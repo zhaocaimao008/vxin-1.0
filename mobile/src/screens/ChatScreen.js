@@ -21,6 +21,7 @@ export default function ChatScreen({ route }) {
   const { conversation } = route.params;
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [replyTo, setReplyTo] = useState(null);
   const socketRef = useRef(null);
   const flatListRef = useRef(null);
   const { user, token } = useAuth();
@@ -38,8 +39,14 @@ export default function ChatScreen({ route }) {
 
   const send = () => {
     if (!input.trim()) return;
-    socketRef.current?.emit('send_message', { conversationId: conversation.id, content: input.trim(), type: 'text' });
+    socketRef.current?.emit('send_message', {
+      conversationId: conversation.id,
+      content: input.trim(),
+      type: 'text',
+      reply_to_id: replyTo?.id || null,
+    });
     setInput('');
+    setReplyTo(null);
   };
 
   const sendImage = async () => {
@@ -57,15 +64,34 @@ export default function ChatScreen({ route }) {
   const renderItem = ({ item }) => {
     const isMine = item.sender_id === user.id;
     return (
-      <View style={[styles.msgRow, isMine ? styles.msgRowMine : styles.msgRowOther]}>
-        {!isMine && <Avatar src={item.senderAvatar} name={item.senderName} />}
-        <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleOther]}>
-          {item.type === 'text' && <Text style={styles.msgText}>{item.content}</Text>}
-          {item.type === 'image' && <Image source={{ uri: item.file_url }} style={styles.msgImage} resizeMode="cover" />}
-          {item.type === 'file' && <Text style={styles.fileText}>📎 {item.content}</Text>}
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onLongPress={() => setReplyTo({ id: item.id, senderName: item.senderName, content: item.content, type: item.type })}
+      >
+        <View style={[styles.msgRow, isMine ? styles.msgRowMine : styles.msgRowOther]}>
+          {!isMine && <Avatar src={item.senderAvatar} name={item.senderName} />}
+          <View style={{ maxWidth: '70%' }}>
+            {!isMine && conversation.type === 'group' && (
+              <Text style={styles.senderName}>{item.senderName}</Text>
+            )}
+            {item.replyTo && (
+              <View style={[styles.replyPreview, isMine ? styles.replyPreviewMine : styles.replyPreviewOther]}>
+                <Text style={styles.replyName}>{item.replyTo.senderName}</Text>
+                <Text style={styles.replyText} numberOfLines={1}>
+                  {item.replyTo.type === 'image' ? '[图片]' : item.replyTo.type === 'voice' ? '[语音]' : item.replyTo.content}
+                </Text>
+              </View>
+            )}
+            <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleOther]}>
+              {item.type === 'text' && <Text style={styles.msgText}>{item.content}</Text>}
+              {item.type === 'image' && <Image source={{ uri: item.file_url }} style={styles.msgImage} resizeMode="cover" />}
+              {item.type === 'file' && <Text style={styles.fileText}>📎 {item.content}</Text>}
+              {item.type === 'voice' && <Text style={styles.fileText}>🎵 语音消息</Text>}
+            </View>
+          </View>
+          {isMine && <Avatar src={user.avatar} name={user.username} />}
         </View>
-        {isMine && <Avatar src={user.avatar} name={user.username} />}
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -79,6 +105,19 @@ export default function ChatScreen({ route }) {
         contentContainerStyle={styles.list}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
       />
+      {replyTo && (
+        <View style={styles.replyBar}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.replyBarName}>回复 {replyTo.senderName}</Text>
+            <Text style={styles.replyBarText} numberOfLines={1}>
+              {replyTo.type === 'image' ? '[图片]' : replyTo.content}
+            </Text>
+          </View>
+          <TouchableOpacity onPress={() => setReplyTo(null)} style={{ padding: 4 }}>
+            <Text style={{ fontSize: 16, color: '#888' }}>✕</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <View style={styles.inputBar}>
         <TouchableOpacity style={styles.iconBtn} onPress={sendImage}>
           <Text style={{ fontSize: 22 }}>📷</Text>
@@ -94,16 +133,25 @@ export default function ChatScreen({ route }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F5F5' },
-  list: { padding: 16, gap: 12 },
+  list: { padding: 16, gap: 4 },
   msgRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginBottom: 8 },
   msgRowMine: { justifyContent: 'flex-end' },
   msgRowOther: { justifyContent: 'flex-start' },
-  bubble: { maxWidth: '70%', padding: 10, borderRadius: 10 },
+  senderName: { fontSize: 11, color: '#888', marginBottom: 2, marginLeft: 2 },
+  replyPreview: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 3, borderLeftWidth: 3 },
+  replyPreviewMine: { backgroundColor: 'rgba(0,0,0,0.06)', borderLeftColor: '#07C160' },
+  replyPreviewOther: { backgroundColor: 'rgba(0,0,0,0.06)', borderLeftColor: '#07C160' },
+  replyName: { fontSize: 11, color: '#07C160', fontWeight: '600', marginBottom: 1 },
+  replyText: { fontSize: 12, color: '#666' },
+  bubble: { padding: 10, borderRadius: 10 },
   bubbleMine: { backgroundColor: '#95EC69', borderBottomRightRadius: 2 },
   bubbleOther: { backgroundColor: '#fff', borderBottomLeftRadius: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 3, elevation: 1 },
   msgText: { fontSize: 15, lineHeight: 22 },
   msgImage: { width: 180, height: 180, borderRadius: 6 },
   fileText: { fontSize: 14, color: '#07C160' },
+  replyBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F0F0', borderTopWidth: 1, borderTopColor: '#E5E5E5', paddingHorizontal: 14, paddingVertical: 6, gap: 8 },
+  replyBarName: { fontSize: 12, color: '#07C160', fontWeight: '600', marginBottom: 1 },
+  replyBarText: { fontSize: 12, color: '#888' },
   inputBar: { flexDirection: 'row', alignItems: 'flex-end', padding: 8, backgroundColor: '#F7F7F7', borderTopWidth: 1, borderTopColor: '#E5E5E5', gap: 8 },
   iconBtn: { padding: 6 },
   textInput: { flex: 1, backgroundColor: '#fff', borderRadius: 8, padding: 8, fontSize: 15, maxHeight: 100, borderWidth: 1, borderColor: '#E5E5E5' },

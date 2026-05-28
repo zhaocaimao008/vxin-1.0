@@ -40,7 +40,15 @@ export default function Moments({ onBack }) {
 
   const like = async (id) => {
     const { data } = await axios.post(`/api/moments/${id}/like`);
-    setMoments(prev => prev.map(m => m.id === id ? { ...m, likes: data.likes } : m));
+    // refetch to get updated likedUsers
+    const { data: updated } = await axios.get('/api/moments');
+    setMoments(updated);
+  };
+
+  const deleteMoment = async (id) => {
+    if (!window.confirm('确定删除这条朋友圈？')) return;
+    await axios.delete(`/api/moments/${id}`);
+    setMoments(prev => prev.filter(m => m.id !== id));
   };
 
   const addComment = (id, text) => {
@@ -115,7 +123,7 @@ export default function Moments({ onBack }) {
       {/* Feed */}
       <div className="wc-moments-feed">
         {moments.map(m => (
-          <MomentCard key={m.id} moment={m} userId={user?.id} onLike={() => like(m.id)} onComment={(t) => addComment(m.id, t)} />
+          <MomentCard key={m.id} moment={m} userId={user?.id} onLike={() => like(m.id)} onComment={(t) => addComment(m.id, t)} onDelete={m.user_id === user?.id ? () => deleteMoment(m.id) : null} />
         ))}
         {moments.length === 0 && (
           <div style={{ textAlign: 'center', padding: '60px 0', color: '#B2B2B2', fontSize: 14 }}>
@@ -128,7 +136,7 @@ export default function Moments({ onBack }) {
   );
 }
 
-function MomentCard({ moment, userId, onLike, onComment }) {
+function MomentCard({ moment, userId, onLike, onComment, onDelete }) {
   const [showComment, setShowComment] = useState(false);
   const [commentText, setCommentText] = useState('');
   const commentRef = useRef(null);
@@ -163,6 +171,9 @@ function MomentCard({ moment, userId, onLike, onComment }) {
         <div className="wc-moment-meta">
           <span className="wc-moment-time">{format(moment.created_at * 1000)}</span>
           <div className="wc-moment-action-bar">
+            {onDelete && (
+              <button className="wc-moment-btn" style={{ color: '#FA5151' }} onClick={onDelete}>🗑️ 删除</button>
+            )}
             <button className={`wc-moment-btn${liked ? ' liked' : ''}`} onClick={onLike}>
               👍 {liked ? '取消' : '赞'}
             </button>
@@ -178,9 +189,9 @@ function MomentCard({ moment, userId, onLike, onComment }) {
             {moment.likes?.length > 0 && (
               <div className="wc-moment-likes">
                 <span>👍</span>
-                {moment.likes.map((uid, i) => (
-                  <span key={uid} className="wc-moment-like-name">
-                    {uid === userId ? '你' : `用户${uid.slice(0,4)}`}{i < moment.likes.length - 1 ? '，' : ''}
+                {(moment.likedUsers || []).map((u, i) => (
+                  <span key={u.id} className="wc-moment-like-name">
+                    {u.id === userId ? '你' : u.username}{i < moment.likes.length - 1 ? '，' : ''}
                   </span>
                 ))}
               </div>

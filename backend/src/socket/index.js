@@ -36,8 +36,15 @@ module.exports = (io) => {
       const { conversationId, content, type = 'text', reply_to_id } = data;
       if (!conversationId || !content) return;
 
-      const member = db.prepare('SELECT 1 FROM conversation_members WHERE conversation_id=? AND user_id=?').get(conversationId, userId);
+      const member = db.prepare('SELECT role FROM conversation_members WHERE conversation_id=? AND user_id=?').get(conversationId, userId);
       if (!member) return;
+
+      // 全群禁言校验：普通成员不能发消息
+      const conv = db.prepare('SELECT mute_all FROM conversations WHERE id=?').get(conversationId);
+      if (conv?.mute_all && member.role === 'member') {
+        if (ack) ack({ success: false, error: '全员禁言中，您没有发言权限' });
+        return;
+      }
 
       const id = uuidv4();
       db.prepare('INSERT INTO messages (id,conversation_id,sender_id,type,content,reply_to_id) VALUES (?,?,?,?,?,?)').run(id, conversationId, userId, type, content, reply_to_id || null);

@@ -17,23 +17,52 @@ function Avatar({ src, name, size = 42 }) {
 export default function DiscoverScreen() {
   const [moments, setMoments] = useState([]);
   const [content, setContent] = useState('');
+  const [images, setImages] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [posting, setPosting] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => { axios.get('/api/moments').then(r => setMoments(r.data)); }, []);
 
+  const pickImages = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) return Alert.alert('需要权限', '请允许访问相册');
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 0.8,
+    });
+    if (result.canceled) return;
+    setImages(result.assets.slice(0, 9));
+  };
+
   const post = async () => {
-    if (!content.trim()) return;
-    const fd = new FormData();
-    fd.append('content', content);
-    const { data } = await axios.post('/api/moments', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-    setMoments(prev => [data, ...prev]);
-    setContent(''); setShowForm(false);
+    if (!content.trim() && images.length === 0) return;
+    setPosting(true);
+    try {
+      const fd = new FormData();
+      fd.append('content', content);
+      images.forEach((img, i) => {
+        fd.append('images', { uri: img.uri, type: 'image/jpeg', name: `img${i}.jpg` });
+      });
+      const { data } = await axios.post('/api/moments', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setMoments(prev => [data, ...prev]);
+      setContent(''); setImages([]); setShowForm(false);
+    } catch { Alert.alert('发布失败', '请重试'); }
+    setPosting(false);
+  };
+
+  const deleteMoment = async (id) => {
+    try {
+      await axios.delete(`/api/moments/${id}`);
+      setMoments(prev => prev.filter(m => m.id !== id));
+    } catch { Alert.alert('删除失败'); }
   };
 
   const like = async (id) => {
-    const { data } = await axios.post(`/api/moments/${id}/like`);
-    setMoments(prev => prev.map(m => m.id === id ? { ...m, likes: data.likes } : m));
+    await axios.post(`/api/moments/${id}/like`);
+    const { data: updated } = await axios.get('/api/moments');
+    setMoments(updated);
   };
 
   return (
@@ -44,8 +73,38 @@ export default function DiscoverScreen() {
       </View>
       {showForm && (
         <View style={styles.form}>
-          <TextInput style={styles.formInput} value={content} onChangeText={setContent} placeholder="分享新鲜事..." multiline rows={3} />
-          <TouchableOpacity style={styles.submitBtn} onPress={post}><Text style={styles.submitText}>发布</Text></TouchableOpacity>
+          <TextInput style={styles.formInput} value={content} onChangeText={setContent} placeholder="分享新鲜事..." multiline />
+          {images.length > 0 && (
+            <ScrollView horizontal style={{ marginBottom: 8 }} showsHorizontalScrollIndicator={false}>
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                {images.map((img, i) => (
+                  <View key={i} style={{ position: 'relative' }}>
+                    <Image source={{ uri: img.uri }} style={{ width: 72, height: 72, borderRadius: 6 }} />
+                    <TouchableOpacity
+                      style={{ position: 'absolute', top: -6, right: -6, backgroundColor: '#FA5151', borderRadius: 9, width: 18, height: 18, alignItems: 'center', justifyContent: 'center' }}
+                      onPress={() => setImages(prev => prev.filter((_, idx) => idx !== i))}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>×</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          )}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <TouchableOpacity onPress={pickImages} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Text style={{ fontSize: 18 }}>🖼️</Text>
+              <Text style={{ fontSize: 13, color: '#888' }}>图片 ({images.length}/9)</Text>
+            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => { setShowForm(false); setImages([]); setContent(''); }}>
+                <Text style={styles.cancelText}>取消</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.submitBtn, posting && { opacity: 0.6 }]} onPress={post} disabled={posting}>
+                <Text style={styles.submitText}>{posting ? '发布中...' : '发布'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       )}
       <ScrollView>
@@ -53,22 +112,45 @@ export default function DiscoverScreen() {
           <View key={m.id} style={styles.card}>
             <Avatar src={m.avatar} name={m.username} />
             <View style={styles.cardBody}>
-              <Text style={styles.cardUser}>{m.username}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <Text style={styles.cardUser}>{m.username}</Text>
+                {m.user_id === user?.id && (
+                  <TouchableOpacity onPress={() => deleteMoment(m.id)}>
+                    <Text style={{ fontSize: 12, color: '#FA5151' }}>删除</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
               {m.content ? <Text style={styles.cardContent}>{m.content}</Text> : null}
               {m.images?.length > 0 && (
                 <View style={styles.imgGrid}>
                   {m.images.map((img, i) => <Image key={i} source={{ uri: img }} style={styles.momentImg} />)}
                 </View>
               )}
+              {(m.likedUsers?.length > 0) && (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4, gap: 2 }}>
+                  <Text style={{ fontSize: 12, color: '#07C160' }}>👍 </Text>
+                  {m.likedUsers.map((u, i) => (
+                    <Text key={u.id} style={{ fontSize: 12, color: '#07C160' }}>
+                      {u.id === user?.id ? '你' : u.username}{i < m.likedUsers.length - 1 ? '，' : ''}
+                    </Text>
+                  ))}
+                </View>
+              )}
               <View style={styles.cardFooter}>
                 <Text style={styles.cardTime}>{new Date(m.created_at*1000).toLocaleDateString('zh-CN')}</Text>
-                <TouchableOpacity onPress={() => like(m.id)}>
-                  <Text style={[styles.likeBtn, m.likes.includes(user.id) && styles.likeBtnActive]}>
-                    👍 {m.likes.length || ''}
-                  </Text>
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <TouchableOpacity onPress={() => like(m.id)}>
+                    <Text style={[styles.likeBtn, m.likes.includes(user?.id) && styles.likeBtnActive]}>
+                      👍 {m.likes.length > 0 ? m.likes.length : '赞'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-              {m.comments?.map(c => <Text key={c.id} style={styles.comment}><Text style={styles.commentUser}>{c.username}</Text>: {c.content}</Text>)}
+              {m.comments?.map(c => (
+                <Text key={c.id} style={styles.comment}>
+                  <Text style={styles.commentUser}>{c.username}</Text>: {c.content}
+                </Text>
+              ))}
             </View>
           </View>
         ))}
@@ -84,9 +166,11 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 17, fontWeight: '600' },
   postBtn: { color: '#07C160', fontWeight: '600' },
   form: { backgroundColor: '#fff', padding: 12, borderBottomWidth: 1, borderBottomColor: '#E5E5E5' },
-  formInput: { borderWidth: 1, borderColor: '#E5E5E5', borderRadius: 8, padding: 10, fontSize: 14, minHeight: 70 },
-  submitBtn: { backgroundColor: '#07C160', borderRadius: 8, padding: 10, alignItems: 'center', marginTop: 8 },
-  submitText: { color: '#fff', fontWeight: '600' },
+  formInput: { borderWidth: 1, borderColor: '#E5E5E5', borderRadius: 8, padding: 10, fontSize: 14, minHeight: 70, marginBottom: 10 },
+  cancelBtn: { backgroundColor: '#F0F0F0', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
+  cancelText: { color: '#555', fontSize: 13 },
+  submitBtn: { backgroundColor: '#07C160', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
+  submitText: { color: '#fff', fontWeight: '600', fontSize: 13 },
   card: { flexDirection: 'row', padding: 14, backgroundColor: '#fff', marginTop: 1, gap: 12 },
   cardBody: { flex: 1 },
   cardUser: { fontWeight: '700', color: '#07C160', fontSize: 14, marginBottom: 4 },

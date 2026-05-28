@@ -35,7 +35,13 @@ router.get('/', auth, (req, res) => {
       WHERE mc.moment_id=?
       ORDER BY mc.created_at
     `).all(m.id);
-    return { ...m, images: JSON.parse(m.images || '[]'), likes: JSON.parse(m.likes || '[]'), comments };
+    const likes = JSON.parse(m.likes || '[]');
+    let likedUsers = [];
+    if (likes.length > 0) {
+      const ph = likes.map(() => '?').join(',');
+      likedUsers = db.prepare(`SELECT id, username FROM users WHERE id IN (${ph})`).all(...likes);
+    }
+    return { ...m, images: JSON.parse(m.images || '[]'), likes, likedUsers, comments };
   });
 
   res.json(result);
@@ -50,7 +56,7 @@ router.post('/', auth, upload.array('images', 9), (req, res) => {
   const id = uuidv4();
   db.prepare('INSERT INTO moments (id,user_id,content,images) VALUES (?,?,?,?)').run(id, req.user.id, content || '', JSON.stringify(images));
   const moment = db.prepare('SELECT m.*, u.username, u.avatar FROM moments m JOIN users u ON u.id=m.user_id WHERE m.id=?').get(id);
-  res.json({ ...moment, images, likes: [], comments: [] });
+  res.json({ ...moment, images, likes: [], likedUsers: [], comments: [] });
 });
 
 // 点赞/取消点赞
@@ -65,6 +71,16 @@ router.post('/:id/like', auth, (req, res) => {
 
   db.prepare('UPDATE moments SET likes=? WHERE id=?').run(JSON.stringify(likes), req.params.id);
   res.json({ likes });
+});
+
+// 删除自己的朋友圈
+router.delete('/:id', auth, (req, res) => {
+  const moment = db.prepare('SELECT user_id FROM moments WHERE id=?').get(req.params.id);
+  if (!moment) return res.status(404).json({ error: '不存在' });
+  if (moment.user_id !== req.user.id) return res.status(403).json({ error: '无权删除' });
+  db.prepare('DELETE FROM moment_comments WHERE moment_id=?').run(req.params.id);
+  db.prepare('DELETE FROM moments WHERE id=?').run(req.params.id);
+  res.json({ success: true });
 });
 
 // 评论

@@ -73,10 +73,11 @@ router.post('/conversation/group', auth, (req, res) => {
   if (!name || !memberIds?.length) return res.status(400).json({ error: '参数缺失' });
 
   const id = uuidv4();
-  db.prepare('INSERT INTO conversations (id,type,name) VALUES (?,?,?)').run(id, 'group', name);
-  const addMember = db.prepare('INSERT INTO conversation_members (conversation_id,user_id) VALUES (?,?)');
-  addMember.run(id, req.user.id);
-  memberIds.forEach(uid => addMember.run(id, uid));
+  db.prepare('INSERT INTO conversations (id,type,name,owner_id) VALUES (?,?,?,?)').run(id, 'group', name, req.user.id);
+  // 创建者角色为 owner，其他成员为 member
+  db.prepare('INSERT INTO conversation_members (conversation_id,user_id,role) VALUES (?,?,?)').run(id, req.user.id, 'owner');
+  const addMember = db.prepare('INSERT OR IGNORE INTO conversation_members (conversation_id,user_id,role) VALUES (?,?,?)');
+  memberIds.forEach(uid => addMember.run(id, uid, 'member'));
 
   const io = req.app.get('io');
   if (io) {
@@ -242,23 +243,72 @@ router.post('/conversation/:convId/leave', auth, (req, res) => {
   res.json({ success: true });
 });
 
-// 获取群详情
+// 获取群详情（含角色、管理设置）
 router.get('/conversation/:convId/info', auth, (req, res) => {
   const { convId } = req.params;
-  const member = db.prepare('SELECT 1 FROM conversation_members WHERE conversation_id=? AND user_id=?').get(convId, req.user.id);
-  if (!member) return res.status(403).json({ error: '不在群内' });
+  const myMember = db.prepare('SELECT role FROM conversation_members WHERE conversation_id=? AND user_id=?').get(convId, req.user.id);
+  if (!myMember) return res.status(403).json({ error: '不在群内' });
   const conv = db.prepare('SELECT * FROM conversations WHERE id=?').get(convId);
   if (!conv) return res.status(404).json({ error: '群不存在' });
   const members = db.prepare(`
-    SELECT u.id, u.username, u.avatar, u.bio,
-      CASE WHEN c.owner_id = u.id THEN 1 ELSE 0 END as isOwner
+    SELECT u.id, u.username, u.avatar, u.bio, cm.role
     FROM users u
     JOIN conversation_members cm ON cm.user_id=u.id
-    LEFT JOIN conversations c ON c.id=cm.conversation_id
     WHERE cm.conversation_id=?
-    ORDER BY isOwner DESC, u.username
+    ORDER BY
+      CASE cm.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END,
+      u.username
   `).all(convId);
-  res.json({ ...conv, members });
+  res.json({ ...conv, members, myRole: myMember.role });
+});
+
+// 群管理设置：禁止私聊 / 全群禁言（仅群主和管理员可操作）
+router.put('/conversation/:convId/manage', auth, (req, res) => {
+  const { convId } = req.params;
+  const conv = db.prepare('SELECT * FROM conversations WHERE id=? AND type=?').get(convId, 'group');
+  if (!conv) return res.status(404).json({ error: '群不存在' });
+
+  const myRole = db.prepare('SELECT role FROM conversation_members WHERE conversation_id=? AND user_id=?').get(convId, req.user.id)?.role;
+  if (!myRole || myRole === 'member') return res.status(403).json({ error: '无权操作，仅群主或管理员可修改' });
+
+  const updates = [];
+  const params = [];
+  const { no_private_chat, mute_all } = req.body;
+  if (no_private_chat !== undefined) { updates.push('no_private_chat=?'); params.push(no_private_chat ? 1 : 0); }
+  if (mute_all !== undefined) { updates.push('mute_all=?'); params.push(mute_all ? 1 : 0); }
+  if (updates.length === 0) return res.status(400).json({ error: '无有效参数' });
+
+  params.push(convId);
+  db.prepare(`UPDATE conversations SET ${updates.join(',')} WHERE id=?`).run(...params);
+
+  const updated = db.prepare('SELECT id, no_private_chat, mute_all FROM conversations WHERE id=?').get(convId);
+  const io = req.app.get('io');
+  if (io) io.to(convId).emit('group_settings_updated', updated);
+  res.json(updated);
+});
+
+// 设置/取消管理员（仅群主可操作）
+router.put('/conversation/:convId/members/:uid/role', auth, (req, res) => {
+  const { convId, uid } = req.params;
+  const { role } = req.body; // 'admin' | 'member'
+  if (!['admin', 'member'].includes(role)) return res.status(400).json({ error: '无效角色' });
+
+  const conv = db.prepare('SELECT owner_id FROM conversations WHERE id=?').get(convId);
+  if (!conv) return res.status(404).json({ error: '群不存在' });
+  if (conv.owner_id !== req.user.id) return res.status(403).json({ error: '仅群主可设置管理员' });
+  if (uid === req.user.id) return res.status(400).json({ error: '不能修改自己的角色' });
+
+  const target = db.prepare('SELECT role FROM conversation_members WHERE conversation_id=? AND user_id=?').get(convId, uid);
+  if (!target) return res.status(404).json({ error: '成员不存在' });
+  if (target.role === 'owner') return res.status(400).json({ error: '不能修改群主角色' });
+
+  db.prepare('UPDATE conversation_members SET role=? WHERE conversation_id=? AND user_id=?').run(role, convId, uid);
+  const io = req.app.get('io');
+  if (io) {
+    io.to(convId).emit('group_updated', { id: convId });
+    io.to(`user_${uid}`).emit('role_changed', { conversationId: convId, role });
+  }
+  res.json({ success: true, role });
 });
 
 // 置顶/取消置顶
@@ -442,6 +492,145 @@ router.post('/:msgId/react', auth, (req, res) => {
   if (io) io.to(msg.conversation_id).emit('message_reaction', { msgId: req.params.msgId, reactions: result });
 
   res.json({ reactions: result });
+});
+
+// 编辑消息（仅限自己的文字消息，2分钟内）
+router.put('/:msgId/edit', auth, (req, res) => {
+  const { content } = req.body;
+  if (!content?.trim()) return res.status(400).json({ error: '内容不能为空' });
+
+  const msg = db.prepare('SELECT * FROM messages WHERE id=?').get(req.params.msgId);
+  if (!msg) return res.status(404).json({ error: '消息不存在' });
+  if (msg.sender_id !== req.user.id) return res.status(403).json({ error: '只能编辑自己的消息' });
+  if (msg.type !== 'text') return res.status(400).json({ error: '只能编辑文字消息' });
+  if (msg.deleted) return res.status(400).json({ error: '已撤回的消息无法编辑' });
+
+  const now = Math.floor(Date.now() / 1000);
+  if (now - msg.created_at > 120) return res.status(400).json({ error: '超过2分钟无法编辑' });
+
+  db.prepare('UPDATE messages SET content=?, edited=1 WHERE id=?').run(content.trim(), req.params.msgId);
+
+  const io = req.app.get('io');
+  if (io) io.to(msg.conversation_id).emit('message_edited', {
+    msgId: req.params.msgId,
+    content: content.trim(),
+    conversationId: msg.conversation_id
+  });
+  res.json({ success: true, content: content.trim() });
+});
+
+// 转发消息到多个会话
+router.post('/forward', auth, (req, res) => {
+  const { msgId, conversationIds } = req.body;
+  if (!msgId || !conversationIds?.length) return res.status(400).json({ error: '参数缺失' });
+
+  const msg = db.prepare('SELECT * FROM messages WHERE id=? AND deleted=0').get(msgId);
+  if (!msg) return res.status(404).json({ error: '消息不存在' });
+
+  const io = req.app.get('io');
+  const sent = [];
+
+  conversationIds.forEach(convId => {
+    // 验证用户在目标会话中
+    const member = db.prepare('SELECT 1 FROM conversation_members WHERE conversation_id=? AND user_id=?').get(convId, req.user.id);
+    if (!member) return;
+
+    const id = uuidv4();
+    db.prepare('INSERT INTO messages (id,conversation_id,sender_id,type,content,file_url) VALUES (?,?,?,?,?,?)').run(
+      id, convId, req.user.id, msg.type, msg.content, msg.file_url || ''
+    );
+    const newMsg = db.prepare('SELECT m.*, u.username as senderName, u.avatar as senderAvatar FROM messages m JOIN users u ON u.id=m.sender_id WHERE m.id=?').get(id);
+    newMsg.reactions = [];
+
+    if (io) io.to(convId).emit('new_message', newMsg);
+    sent.push(convId);
+  });
+
+  res.json({ success: true, sent: sent.length });
+});
+
+// 置顶消息（群主/管理员可置顶，私聊双方均可）
+router.post('/conversation/:convId/pin-message', auth, (req, res) => {
+  const { msgId } = req.body;
+  if (!msgId) return res.status(400).json({ error: '参数缺失' });
+
+  const member = db.prepare('SELECT role FROM conversation_members WHERE conversation_id=? AND user_id=?').get(req.params.convId, req.user.id);
+  if (!member) return res.status(403).json({ error: '不在会话中' });
+
+  const msg = db.prepare('SELECT id,type,content,sender_id FROM messages WHERE id=? AND conversation_id=?').get(msgId, req.params.convId);
+  if (!msg) return res.status(404).json({ error: '消息不存在' });
+
+  const id = uuidv4();
+  db.prepare('INSERT OR REPLACE INTO pinned_messages (id,conversation_id,message_id,pinned_by) VALUES (?,?,?,?)').run(id, req.params.convId, msgId, req.user.id);
+
+  const pinner = db.prepare('SELECT username FROM users WHERE id=?').get(req.user.id);
+  const io = req.app.get('io');
+  if (io) io.to(req.params.convId).emit('message_pinned', { msgId, convId: req.params.convId, pinnedBy: pinner?.username, content: msg.content, type: msg.type });
+
+  res.json({ success: true });
+});
+
+// 取消置顶
+router.delete('/conversation/:convId/pin-message/:msgId', auth, (req, res) => {
+  const member = db.prepare('SELECT 1 FROM conversation_members WHERE conversation_id=? AND user_id=?').get(req.params.convId, req.user.id);
+  if (!member) return res.status(403).json({ error: '不在会话中' });
+
+  db.prepare('DELETE FROM pinned_messages WHERE conversation_id=? AND message_id=?').run(req.params.convId, req.params.msgId);
+  const io = req.app.get('io');
+  if (io) io.to(req.params.convId).emit('message_unpinned', { msgId: req.params.msgId, convId: req.params.convId });
+  res.json({ success: true });
+});
+
+// 获取置顶消息列表
+router.get('/conversation/:convId/pinned-messages', auth, (req, res) => {
+  const member = db.prepare('SELECT 1 FROM conversation_members WHERE conversation_id=? AND user_id=?').get(req.params.convId, req.user.id);
+  if (!member) return res.status(403).json({ error: '无权访问' });
+
+  const pinned = db.prepare(`
+    SELECT pm.message_id as msgId, pm.pinned_by, pm.created_at,
+      m.type, m.content, m.file_url,
+      u.username as senderName, pu.username as pinnedByName
+    FROM pinned_messages pm
+    JOIN messages m ON m.id=pm.message_id
+    JOIN users u ON u.id=m.sender_id
+    JOIN users pu ON pu.id=pm.pinned_by
+    WHERE pm.conversation_id=?
+    ORDER BY pm.created_at DESC LIMIT 20
+  `).all(req.params.convId);
+  res.json(pinned);
+});
+
+// 批量撤回消息（多选删除）
+router.post('/batch-delete', auth, (req, res) => {
+  const { msgIds, conversationId } = req.body;
+  if (!msgIds?.length || !conversationId) return res.status(400).json({ error: '参数缺失' });
+
+  const member = db.prepare('SELECT role FROM conversation_members WHERE conversation_id=? AND user_id=?').get(conversationId, req.user.id);
+  if (!member) return res.status(403).json({ error: '不在会话中' });
+
+  const isAdmin = member.role === 'owner' || member.role === 'admin';
+  const deleted = [];
+  const now = Math.floor(Date.now() / 1000);
+
+  msgIds.forEach(msgId => {
+    const msg = db.prepare('SELECT * FROM messages WHERE id=? AND conversation_id=?').get(msgId, conversationId);
+    if (!msg || msg.deleted) return;
+    const isOwn = msg.sender_id === req.user.id;
+    const inTime = (now - msg.created_at) <= 120;
+    if (isOwn && inTime) {
+      db.prepare('UPDATE messages SET deleted=1 WHERE id=?').run(msgId);
+      deleted.push(msgId);
+    } else if (isAdmin) {
+      db.prepare('UPDATE messages SET deleted=1 WHERE id=?').run(msgId);
+      deleted.push(msgId);
+    }
+  });
+
+  const io = req.app.get('io');
+  if (io && deleted.length > 0) {
+    deleted.forEach(msgId => io.to(conversationId).emit('message_deleted', { msgId, conversationId }));
+  }
+  res.json({ success: true, deleted: deleted.length });
 });
 
 // 收藏消息
