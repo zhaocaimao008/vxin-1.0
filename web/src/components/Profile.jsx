@@ -109,9 +109,9 @@ function EditProfile({ user, updateUser, onBack }) {
 
   return (
     <div className="wc-profile" style={{ overflowY: 'auto' }}>
-      <div className="wc-panel-header" style={{ background: '#fff' }}>
+      <div className="wc-sub-header" style={{ background: '#fff' }}>
         <button style={{ color: '#07C160', fontSize: 15 }} onClick={onBack}>‹ 返回</button>
-        <span className="wc-panel-title">编辑资料</span>
+        <span className="wc-sub-header-title">编辑资料</span>
         <button style={{ color: '#07C160', fontSize: 15, fontWeight: 500 }} onClick={save} disabled={saving}>{saving ? '保存中' : '保存'}</button>
       </div>
       <div style={{ background: '#fff', margin: '12px 0' }}>
@@ -139,9 +139,9 @@ function EditProfile({ user, updateUser, onBack }) {
 function Settings({ user, logout, onBack }) {
   return (
     <div className="wc-settings">
-      <div className="wc-panel-header" style={{ background: '#fff' }}>
+      <div className="wc-sub-header" style={{ background: '#fff' }}>
         <button style={{ color: '#07C160', fontSize: 15 }} onClick={onBack}>‹ 返回</button>
-        <span className="wc-panel-title">设置</span>
+        <span className="wc-sub-header-title">设置</span>
         <div style={{ width: 40 }} />
       </div>
       <div style={{ paddingTop: 12 }}>
@@ -182,9 +182,9 @@ function Collections({ onBack }) {
 
   return (
     <div className="wc-settings">
-      <div className="wc-panel-header" style={{ background: '#fff' }}>
+      <div className="wc-sub-header" style={{ background: '#fff' }}>
         <button style={{ color: '#07C160', fontSize: 15 }} onClick={onBack}>‹ 返回</button>
-        <span className="wc-panel-title">收藏</span>
+        <span className="wc-sub-header-title">收藏</span>
         <div style={{ width: 40 }} />
       </div>
       <div style={{ paddingTop: 8 }}>

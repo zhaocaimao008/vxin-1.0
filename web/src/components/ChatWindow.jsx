@@ -5,6 +5,7 @@ import EmojiPicker from './EmojiPicker';
 import GroupInfo, { GroupAvatar } from './GroupInfo';
 import UserProfile from './UserProfile';
 import ForwardModal from './ForwardModal';
+import CallModal from './CallModal';
 import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
 import { format, formatFull } from '../utils/time';
@@ -38,6 +39,8 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   const [atList, setAtList] = useState(null); // members for @ mention
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  // 通话状态
+  const [activeCall, setActiveCall] = useState(null); // { type, direction, remoteUser, remoteId }
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -47,6 +50,30 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   const textareaRef = useRef(null);
   const { socket } = useSocket();
   const { user } = useAuth();
+
+  // 发起通话
+  const startCall = useCallback((type) => {
+    if (conversation.type !== 'private') return;
+    const remoteUser = { id: conversation.otherUser?.id, name: conversation.name, avatar: conversation.avatar };
+    socket?.emit('call:request', {
+      to: conversation.otherUser?.id,
+      type,
+      caller: { id: user.id, name: user.username, avatar: user.avatar },
+    });
+    setActiveCall({ type, direction: 'outgoing', remoteUser, remoteId: conversation.otherUser?.id });
+  }, [socket, conversation, user]);
+
+  // 监听来电（本 ChatWindow 对应的联系人打来的电话）
+  useEffect(() => {
+    if (!socket) return;
+    const onIncoming = ({ from, type, caller }) => {
+      // 只响应当前打开的私聊对方
+      if (from !== conversation.otherUser?.id) return;
+      setActiveCall({ type, direction: 'incoming', remoteUser: { id: from, name: caller?.name, avatar: caller?.avatar }, remoteId: from });
+    };
+    socket.on('call:incoming', onIncoming);
+    return () => socket.off('call:incoming', onIncoming);
+  }, [socket, conversation.otherUser?.id]);
 
   const fetchMessages = useCallback(async (before = null) => {
     const params = { limit: 40 };
@@ -587,6 +614,15 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
 
   return (
     <div className="wc-chat">
+      {/* ── 通话弹窗 ── */}
+      {activeCall && (
+        <CallModal
+          socket={socket}
+          user={user}
+          call={activeCall}
+          onClose={() => setActiveCall(null)}
+        />
+      )}
       {/* ── Header ── */}
       <div className="wc-chat-header">
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -603,8 +639,8 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         </div>
         <div className="wc-chat-header-right">
           {conversation.type === 'private' && <>
-            <button className="wc-chat-header-btn" title="语音通话"><IcoVoiceCall /></button>
-            <button className="wc-chat-header-btn" title="视频通话"><IcoVideoCall /></button>
+            <button className="wc-chat-header-btn" title="语音通话" onClick={() => startCall('audio')}><IcoVoiceCall /></button>
+            <button className="wc-chat-header-btn" title="视频通话" onClick={() => startCall('video')}><IcoVideoCall /></button>
             <button className="wc-chat-header-btn" title="查看资料" onClick={() => setShowUserProfile(conversation.otherUser?.id)}><IcoPerson /></button>
           </>}
           <button
@@ -779,17 +815,17 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         {showMore && (
           <div className="wc-more-panel">
             {[
-              { icon: '📷', label: '相机' },
-              { icon: '📍', label: '位置' },
-              { icon: '👤', label: '名片' },
-              { icon: '🧧', label: '红包' },
-              { icon: '📁', label: '文件', action: () => fileInputRef.current?.click() },
-              { icon: '📹', label: '视频通话' },
-              { icon: '📞', label: '语音通话' },
-              { icon: '🎵', label: '音乐' },
+              { bg:'#2B2B2B', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M12 15.2A3.2 3.2 0 008.8 12 3.2 3.2 0 0012 8.8 3.2 3.2 0 0115.2 12 3.2 3.2 0 0112 15.2M12 7a5 5 0 000 10A5 5 0 0012 7m0-5c0 0-8.02 0-9.5 1.5S1 7 1 12s0 8 1.5 9.5S7 23 12 23s8 0 9.5-1.5S23 17 23 12s0-8-1.5-9.5S17 1 12 1m0 20c-5 0-9-4-9-9s4-9 9-9 9 4 9 9-4 9-9 9z"/></svg>, label:'相机' },
+              { bg:'#FF4D4F', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>, label:'位置' },
+              { bg:'#52C41A', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>, label:'名片' },
+              { bg:'#FA541C', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>, label:'红包', action:()=>{} },
+              { bg:'#1890FF', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M20 6h-2.18c.07-.44.18-.88.18-1.36C18 2.05 15.96 0 13.5 0c-1.3 0-2.47.6-3.28 1.53L9 3 7.78 1.53C6.97.6 5.8 0 4.5 0 2.04 0 0 2.05 0 4.64c0 .48.11.92.18 1.36H0v2h20v-2zM20 10H4v8c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-8z"/></svg>, label:'文件', action:()=>fileInputRef.current?.click() },
+              { bg:'#13C2C2', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>, label:'视频通话', action:()=>{ setShowMore(false); startCall('video'); } },
+              { bg:'#07C160', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>, label:'语音通话', action:()=>{ setShowMore(false); startCall('audio'); } },
+              { bg:'#722ED1', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>, label:'音乐' },
             ].map(item => (
               <div key={item.label} className="wc-more-item" onClick={item.action}>
-                <div className="wc-more-icon">{item.icon}</div>
+                <div className="wc-more-icon" style={{ background: item.bg }}>{item.svg}</div>
                 <span className="wc-more-label">{item.label}</span>
               </div>
             ))}

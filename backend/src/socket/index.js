@@ -78,6 +78,33 @@ module.exports = (io) => {
       socket.join(conversationId);
     });
 
+    // ── WebRTC 通话信令 ──────────────────────────────────────
+    // 发起通话请求
+    socket.on('call:request', ({ to, type, caller }) => {
+      io.to(`user_${to}`).emit('call:incoming', { from: userId, type, caller });
+    });
+    // 接受/拒绝通话
+    socket.on('call:response', ({ to, accepted }) => {
+      io.to(`user_${to}`).emit('call:response', { from: userId, accepted });
+    });
+    // WebRTC SDP offer
+    socket.on('call:offer', ({ to, offer }) => {
+      io.to(`user_${to}`).emit('call:offer', { from: userId, offer });
+    });
+    // WebRTC SDP answer
+    socket.on('call:answer', ({ to, answer }) => {
+      io.to(`user_${to}`).emit('call:answer', { from: userId, answer });
+    });
+    // ICE candidate 交换
+    socket.on('call:ice', ({ to, candidate }) => {
+      io.to(`user_${to}`).emit('call:ice', { from: userId, candidate });
+    });
+    // 结束通话
+    socket.on('call:end', ({ to }) => {
+      io.to(`user_${to}`).emit('call:end', { from: userId });
+    });
+    // ──────────────────────────────────────────────────────────
+
     socket.on('disconnect', () => {
       onlineUsers.delete(userId);
       db.prepare('UPDATE users SET status=? WHERE id=?').run('offline', userId);
