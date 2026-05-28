@@ -13,6 +13,12 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
 
+const groupAvatarStorage = multer.diskStorage({
+  destination: path.join(__dirname, '../../uploads/avatars'),
+  filename: (req, file, cb) => cb(null, 'group_' + uuidv4() + path.extname(file.originalname))
+});
+const uploadGroupAvatar = multer({ storage: groupAvatarStorage, limits: { fileSize: 5 * 1024 * 1024 } });
+
 function getConvSetting(userId, convId) {
   return db.prepare('SELECT * FROM conversation_settings WHERE user_id=? AND conversation_id=?').get(userId, convId) || { pinned: 0, muted: 0, last_read_at: 0 };
 }
@@ -177,6 +183,20 @@ router.put('/conversation/:convId', auth, (req, res) => {
   const io = req.app.get('io');
   if (io) io.to(convId).emit('group_updated', updated);
   res.json(updated);
+});
+
+// 修改群头像（群主和管理员可操作）
+router.put('/conversation/:convId/avatar', auth, uploadGroupAvatar.single('avatar'), (req, res) => {
+  const { convId } = req.params;
+  if (!req.file) return res.status(400).json({ error: '请选择图片' });
+  const member = db.prepare('SELECT role FROM conversation_members WHERE conversation_id=? AND user_id=?').get(convId, req.user.id);
+  if (!member) return res.status(403).json({ error: '不在群内' });
+  if (member.role === 'member') return res.status(403).json({ error: '仅群主和管理员可修改群头像' });
+  const url = `/uploads/avatars/${req.file.filename}`;
+  db.prepare('UPDATE conversations SET avatar=? WHERE id=?').run(url, convId);
+  const io = req.app.get('io');
+  if (io) io.to(convId).emit('group_updated', { id: convId, avatar: url });
+  res.json({ avatar: url });
 });
 
 // 邀请成员进群

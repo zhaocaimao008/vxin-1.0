@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Avatar from './Avatar';
 
@@ -16,6 +16,46 @@ export function GroupAvatar({ members = [], size = 46 }) {
           {m.avatar ? <img src={m.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: cellSize * 0.45, fontWeight: 600, color: '#fff' }}>{(m.username || '?')[0]}</span>}
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ── 群头像上传（管理员 hover 显示相机图标） ── */
+function GroupAvatarUpload({ info, isAdmin, uploading, inputRef, onAvatarClick, onChange }) {
+  const [hovered, setHovered] = useState(false);
+  const r = Math.round(50 * 0.22);
+  return (
+    <div
+      style={{ position: 'relative', flexShrink: 0, cursor: isAdmin ? 'pointer' : 'default', width: 50, height: 50 }}
+      onMouseEnter={() => isAdmin && setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={onAvatarClick}
+      title={isAdmin ? '点击更换群头像' : undefined}
+    >
+      {info.avatar
+        ? <img src={info.avatar} alt="" style={{ width: 50, height: 50, borderRadius: r, objectFit: 'cover', display: 'block' }} />
+        : <GroupAvatar members={info.members} size={50} />
+      }
+      {isAdmin && (hovered || uploading) && (
+        <div style={{
+          position: 'absolute', inset: 0, borderRadius: r,
+          background: 'rgba(0,0,0,.42)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1,
+        }}>
+          {uploading
+            ? <span style={{ color: '#fff', fontSize: 9, lineHeight: 1 }}>上传中…</span>
+            : <>
+                <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, fill: '#fff' }}>
+                  <path d="M12 15.2A3.2 3.2 0 0 1 8.8 12 3.2 3.2 0 0 1 12 8.8a3.2 3.2 0 0 1 3.2 3.2 3.2 3.2 0 0 1-3.2 3.2M20 4h-3.17L15 2H9L7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/>
+                </svg>
+                <span style={{ color: '#fff', fontSize: 8, lineHeight: 1 }}>更换头像</span>
+              </>
+          }
+        </div>
+      )}
+      {isAdmin && (
+        <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onChange} />
+      )}
     </div>
   );
 }
@@ -68,6 +108,11 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
   const [myPinned, setMyPinned] = useState(!!conversation.pinned);
   const [togglingMyMute, setTogglingMyMute] = useState(false);
   const [togglingMyPin, setTogglingMyPin] = useState(false);
+  // 踢人搜索
+  const [kickSearch, setKickSearch] = useState('');
+  // 群头像上传
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef(null);
 
   const load = () => {
     setLoading(true);
@@ -165,6 +210,28 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
     onLeave?.();
   };
 
+  /* 修改群头像 */
+  const uploadAvatar = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    try {
+      const fd = new FormData();
+      fd.append('avatar', file);
+      const { data } = await axios.put(
+        `/api/messages/conversation/${conversation.id}/avatar`,
+        fd,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+      setInfo(i => ({ ...i, avatar: data.avatar }));
+      onConvUpdate?.({ avatar: data.avatar });
+    } catch (err) {
+      alert(err.response?.data?.error || '上传失败');
+    }
+    setUploadingAvatar(false);
+    e.target.value = '';
+  };
+
   /* ── section 样式 ── */
   const S = {
     panel: { width: 280, borderLeft: '1px solid #E0E0E0', background: '#F5F5F5', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 },
@@ -195,7 +262,15 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
 
         {/* 群名称 + 头像 */}
         <div style={{ ...S.section, padding: '14px 14px 12px', display: 'flex', gap: 12, alignItems: 'center', marginBottom: 8 }}>
-          <GroupAvatar members={info.members} size={50} />
+          {/* 群头像：管理员可点击更换 */}
+          <GroupAvatarUpload
+            info={info}
+            isAdmin={isAdmin}
+            uploading={uploadingAvatar}
+            inputRef={avatarInputRef}
+            onAvatarClick={() => isAdmin && !uploadingAvatar && avatarInputRef.current?.click()}
+            onChange={uploadAvatar}
+          />
           <div style={{ flex: 1, minWidth: 0 }}>
             {editName ? (
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -286,41 +361,89 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
 
         {/* 群成员列表 */}
         <div style={{ ...S.section, marginBottom: 8 }}>
-          <div style={{ padding: '9px 14px 6px', fontSize: 12, fontWeight: 600, color: '#888', borderBottom: '1px solid #F5F5F5', letterSpacing: '.3px' }}>
-            群成员 ({info.members.length})
-          </div>
-          <div style={{ padding: '4px 8px' }}>
-            {/* 邀请按钮 */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 6px', cursor: 'pointer', borderRadius: 6 }} onClick={openInvite}>
-              <div style={{ width: 38, height: 38, borderRadius: 7, border: '1.5px dashed #07C160', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#07C160', fontSize: 20 }}>+</div>
-              <span style={{ fontSize: 13, color: '#07C160' }}>邀请成员</span>
+          {/* 标题行 + 搜索框 */}
+          <div style={{ padding: '9px 14px 0', borderBottom: '1px solid #F5F5F5' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#888', letterSpacing: '.3px' }}>
+                群成员 ({info.members.length})
+              </span>
             </div>
-
-            {info.members.map(m => (
-              <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '6px 6px', borderRadius: 6 }}>
-                <Avatar src={m.avatar} name={m.username} size={38} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>
-                    {m.username}
-                    <RoleBadge role={m.role} />
-                  </div>
-                </div>
-                {/* 群主可以设置管理员 */}
-                {isOwner && m.role !== 'owner' && (
-                  <button
-                    style={{ fontSize: 11, padding: '2px 6px', borderRadius: 4, color: m.role === 'admin' ? '#888' : '#07C160', border: `1px solid ${m.role === 'admin' ? '#E0E0E0' : '#07C160'}`, background: 'transparent', cursor: 'pointer', flexShrink: 0 }}
-                    onClick={() => toggleAdmin(m.id, m.role)}
-                  >{m.role === 'admin' ? '撤销管理员' : '设为管理员'}</button>
-                )}
-                {/* 群主和管理员可以踢普通成员（管理员不能踢管理员） */}
-                {isAdmin && m.id !== currentUserId && m.role === 'member' && (
-                  <button
-                    style={{ fontSize: 11, padding: '2px 6px', borderRadius: 4, color: '#FA5151', border: '1px solid #FFCDD2', background: 'transparent', cursor: 'pointer', flexShrink: 0, marginLeft: 2 }}
-                    onClick={() => kickMember(m.id)}
-                  >移出</button>
+            {/* 仅管理员显示搜索框（用于快速找人踢出） */}
+            {isAdmin && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#F0F0F0', borderRadius: 5, padding: '4px 8px', marginBottom: 8 }}>
+                <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, fill: '#ADADAD', flexShrink: 0 }}>
+                  <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                </svg>
+                <input
+                  value={kickSearch}
+                  onChange={e => setKickSearch(e.target.value)}
+                  placeholder="搜索成员…"
+                  style={{ flex: 1, fontSize: 12, background: 'transparent', color: '#333' }}
+                />
+                {kickSearch && (
+                  <button style={{ color: '#ADADAD', fontSize: 13, lineHeight: 1 }} onClick={() => setKickSearch('')}>✕</button>
                 )}
               </div>
-            ))}
+            )}
+          </div>
+
+          <div style={{ padding: '4px 8px' }}>
+            {/* 邀请按钮（搜索时隐藏） */}
+            {!kickSearch && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 6px', cursor: 'pointer', borderRadius: 6 }} onClick={openInvite}>
+                <div style={{ width: 38, height: 38, borderRadius: 7, border: '1.5px dashed #07C160', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#07C160', fontSize: 20 }}>+</div>
+                <span style={{ fontSize: 13, color: '#07C160' }}>邀请成员</span>
+              </div>
+            )}
+
+            {/* 成员列表（支持搜索过滤） */}
+            {(() => {
+              const q = kickSearch.toLowerCase();
+              const filtered = kickSearch
+                ? info.members.filter(m => m.username.toLowerCase().includes(q))
+                : info.members;
+              if (kickSearch && filtered.length === 0) {
+                return <div style={{ textAlign: 'center', padding: '16px 0', color: '#B2B2B2', fontSize: 13 }}>未找到匹配成员</div>;
+              }
+              return filtered.map(m => (
+                <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '6px 6px', borderRadius: 6 }}>
+                  <Avatar src={m.avatar} name={m.username} size={38} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>
+                      {/* 搜索时高亮匹配字符 */}
+                      {kickSearch && m.username.toLowerCase().includes(kickSearch.toLowerCase())
+                        ? (() => {
+                            const idx = m.username.toLowerCase().indexOf(kickSearch.toLowerCase());
+                            return (
+                              <>
+                                {m.username.slice(0, idx)}
+                                <span style={{ color: '#07C160', fontWeight: 600 }}>{m.username.slice(idx, idx + kickSearch.length)}</span>
+                                {m.username.slice(idx + kickSearch.length)}
+                              </>
+                            );
+                          })()
+                        : m.username
+                      }
+                      <RoleBadge role={m.role} />
+                    </div>
+                  </div>
+                  {/* 群主可以设置管理员 */}
+                  {isOwner && m.role !== 'owner' && (
+                    <button
+                      style={{ fontSize: 11, padding: '2px 6px', borderRadius: 4, color: m.role === 'admin' ? '#888' : '#07C160', border: `1px solid ${m.role === 'admin' ? '#E0E0E0' : '#07C160'}`, background: 'transparent', cursor: 'pointer', flexShrink: 0 }}
+                      onClick={() => toggleAdmin(m.id, m.role)}
+                    >{m.role === 'admin' ? '撤销管理员' : '设为管理员'}</button>
+                  )}
+                  {/* 群主和管理员可以踢普通成员（管理员不能踢管理员） */}
+                  {isAdmin && m.id !== currentUserId && m.role === 'member' && (
+                    <button
+                      style={{ fontSize: 11, padding: '2px 6px', borderRadius: 4, color: '#FA5151', border: '1px solid #FFCDD2', background: 'transparent', cursor: 'pointer', flexShrink: 0, marginLeft: 2 }}
+                      onClick={() => kickMember(m.id)}
+                    >移出</button>
+                  )}
+                </div>
+              ));
+            })()}
           </div>
         </div>
 
