@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.env
+*.db
+uploads/avatars/*
+uploads/files/*
+uploads/moments/*
+!uploads/avatars/.gitkeep
+!uploads/files/.gitkeep
+!uploads/moments/.gitkeep
+.DS_Store
+*.log
+backend/wechat.db
+backend/wechat.db-shm
+backend/wechat.db-wal

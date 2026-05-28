@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "v信",
+    "slug": "v-xin",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": { "backgroundColor": "#07C160" },
+    "ios": { "supportsTablet": true },
+    "android": { "adaptiveIcon": { "backgroundColor": "#07C160" } },
+    "plugins": ["expo-image-picker", "expo-document-picker"]
+  }
+}
