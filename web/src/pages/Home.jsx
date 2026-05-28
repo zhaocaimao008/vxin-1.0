@@ -11,6 +11,30 @@ import Avatar from '../components/Avatar';
 import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
 
+/* 微信 PC 空状态 — 双气泡 Logo + 灰底 */
+function WcEmpty() {
+  return (
+    <div className="wc-empty">
+      {/* WeChat two-bubble logo */}
+      <svg viewBox="0 0 62 52" style={{ width: 62, height: 52, marginBottom: 14 }}>
+        {/* 后气泡（浅绿，左上） */}
+        <path
+          fill="rgba(7,193,96,0.55)"
+          d="M20 1C9.5 1 1 7.8 1 16.2c0 4.7 2.5 8.9 6.5 11.7l-1.2 5.8
+             6.8-3.9c2.2.5 4.5.8 6.9.8 10.5 0 19-6.8 19-15.2S30.5 1 20 1z"
+        />
+        {/* 前气泡（实绿，右下） */}
+        <path
+          fill="#07C160"
+          d="M40 13C28.4 13 19 20.5 19 29.7c0 5.3 2.9 10 7.6 13.1l-1.3 6.2
+             7.8-4.6c2.5.6 5.1.9 7.9.9 11.6 0 21-7.5 21-16.7S51.6 13 40 13z"
+        />
+      </svg>
+      <p style={{ fontSize: 13, color: 'var(--text-tertiary)', letterSpacing: '.3px' }}>微信</p>
+    </div>
+  );
+}
+
 export default function Home() {
   const [tab, setTab] = useState('chats');
   const [subView, setSubView] = useState(null); // 'moments'
@@ -83,12 +107,7 @@ export default function Home() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {activeConv
           ? <ChatWindow conversation={activeConv} onClose={() => setActiveConv(null)} />
-          : (
-            <div className="wc-empty">
-              <div style={{ fontSize: 60, marginBottom: 8 }}>💬</div>
-              <p>选择一个聊天开始对话</p>
-            </div>
-          )
+          : <WcEmpty />
         }
       </div>
     </div>

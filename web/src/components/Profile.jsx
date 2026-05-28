@@ -3,6 +3,24 @@ import axios from 'axios';
 import Avatar from './Avatar';
 import { useAuth } from '../contexts/AuthContext';
 
+const ChevronRight = () => (
+  <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, fill: '#C7C7CC', flexShrink: 0 }}>
+    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+  </svg>
+);
+
+function MenuItem({ bg, icon, label, onClick }) {
+  return (
+    <div className="wc-menu-item" onClick={onClick}>
+      <div style={{ width: 28, height: 28, borderRadius: 7, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        {icon}
+      </div>
+      <span className="wc-menu-label">{label}</span>
+      <ChevronRight />
+    </div>
+  );
+}
+
 export default function Profile({ onNavigate }) {
   const { user, updateUser, logout } = useAuth();
   const [showEdit, setShowEdit] = useState(false);
@@ -37,41 +55,38 @@ export default function Profile({ onNavigate }) {
           </div>
           {user?.bio && <div style={{ fontSize: 13, color: '#888', marginTop: 3 }}>{user.bio}</div>}
         </div>
-        <div style={{ color: '#C7C7CC', fontSize: 18 }}>›</div>
+        <ChevronRight />
       </div>
 
       {/* 朋友圈入口 */}
       <div className="wc-menu-section">
-        <div className="wc-menu-item" onClick={() => onNavigate?.('moments')}>
-          <div className="wc-menu-icon" style={{ background: '#07C16022' }}>🌐</div>
-          <span className="wc-menu-label">朋友圈</span>
-          <span className="wc-menu-arrow">›</span>
-        </div>
+        <MenuItem
+          bg="#07C160" label="朋友圈" onClick={() => onNavigate?.('moments')}
+          icon={<svg viewBox="0 0 24 24" style={{ width: 17, height: 17, fill: '#fff' }}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>}
+        />
       </div>
 
-      {/* Main menu */}
+      {/* 功能菜单 */}
       <div className="wc-menu-section">
-        {[
-          { icon: '⭐', color: '#FAAD14', label: '收藏', action: () => setShowCollections(true) },
-          { icon: '🖼️', color: '#1890FF', label: '照片与视频', action: () => {} },
-          { icon: '💳', color: '#52C41A', label: '卡包', action: () => {} },
-          { icon: '😊', color: '#FA8C16', label: '表情', action: () => {} },
-        ].map(item => (
-          <div key={item.label} className="wc-menu-item" onClick={item.action}>
-            <div className="wc-menu-icon" style={{ background: item.color + '22' }}>{item.icon}</div>
-            <span className="wc-menu-label">{item.label}</span>
-            <span className="wc-menu-arrow">›</span>
-          </div>
-        ))}
+        <MenuItem bg="#FAAD14" label="收藏" onClick={() => setShowCollections(true)}
+          icon={<svg viewBox="0 0 24 24" style={{ width: 17, height: 17, fill: '#fff' }}><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>}
+        />
+        <MenuItem bg="#1890FF" label="照片与视频" onClick={() => {}}
+          icon={<svg viewBox="0 0 24 24" style={{ width: 17, height: 17, fill: '#fff' }}><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>}
+        />
+        <MenuItem bg="#52C41A" label="卡包" onClick={() => {}}
+          icon={<svg viewBox="0 0 24 24" style={{ width: 17, height: 17, fill: '#fff' }}><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>}
+        />
+        <MenuItem bg="#FA8C16" label="表情" onClick={() => {}}
+          icon={<svg viewBox="0 0 24 24" style={{ width: 17, height: 17, fill: '#fff' }}><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>}
+        />
       </div>
 
-      {/* Settings */}
+      {/* 设置 */}
       <div className="wc-menu-section">
-        <div className="wc-menu-item" onClick={() => setShowSettings(true)}>
-          <div className="wc-menu-icon" style={{ background: '#F5F5F5' }}>⚙️</div>
-          <span className="wc-menu-label">设置</span>
-          <span className="wc-menu-arrow">›</span>
-        </div>
+        <MenuItem bg="#8C8C8C" label="设置" onClick={() => setShowSettings(true)}
+          icon={<svg viewBox="0 0 24 24" style={{ width: 17, height: 17, fill: '#fff' }}><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>}
+        />
       </div>
     </div>
   );

@@ -99,19 +99,33 @@ export default function ContactList({ onStartChat }) {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  const SpecialIcon = ({ type }) => {
+    if (type === 'new') return (
+      <svg viewBox="0 0 24 24" style={{ width: 18, height: 18, fill: '#fff' }}>
+        <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+      </svg>
+    );
+    if (type === 'group') return (
+      <svg viewBox="0 0 24 24" style={{ width: 18, height: 18, fill: '#fff' }}>
+        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+      </svg>
+    );
+    return (
+      <svg viewBox="0 0 24 24" style={{ width: 18, height: 18, fill: '#fff' }}>
+        <path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16z"/>
+      </svg>
+    );
+  };
+
   const specials = [
-    { id: 'new_friends', icon: '👤', bg: '#07C160', label: '新的朋友', badge: requests.length, action: () => setTab('requests') },
-    { id: 'groups', icon: '👥', bg: '#1890FF', label: '群聊', badge: groups.length, action: () => setTab('groups') },
-    { id: 'tags', icon: '🏷', bg: '#FA8C16', label: '标签', action: () => {} },
+    { id: 'new_friends', iconType: 'new', bg: '#07C160', label: '新的朋友', badge: requests.length, action: () => setTab('requests') },
+    { id: 'groups', iconType: 'group', bg: '#1DA1F2', label: '群聊', action: () => setTab('groups') },
+    { id: 'tags', iconType: 'tag', bg: '#FF7A45', label: '标签', action: () => {} },
   ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
-      <div className="wc-panel-header">
-        <span className="wc-panel-title">通讯录</span>
-        <button className="wc-icon-btn" title="添加好友" onClick={() => setTab('search')}>⊕</button>
-      </div>
-      <div className="wc-search-wrap">
+      <div className="wc-panel-topbar">
         <div className="wc-search">
           <span className="wc-search-icon">
             <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, fill: 'currentColor' }}>
@@ -128,6 +142,7 @@ export default function ContactList({ onStartChat }) {
             <button style={{ color: 'var(--text-tertiary)', fontSize: 14, lineHeight: 1 }} onClick={() => { setSearch(''); setTab('contacts'); }}>✕</button>
           )}
         </div>
+        <button className="wc-icon-btn" title="添加好友" onClick={() => setTab('search')} style={{ flexShrink: 0 }}>⊕</button>
       </div>
 
       <div className="wc-list" ref={listRef}>
@@ -136,18 +151,18 @@ export default function ContactList({ onStartChat }) {
         {tab === 'contacts' && <>
           {specials.map(s => (
             <div key={s.id} className="wc-contact-item" onClick={s.action}>
-              <div style={{ width: 44, height: 44, borderRadius: 8, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
-                {s.icon}
+              <div style={{ width: 44, height: 44, borderRadius: 10, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <SpecialIcon type={s.iconType} />
               </div>
               <div style={{ flex: 1 }}>
                 <span className="wc-contact-item-name">{s.label}</span>
               </div>
               {s.badge > 0 && (
-                <span style={{ background: '#FA5151', color: '#fff', borderRadius: 10, fontSize: 11, minWidth: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>
+                <span style={{ background: '#FA5151', color: '#fff', borderRadius: 9, fontSize: 10, minWidth: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px', marginRight: 4 }}>
                   {s.badge}
                 </span>
               )}
-              <span style={{ color: '#C7C7CC', fontSize: 18 }}>›</span>
+              <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, fill: '#C7C7CC', flexShrink: 0 }}><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
             </div>
           ))}
           <div style={{ height: 8, background: '#F5F5F5' }} />

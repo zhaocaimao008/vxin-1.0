@@ -9,12 +9,12 @@
   --green-hover:     #06AE56;
   --link-color:      #576B95;
 
-  /* ── Surface（对照 WeChat 4.1.8 官方截图校准）── */
-  --bg-nav:          #2B2B2B;   /* 最左侧图标栏：暖深灰，非纯黑 */
+  /* ── Surface（对照 WeChat 4.1.5/4.1.7 官方截图精确校准）── */
+  --bg-nav:          #1E1E1E;   /* 最左侧图标栏：极深近黑色 */
   --bg-panel:        #F0F0F0;   /* 会话/联系人列表面板：中性灰 */
-  --bg-panel-header: #EDEDED;   /* 面板顶部标题区：略深于面板 */
+  --bg-panel-header: #F0F0F0;   /* 面板顶部栏：与面板完全一致，形成统一色带 */
   --bg-chat:         #FFFFFF;   /* 聊天主区域：WeChat 4.1.8 白底 */
-  --bg-chat-header:  #EDEDED;   /* 聊天顶栏：与面板协调 */
+  --bg-chat-header:  #F0F0F0;   /* 聊天顶栏：与面板完全一致，形成统一顶部色带 */
   --bg-input:        #FFFFFF;   /* 输入区域：白色 */
   --bg-search:       #DADADD;   /* 搜索栏填充：中性灰 */
   --bg-msg-mine:     #95EC69;   /* 我的气泡：WeChat 绿 */
@@ -45,8 +45,8 @@
 
   /* ── Dimensions ── */
   --nav-w:          58px;
-  --panel-w:       280px;
-  --header-h:       57px;
+  --panel-w:       260px;
+  --header-h:       52px;
   --session-h:      64px;
   --avatar-session: 46px;
   --avatar-msg:     38px;
@@ -112,7 +112,7 @@ img { display: block; }
 .wc-sidebar {
   width: 58px;
   min-width: 58px;
-  background: #2B2B2B;
+  background: #1E1E1E;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -208,7 +208,7 @@ img { display: block; }
   justify-content: center;
   padding: 0 3px;
   line-height: 1;
-  border: 1.5px solid #2B2B2B;
+  border: 1.5px solid #1E1E1E;
 }
 
 /* 底部设置区 */
@@ -233,32 +233,22 @@ img { display: block; }
   position: relative;
 }
 
-/* 面板顶部栏：略深于面板，微信灰 */
-.wc-panel-header {
-  height: var(--header-h);
-  padding: 0 12px 0 var(--sp-4);
+/* 面板顶部栏：单行，与聊天窗口顶栏同高，形成统一横向色带 */
+.wc-panel-topbar {
+  height: var(--header-h);   /* 52px — 与 .wc-chat-header 完全一致 */
+  padding: 0 8px 0 10px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  background: var(--bg-panel-header);
+  gap: 6px;
+  background: var(--bg-panel-header);  /* #F0F0F0 — 与面板一致 */
   flex-shrink: 0;
-  border-bottom: 1px solid rgba(0,0,0,.06);
-}
-.wc-panel-title {
-  font-size: 17px;
-  font-weight: 600;
-  color: var(--text-primary);
-  letter-spacing: -.2px;
+  border-bottom: 1px solid rgba(0,0,0,.09);
 }
 
-/* 搜索栏 —— 圆角胶囊形，更接近微信原版 */
-.wc-search-wrap {
-  padding: 7px 10px 8px;
-  background: var(--bg-panel-header);
-  border-bottom: 1px solid rgba(0,0,0,.06);
-  flex-shrink: 0;
-}
+/* 搜索栏 —— 圆角矩形，填充顶栏剩余宽度 */
 .wc-search {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -392,19 +382,19 @@ img { display: block; }
   background: var(--bg-chat);
 }
 
-/* 顶部栏：微信同款高度 57px，下边线 */
+/* 顶部栏：52px，与面板顶栏同高，背景同色，形成统一顶部色带 */
 .wc-chat-header {
-  height: var(--header-h);
+  height: var(--header-h);   /* 52px */
   padding: 0 10px 0 var(--sp-4);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--bg-chat-header);
-  border-bottom: 1px solid rgba(0,0,0,.08);
+  background: var(--bg-chat-header);  /* #F0F0F0 — 与面板完全一致 */
+  border-bottom: 1px solid rgba(0,0,0,.09);
   flex-shrink: 0;
 }
 .wc-chat-header-name {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--text-primary);
   line-height: var(--lh-base);
@@ -461,7 +451,7 @@ img { display: block; }
 .wc-msg-row {
   display: flex;
   align-items: flex-start;
-  margin-top: 14px;
+  margin-top: 12px;
   flex-shrink: 0;
 }
 .wc-msg-row.mine { flex-direction: row-reverse; }
@@ -619,26 +609,25 @@ img { display: block; }
   flex-shrink: 0;
 }
 
-/* 工具栏 */
+/* 工具栏 — 微信原版无内分隔线 */
 .wc-input-toolbar {
   display: flex;
   align-items: center;
-  padding: 7px 10px 3px;
-  height: 38px;
-  border-bottom: 1px solid rgba(0,0,0,.05);
+  padding: 6px 10px 2px;
+  height: 36px;
 }
 .wc-tool-btn {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
-  color: #555;
+  color: #606060;
   transition: background var(--dur-fast), color var(--dur-fast);
 }
-.wc-tool-btn:hover { background: rgba(0,0,0,.07); color: var(--text-primary); }
+.wc-tool-btn:hover { background: rgba(0,0,0,.07); color: #333; }
 .wc-tool-btn.active { background: rgba(0,0,0,.08); }
 .wc-tool-btn svg { width: 18px; height: 18px; fill: currentColor; }
 
