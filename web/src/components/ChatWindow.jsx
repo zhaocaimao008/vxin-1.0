@@ -56,6 +56,11 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   const [showRedPacketDetail, setShowRedPacketDetail] = useState(null); // packetId
   const [redPacketDetailData, setRedPacketDetailData] = useState(null);
   const [claiming, setClaiming] = useState(false);
+  // 名片
+  const [showContactCardModal, setShowContactCardModal] = useState(false);
+  const [cardContacts, setCardContacts] = useState([]);
+  const [cardSearch, setCardSearch] = useState('');
+  const [cardLoading, setCardLoading] = useState(false);
   // 撤回重新编辑
   const recalledContentRef = useRef({}); // msgId -> originalContent
   const messagesEndRef = useRef(null);
@@ -586,6 +591,36 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     setClaiming(false);
   };
 
+  // 打开名片选人弹窗
+  const openContactCardModal = async () => {
+    setShowContactCardModal(true);
+    setCardSearch('');
+    if (cardContacts.length === 0) {
+      setCardLoading(true);
+      try {
+        const { data } = await axios.get('/api/users/contacts');
+        setCardContacts(data);
+      } catch {}
+      setCardLoading(false);
+    }
+  };
+
+  // 发送名片
+  const sendContactCard = (contact) => {
+    const content = JSON.stringify({
+      userId: contact.id,
+      username: contact.remark || contact.username,
+      realName: contact.username,
+      avatar: contact.avatar || '',
+      bio: contact.bio || '',
+      wechat_id: contact.wechat_id || '',
+    });
+    socket?.emit('send_message', { conversationId: conversation.id, content, type: 'contact_card' });
+    setShowContactCardModal(false);
+    setShowMore(false);
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+  };
+
   // Time dividers
   const renderMessages = () => {
     const items = [];
@@ -724,6 +759,28 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                       </div>
                     </div>
                   </a>
+                );
+              })()}
+              {msg.type === 'contact_card' && (() => {
+                let card = {};
+                try { card = JSON.parse(msg.content); } catch {}
+                return (
+                  <div
+                    style={{ background: isMine ? 'rgba(255,255,255,0.15)' : '#fff', border: `1px solid ${isMine ? 'rgba(255,255,255,0.3)' : '#E5E5E5'}`, borderRadius: 8, overflow: 'hidden', cursor: 'pointer', minWidth: 200 }}
+                    onClick={() => card.userId && setShowUserProfile(card.userId)}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px' }}>
+                      <Avatar src={card.avatar} name={card.username} size={42} style={{ borderRadius: 8, flexShrink: 0 }} />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: isMine ? '#fff' : '#191919', marginBottom: 2 }}>{card.username}</div>
+                        {card.wechat_id && <div style={{ fontSize: 11, color: isMine ? 'rgba(255,255,255,0.65)' : '#888' }}>微信号：{card.wechat_id}</div>}
+                        {card.bio && !card.wechat_id && <div style={{ fontSize: 11, color: isMine ? 'rgba(255,255,255,0.65)' : '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.bio}</div>}
+                      </div>
+                    </div>
+                    <div style={{ borderTop: `1px solid ${isMine ? 'rgba(255,255,255,0.2)' : '#F0F0F0'}`, padding: '6px 12px', fontSize: 12, color: isMine ? 'rgba(255,255,255,0.7)' : '#07C160', textAlign: 'center' }}>
+                      个人名片
+                    </div>
+                  </div>
                 );
               })()}
               {msg.type === 'red_packet' && (() => {
@@ -1066,7 +1123,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
             {[
               { bg:'#2B2B2B', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M12 15.2A3.2 3.2 0 008.8 12 3.2 3.2 0 0012 8.8 3.2 3.2 0 0115.2 12 3.2 3.2 0 0112 15.2M12 7a5 5 0 000 10A5 5 0 0012 7m0-5c0 0-8.02 0-9.5 1.5S1 7 1 12s0 8 1.5 9.5S7 23 12 23s8 0 9.5-1.5S23 17 23 12s0-8-1.5-9.5S17 1 12 1m0 20c-5 0-9-4-9-9s4-9 9-9 9 4 9 9-4 9-9 9z"/></svg>, label:'相机' },
               { bg:'#FF4D4F', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>, label:'位置', action:()=>{ setShowMore(false); openLocationModal(); } },
-              { bg:'#52C41A', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>, label:'名片' },
+              { bg:'#52C41A', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>, label:'名片', action:()=>{ setShowMore(false); openContactCardModal(); } },
               { bg:'#FA541C', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>, label:'红包', action:()=>{ setShowMore(false); setShowRedPacketModal(true); } },
               { bg:'#1890FF', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M20 6h-2.18c.07-.44.18-.88.18-1.36C18 2.05 15.96 0 13.5 0c-1.3 0-2.47.6-3.28 1.53L9 3 7.78 1.53C6.97.6 5.8 0 4.5 0 2.04 0 0 2.05 0 4.64c0 .48.11.92.18 1.36H0v2h20v-2zM20 10H4v8c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-8z"/></svg>, label:'文件', action:()=>fileInputRef.current?.click() },
               { bg:'#13C2C2', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>, label:'视频通话', action:()=>{ setShowMore(false); startCall('video'); } },
@@ -1136,6 +1193,64 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         )}
       </div>
       )} {/* end mute_all conditional */}
+
+      {/* ── 名片选人弹窗 ── */}
+      {showContactCardModal && (
+        <div className="wc-modal-overlay" onClick={e => e.target === e.currentTarget && setShowContactCardModal(false)}>
+          <div className="wc-modal" style={{ width: 360, maxHeight: '70vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #F0F0F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+              <span style={{ fontWeight: 600, fontSize: 16 }}>发送名片</span>
+              <button style={{ color: '#888', fontSize: 18, cursor: 'pointer' }} onClick={() => setShowContactCardModal(false)}>✕</button>
+            </div>
+            {/* 搜索框 */}
+            <div style={{ padding: '10px 16px', borderBottom: '1px solid #F5F5F5', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F5F5F5', borderRadius: 5, padding: '6px 10px' }}>
+                <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, fill: '#B2B2B2', flexShrink: 0 }}><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <input
+                  autoFocus
+                  value={cardSearch}
+                  onChange={e => setCardSearch(e.target.value)}
+                  placeholder="搜索联系人..."
+                  style={{ flex: 1, fontSize: 13, background: 'transparent', color: '#333' }}
+                />
+                {cardSearch && <button style={{ color: '#B2B2B2', fontSize: 13 }} onClick={() => setCardSearch('')}>✕</button>}
+              </div>
+            </div>
+            {/* 联系人列表 */}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {cardLoading ? (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: '#B2B2B2', fontSize: 13 }}>加载中...</div>
+              ) : (() => {
+                const filtered = cardContacts.filter(c => {
+                  const q = cardSearch.toLowerCase();
+                  return !q || (c.remark || c.username).toLowerCase().includes(q) || c.username.toLowerCase().includes(q);
+                });
+                if (filtered.length === 0) return (
+                  <div style={{ textAlign: 'center', padding: '40px 0', color: '#B2B2B2', fontSize: 13 }}>
+                    {cardSearch ? '没有找到匹配的联系人' : '暂无联系人'}
+                  </div>
+                );
+                return filtered.map(c => (
+                  <div
+                    key={c.id}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid #F5F5F5', transition: 'background .08s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#F5F5F5'}
+                    onMouseLeave={e => e.currentTarget.style.background = ''}
+                    onClick={() => sendContactCard(c)}
+                  >
+                    <Avatar src={c.avatar} name={c.remark || c.username} size={40} style={{ borderRadius: 8, flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, color: '#191919', fontWeight: 500 }}>{c.remark || c.username}</div>
+                      {c.remark && <div style={{ fontSize: 12, color: '#B2B2B2' }}>{c.username}</div>}
+                    </div>
+                    <span style={{ fontSize: 12, color: '#07C160', flexShrink: 0 }}>发送</span>
+                  </div>
+                ));
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── 位置选择弹窗 ── */}
       {showLocationModal && (
