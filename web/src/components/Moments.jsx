@@ -51,10 +51,15 @@ export default function Moments({ onBack }) {
     setMoments(prev => prev.filter(m => m.id !== id));
   };
 
-  const addComment = (id, text) => {
-    axios.post(`/api/moments/${id}/comment`, { content: text }).then(({ data }) => {
+  const addComment = (id, text, replyToUser) => {
+    axios.post(`/api/moments/${id}/comment`, { content: text, replyToUser }).then(({ data }) => {
       setMoments(prev => prev.map(m => m.id === id ? { ...m, comments: [...(m.comments || []), data] } : m));
     });
+  };
+
+  const deleteComment = async (momentId, commentId) => {
+    await axios.delete(`/api/moments/${momentId}/comment/${commentId}`);
+    setMoments(prev => prev.map(m => m.id === momentId ? { ...m, comments: m.comments.filter(c => c.id !== commentId) } : m));
   };
 
   const uploadCover = async (e) => {
@@ -123,7 +128,7 @@ export default function Moments({ onBack }) {
       {/* Feed */}
       <div className="wc-moments-feed">
         {moments.map(m => (
-          <MomentCard key={m.id} moment={m} userId={user?.id} onLike={() => like(m.id)} onComment={(t) => addComment(m.id, t)} onDelete={m.user_id === user?.id ? () => deleteMoment(m.id) : null} />
+          <MomentCard key={m.id} moment={m} userId={user?.id} onLike={() => like(m.id)} onComment={(t, replyUser) => addComment(m.id, t, replyUser)} onDelete={m.user_id === user?.id ? () => deleteMoment(m.id) : null} onDeleteComment={(commentId) => deleteComment(m.id, commentId)} />
         ))}
         {moments.length === 0 && (
           <div style={{ textAlign: 'center', padding: '60px 0', color: '#B2B2B2', fontSize: 14 }}>
@@ -136,9 +141,10 @@ export default function Moments({ onBack }) {
   );
 }
 
-function MomentCard({ moment, userId, onLike, onComment, onDelete }) {
+function MomentCard({ moment, userId, onLike, onComment, onDelete, onDeleteComment }) {
   const [showComment, setShowComment] = useState(false);
   const [commentText, setCommentText] = useState('');
+  const [replyTarget, setReplyTarget] = useState(null); // {id, username}
   const commentRef = useRef(null);
   const liked = moment.likes?.includes(userId);
   const images = moment.images || [];
@@ -148,8 +154,15 @@ function MomentCard({ moment, userId, onLike, onComment, onDelete }) {
 
   const submitComment = () => {
     if (!commentText.trim()) return;
-    onComment(commentText.trim());
-    setCommentText(''); setShowComment(false);
+    onComment(commentText.trim(), replyTarget?.username);
+    setCommentText(''); setShowComment(false); setReplyTarget(null);
+  };
+
+  const startReply = (comment) => {
+    setReplyTarget({ username: comment.username });
+    setShowComment(true);
+    setCommentText('');
+    setTimeout(() => commentRef.current?.focus(), 50);
   };
 
   return (
@@ -201,8 +214,15 @@ function MomentCard({ moment, userId, onLike, onComment, onDelete }) {
             )}
             <div className="wc-moment-comments">
               {moment.comments?.map(c => (
-                <div key={c.id} className="wc-moment-comment">
-                  <span className="wc-moment-comment-name">{c.username}</span>：{c.content}
+                <div key={c.id} className="wc-moment-comment" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
+                  <div style={{ flex: 1 }}>
+                    <span className="wc-moment-comment-name" style={{ cursor: 'pointer' }} onClick={() => startReply(c)}>{c.username}</span>
+                    {c.reply_to_user && <><span style={{ color: '#888' }}> 回复 </span><span className="wc-moment-comment-name">{c.reply_to_user}</span></>}
+                    ：{c.content}
+                  </div>
+                  {(c.user_id === userId || moment.user_id === userId) && (
+                    <button style={{ fontSize: 11, color: '#B2B2B2', cursor: 'pointer', flexShrink: 0, padding: '0 2px' }} onClick={() => onDeleteComment(c.id)}>删除</button>
+                  )}
                 </div>
               ))}
             </div>
@@ -213,10 +233,10 @@ function MomentCard({ moment, userId, onLike, onComment, onDelete }) {
           <div className="wc-moment-cmt-input">
             <input
               ref={commentRef}
-              placeholder="评论..."
+              placeholder={replyTarget ? `回复 ${replyTarget.username}...` : '评论...'}
               value={commentText}
               onChange={e => setCommentText(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') submitComment(); if (e.key === 'Escape') setShowComment(false); }}
+              onKeyDown={e => { if (e.key === 'Enter') submitComment(); if (e.key === 'Escape') { setShowComment(false); setReplyTarget(null); } }}
             />
             <button className="wc-moment-cmt-send" onClick={submitComment}>发送</button>
           </div>

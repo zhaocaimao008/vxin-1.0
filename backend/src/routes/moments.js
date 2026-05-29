@@ -85,13 +85,22 @@ router.delete('/:id', auth, (req, res) => {
 
 // 评论
 router.post('/:id/comment', auth, (req, res) => {
-  const { content } = req.body;
+  const { content, replyToUser } = req.body;
   if (!content) return res.status(400).json({ error: '评论不能为空' });
 
   const id = uuidv4();
-  db.prepare('INSERT INTO moment_comments (id,moment_id,user_id,content) VALUES (?,?,?,?)').run(id, req.params.id, req.user.id, content);
+  db.prepare('INSERT INTO moment_comments (id,moment_id,user_id,content,reply_to_user) VALUES (?,?,?,?,?)').run(id, req.params.id, req.user.id, content, replyToUser || '');
   const comment = db.prepare('SELECT mc.*, u.username FROM moment_comments mc JOIN users u ON u.id=mc.user_id WHERE mc.id=?').get(id);
   res.json(comment);
+});
+
+// 删除评论（评论作者或朋友圈作者可删）
+router.delete('/:momentId/comment/:commentId', auth, (req, res) => {
+  const comment = db.prepare('SELECT mc.*, m.user_id as moment_owner FROM moment_comments mc JOIN moments m ON m.id=mc.moment_id WHERE mc.id=? AND mc.moment_id=?').get(req.params.commentId, req.params.momentId);
+  if (!comment) return res.status(404).json({ error: '评论不存在' });
+  if (comment.user_id !== req.user.id && comment.moment_owner !== req.user.id) return res.status(403).json({ error: '无权删除' });
+  db.prepare('DELETE FROM moment_comments WHERE id=?').run(req.params.commentId);
+  res.json({ success: true });
 });
 
 module.exports = router;

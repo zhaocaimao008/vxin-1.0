@@ -40,7 +40,24 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   // 通话状态
-  const [activeCall, setActiveCall] = useState(null); // { type, direction, remoteUser, remoteId }
+  const [activeCall, setActiveCall] = useState(null);
+  // 搜索消息
+  const [showMsgSearch, setShowMsgSearch] = useState(false);
+  const [msgSearchQ, setMsgSearchQ] = useState('');
+  const [msgSearchResults, setMsgSearchResults] = useState([]);
+  const [msgSearching, setMsgSearching] = useState(false);
+  // 位置
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [locationInfo, setLocationInfo] = useState(null); // {lat, lng, address}
+  const [locating, setLocating] = useState(false);
+  // 红包
+  const [showRedPacketModal, setShowRedPacketModal] = useState(false);
+  const [redPacketForm, setRedPacketForm] = useState({ amount: 100, count: 1, greeting: '恭喜发财，大吉大利' });
+  const [showRedPacketDetail, setShowRedPacketDetail] = useState(null); // packetId
+  const [redPacketDetailData, setRedPacketDetailData] = useState(null);
+  const [claiming, setClaiming] = useState(false);
+  // 撤回重新编辑
+  const recalledContentRef = useRef({}); // msgId -> originalContent
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -50,6 +67,17 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   const textareaRef = useRef(null);
   const { socket } = useSocket();
   const { user } = useAuth();
+
+  // 搜索消息
+  const searchMessages = useCallback(async (q) => {
+    if (!q.trim()) { setMsgSearchResults([]); return; }
+    setMsgSearching(true);
+    try {
+      const { data } = await axios.get(`/api/messages/conversation/${conversation.id}/search`, { params: { q } });
+      setMsgSearchResults(data);
+    } catch { setMsgSearchResults([]); }
+    setMsgSearching(false);
+  }, [conversation.id]);
 
   // 发起通话
   const startCall = useCallback((type) => {
@@ -168,7 +196,13 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       if (conversationId === conversation.id) setTypingName('');
     };
     const onDeleted = ({ msgId }) => {
-      setMessages(prev => prev.map(m => m.id === msgId ? { ...m, deleted: 1, content: '消息已撤回' } : m));
+      setMessages(prev => {
+        const target = prev.find(m => m.id === msgId);
+        if (target && target.sender_id === user.id && target.type === 'text' && !target.deleted) {
+          recalledContentRef.current[msgId] = target.content;
+        }
+        return prev.map(m => m.id === msgId ? { ...m, deleted: 1, content: '消息已撤回' } : m);
+      });
     };
     const onEdited = ({ msgId, content }) => {
       setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content, edited: 1 } : m));
@@ -176,19 +210,28 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     const onReaction = ({ msgId, reactions }) => {
       setMessages(prev => prev.map(m => m.id === msgId ? { ...m, reactions } : m));
     };
-    const onRead = ({ userId: uid, conversationId }) => {
+    const onRead = ({ userId: uid, conversationId, readAt }) => {
       if (conversationId !== conversation.id || uid === user.id) return;
-      setMessages(prev => {
-        const copy = [...prev];
-        // mark last message as read
-        for (let i = copy.length - 1; i >= 0; i--) {
-          if (copy[i].sender_id === user.id) {
-            copy[i] = { ...copy[i], _read: true };
-            break;
+      if (conversation.type === 'private') {
+        setMessages(prev => {
+          const copy = [...prev];
+          for (let i = copy.length - 1; i >= 0; i--) {
+            if (copy[i].sender_id === user.id) { copy[i] = { ...copy[i], _read: true }; break; }
           }
-        }
-        return copy;
-      });
+          return copy;
+        });
+      } else {
+        // 群聊：重新计算已读数（简单做法：增加每条<=readAt的消息readCount）
+        setMessages(prev => prev.map(m =>
+          m.sender_id !== uid && m.created_at <= readAt
+            ? { ...m, readCount: (m.readCount || 0) + 1 }
+            : m
+        ));
+      }
+    };
+    const onRedPacketClaimed = ({ packetId }) => {
+      // 刷新当前展示的红包详情
+      setShowRedPacketDetail(prev => { if (prev === packetId) { loadRedPacketDetail(packetId); } return prev; });
     };
     const onGroupUpdated = ({ id }) => {
       if (id === conversation.id) {
@@ -228,6 +271,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     socket.on('message_edited', onEdited);
     socket.on('message_reaction', onReaction);
     socket.on('message_read', onRead);
+    socket.on('red_packet_claimed', onRedPacketClaimed);
     socket.on('group_updated', onGroupUpdated);
     socket.on('group_kicked', onGroupKicked);
     socket.on('group_dismissed', onGroupDismissed);
@@ -242,6 +286,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       socket.off('message_edited', onEdited);
       socket.off('message_reaction', onReaction);
       socket.off('message_read', onRead);
+      socket.off('red_packet_claimed', onRedPacketClaimed);
       socket.off('group_updated', onGroupUpdated);
       socket.off('group_kicked', onGroupKicked);
       socket.off('group_dismissed', onGroupDismissed);
@@ -462,6 +507,85 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     new Audio(url).play();
   };
 
+  // 获取当前位置
+  const openLocationModal = () => {
+    setLocating(true);
+    setLocationInfo(null);
+    setShowLocationModal(true);
+    if (!navigator.geolocation) {
+      setLocationInfo({ lat: 0, lng: 0, address: '设备不支持定位' });
+      setLocating(false);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+      let address = `${lat}, ${lng}`;
+      try {
+        const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=zh`);
+        const data = await r.json();
+        address = data.display_name || address;
+      } catch {}
+      setLocationInfo({ lat, lng, address });
+      setLocating(false);
+    }, () => {
+      setLocationInfo({ lat: 0, lng: 0, address: '获取位置失败' });
+      setLocating(false);
+    }, { timeout: 10000 });
+  };
+
+  const sendLocation = () => {
+    if (!locationInfo) return;
+    socket?.emit('send_message', {
+      conversationId: conversation.id,
+      content: JSON.stringify(locationInfo),
+      type: 'location',
+    });
+    setShowLocationModal(false);
+    setShowMore(false);
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+  };
+
+  // 发红包
+  const sendRedPacket = async () => {
+    try {
+      await axios.post('/api/messages/red-packet/send', {
+        conversationId: conversation.id,
+        totalAmount: redPacketForm.amount,
+        totalCount: redPacketForm.count,
+        greeting: redPacketForm.greeting,
+      });
+      setShowRedPacketModal(false);
+      setShowMore(false);
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    } catch (e) { alert(e.response?.data?.error || '发送失败'); }
+  };
+
+  const loadRedPacketDetail = async (packetId) => {
+    try {
+      const { data } = await axios.get(`/api/messages/red-packet/${packetId}`);
+      setRedPacketDetailData(data);
+    } catch {}
+  };
+
+  const claimRedPacket = async (packetId) => {
+    if (claiming) return;
+    setClaiming(true);
+    try {
+      const { data } = await axios.post(`/api/messages/red-packet/${packetId}/claim`);
+      alert(`🎉 恭喜领到 ${data.amount} 金币！`);
+      loadRedPacketDetail(packetId);
+    } catch (e) {
+      const msg = e.response?.data?.error || '领取失败';
+      if (e.response?.data?.amount) {
+        alert(`您已领取过，金额：${e.response.data.amount} 金币`);
+      } else {
+        alert(msg);
+      }
+    }
+    setClaiming(false);
+  };
+
   // Time dividers
   const renderMessages = () => {
     const items = [];
@@ -482,11 +606,18 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
 
   const renderMessage = (msg, idx) => {
     if (msg.deleted) {
+      const recalled = recalledContentRef.current[msg.id];
       return (
         <div key={msg.id} style={{ textAlign: 'center', margin: '4px 0' }}>
           <span style={{ fontSize: 12, color: '#B2B2B2' }}>
             {msg.sender_id === user.id ? '你撤回了一条消息' : `"${msg.senderName}"撤回了一条消息`}
           </span>
+          {recalled && (
+            <span
+              style={{ fontSize: 12, color: '#07C160', marginLeft: 8, cursor: 'pointer', textDecoration: 'underline' }}
+              onClick={() => { setInput(recalled); textareaRef.current?.focus(); delete recalledContentRef.current[msg.id]; }}
+            >重新编辑</span>
+          )}
         </div>
       );
     }
@@ -578,8 +709,49 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                   </div>
                 </a>
               )}
+              {msg.type === 'location' && (() => {
+                let loc = {};
+                try { loc = JSON.parse(msg.content); } catch {}
+                const mapsUrl = `https://www.openstreetmap.org/?mlat=${loc.lat}&mlon=${loc.lng}#map=16/${loc.lat}/${loc.lng}`;
+                return (
+                  <a href={mapsUrl} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, minWidth: 180, maxWidth: 240 }}>
+                      <span style={{ fontSize: 22, flexShrink: 0 }}>📍</span>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 3 }}>位置</div>
+                        <div style={{ fontSize: 11, color: isMine ? 'rgba(255,255,255,0.8)' : '#888', lineHeight: 1.4, wordBreak: 'break-all' }}>{loc.address}</div>
+                        <div style={{ fontSize: 11, color: isMine ? 'rgba(255,255,255,0.6)' : '#B2B2B2', marginTop: 3 }}>点击查看地图</div>
+                      </div>
+                    </div>
+                  </a>
+                );
+              })()}
+              {msg.type === 'red_packet' && (() => {
+                let rp = {};
+                try { rp = JSON.parse(msg.content); } catch {}
+                return (
+                  <div
+                    style={{ background: isMine ? 'rgba(0,0,0,0.15)' : 'rgba(220,80,30,0.1)', border: `1px solid ${isMine ? 'rgba(255,255,255,0.3)' : '#FA8C16'}`, borderRadius: 8, padding: '10px 14px', cursor: 'pointer', minWidth: 180 }}
+                    onClick={() => { setShowRedPacketDetail(rp.packetId); loadRedPacketDetail(rp.packetId); }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 28 }}>🧧</span>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: isMine ? '#fff' : '#D4380D' }}>{rp.greeting || '恭喜发财'}</div>
+                        <div style={{ fontSize: 11, color: isMine ? 'rgba(255,255,255,0.7)' : '#888', marginTop: 2 }}>
+                          共 {rp.totalCount} 个 · {rp.totalAmount} 金币 · 点击领取
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
+          {/* 群消息已读数 */}
+          {conversation.type === 'group' && isMine && msg.readCount > 0 && (
+            <div style={{ fontSize: 11, color: '#B2B2B2', textAlign: 'right', marginTop: 2, paddingRight: 4 }}>{msg.readCount}人已读</div>
+          )}
           {msg.reactions?.length > 0 && (
             <div className="wc-reactions">
               {msg.reactions.map(r => (
@@ -638,6 +810,14 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
           )}
         </div>
         <div className="wc-chat-header-right">
+          {/* 搜索聊天记录 */}
+          <button
+            className={`wc-chat-header-btn${showMsgSearch ? ' active' : ''}`}
+            title="搜索聊天记录"
+            onClick={() => { setShowMsgSearch(v => !v); setMsgSearchQ(''); setMsgSearchResults([]); }}
+          >
+            <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          </button>
           {conversation.type === 'private' && <>
             <button className="wc-chat-header-btn" title="语音通话" onClick={() => startCall('audio')}><IcoVoiceCall /></button>
             <button className="wc-chat-header-btn" title="视频通话" onClick={() => startCall('video')}><IcoVideoCall /></button>
@@ -650,6 +830,75 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
           ><IcoMore /></button>
         </div>
       </div>
+
+      {/* ── 搜索消息面板 ── */}
+      {showMsgSearch && (
+        <div style={{ background: 'var(--bg-chat-header)', borderBottom: '1px solid rgba(0,0,0,.09)', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', padding: '8px 14px', gap: 8 }}>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-search)', borderRadius: 5, padding: '5px 10px', height: 28 }}>
+              <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, fill: 'var(--text-tertiary)', flexShrink: 0 }}><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+              <input
+                autoFocus
+                value={msgSearchQ}
+                onChange={e => { setMsgSearchQ(e.target.value); searchMessages(e.target.value); }}
+                placeholder="搜索聊天记录..."
+                style={{ flex: 1, fontSize: 13, color: 'var(--text-primary)', background: 'transparent' }}
+                onKeyDown={e => e.key === 'Escape' && setShowMsgSearch(false)}
+              />
+              {msgSearchQ && <button style={{ color: 'var(--text-tertiary)', fontSize: 14 }} onClick={() => { setMsgSearchQ(''); setMsgSearchResults([]); }}>✕</button>}
+            </div>
+            <button style={{ color: '#07C160', fontSize: 13 }} onClick={() => setShowMsgSearch(false)}>关闭</button>
+          </div>
+          {/* 搜索结果 */}
+          {msgSearchQ && (
+            <div style={{ maxHeight: 220, overflowY: 'auto', borderTop: '1px solid rgba(0,0,0,.05)' }}>
+              {msgSearching && <div style={{ textAlign: 'center', padding: '12px 0', fontSize: 13, color: 'var(--text-tertiary)' }}>搜索中…</div>}
+              {!msgSearching && msgSearchResults.length === 0 && msgSearchQ && (
+                <div style={{ textAlign: 'center', padding: '12px 0', fontSize: 13, color: 'var(--text-tertiary)' }}>未找到相关记录</div>
+              )}
+              {msgSearchResults.map(msg => {
+                const q = msgSearchQ.toLowerCase();
+                const idx = msg.content.toLowerCase().indexOf(q);
+                return (
+                  <div
+                    key={msg.id}
+                    style={{ display: 'flex', gap: 8, padding: '8px 14px', cursor: 'pointer', borderBottom: '1px solid rgba(0,0,0,.04)' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,.04)'}
+                    onMouseLeave={e => e.currentTarget.style.background = ''}
+                    onClick={() => {
+                      // 跳转到该消息（添加到消息列表并高亮）
+                      const exists = messages.find(m => m.id === msg.id);
+                      if (!exists) setMessages(prev => [...prev, { ...msg, _highlighted: true }]);
+                      setTimeout(() => {
+                        const el = document.getElementById(`msg-${msg.id}`);
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }, 100);
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--link-color)' }}>{msg.senderName}</span>
+                        <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                          {new Date(msg.created_at * 1000).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 13, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {idx >= 0 ? (
+                          <>
+                            {msg.content.slice(0, idx)}
+                            <span style={{ color: '#07C160', fontWeight: 600 }}>{msg.content.slice(idx, idx + msgSearchQ.length)}</span>
+                            {msg.content.slice(idx + msgSearchQ.length)}
+                          </>
+                        ) : msg.content}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── 置顶消息 Banner ── */}
       {pinnedMessages.length > 0 && (
@@ -816,9 +1065,9 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
           <div className="wc-more-panel">
             {[
               { bg:'#2B2B2B', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M12 15.2A3.2 3.2 0 008.8 12 3.2 3.2 0 0012 8.8 3.2 3.2 0 0115.2 12 3.2 3.2 0 0112 15.2M12 7a5 5 0 000 10A5 5 0 0012 7m0-5c0 0-8.02 0-9.5 1.5S1 7 1 12s0 8 1.5 9.5S7 23 12 23s8 0 9.5-1.5S23 17 23 12s0-8-1.5-9.5S17 1 12 1m0 20c-5 0-9-4-9-9s4-9 9-9 9 4 9 9-4 9-9 9z"/></svg>, label:'相机' },
-              { bg:'#FF4D4F', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>, label:'位置' },
+              { bg:'#FF4D4F', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>, label:'位置', action:()=>{ setShowMore(false); openLocationModal(); } },
               { bg:'#52C41A', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>, label:'名片' },
-              { bg:'#FA541C', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>, label:'红包', action:()=>{} },
+              { bg:'#FA541C', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>, label:'红包', action:()=>{ setShowMore(false); setShowRedPacketModal(true); } },
               { bg:'#1890FF', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M20 6h-2.18c.07-.44.18-.88.18-1.36C18 2.05 15.96 0 13.5 0c-1.3 0-2.47.6-3.28 1.53L9 3 7.78 1.53C6.97.6 5.8 0 4.5 0 2.04 0 0 2.05 0 4.64c0 .48.11.92.18 1.36H0v2h20v-2zM20 10H4v8c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-8z"/></svg>, label:'文件', action:()=>fileInputRef.current?.click() },
               { bg:'#13C2C2', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>, label:'视频通话', action:()=>{ setShowMore(false); startCall('video'); } },
               { bg:'#07C160', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>, label:'语音通话', action:()=>{ setShowMore(false); startCall('audio'); } },
@@ -887,6 +1136,135 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         )}
       </div>
       )} {/* end mute_all conditional */}
+
+      {/* ── 位置选择弹窗 ── */}
+      {showLocationModal && (
+        <div className="wc-modal-overlay" onClick={e => e.target === e.currentTarget && setShowLocationModal(false)}>
+          <div className="wc-modal" style={{ width: 340 }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #F0F0F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 600, fontSize: 16 }}>发送位置</span>
+              <button style={{ color: '#888', fontSize: 18, cursor: 'pointer' }} onClick={() => setShowLocationModal(false)}>✕</button>
+            </div>
+            <div style={{ padding: 20 }}>
+              {locating ? (
+                <div style={{ textAlign: 'center', padding: '30px 0', color: '#B2B2B2', fontSize: 13 }}>
+                  <div style={{ fontSize: 32, marginBottom: 10 }}>📍</div>
+                  正在获取位置...
+                </div>
+              ) : locationInfo ? (
+                <div>
+                  <div style={{ background: '#F5F5F5', borderRadius: 8, padding: 14, marginBottom: 14 }}>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: 24, flexShrink: 0 }}>📍</span>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>我的位置</div>
+                        <div style={{ fontSize: 12, color: '#888', lineHeight: 1.5 }}>{locationInfo.address}</div>
+                        {locationInfo.lat !== 0 && (
+                          <div style={{ fontSize: 11, color: '#B2B2B2', marginTop: 4 }}>{locationInfo.lat}, {locationInfo.lng}</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button style={{ flex: 1, padding: '10px', background: '#F5F5F5', borderRadius: 6, fontSize: 14, color: '#555' }} onClick={() => { setLocationInfo(null); openLocationModal(); }}>重新定位</button>
+                    <button style={{ flex: 1, padding: '10px', background: '#07C160', color: '#fff', borderRadius: 6, fontSize: 14, fontWeight: 500 }} onClick={sendLocation} disabled={locationInfo.lat === 0 && locationInfo.address === '获取位置失败'}>发送</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                  <button style={{ padding: '12px 28px', background: '#07C160', color: '#fff', borderRadius: 6, fontSize: 14 }} onClick={openLocationModal}>获取当前位置</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 发红包弹窗 ── */}
+      {showRedPacketModal && (
+        <div className="wc-modal-overlay" onClick={e => e.target === e.currentTarget && setShowRedPacketModal(false)}>
+          <div className="wc-modal" style={{ width: 340 }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #F0F0F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 600, fontSize: 16 }}>🧧 发红包</span>
+              <button style={{ color: '#888', fontSize: 18, cursor: 'pointer' }} onClick={() => setShowRedPacketModal(false)}>✕</button>
+            </div>
+            <div style={{ padding: 20 }}>
+              {conversation.type === 'group' && (
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ fontSize: 13, color: '#888', display: 'block', marginBottom: 6 }}>红包个数</label>
+                  <input type="number" min={1} max={100} value={redPacketForm.count}
+                    onChange={e => setRedPacketForm(f => ({ ...f, count: Math.max(1, Math.min(100, +e.target.value)) }))}
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #E5E5E5', borderRadius: 6, fontSize: 14 }} />
+                </div>
+              )}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ fontSize: 13, color: '#888', display: 'block', marginBottom: 6 }}>金额（金币）</label>
+                <input type="number" min={1} max={20000} value={redPacketForm.amount}
+                  onChange={e => setRedPacketForm(f => ({ ...f, amount: Math.max(1, Math.min(20000, +e.target.value)) }))}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #E5E5E5', borderRadius: 6, fontSize: 14 }} />
+              </div>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ fontSize: 13, color: '#888', display: 'block', marginBottom: 6 }}>祝福语</label>
+                <input value={redPacketForm.greeting} maxLength={30}
+                  onChange={e => setRedPacketForm(f => ({ ...f, greeting: e.target.value }))}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #E5E5E5', borderRadius: 6, fontSize: 14 }} />
+              </div>
+              <button style={{ width: '100%', padding: '12px', background: '#FA5A00', color: '#fff', borderRadius: 6, fontSize: 15, fontWeight: 600 }} onClick={sendRedPacket}>
+                塞入红包
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 红包详情弹窗 ── */}
+      {showRedPacketDetail && (
+        <div className="wc-modal-overlay" onClick={e => e.target === e.currentTarget && setShowRedPacketDetail(null)}>
+          <div className="wc-modal" style={{ width: 360 }}>
+            <div style={{ background: 'linear-gradient(135deg, #C0392B, #E74C3C)', padding: '20px 20px 16px', borderRadius: '8px 8px 0 0', position: 'relative' }}>
+              <div style={{ color: '#fff', fontSize: 18, fontWeight: 600, marginBottom: 4 }}>🧧 红包</div>
+              <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13 }}>{redPacketDetailData?.greeting}</div>
+              <button style={{ position: 'absolute', top: 12, right: 14, color: 'rgba(255,255,255,0.7)', fontSize: 18, cursor: 'pointer' }} onClick={() => setShowRedPacketDetail(null)}>✕</button>
+            </div>
+            <div style={{ padding: 16 }}>
+              {redPacketDetailData ? (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, fontSize: 13, color: '#888' }}>
+                    <span>共 {redPacketDetailData.total_count} 个 · {redPacketDetailData.total_amount} 金币</span>
+                    <span>已领 {redPacketDetailData.claimed_count}/{redPacketDetailData.total_count}</span>
+                  </div>
+                  {!redPacketDetailData.myClaim && redPacketDetailData.claimed_count < redPacketDetailData.total_count && (
+                    <button style={{ width: '100%', padding: '12px', background: '#FA5A00', color: '#fff', borderRadius: 6, fontSize: 15, fontWeight: 600, marginBottom: 14 }} onClick={() => claimRedPacket(showRedPacketDetail)} disabled={claiming}>
+                      {claiming ? '领取中...' : '🧧 点击领取'}
+                    </button>
+                  )}
+                  {redPacketDetailData.myClaim && (
+                    <div style={{ background: '#FFF3E0', borderRadius: 6, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: '#E65100', textAlign: 'center' }}>
+                      已领取 {redPacketDetailData.myClaim.amount} 金币
+                    </div>
+                  )}
+                  {redPacketDetailData.claims.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: 12, color: '#B2B2B2', marginBottom: 8 }}>领取记录</div>
+                      {redPacketDetailData.claims.map(c => (
+                        <div key={c.user_id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #F5F5F5', fontSize: 13 }}>
+                          <span style={{ color: '#333' }}>{c.username}</span>
+                          <span style={{ color: '#FA5A00', fontWeight: 600 }}>{c.amount} 金币</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {redPacketDetailData.claimed_count >= redPacketDetailData.total_count && !redPacketDetailData.myClaim && (
+                    <div style={{ textAlign: 'center', padding: '10px 0', color: '#B2B2B2', fontSize: 13 }}>红包已被领完</div>
+                  )}
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '30px 0', color: '#B2B2B2', fontSize: 13 }}>加载中...</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Context menu */}
       {ctxMenu && (

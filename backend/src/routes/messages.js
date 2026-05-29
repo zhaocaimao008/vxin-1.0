@@ -406,6 +406,16 @@ router.get('/:conversationId', auth, (req, res) => {
 
   const messages = db.prepare(query).all(...params).reverse();
 
+  // 群聊：获取所有成员的已读时间，用于计算每条消息的已读数
+  const conv = db.prepare('SELECT type FROM conversations WHERE id=?').get(conversationId);
+  let memberReadTimes = null;
+  if (conv?.type === 'group') {
+    memberReadTimes = db.prepare(`
+      SELECT cs.user_id, cs.last_read_at FROM conversation_settings cs
+      WHERE cs.conversation_id=?
+    `).all(conversationId);
+  }
+
   // Enrich with reply_to and reactions
   const enriched = messages.map(msg => {
     if (msg.reply_to_id) {
@@ -420,6 +430,12 @@ router.get('/:conversationId', auth, (req, res) => {
       FROM message_reactions WHERE message_id=? GROUP BY emoji
     `).all(msg.id);
     msg.reactions = reactions.map(r => ({ emoji: r.emoji, count: r.count, userIds: r.userIds.split(',') }));
+
+    // 群消息已读数（排除发送者自己）
+    if (memberReadTimes && conv?.type === 'group') {
+      msg.readCount = memberReadTimes.filter(m => m.user_id !== msg.sender_id && m.last_read_at >= msg.created_at).length;
+    }
+
     return msg;
   });
 
@@ -663,6 +679,85 @@ router.post('/:msgId/collect', auth, (req, res) => {
     id, req.user.id, msg.type, msg.content, JSON.stringify({ file_url: msg.file_url, source_msg_id: msg.id })
   );
   res.json({ success: true });
+});
+
+// ── 红包 ──────────────────────────────────────────────────────
+
+// 发红包（创建红包并发一条消息）
+router.post('/red-packet/send', auth, (req, res) => {
+  const { conversationId, totalAmount, totalCount, greeting } = req.body;
+  if (!conversationId || !totalAmount || !totalCount) return res.status(400).json({ error: '参数缺失' });
+  if (totalAmount < 1 || totalAmount > 20000) return res.status(400).json({ error: '金额范围 1-20000 金币' });
+  if (totalCount < 1 || totalCount > 100) return res.status(400).json({ error: '红包个数 1-100' });
+
+  const member = db.prepare('SELECT 1 FROM conversation_members WHERE conversation_id=? AND user_id=?').get(conversationId, req.user.id);
+  if (!member) return res.status(403).json({ error: '无权操作' });
+
+  const packetId = uuidv4();
+  db.prepare('INSERT INTO red_packets (id,sender_id,conversation_id,total_amount,total_count,greeting) VALUES (?,?,?,?,?,?)').run(
+    packetId, req.user.id, conversationId, totalAmount, totalCount, greeting || '恭喜发财，大吉大利'
+  );
+
+  const msgContent = JSON.stringify({ packetId, greeting: greeting || '恭喜发财，大吉大利', totalCount, totalAmount });
+  const msgId = uuidv4();
+  db.prepare('INSERT INTO messages (id,conversation_id,sender_id,type,content) VALUES (?,?,?,?,?)').run(
+    msgId, conversationId, req.user.id, 'red_packet', msgContent
+  );
+  const msg = db.prepare('SELECT m.*, u.username as senderName, u.avatar as senderAvatar FROM messages m JOIN users u ON u.id=m.sender_id WHERE m.id=?').get(msgId);
+  msg.reactions = [];
+
+  const io = req.app.get('io');
+  if (io) io.to(conversationId).emit('new_message', msg);
+
+  res.json({ success: true, packetId, message: msg });
+});
+
+// 获取红包详情
+router.get('/red-packet/:packetId', auth, (req, res) => {
+  const packet = db.prepare('SELECT rp.*, u.username as senderName FROM red_packets rp JOIN users u ON u.id=rp.sender_id WHERE rp.id=?').get(req.params.packetId);
+  if (!packet) return res.status(404).json({ error: '红包不存在' });
+
+  const member = db.prepare('SELECT 1 FROM conversation_members WHERE conversation_id=? AND user_id=?').get(packet.conversation_id, req.user.id);
+  if (!member) return res.status(403).json({ error: '无权查看' });
+
+  const claims = db.prepare('SELECT rpc.*, u.username FROM red_packet_claims rpc JOIN users u ON u.id=rpc.user_id WHERE rpc.packet_id=? ORDER BY rpc.claimed_at').all(req.params.packetId);
+  const myCllaim = claims.find(c => c.user_id === req.user.id);
+
+  res.json({ ...packet, claims, myClaim: myCllaim || null });
+});
+
+// 领红包
+router.post('/red-packet/:packetId/claim', auth, (req, res) => {
+  const packet = db.prepare('SELECT * FROM red_packets WHERE id=?').get(req.params.packetId);
+  if (!packet) return res.status(404).json({ error: '红包不存在' });
+
+  const member = db.prepare('SELECT 1 FROM conversation_members WHERE conversation_id=? AND user_id=?').get(packet.conversation_id, req.user.id);
+  if (!member) return res.status(403).json({ error: '无权领取' });
+
+  const existing = db.prepare('SELECT * FROM red_packet_claims WHERE packet_id=? AND user_id=?').get(req.params.packetId, req.user.id);
+  if (existing) return res.status(400).json({ error: '已领取过', amount: existing.amount });
+
+  if (packet.claimed_count >= packet.total_count) return res.status(400).json({ error: '红包已被领完' });
+
+  const remaining = packet.total_amount - db.prepare('SELECT COALESCE(SUM(amount),0) as s FROM red_packet_claims WHERE packet_id=?').get(req.params.packetId).s;
+  const leftCount = packet.total_count - packet.claimed_count;
+  let amount;
+  if (leftCount === 1) {
+    amount = remaining;
+  } else {
+    // 随机分配，最少1，最多 remaining - (leftCount-1)
+    const max = Math.floor(remaining / leftCount * 2);
+    amount = Math.max(1, Math.min(max, Math.floor(Math.random() * max) + 1));
+  }
+
+  db.prepare('INSERT INTO red_packet_claims (packet_id,user_id,amount) VALUES (?,?,?)').run(req.params.packetId, req.user.id, amount);
+  db.prepare('UPDATE red_packets SET claimed_count=claimed_count+1 WHERE id=?').run(req.params.packetId);
+
+  const io = req.app.get('io');
+  const claimer = db.prepare('SELECT username FROM users WHERE id=?').get(req.user.id);
+  if (io) io.to(packet.conversation_id).emit('red_packet_claimed', { packetId: req.params.packetId, userId: req.user.id, username: claimer.username, amount });
+
+  res.json({ success: true, amount });
 });
 
 module.exports = router;

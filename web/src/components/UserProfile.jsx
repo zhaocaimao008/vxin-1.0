@@ -10,10 +10,12 @@ export default function UserProfile({ userId, onClose, onStartChat, onFriendAdde
   const [remark, setRemark] = useState('');
   const [remarkSaving, setRemarkSaving] = useState(false);
   const [requesting, setRequesting] = useState(false);
+  const [blocked, setBlocked] = useState(false);
 
   useEffect(() => {
     axios.get(`/api/users/${userId}`).then(r => {
       setUser(r.data);
+      setBlocked(!!r.data.isBlocked);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [userId]);
@@ -40,6 +42,17 @@ export default function UserProfile({ userId, onClose, onStartChat, onFriendAdde
     if (!confirm(`确认删除好友「${user.remark || user.username}」？`)) return;
     await axios.delete(`/api/users/contacts/${userId}`);
     onClose();
+  };
+
+  const toggleBlock = async () => {
+    if (blocked) {
+      await axios.delete(`/api/users/block/${userId}`);
+      setBlocked(false);
+    } else {
+      if (!confirm(`确认拉黑「${user.remark || user.username}」？拉黑后对方无法向你发送好友请求。`)) return;
+      await axios.post(`/api/users/block/${userId}`);
+      setBlocked(true);
+    }
   };
 
   const startChat = async () => {
@@ -100,6 +113,10 @@ export default function UserProfile({ userId, onClose, onStartChat, onFriendAdde
               <div className="wc-menu-item" style={{ borderBottom: '1px solid #F0F0F0' }}>
                 <div className="wc-menu-icon" style={{ background: '#FA8C1622' }}>🔔</div>
                 <span className="wc-menu-label">消息免打扰</span>
+              </div>
+              <div className="wc-menu-item" onClick={toggleBlock} style={{ borderBottom: '1px solid #F0F0F0' }}>
+                <div className="wc-menu-icon" style={{ background: blocked ? '#8C8C8C22' : '#FA8C1622' }}>{blocked ? '🔓' : '🚫'}</div>
+                <span className="wc-menu-label">{blocked ? '取消拉黑' : '加入黑名单'}</span>
               </div>
               <div className="wc-menu-item danger" onClick={deleteFriend} style={{ color: '#FA5151' }}>
                 <div className="wc-menu-icon" style={{ background: '#FA515122' }}>🗑</div>

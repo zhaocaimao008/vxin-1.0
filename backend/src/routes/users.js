@@ -46,6 +46,8 @@ router.post('/friend-request', auth, (req, res) => {
   if (!toId) return res.status(400).json({ error: '参数缺失' });
   const existing = db.prepare('SELECT id FROM contacts WHERE user_id=? AND contact_id=?').get(req.user.id, toId);
   if (existing) return res.status(400).json({ error: '已是好友' });
+  const isBlocked = db.prepare('SELECT 1 FROM blocked_users WHERE user_id=? AND blocked_id=?').get(toId, req.user.id);
+  if (isBlocked) return res.status(403).json({ error: '对方已将你加入黑名单' });
   const pendingReq = db.prepare('SELECT id FROM friend_requests WHERE from_id=? AND to_id=? AND status=?').get(req.user.id, toId, 'pending');
   if (pendingReq) return res.status(400).json({ error: '请求已发送' });
   const id = uuidv4();
@@ -142,13 +144,42 @@ router.get('/:id', auth, (req, res) => {
   const user = db.prepare('SELECT id,username,phone,avatar,bio,status,wechat_id,cover_photo FROM users WHERE id=?').get(req.params.id);
   if (!user) return res.status(404).json({ error: '用户不存在' });
   const isFriend = !!db.prepare('SELECT 1 FROM contacts WHERE user_id=? AND contact_id=?').get(req.user.id, req.params.id);
-  res.json({ ...user, isFriend });
+  const isBlocked = !!db.prepare('SELECT 1 FROM blocked_users WHERE user_id=? AND blocked_id=?').get(req.user.id, req.params.id);
+  const contact = db.prepare('SELECT remark FROM contacts WHERE user_id=? AND contact_id=?').get(req.user.id, req.params.id);
+  res.json({ ...user, isFriend, isBlocked, remark: contact?.remark || '' });
 });
 
 // 获取收藏列表
 router.get('/me/collections', auth, (req, res) => {
   const items = db.prepare('SELECT * FROM collections WHERE user_id=? ORDER BY created_at DESC').all(req.user.id);
   res.json(items.map(i => ({ ...i, extra: JSON.parse(i.extra || '{}') })));
+});
+
+// 拉黑用户
+router.post('/block/:targetId', auth, (req, res) => {
+  const target = db.prepare('SELECT id FROM users WHERE id=?').get(req.params.targetId);
+  if (!target) return res.status(404).json({ error: '用户不存在' });
+  if (req.params.targetId === req.user.id) return res.status(400).json({ error: '不能拉黑自己' });
+  try {
+    db.prepare('INSERT INTO blocked_users (id,user_id,blocked_id) VALUES (?,?,?)').run(uuidv4(), req.user.id, req.params.targetId);
+  } catch {}
+  res.json({ success: true, blocked: true });
+});
+
+// 取消拉黑
+router.delete('/block/:targetId', auth, (req, res) => {
+  db.prepare('DELETE FROM blocked_users WHERE user_id=? AND blocked_id=?').run(req.user.id, req.params.targetId);
+  res.json({ success: true, blocked: false });
+});
+
+// 获取拉黑列表
+router.get('/me/blocked', auth, (req, res) => {
+  const list = db.prepare(`
+    SELECT u.id, u.username, u.avatar FROM blocked_users b
+    JOIN users u ON u.id=b.blocked_id
+    WHERE b.user_id=?
+  `).all(req.user.id);
+  res.json(list);
 });
 
 module.exports = router;

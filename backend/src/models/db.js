@@ -121,6 +121,39 @@ db.exec(`
     created_at INTEGER DEFAULT (strftime('%s', 'now')),
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS blocked_users (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    blocked_id TEXT NOT NULL,
+    created_at INTEGER DEFAULT (strftime('%s', 'now')),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (blocked_id) REFERENCES users(id),
+    UNIQUE(user_id, blocked_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS red_packets (
+    id TEXT PRIMARY KEY,
+    sender_id TEXT NOT NULL,
+    conversation_id TEXT NOT NULL,
+    total_amount INTEGER NOT NULL,
+    total_count INTEGER NOT NULL,
+    claimed_count INTEGER DEFAULT 0,
+    greeting TEXT DEFAULT '恭喜发财，大吉大利',
+    created_at INTEGER DEFAULT (strftime('%s', 'now')),
+    FOREIGN KEY (sender_id) REFERENCES users(id),
+    FOREIGN KEY (conversation_id) REFERENCES conversations(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS red_packet_claims (
+    packet_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    amount INTEGER NOT NULL,
+    claimed_at INTEGER DEFAULT (strftime('%s', 'now')),
+    PRIMARY KEY (packet_id, user_id),
+    FOREIGN KEY (packet_id) REFERENCES red_packets(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
 `);
 
 // Safe migrations for existing DBs
@@ -130,6 +163,7 @@ const migrations = [
   "ALTER TABLE messages ADD COLUMN reply_to_id TEXT DEFAULT NULL",
   "ALTER TABLE messages ADD COLUMN deleted INTEGER DEFAULT 0",
   "ALTER TABLE moments ADD COLUMN visibility TEXT DEFAULT 'all'",
+  "ALTER TABLE moment_comments ADD COLUMN reply_to_user TEXT DEFAULT ''",
 ];
 migrations.forEach(sql => { try { db.prepare(sql).run(); } catch {} });
 
