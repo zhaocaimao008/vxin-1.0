@@ -6,9 +6,31 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": { "backgroundColor": "#07C160" },
-    "ios": { "supportsTablet": true },
-    "android": { "adaptiveIcon": { "backgroundColor": "#07C160" } },
-    "plugins": ["expo-image-picker", "expo-document-picker"]
+    "splash": {
+      "backgroundColor": "#07C160"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.vxin.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#07C160"
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "plugins": [
+      "expo-image-picker",
+      "expo-document-picker"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "2de825d1-5a52-4516-976c-245d95429fff"
+      }
+    },
+    "owner": "zhaocaimao01"
   }
 }

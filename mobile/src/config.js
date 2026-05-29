@@ -1,3 +1,2 @@
-// 修改为你的后端服务器地址
-export const API_BASE = 'http://localhost:3001';
-export const SOCKET_URL = 'http://localhost:3001';
+export const API_BASE = 'http://104.244.95.70:8086';
+export const SOCKET_URL = 'http://104.244.95.70:8086';

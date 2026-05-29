@@ -21,13 +21,14 @@ function createWindow() {
     icon: path.join(__dirname, 'icon.png')
   });
 
-  // 加载 Web 端（开发模式连接 Vite 服务器，生产模式加载构建文件）
+  // 生产模式连接远程服务器，开发模式连接本地 Vite
   const isDev = process.env.NODE_ENV !== 'production';
+  const SERVER_URL = 'http://104.244.95.70:8086';
   if (isDev) {
     mainWindow.loadURL('http://localhost:3000');
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../web/dist/index.html'));
+    mainWindow.loadURL(SERVER_URL);
   }
 
   mainWindow.on('close', (e) => {
