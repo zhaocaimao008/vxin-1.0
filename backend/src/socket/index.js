@@ -143,7 +143,8 @@ module.exports = (io, app) => {
         );
       }
 
-      io.to(conversationId).emit('new_message', msg);
+      // socket.to 排除发送者本人，避免 ack + broadcast 双写
+      socket.to(conversationId).emit('new_message', msg);
       if (ack) ack({ success: true, message: msg });
 
       // ── @mention 检测 ──
@@ -277,7 +278,8 @@ module.exports = (io, app) => {
         );
       }
 
-      io.to(conversationId).emit('new_message', msg);
+      // socket.to 排除发送者本人，避免 ack + broadcast 双写
+      socket.to(conversationId).emit('new_message', msg);
       if (ack) ack({ success: true, message: msg });
 
       setImmediate(() => {
