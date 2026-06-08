@@ -10,6 +10,7 @@ function AddFriendModal({ onClose }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [searched, setSearched] = useState(false);
   const [viewId, setViewId] = useState(null);
   const inputRef = useRef(null);
   const timerRef = useRef(null);
@@ -17,86 +18,90 @@ function AddFriendModal({ onClose }) {
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 80); }, []);
 
   const doSearch = useCallback((q) => {
-    if (!q.trim()) { setResults([]); return; }
+    if (!q.trim()) { setResults([]); setSearched(false); return; }
     setSearching(true);
     axios.get(`/api/users/search?q=${encodeURIComponent(q.trim())}`)
-      .then(({ data }) => setResults(data))
-      .catch(() => setResults([]))
+      .then(({ data }) => { setResults(data); setSearched(true); })
+      .catch(() => { setResults([]); setSearched(true); })
       .finally(() => setSearching(false));
   }, []);
 
   const onChange = (e) => {
     const v = e.target.value;
     setQuery(v);
+    if (!v.trim()) { setResults([]); setSearched(false); }
     clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => doSearch(v), 400);
+    timerRef.current = setTimeout(() => doSearch(v), 350);
   };
 
   return (
-    <div className="af-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="af-modal">
-        <div className="af-header">
-          <span className="af-title">添加好友</span>
-          <button className="af-close" onClick={onClose}>
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(0,0,0,.52)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div
+        style={{ width: 440, maxWidth: '92vw', background: 'var(--bg-msg-other)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,.28)', display: 'flex', flexDirection: 'column', maxHeight: '72vh', border: '1px solid var(--border-color)' }}
+        onClick={e => e.stopPropagation()}>
+
+        {/* 标题栏 */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 18px 14px', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
+          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>添加好友</span>
+          <button onClick={onClose} style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, color: 'var(--text-secondary)', cursor: 'pointer', background: 'transparent' }}>
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
               <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
             </svg>
           </button>
         </div>
 
-        <div className="af-search-wrap">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" style={{ color: '#B0BAC5', flexShrink: 0 }}>
+        {/* 搜索框 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '12px 16px', padding: '9px 12px', background: 'var(--bg-search)', borderRadius: 10, border: '1px solid var(--border-color)', flexShrink: 0 }}>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}>
             <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
           </svg>
           <input
             ref={inputRef}
-            className="af-search-input"
+            style={{ flex: 1, fontSize: 14, color: 'var(--text-primary)', background: 'none', border: 'none', outline: 'none' }}
             placeholder="搜索 v信号、手机号或昵称"
             value={query}
             onChange={onChange}
             onKeyDown={e => e.key === 'Enter' && doSearch(query)}
           />
           {query && (
-            <button className="af-clear" onClick={() => { setQuery(''); setResults([]); }}>
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            <button onClick={() => { setQuery(''); setResults([]); setSearched(false); }}
+              style={{ color: 'var(--text-tertiary)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 2, background: 'transparent' }}>
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
+                <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/>
               </svg>
             </button>
           )}
         </div>
 
-        <div className="af-body">
+        {/* 内容区 */}
+        <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
           {searching && (
-            <div className="af-hint">搜索中…</div>
-          )}
-          {!searching && query && results.length === 0 && (
-            <div className="af-hint">
-              <svg viewBox="0 0 24 24" width="32" height="32" fill="#D0D7E3" style={{ marginBottom: 10 }}>
-                <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-              </svg>
-              未找到「{query}」相关用户
-              <div style={{ fontSize: 12, marginTop: 4, color: '#B0BAC5' }}>可搜索 v信号、手机号或昵称</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '44px 20px', color: 'var(--text-tertiary)', fontSize: 13 }}>
+              搜索中…
             </div>
           )}
           {!searching && !query && (
-            <div className="af-hint">
-              <svg viewBox="0 0 24 24" width="36" height="36" fill="#D0D7E3" style={{ marginBottom: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '44px 20px', textAlign: 'center' }}>
+              <svg viewBox="0 0 24 24" width="44" height="44" fill="currentColor" style={{ color: 'var(--text-tertiary)', marginBottom: 14, opacity: 0.4 }}>
                 <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
               </svg>
-              输入 v信号、手机号或昵称搜索
+              <div style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 4 }}>搜索添加好友</div>
+              <div style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>支持 v信号、手机号或昵称</div>
             </div>
           )}
-          {results.map(u => (
-            <div key={u.id} className="af-result-item" onClick={() => setViewId(u.id)}>
-              <Avatar src={u.avatar} name={u.username} size={44} style={{ borderRadius: 8, flexShrink: 0 }} />
-              <div className="af-result-info">
-                <div className="af-result-name">{u.username}</div>
-                <div className="af-result-sub">{u.wechat_id ? `v信号：${u.wechat_id}` : u.phone}</div>
-              </div>
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="#C7C7CC">
-                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+          {!searching && searched && results.length === 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '44px 20px', textAlign: 'center' }}>
+              <svg viewBox="0 0 24 24" width="40" height="40" fill="currentColor" style={{ color: 'var(--text-tertiary)', marginBottom: 12, opacity: 0.4 }}>
+                <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
               </svg>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 4 }}>未找到「{query}」相关用户</div>
+              <div style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>可尝试搜索 v信号或手机号</div>
             </div>
+          )}
+          {!searching && results.map(u => (
+            <AfResultItem key={u.id} user={u} onClick={() => setViewId(u.id)} />
           ))}
         </div>
       </div>
@@ -109,6 +114,28 @@ function AddFriendModal({ onClose }) {
           onFriendAdded={() => {}}
         />
       )}
+    </div>
+  );
+}
+
+function AfResultItem({ user: u, onClick }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', cursor: 'pointer', background: hovered ? 'var(--bg-hover)' : 'transparent', transition: 'background .12s' }}>
+      <Avatar src={u.avatar} name={u.username} size={46} style={{ borderRadius: 10, flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 2 }}>{u.username}</div>
+        <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+          {u.wechat_id ? `v信号：${u.wechat_id}` : u.phone ? `手机：${u.phone}` : ''}
+        </div>
+      </div>
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}>
+        <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+      </svg>
     </div>
   );
 }

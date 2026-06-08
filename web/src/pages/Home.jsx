@@ -11,9 +11,8 @@ import { useAuth } from '../contexts/AuthContext';
 
 function WcEmpty() {
   return (
-    <div className="wc-empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#FFFFFF' }}>
+    <div className="wc-empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
       <svg viewBox="0 0 80 64" style={{ width: 80, height: 64, marginBottom: 18 }}>
-        {/* 企业风格插图：消息气泡 + 对勾 */}
         <rect x="4" y="8" width="50" height="34" rx="8" fill="#EEF2F8"/>
         <rect x="8" y="15" width="30" height="3" rx="1.5" fill="#B8C4D4"/>
         <rect x="8" y="22" width="22" height="3" rx="1.5" fill="#B8C4D4"/>
@@ -22,8 +21,8 @@ function WcEmpty() {
         <circle cx="60" cy="46" r="16" fill="#1A2033"/>
         <path d="M53 46l5 5 9-9" stroke="#07C160" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
-      <p style={{ fontSize: 14, fontWeight: 500, color: '#1F2D3D', marginBottom: 6 }}>选择一个会话开始聊天</p>
-      <p style={{ fontSize: 12, color: '#7A8694' }}>安全、高效的企业级通讯</p>
+      <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 6 }}>选择一个会话开始聊天</p>
+      <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>安全、高效的企业级通讯</p>
     </div>
   );
 }
@@ -259,61 +258,161 @@ function AccountSwitcher({ onNavigate }) {
   );
 }
 
+/* ── 群成员行（带 hover） ── */
+function CgMemberRow({ contact: c, checked, onToggle }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div onClick={onToggle}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 18px', cursor: 'pointer', background: hovered ? 'var(--bg-hover)' : 'transparent', transition: 'background .1s' }}>
+      <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${checked ? '#07C160' : 'var(--border-color)'}`, background: checked ? '#07C160' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .12s' }}>
+        {checked && <svg viewBox="0 0 24 24" width="12" height="12" fill="#fff"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
+      </div>
+      <Avatar src={c.avatar} name={c.remark || c.username} size={40} style={{ borderRadius: 8, flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: checked ? 500 : 400 }}>{c.remark || c.username}</div>
+        {c.remark && <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 1 }}>{c.username}</div>}
+      </div>
+    </div>
+  );
+}
+
 /* ── Create Group Modal ── */
 function CreateGroupModal({ onClose, onCreated }) {
   const [name, setName] = useState('');
   const [contacts, setContacts] = useState([]);
+  const [contactSearch, setContactSearch] = useState('');
   const [selected, setSelected] = useState(new Set());
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const nameRef = useRef(null);
 
   useEffect(() => {
     axios.get('/api/users/contacts').then(r => setContacts(r.data)).catch(() => {});
+    setTimeout(() => nameRef.current?.focus(), 80);
   }, []);
 
   const toggle = (id) => setSelected(prev => {
-    const s = new Set(prev); if (s.has(id)) s.delete(id); else s.add(id); return s;
+    const s = new Set(prev);
+    if (s.has(id)) s.delete(id); else s.add(id);
+    return s;
   });
 
   const create = async () => {
-    if (!name.trim()) return alert('请输入群名称');
-    if (selected.size === 0) return alert('请至少选择一位成员');
-    setLoading(true);
+    if (!name.trim()) { setError('请输入群名称'); return; }
+    if (selected.size === 0) { setError('请至少选择一位成员'); return; }
+    setLoading(true); setError('');
     try {
       const { data } = await axios.post('/api/messages/conversation/group', { name: name.trim(), memberIds: [...selected] });
       onCreated({ id: data.conversationId, type: 'group', name: name.trim(), avatar: '', members: [] });
-    } catch (err) { alert(err.response?.data?.error || '创建失败'); }
-    setLoading(false);
+    } catch (err) {
+      setError(err.response?.data?.error || '创建失败，请重试');
+      setLoading(false);
+    }
   };
 
+  const filtered = contacts.filter(c => {
+    if (!contactSearch.trim()) return true;
+    const q = contactSearch.toLowerCase();
+    return (c.remark || c.username || '').toLowerCase().includes(q);
+  });
+
+  const selectedContacts = contacts.filter(c => selected.has(c.id));
+
   return (
-    <div className="wc-modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="wc-modal wide">
-        <div className="wc-modal-header">
-          <span className="wc-modal-title">发起群聊</span>
-          <button className="wc-modal-close" onClick={onClose}>✕</button>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 600, background: 'rgba(0,0,0,.52)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ width: 480, maxWidth: '94vw', maxHeight: '80vh', background: 'var(--bg-msg-other)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,.28)', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color)' }}
+        onClick={e => e.stopPropagation()}>
+
+        {/* 标题栏 */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 18px 14px', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
+          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>发起群聊</span>
+          <button onClick={onClose} style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, color: 'var(--text-secondary)', cursor: 'pointer', background: 'transparent' }}>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
         </div>
-        <div className="wc-modal-body">
-          <div className="wc-modal-field">
-            <label>群名称</label>
-            <input className="wc-modal-input" placeholder="请输入群名称" value={name} onChange={e => setName(e.target.value)} autoFocus />
-          </div>
-          <div style={{ padding: '4px 20px 8px', fontSize: 13, color: '#888' }}>选择联系人（已选 {selected.size} 人）</div>
-          <div style={{ maxHeight: 300, overflowY: 'auto' }}>
-            {contacts.length === 0 && <div style={{ padding: 20, textAlign: 'center', color: '#B2B2B2', fontSize: 13 }}>暂无联系人</div>}
-            {contacts.map(c => (
-              <div key={c.id} className="wc-group-member-item" onClick={() => toggle(c.id)}>
-                <div className={`wc-group-check${selected.has(c.id) ? ' checked' : ''}`}>{selected.has(c.id) ? '✓' : ''}</div>
-                <Avatar src={c.avatar} name={c.remark || c.username} size={38} />
-                <span style={{ fontSize: 15 }}>{c.remark || c.username}</span>
+
+        {/* 群名称输入 */}
+        <div style={{ padding: '14px 18px 10px', flexShrink: 0, borderBottom: '1px solid var(--border-color)' }}>
+          <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 7, fontWeight: 500 }}>群名称</div>
+          <input
+            ref={nameRef}
+            value={name}
+            onChange={e => { setName(e.target.value); setError(''); }}
+            placeholder="请输入群名称"
+            maxLength={30}
+            style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--border-color)', fontSize: 14, color: 'var(--text-primary)', background: 'var(--bg-search)', outline: 'none', boxSizing: 'border-box' }}
+            onFocus={e => e.target.style.borderColor = '#07C160'}
+            onBlur={e => e.target.style.borderColor = 'var(--border-color)'}
+          />
+        </div>
+
+        {/* 已选成员 chips */}
+        {selectedContacts.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '10px 18px', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
+            {selectedContacts.map(c => (
+              <div key={c.id} onClick={() => toggle(c.id)}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '3px 8px 3px 4px', background: 'rgba(7,193,96,.12)', borderRadius: 99, cursor: 'pointer', border: '1px solid rgba(7,193,96,.25)' }}>
+                <Avatar src={c.avatar} name={c.remark || c.username} size={20} style={{ borderRadius: 4 }} />
+                <span style={{ fontSize: 12, color: '#07C160', maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.remark || c.username}</span>
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="#07C160"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
               </div>
             ))}
           </div>
+        )}
+
+        {/* 联系人搜索 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '10px 18px 6px', padding: '7px 10px', background: 'var(--bg-search)', borderRadius: 8, border: '1px solid var(--border-color)', flexShrink: 0 }}>
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}>
+            <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          </svg>
+          <input
+            value={contactSearch}
+            onChange={e => setContactSearch(e.target.value)}
+            placeholder="搜索联系人"
+            style={{ flex: 1, fontSize: 13, color: 'var(--text-primary)', background: 'none', border: 'none', outline: 'none' }}
+          />
         </div>
-        <div className="wc-modal-footer">
-          <button className="wc-modal-btn secondary" onClick={onClose}>取消</button>
-          <button className="wc-modal-btn primary" onClick={create} disabled={loading || selected.size === 0}>
-            {loading ? '创建中...' : `创建 (${selected.size}人)`}
-          </button>
+
+        {/* 联系人列表 */}
+        <div style={{ fontSize: 12, color: 'var(--text-tertiary)', padding: '2px 18px 6px', flexShrink: 0 }}>
+          选择成员（已选 {selected.size} 人）
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {filtered.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '24px 20px', color: 'var(--text-tertiary)', fontSize: 13 }}>
+              {contacts.length === 0 ? '暂无联系人' : '未找到相关联系人'}
+            </div>
+          )}
+          {filtered.map(c => {
+            const isChecked = selected.has(c.id);
+            return (
+              <CgMemberRow key={c.id} contact={c} checked={isChecked} onToggle={() => toggle(c.id)} />
+            );
+          })}
+        </div>
+
+        {/* 底部操作 */}
+        <div style={{ padding: '12px 18px', borderTop: '1px solid var(--border-color)', flexShrink: 0 }}>
+          {error && (
+            <div style={{ padding: '6px 10px', background: 'rgba(250,81,81,.08)', border: '1px solid rgba(250,81,81,.2)', borderRadius: 8, color: '#FA5151', fontSize: 12, marginBottom: 10 }}>
+              {error}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={onClose}
+              style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: '1px solid var(--border-color)', fontSize: 14, color: 'var(--text-secondary)', background: 'var(--bg-search)', cursor: 'pointer', fontWeight: 500 }}>
+              取消
+            </button>
+            <button onClick={create} disabled={loading || selected.size === 0}
+              style={{ flex: 2, padding: '11px 0', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: loading || selected.size === 0 ? 'not-allowed' : 'pointer', background: loading || selected.size === 0 ? 'rgba(7,193,96,.4)' : '#07C160', color: '#fff' }}>
+              {loading ? '创建中…' : `创建群聊${selected.size > 0 ? `（${selected.size}人）` : ''}`}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -328,11 +427,13 @@ export default function Home() {
   const [search, setSearch] = useState('');
   const [showQR, setShowQR] = useState(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [addMenuPos, setAddMenuPos] = useState(null);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [addFriendRequest, setAddFriendRequest] = useState(0);
   const { socket, reconnectCount, registerUnreadCleared } = useSocket();
   const { user } = useAuth();
   const activeConvIdRef = useRef(null);
+  const addBtnRef = useRef(null);
   useEffect(() => { activeConvIdRef.current = activeConv?.id ?? null; }, [activeConv?.id]);
 
   useEffect(() => {
@@ -435,13 +536,25 @@ export default function Home() {
     }
   };
 
+  const toggleAddMenu = () => {
+    if (showAddMenu) {
+      setShowAddMenu(false);
+      setAddMenuPos(null);
+    } else {
+      const rect = addBtnRef.current?.getBoundingClientRect();
+      if (rect) setAddMenuPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right });
+      setShowAddMenu(true);
+    }
+  };
+  const closeAddMenu = () => { setShowAddMenu(false); setAddMenuPos(null); };
+
   const handleCreateGroup = () => {
-    setShowAddMenu(false);
+    closeAddMenu();
     setShowCreateGroup(true);
   };
 
   const handleAddFriend = () => {
-    setShowAddMenu(false);
+    closeAddMenu();
     if (tab !== 'contacts') handleTabChange('contacts');
     setAddFriendRequest(n => n + 1);
   };
@@ -499,31 +612,9 @@ export default function Home() {
               </button>
 
               {/* 添加按钮 */}
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <button className="wc-icon-btn" title="发起" onClick={() => setShowAddMenu(v => !v)}>
-                  <IcoAdd />
-                </button>
-                {showAddMenu && (
-                  <>
-                    <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setShowAddMenu(false)} />
-                    <div className="wc-ctx-menu" style={{ position: 'absolute', right: 0, top: 34, minWidth: 148, zIndex: 100 }}>
-                      <div className="wc-ctx-item" onClick={handleCreateGroup}>
-                        <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, fill: 'currentColor', flexShrink: 0 }}>
-                          <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-                        </svg>
-                        发起群聊
-                      </div>
-                      <div className="wc-ctx-divider" />
-                      <div className="wc-ctx-item" onClick={handleAddFriend}>
-                        <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, fill: 'currentColor', flexShrink: 0 }}>
-                          <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                        </svg>
-                        添加朋友
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
+              <button ref={addBtnRef} className="wc-icon-btn" title="发起" onClick={toggleAddMenu}>
+                <IcoAdd />
+              </button>
             </div>
 
             <div className="wc-panel-content">
@@ -560,6 +651,37 @@ export default function Home() {
         </div>
       )}
 
+      {/* + 号下拉菜单（position:fixed 避免 backdrop-filter 堆叠层问题） */}
+      {showAddMenu && addMenuPos && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 800 }} onClick={closeAddMenu} />
+          <div style={{
+            position: 'fixed',
+            top: addMenuPos.top,
+            right: addMenuPos.right,
+            zIndex: 801,
+            background: 'var(--bg-msg-other)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 12,
+            boxShadow: '0 8px 32px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.1)',
+            overflow: 'hidden',
+            minWidth: 168,
+          }}>
+            <AddDropItem
+              icon={<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>}
+              label="发起群聊"
+              onClick={handleCreateGroup}
+            />
+            <div style={{ height: 1, background: 'var(--border-color)' }} />
+            <AddDropItem
+              icon={<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>}
+              label="添加朋友"
+              onClick={handleAddFriend}
+            />
+          </div>
+        </>
+      )}
+
       {/* 发起群聊弹窗 */}
       {showCreateGroup && (
         <CreateGroupModal
@@ -567,6 +689,19 @@ export default function Home() {
           onCreated={(conv) => { setShowCreateGroup(false); handleSelectConv(conv); }}
         />
       )}
+    </div>
+  );
+}
+
+function AddDropItem({ icon, label, onClick }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', cursor: 'pointer', background: hovered ? 'var(--bg-hover)' : 'transparent', transition: 'background .1s' }}>
+      <span style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>{icon}</span>
+      <span style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 500 }}>{label}</span>
     </div>
   );
 }

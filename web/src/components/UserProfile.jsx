@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Avatar from './Avatar';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function UserProfile({ userId, onClose, onStartChat, onFriendAdded }) {
+  const { user: currentUser } = useAuth();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showRemarkEdit, setShowRemarkEdit] = useState(false);
@@ -156,7 +158,7 @@ export default function UserProfile({ userId, onClose, onStartChat, onFriendAdde
         )}
 
         {/* 申请好友区域（非好友） */}
-        {!user.isFriend && userId !== user?.id && (
+        {!user.isFriend && userId !== currentUser?.id && (
           <div className="up-add-area">
             {addStep === 'idle' && (
               <button className="up-btn-primary up-btn-full" onClick={() => setAddStep('composing')}>
