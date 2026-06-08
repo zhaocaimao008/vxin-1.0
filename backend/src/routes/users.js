@@ -286,6 +286,7 @@ router.get('/:id', auth, (req, res) => {
   const contact = db.prepare('SELECT remark FROM contacts WHERE user_id=? AND contact_id=?').get(req.user.id, req.params.id);
   const settings = serializeSettings(ensureSettings(req.params.id));
   const visible = isFriend || req.params.id === req.user.id || settings.profileVisible;
+  const pendingReq = db.prepare('SELECT id FROM friend_requests WHERE from_id=? AND to_id=? AND status=?').get(req.user.id, req.params.id, 'pending');
   res.json({
     ...user,
     phone: visible ? user.phone : '',
@@ -294,6 +295,7 @@ router.get('/:id', auth, (req, res) => {
     isFriend,
     isBlocked,
     remark: contact?.remark || '',
+    hasPendingRequest: !!pendingReq,
   });
 });
 
