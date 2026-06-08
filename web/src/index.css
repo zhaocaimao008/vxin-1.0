@@ -1,39 +1,39 @@
 /* ============================================================
-   WeChat PC 4.1.10 Design System — 最新版精确复刻
+   v信 Enterprise Design System — 企业微信视觉规范对齐
    ============================================================ */
 
 :root {
   /* ── Brand ── */
   --green:           #07C160;
-  --green-bubble:    #95EC69;
+  --green-bubble:    #9BE87D;   /* 企业版偏淡绿，更专业 */
   --green-hover:     #06AE56;
-  --link-color:      #576B95;
+  --link-color:      #1677FF;   /* 企业微信蓝色链接 */
 
-  /* ── Surface（最新微信 4.1.10 精确校准）── */
-  --bg-nav:          #1A1A1A;   /* 最左侧图标栏：极深近黑色，比 4.1.8 更深 */
-  --bg-panel:        #F5F5F5;   /* 会话面板：更亮更干净 */
-  --bg-panel-header: #F5F5F5;   /* 面板顶栏：与面板一致 */
-  --bg-chat:         #FFFFFF;   /* 聊天主区域：白底 */
-  --bg-chat-header:  #F5F5F5;   /* 聊天顶栏：与面板一致 */
-  --bg-input:        #FFFFFF;   /* 输入区域：白色 */
-  --bg-search:       #E8E8E8;   /* 搜索栏填充：更浅 */
-  --bg-msg-mine:     #95EC69;   /* 我的气泡：经典绿 */
-  --bg-msg-other:    #FFFFFF;   /* 对方气泡：4.1.10 改为白底 */
+  /* ── Surface（企业微信 Light Mode）── */
+  --bg-nav:          #1A2033;   /* 侧边栏：深藏青，企业感强 */
+  --bg-panel:        #F7F8FA;   /* 会话面板：企业微信标准浅灰 */
+  --bg-panel-header: #F7F8FA;
+  --bg-chat:         #FFFFFF;
+  --bg-chat-header:  #FFFFFF;   /* 聊天顶栏：纯白更干净 */
+  --bg-input:        #FFFFFF;
+  --bg-search:       #ECEEF2;   /* 搜索栏：略带蓝灰 */
+  --bg-msg-mine:     #9BE87D;   /* 我的气泡：企业版偏淡 */
+  --bg-msg-other:    #FFFFFF;
   --bg-hover:        rgba(0,0,0,.04);
-  --bg-active:       #D6F0DE;   /* 选中会话：更柔和的浅绿 */
-  --bg-active-hover: #C8E8D2;
+  --bg-active:       #E8F3FF;   /* 选中会话：企业微信蓝选中态 */
+  --bg-active-hover: #D6E9FF;
 
   /* ── Text ── */
-  --text-primary:    #191919;
-  --text-secondary:  #8A8A8A;
-  --text-tertiary:   #B0B0B0;
-  --text-placeholder:#B0B0B0;
+  --text-primary:    #1F2D3D;   /* 企业微信主文字：深蓝黑 */
+  --text-secondary:  #7A8694;   /* 辅助文字：蓝灰 */
+  --text-tertiary:   #B0BAC5;
+  --text-placeholder:#B0BAC5;
 
   /* ── Border ── */
-  --border-color:    #E5E5E5;
-  --border-light:    rgba(0,0,0,.05);
-  --border-strong:   rgba(0,0,0,.1);
-  --divider:         #EBEBEB;
+  --border-color:    #E8ECF0;
+  --border-light:    rgba(0,0,0,.04);
+  --border-strong:   rgba(0,0,0,.09);
+  --divider:         #EEF0F3;
 
   /* ── Spacing (8px grid) ── */
   --sp-1:  4px;
@@ -44,32 +44,32 @@
   --sp-6: 24px;
 
   /* ── Dimensions ── */
-  --nav-w:          60px;     /* 侧边栏略宽 */
-  --panel-w:       300px;     /* 面板更宽 300px 匹配 NeoAnt */
-  --header-h:       50px;     /* 顶栏略矮 */
-  --session-h:      68px;     /* 会话条目更高 68px */
-  --avatar-session: 48px;     /* 头像更大 */
+  --nav-w:          64px;     /* 企业微信侧边栏宽度 */
+  --panel-w:        280px;    /* 企业微信面板宽度 */
+  --header-h:       54px;     /* 企业微信顶栏高度 */
+  --session-h:      64px;     /* 企业微信会话高度 */
+  --avatar-session: 44px;
   --avatar-msg:     36px;
   --radius-avatar:  6px;
-  --radius-bubble:  6px;      /* 气泡更圆 */
+  --radius-bubble:  10px;     /* 企业微信气泡圆角更大 */
   --radius-sm:      4px;
   --radius-md:      8px;
-  --radius-lg:     14px;
+  --radius-lg:     12px;
 
   /* ── Typography ── */
   --font: -apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei UI",
           "Microsoft YaHei","Segoe UI",sans-serif;
   --font-msg:     14px;
   --font-name:    14px;
-  --font-preview: 12px;
+  --font-preview: 12.5px;
   --font-time:    11px;
   --font-system:  11px;
-  --lh-msg:       1.55;
-  --lh-base:      1.4;
+  --lh-msg:       1.6;
+  --lh-base:      1.45;
 
   /* ── Motion ── */
   --ease: cubic-bezier(.2,0,.38,.9);
-  --dur:  120ms;
+  --dur:  130ms;
   --dur-fast: 80ms;
 }
 
@@ -266,16 +266,16 @@ img { display: block; }
   position: relative;
 }
 
-/* 面板顶部栏：单行，与聊天窗口顶栏同高，形成统一横向色带 */
+/* 面板顶栏 — 企业微信：与面板同色，底部分隔线 */
 .wc-panel-topbar {
-  height: var(--header-h);   /* 52px — 与 .wc-chat-header 完全一致 */
-  padding: 0 8px 0 10px;
+  height: var(--header-h);
+  padding: 0 8px 0 12px;
   display: flex;
   align-items: center;
   gap: 6px;
-  background: var(--bg-panel-header);  /* #F0F0F0 — 与面板一致 */
+  background: var(--bg-panel-header);
   flex-shrink: 0;
-  border-bottom: 1px solid rgba(0,0,0,.09);
+  border-bottom: 1px solid var(--border-color);
 }
 
 /* 搜索栏 —— 圆角矩形，填充顶栏剩余宽度 */
@@ -381,7 +381,7 @@ img { display: block; }
 }
 .wc-chat-item-name {
   font-size: var(--font-name);
-  font-weight: 400;
+  font-weight: 500;          /* 企业微信名字中等粗细 */
   color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -416,16 +416,17 @@ img { display: block; }
   position: relative;
 }
 
-/* 顶部栏：52px，与面板顶栏同高，背景同色，形成统一顶部色带 */
+/* 聊天顶栏 — 企业微信：纯白底 + 底部 1px 分隔线 */
 .wc-chat-header {
-  height: var(--header-h);   /* 52px */
-  padding: 0 10px 0 var(--sp-4);
+  height: var(--header-h);
+  padding: 0 12px 0 var(--sp-4);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--bg-chat-header);  /* #F0F0F0 — 与面板完全一致 */
-  border-bottom: 1px solid rgba(0,0,0,.09);
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
+  box-shadow: 0 1px 0 rgba(0,0,0,.04);
 }
 .wc-chat-header-name {
   font-size: 15px;
@@ -518,9 +519,9 @@ img { display: block; }
   white-space: nowrap;
 }
 
-/* 气泡 */
+/* 气泡 — 企业微信更大圆角 */
 .wc-msg-bubble {
-  padding: 8px 12px;
+  padding: 9px 13px;
   border-radius: var(--radius-bubble);
   word-break: break-word;
   position: relative;
@@ -532,12 +533,13 @@ img { display: block; }
 }
 .wc-msg-bubble.mine {
   background: var(--bg-msg-mine);
-  border-top-right-radius: 2px;
+  border-top-right-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
 }
 .wc-msg-bubble.other {
   background: var(--bg-msg-other);
-  border-top-left-radius: 2px;
-  box-shadow: 0 1px 2px rgba(0,0,0,.08);
+  border-top-left-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.10), 0 0 0 .5px rgba(0,0,0,.04);
 }
 
 /* 气泡尾巴 */
@@ -548,7 +550,7 @@ img { display: block; }
   right: -6px;
   width: 0; height: 0;
   border-style: solid;
-  border-width: 6px 0 0 7px;
+  border-width: 7px 0 0 7px;
   border-color: transparent transparent transparent var(--bg-msg-mine);
 }
 .wc-msg-bubble.other::before {
@@ -558,7 +560,7 @@ img { display: block; }
   left: -6px;
   width: 0; height: 0;
   border-style: solid;
-  border-width: 6px 7px 0 0;
+  border-width: 7px 7px 0 0;
   border-color: transparent var(--bg-msg-other) transparent transparent;
 }
 
@@ -690,22 +692,28 @@ img { display: block; }
 }
 .wc-input-hint { font-size: 11px; color: var(--text-tertiary); }
 .wc-send-btn {
-  padding: 5px 16px;
-  background: #E6E6E6;
-  color: #999;
-  border-radius: 4px;
+  padding: 6px 18px;
+  background: #EAECEF;
+  color: #A8B0BC;
+  border-radius: 5px;
   font-size: 13px;
+  font-weight: 500;
   cursor: not-allowed;
-  transition: background var(--dur), color var(--dur);
-  letter-spacing: .2px;
-  min-width: 64px;
+  transition: background var(--dur), color var(--dur), box-shadow var(--dur), transform var(--dur-fast);
+  letter-spacing: .3px;
+  min-width: 66px;
 }
 .wc-send-btn.active {
   background: var(--green);
   color: #fff;
   cursor: pointer;
+  box-shadow: 0 2px 8px rgba(7,193,96,.30);
 }
-.wc-send-btn.active:hover { background: var(--green-hover); }
+.wc-send-btn.active:hover {
+  background: var(--green-hover);
+  box-shadow: 0 3px 10px rgba(7,193,96,.40);
+  transform: translateY(-0.5px);
+}
 
 /* 语音按钮 */
 .wc-voice-btn {
@@ -1019,85 +1027,84 @@ img { display: block; }
 /* ============================================================
    Auth Pages — 现代登录/注册 (新设计)
    ============================================================ */
+/* ── 登录页 — 企业微信视觉规范 ── */
 .auth-page {
   min-height: 100vh; display: flex;
   align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #F0F4F8 0%, #E8EEF5 50%, #DEE6F0 100%);
+  background: linear-gradient(145deg, #F0F3F8 0%, #EBF0F7 50%, #E5ECF4 100%);
   position: relative; overflow: hidden;
   font-family: var(--font);
 }
 .auth-bg-circle { position: absolute; border-radius: 50%; pointer-events: none; }
 .auth-bg-circle-1 {
-  width: 500px; height: 500px;
-  background: radial-gradient(circle, rgba(7,193,96,.08) 0%, transparent 70%);
-  top: -150px; right: -100px;
+  width: 560px; height: 560px;
+  background: radial-gradient(circle, rgba(26,32,51,.05) 0%, transparent 65%);
+  top: -200px; right: -120px;
 }
 .auth-bg-circle-2 {
-  width: 400px; height: 400px;
-  background: radial-gradient(circle, rgba(87,107,149,.06) 0%, transparent 70%);
-  bottom: -100px; left: -80px;
+  width: 420px; height: 420px;
+  background: radial-gradient(circle, rgba(7,193,96,.06) 0%, transparent 65%);
+  bottom: -120px; left: -100px;
 }
 .auth-bg-circle-3 {
-  width: 200px; height: 200px;
-  background: radial-gradient(circle, rgba(7,193,96,.05) 0%, transparent 70%);
-  top: 40%; left: 10%;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(26,32,51,.04) 0%, transparent 65%);
+  top: 35%; left: 8%;
 }
-.auth-container { position: relative; z-index: 1; width: 380px; animation: scaleIn .35s var(--ease); }
-.auth-brand { text-align: center; margin-bottom: 32px; }
+.auth-container { position: relative; z-index: 1; width: 400px; animation: scaleIn .3s var(--ease); }
+.auth-brand { text-align: center; margin-bottom: 36px; }
 .auth-brand-icon {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 56px; height: 56px;
-  background: linear-gradient(135deg, #07C160, #06AE56);
-  border-radius: 16px; color: #fff; margin-bottom: 16px;
-  box-shadow: 0 4px 16px rgba(7,193,96,.3);
+  width: 60px; height: 60px;
+  background: #1A2033;
+  border-radius: 16px; color: #fff; margin-bottom: 18px;
+  box-shadow: 0 6px 20px rgba(26,32,51,.28);
 }
-.auth-brand-name { font-size: 24px; font-weight: 700; color: #1A1A1A; margin-bottom: 6px; letter-spacing: -.5px; }
-.auth-brand-desc { font-size: 13px; color: #8A8A8A; letter-spacing: .3px; }
+.auth-brand-name { font-size: 22px; font-weight: 700; color: #1F2D3D; margin-bottom: 6px; letter-spacing: -.3px; }
+.auth-brand-desc { font-size: 13px; color: #7A8694; letter-spacing: .2px; }
 .auth-accounts {
-  background: rgba(255,255,255,.85);
-  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-  border-radius: 14px; margin-bottom: 20px; overflow: hidden;
-  border: 1px solid rgba(255,255,255,.5);
-  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+  background: #FFFFFF;
+  border-radius: 12px; margin-bottom: 16px; overflow: hidden;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
 }
-.auth-accounts-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid rgba(0,0,0,.04); }
+.auth-accounts-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border-color); background: #F7F8FA; }
 .auth-accounts-title { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
 .auth-accounts-count { font-size: 11px; color: var(--text-tertiary); }
-.auth-account-row { display: flex; align-items: center; border-bottom: 1px solid rgba(0,0,0,.04); }
+.auth-account-row { display: flex; align-items: center; border-bottom: 1px solid var(--border-color); }
 .auth-account-row:last-child { border-bottom: none; }
-.auth-account-btn { flex: 1; display: flex; align-items: center; gap: 12px; padding: 12px 16px; text-align: left; cursor: pointer; transition: background .15s; min-width: 0; }
-.auth-account-btn:hover { background: rgba(7,193,96,.04); }
-.auth-account-avatar { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #07C160, #05A34E); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; flex-shrink: 0; }
+.auth-account-btn { flex: 1; display: flex; align-items: center; gap: 12px; padding: 11px 16px; text-align: left; cursor: pointer; transition: background .12s; min-width: 0; }
+.auth-account-btn:hover { background: #F7F9FC; }
+.auth-account-avatar { width: 36px; height: 36px; border-radius: 8px; background: #1A2033; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; flex-shrink: 0; }
 .auth-account-info { min-width: 0; flex: 1; }
-.auth-account-name { display: block; font-size: 14px; color: #1A1A1A; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.auth-account-id { display: block; font-size: 11px; color: #B0B0B0; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.auth-account-remove { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #C0C0C0; font-size: 14px; cursor: pointer; transition: color .15s; flex-shrink: 0; }
+.auth-account-name { display: block; font-size: 14px; color: #1F2D3D; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auth-account-id { display: block; font-size: 11px; color: var(--text-tertiary); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auth-account-remove { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: #C0C8D0; font-size: 13px; cursor: pointer; transition: color .12s; flex-shrink: 0; }
 .auth-account-remove:hover { color: #FA5151; }
 .auth-form {
-  background: rgba(255,255,255,.88);
-  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-  border-radius: 14px; padding: 24px 24px 20px;
-  border: 1px solid rgba(255,255,255,.5);
+  background: #FFFFFF;
+  border-radius: 12px; padding: 24px 24px 20px;
+  border: 1px solid var(--border-color);
   box-shadow: 0 2px 12px rgba(0,0,0,.06);
 }
 .auth-field { margin-bottom: 16px; }
-.auth-field-label { display: block; font-size: 12px; font-weight: 500; color: #8A8A8A; margin-bottom: 6px; letter-spacing: .2px; transition: color .2s; }
-.auth-field.focused .auth-field-label { color: #07C160; }
-.auth-field-input-wrap { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #F5F7FA; border: 1.5px solid transparent; border-radius: 10px; transition: all .2s; }
-.auth-field.focused .auth-field-input-wrap { border-color: rgba(7,193,96,.3); background: #F0F9F3; box-shadow: 0 0 0 3px rgba(7,193,96,.08); }
-.auth-field-icon { width: 18px; height: 18px; color: #B0B0B0; flex-shrink: 0; transition: color .2s; }
-.auth-field.focused .auth-field-icon { color: #07C160; }
-.auth-field-input { flex: 1; font-size: 15px; color: #191919; background: transparent; border: none; outline: none; min-width: 0; font-family: inherit; }
-.auth-field-input::placeholder { color: #C0C5CC; font-weight: 400; }
-.auth-error { display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: rgba(250,81,81,.08); border: 1px solid rgba(250,81,81,.15); border-radius: 10px; color: #E24C4C; font-size: 13px; margin-bottom: 12px; animation: scaleIn .2s var(--ease); }
-.auth-submit { width: 100%; padding: 13px; background: linear-gradient(135deg, #07C160 0%, #05A34E 100%); color: #fff; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all .2s; display: flex; align-items: center; justify-content: center; letter-spacing: .5px; box-shadow: 0 2px 8px rgba(7,193,96,.25); border: none; }
-.auth-submit:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(7,193,96,.35); }
+.auth-field-label { display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; letter-spacing: .2px; transition: color .15s; }
+.auth-field.focused .auth-field-label { color: var(--green); }
+.auth-field-input-wrap { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-search); border: 1.5px solid transparent; border-radius: 8px; transition: all .15s; }
+.auth-field.focused .auth-field-input-wrap { border-color: rgba(7,193,96,.35); background: #F2FBF5; box-shadow: 0 0 0 3px rgba(7,193,96,.07); }
+.auth-field-icon { width: 18px; height: 18px; color: var(--text-tertiary); flex-shrink: 0; transition: color .15s; }
+.auth-field.focused .auth-field-icon { color: var(--green); }
+.auth-field-input { flex: 1; font-size: 14px; color: var(--text-primary); background: transparent; border: none; outline: none; min-width: 0; font-family: inherit; }
+.auth-field-input::placeholder { color: var(--text-placeholder); font-weight: 400; }
+.auth-error { display: flex; align-items: center; gap: 6px; padding: 9px 14px; background: rgba(250,81,81,.07); border: 1px solid rgba(250,81,81,.14); border-radius: 8px; color: #D94F4F; font-size: 13px; margin-bottom: 12px; animation: scaleIn .2s var(--ease); }
+.auth-submit { width: 100%; padding: 12px; background: var(--green); color: #fff; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; letter-spacing: .4px; box-shadow: 0 2px 8px rgba(7,193,96,.28); border: none; }
+.auth-submit:hover { background: var(--green-hover); box-shadow: 0 4px 14px rgba(7,193,96,.38); transform: translateY(-0.5px); }
 .auth-submit:active { transform: translateY(0); box-shadow: 0 1px 4px rgba(7,193,96,.2); }
 .auth-submit:disabled { background: #C8CDD3; box-shadow: none; transform: none; cursor: not-allowed; }
 @keyframes authSpin { to { transform: rotate(360deg); } }
-.auth-spinner { display: inline-block; width: 20px; height: 20px; border: 2.5px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: authSpin .6s linear infinite; }
-.auth-footer { text-align: center; margin-top: 24px; font-size: 13px; color: var(--text-secondary); }
-.auth-link { color: #07C160; font-weight: 500; text-decoration: none; }
+.auth-spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: authSpin .6s linear infinite; }
+.auth-footer { text-align: center; margin-top: 20px; font-size: 13px; color: var(--text-secondary); }
+.auth-link { color: var(--green); font-weight: 500; text-decoration: none; }
 .auth-link:hover { text-decoration: underline; }
 
 
@@ -1633,17 +1640,16 @@ body.dark-mode .wc-settings-entry:hover {
 
 body {
   background:
-    radial-gradient(circle at 12% 10%, rgba(7,193,96,.16), transparent 28%),
-    radial-gradient(circle at 88% 18%, rgba(87,107,149,.12), transparent 26%),
-    linear-gradient(135deg, #e7ebef 0%, #f4f6f8 48%, #e9edf1 100%);
+    radial-gradient(circle at 8% 8%, rgba(26,32,51,.06), transparent 30%),
+    radial-gradient(circle at 92% 12%, rgba(7,193,96,.08), transparent 28%),
+    linear-gradient(145deg, #EEF1F5 0%, #F7F8FA 55%, #EBEEf2 100%);
 }
 
 .wc-app {
-  background:
-    linear-gradient(135deg, rgba(255,255,255,.24), rgba(255,255,255,.05)),
-    rgba(237,240,243,.65);
+  background: #F2F4F7;
 }
 
+/* ── 企业微信风格侧边栏 ── */
 .wc-sidebar {
   width: var(--nav-w);
   flex-shrink: 0;
@@ -1651,33 +1657,32 @@ body {
   flex-direction: column;
   align-items: center;
   height: 100%;
-  background: rgba(22,22,22,.82);
-  backdrop-filter: blur(24px) saturate(1.25);
-  -webkit-backdrop-filter: blur(24px) saturate(1.25);
-  border-right: 1px solid rgba(255,255,255,.08);
-  box-shadow: 12px 0 32px rgba(0,0,0,.18);
+  background: #1A2033;
+  border-right: 1px solid rgba(0,0,0,.18);
+  box-shadow: 1px 0 0 rgba(255,255,255,.04);
 }
 .wc-sidebar-avatar {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 14px 0 10px;
+  padding: 16px 0 10px;
   flex-shrink: 0;
   cursor: pointer;
   transition: opacity var(--dur);
+  width: 100%;
 }
-.wc-sidebar-avatar:hover { opacity: .82; }
+.wc-sidebar-avatar:hover { opacity: .85; }
 .wc-sidebar-avatar-img {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
   object-fit: cover;
   display: block;
-  box-shadow: 0 1px 4px rgba(0,0,0,.28);
+  box-shadow: 0 2px 6px rgba(0,0,0,.35);
 }
 .wc-sidebar-avatar-inner {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
   background: var(--green);
   color: #fff;
@@ -1686,6 +1691,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 6px rgba(7,193,96,.35);
 }
 .wc-sidebar-nav {
   flex: 1;
@@ -1693,58 +1699,71 @@ body {
   flex-direction: column;
   align-items: center;
   width: 100%;
-  padding-bottom: 12px;
+  padding: 0 0 14px;
 }
 .wc-sidebar-spacer { flex: 1; }
 .wc-sidebar-btns {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
+  width: 100%;
+  padding: 0 6px;
 }
 .wc-sidebar-btn {
-  width: 50px;
-  height: 52px;
+  width: 100%;
+  height: 56px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  border-radius: 10px;
+  gap: 4px;
+  border-radius: 8px;
   cursor: pointer;
   position: relative;
-  transition: background var(--dur) var(--ease), transform var(--dur-fast) var(--ease), opacity var(--dur) var(--ease);
+  transition: background var(--dur) var(--ease), transform var(--dur-fast) var(--ease);
 }
 .wc-sidebar-btn .icon { display: flex; align-items: center; justify-content: center; }
-.wc-sidebar-btn .icon svg { width: 21px; height: 21px; fill: rgba(255,255,255,.55); }
+.wc-sidebar-btn .icon svg { width: 22px; height: 22px; fill: rgba(255,255,255,.48); transition: fill var(--dur); }
 .wc-sidebar-label {
   font-size: 10px;
   line-height: 1;
-  color: rgba(255,255,255,.50);
+  color: rgba(255,255,255,.42);
   white-space: nowrap;
-  letter-spacing: .2px;
+  letter-spacing: .3px;
+  transition: color var(--dur);
 }
-.wc-sidebar-btn:hover { background: rgba(255,255,255,.11); }
-.wc-sidebar-btn:hover .icon svg { fill: rgba(255,255,255,.85); }
-.wc-sidebar-btn:hover .wc-sidebar-label { color: rgba(255,255,255,.85); }
-.wc-sidebar-btn:active { transform: scale(.96); opacity: .82; }
+.wc-sidebar-btn:hover { background: rgba(255,255,255,.08); }
+.wc-sidebar-btn:hover .icon svg { fill: rgba(255,255,255,.80); }
+.wc-sidebar-btn:hover .wc-sidebar-label { color: rgba(255,255,255,.80); }
+.wc-sidebar-btn:active { transform: scale(.95); }
+/* 企业微信激活态：左侧绿色指示线 + 图标高亮 */
 .wc-sidebar-btn.active {
-  background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
+  background: rgba(7,193,96,.14);
 }
-.wc-sidebar-btn.active .icon svg { fill: #fff; }
-.wc-sidebar-btn.active .wc-sidebar-label { color: #fff; }
+.wc-sidebar-btn.active .icon svg { fill: #07C160; }
+.wc-sidebar-btn.active .wc-sidebar-label { color: #07C160; }
+.wc-sidebar-btn.active::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 12px; bottom: 12px;
+  width: 3px;
+  background: #07C160;
+  border-radius: 0 3px 3px 0;
+}
 .wc-sidebar-badge {
   position: absolute;
-  top: 3px; right: 3px;
+  top: 4px; right: 4px;
   min-width: 15px; height: 15px;
   border-radius: 8px;
-  background: #e84040;
+  background: #E84040;
   color: #fff;
   font-size: 9px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
   padding: 0 3px;
   pointer-events: none;
-  border: 1.5px solid rgba(22,22,22,.82);
+  border: 1.5px solid #1A2033;
 }
 
 .wc-panel {

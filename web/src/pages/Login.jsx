@@ -35,13 +35,16 @@ export default function Login() {
         {/* Logo区域 */}
         <div className="auth-brand">
           <div className="auth-brand-icon">
-            <svg viewBox="0 0 28 28" width="28" height="28" fill="none">
-              <rect width="28" height="28" rx="8" fill="currentColor"/>
-              <path d="M8 10h12M8 14h8M8 18h10" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+            <svg viewBox="0 0 32 32" width="32" height="32" fill="none">
+              <path d="M6 8C6 6.9 6.9 6 8 6h16c1.1 0 2 .9 2 2v3H6V8z" fill="rgba(255,255,255,.25)"/>
+              <rect x="6" y="11" width="20" height="15" rx="1" fill="rgba(255,255,255,.12)"/>
+              <path d="M10 16h12M10 20h8" stroke="#fff" strokeWidth="1.8" strokeLinecap="round"/>
+              <circle cx="24" cy="22" r="5" fill="#07C160"/>
+              <path d="M22 22l1.5 1.5L26 20" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
           <h1 className="auth-brand-name">v信</h1>
-          <p className="auth-brand-desc">随时随地，畅快沟通</p>
+          <p className="auth-brand-desc">企业级安全通讯平台</p>
         </div>
 
         {/* 账号切换 */}

@@ -11,12 +11,19 @@ import { useAuth } from '../contexts/AuthContext';
 
 function WcEmpty() {
   return (
-    <div className="wc-empty">
-      <svg viewBox="0 0 62 52" style={{ width: 62, height: 52, marginBottom: 14 }}>
-        <path fill="rgba(7,193,96,0.55)" d="M20 1C9.5 1 1 7.8 1 16.2c0 4.7 2.5 8.9 6.5 11.7l-1.2 5.8 6.8-3.9c2.2.5 4.5.8 6.9.8 10.5 0 19-6.8 19-15.2S30.5 1 20 1z" />
-        <path fill="#07C160" d="M40 13C28.4 13 19 20.5 19 29.7c0 5.3 2.9 10 7.6 13.1l-1.3 6.2 7.8-4.6c2.5.6 5.1.9 7.9.9 11.6 0 21-7.5 21-16.7S51.6 13 40 13z" />
+    <div className="wc-empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#FFFFFF' }}>
+      <svg viewBox="0 0 80 64" style={{ width: 80, height: 64, marginBottom: 18 }}>
+        {/* 企业风格插图：消息气泡 + 对勾 */}
+        <rect x="4" y="8" width="50" height="34" rx="8" fill="#EEF2F8"/>
+        <rect x="8" y="15" width="30" height="3" rx="1.5" fill="#B8C4D4"/>
+        <rect x="8" y="22" width="22" height="3" rx="1.5" fill="#B8C4D4"/>
+        <rect x="8" y="29" width="26" height="3" rx="1.5" fill="#B8C4D4"/>
+        <path d="M4 42l8-8" stroke="#EEF2F8" strokeWidth="2"/>
+        <circle cx="60" cy="46" r="16" fill="#1A2033"/>
+        <path d="M53 46l5 5 9-9" stroke="#07C160" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
-      <p style={{ fontSize: 13, color: 'var(--text-tertiary)', letterSpacing: '.3px' }}>v信</p>
+      <p style={{ fontSize: 14, fontWeight: 500, color: '#1F2D3D', marginBottom: 6 }}>选择一个会话开始聊天</p>
+      <p style={{ fontSize: 12, color: '#7A8694' }}>安全、高效的企业级通讯</p>
     </div>
   );
 }
@@ -57,6 +64,7 @@ const TABS = [
   { key: 'chats',    Icon: IcoChat,     label: '消息' },
   { key: 'contacts', Icon: IcoContacts, label: '通讯录' },
   { key: 'discover', Icon: IcoDiscover, label: '发现' },
+  { key: 'profile',  Icon: IcoProfile,  label: '我' },
 ];
 
 /* ── 左上角头像 — 点击展开账号切换/添加下拉面板 ── */
