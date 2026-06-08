@@ -452,23 +452,21 @@ export default function Home() {
       {/* 左侧导航栏 */}
       <div className="wc-sidebar">
         <AccountSwitcher onNavigate={() => handleTabChange('profile')} />
-        <div className="wc-sidebar-nav">
-          <div className="wc-sidebar-spacer" />
-          <div className="wc-sidebar-btns">
-            {TABS.map(({ key, Icon, label }) => {
-              const count = badges[key] || 0;
-              return (
-                <div key={key} className={`wc-sidebar-btn${tab === key ? ' active' : ''}`}
-                  onClick={() => handleTabChange(key)} title={label}>
-                  <div className="icon"><Icon /></div>
-                  <span className="wc-sidebar-label">{label}</span>
-                  {count > 0 && (
-                    <span className="wc-sidebar-badge">{count > 99 ? '99+' : count}</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+        {/* Tab 按钮紧跟头像，不用 spacer 下推，防止小屏被裁切 */}
+        <div className="wc-sidebar-btns">
+          {TABS.map(({ key, Icon, label }) => {
+            const count = badges[key] || 0;
+            return (
+              <div key={key} className={`wc-sidebar-btn${tab === key ? ' active' : ''}`}
+                onClick={() => handleTabChange(key)} title={label}>
+                <div className="icon"><Icon /></div>
+                <span className="wc-sidebar-label">{label}</span>
+                {count > 0 && (
+                  <span className="wc-sidebar-badge">{count > 99 ? '99+' : count}</span>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
