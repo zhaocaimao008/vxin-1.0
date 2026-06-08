@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './src/contexts/AuthContext';
+import { SocketProvider } from './src/contexts/SocketContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
 class ErrorBoundary extends React.Component {
@@ -14,12 +16,14 @@ class ErrorBoundary extends React.Component {
     if (this.state.error) {
       return (
         <View style={styles.errorContainer}>
+          <View style={styles.errorIcon}>
+            <Text style={styles.errorIconText}>!</Text>
+          </View>
           <Text style={styles.errorTitle}>启动失败</Text>
           <Text style={styles.errorText}>{String(this.state.error?.message || this.state.error)}</Text>
         </View>
       );
     }
-
     return this.props.children;
   }
 }
@@ -27,9 +31,13 @@ class ErrorBoundary extends React.Component {
 export default function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <AppNavigator />
-      </AuthProvider>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <SocketProvider>
+            <AppNavigator />
+          </SocketProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
     </ErrorBoundary>
   );
 }
@@ -38,18 +46,34 @@ const styles = StyleSheet.create({
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#F5F5F5',
+    alignItems: 'center',
+    padding: 32,
+    backgroundColor: '#F7F8FA',
+  },
+  errorIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FA5151',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  errorIconText: {
+    color: '#fff',
+    fontSize: 32,
+    fontWeight: '700',
   },
   errorTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#191919',
+    fontWeight: '700',
+    color: '#1F2D3D',
     marginBottom: 12,
   },
   errorText: {
     fontSize: 14,
-    color: '#666',
+    color: '#7A8694',
     lineHeight: 20,
-  }
+    textAlign: 'center',
+  },
 });

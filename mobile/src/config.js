@@ -1,2 +1,2 @@
-export const API_BASE = 'https://93.179.127.50:8086';
-export const SOCKET_URL = 'https://93.179.127.50:8086';
+export const API_BASE = 'https://chat.91aigu.com';
+export const SOCKET_URL = 'https://chat.91aigu.com';
