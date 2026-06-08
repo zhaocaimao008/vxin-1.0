@@ -1,0 +1,27 @@
+{
+  "name": "vxin-tests",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node run.js",
+    "test:quick": "node run.js --quick",
+    "loop": "node loop.js",
+    "loop:quick": "node loop.js --quick --interval 180",
+    "once": "node loop.js --once",
+    "stress": "node stress/loadTest.js",
+    "setup": "node setup/createAccounts.js",
+    "report": "node report/generateReport.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "bcryptjs": "^3.0.3",
+    "chalk": "^4.1.2",
+    "dotenv": "^17.4.2",
+    "form-data": "^4.0.0",
+    "jsonwebtoken": "^9.0.3",
+    "playwright": "^1.40.0",
+    "socket.io-client": "^4.7.0",
+    "uuid": "^14.0.0",
+    "ws": "^8.14.0"
+  }
+}

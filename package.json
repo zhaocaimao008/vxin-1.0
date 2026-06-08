@@ -1,0 +1,16 @@
+{
+  "name": "v-xin",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "cd backend && npm install && cd ../web && npm install && cd ../desktop && npm install",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:web": "cd web && npm run dev",
+    "dev:desktop": "cd desktop && NODE_ENV=development npx electron .",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:web\"",
+    "build:web": "cd web && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
