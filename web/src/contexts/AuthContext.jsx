@@ -1,30 +1,29 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 
+// 所有请求自动携带 httpOnly Cookie（同源时浏览器自动附加，跨域需此选项）
 axios.defaults.withCredentials = true;
 
 // ── CSRF 防护：响应拦截器 ──────────────────────────────────────────
-// 从任何 API 响应头中读取 X-CSRF-Token 并存入 localStorage
+// 从任何 API 响应头中读取 X-CSRF-Token 并存入 sessionStorage
+// 注：使用 sessionStorage 而非 localStorage，标签页关闭即清除，
+//     XSS 仍可读取（SameSite=Strict Cookie 是防 CSRF 的主力），
+//     但至少不会跨会话持久化。
 axios.interceptors.response.use(
   (res) => {
     const csrfHeader = res.headers['x-csrf-token'];
-    if (csrfHeader) {
-      localStorage.setItem('csrf_token', csrfHeader);
-    }
+    if (csrfHeader) sessionStorage.setItem('csrf_token', csrfHeader);
     return res;
   },
   (err) => Promise.reject(err)
 );
 
 // ── CSRF 防护：请求拦截器 ──────────────────────────────────────────
-// 对 POST/PUT/PATCH/DELETE 请求自动附加 X-CSRF-Token header
 axios.interceptors.request.use(
   (config) => {
     if (['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase())) {
-      const csrfToken = localStorage.getItem('csrf_token');
-      if (csrfToken) {
-        config.headers['X-CSRF-Token'] = csrfToken;
-      }
+      const csrfToken = sessionStorage.getItem('csrf_token');
+      if (csrfToken) config.headers['X-CSRF-Token'] = csrfToken;
     }
     return config;
   },
@@ -32,14 +31,18 @@ axios.interceptors.request.use(
 );
 
 const AuthContext = createContext(null);
-const ACCOUNTS_KEY = 'vxin_accounts_v1';
-const ACTIVE_KEY = 'vxin_active_account_id_v1';
+
+// ── 多账号"最近登录"记录 ──────────────────────────────────────────
+// 只存 { id, user, lastLoginAt }，不存 token。
+// token 始终只在后端签发的 httpOnly Cookie 中，JS 无法读取。
+// 切换账号需重新登录（无静默换 Cookie 能力），这是正确的安全边界。
+const ACCOUNTS_KEY = 'vxin_accounts_v2';   // v2 = 无 token 版本
 const MAX_ACCOUNTS = 15;
 
 function readAccounts() {
   try {
-    const accounts = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '[]');
-    return Array.isArray(accounts) ? accounts.filter(a => a?.id && a?.token && a?.user) : [];
+    const raw = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '[]');
+    return Array.isArray(raw) ? raw.filter(a => a?.id && a?.user) : [];
   } catch {
     return [];
   }
@@ -49,9 +52,9 @@ function writeAccounts(accounts) {
   localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts.slice(0, MAX_ACCOUNTS)));
 }
 
-function upsertAccount(token, user) {
+function upsertAccount(user) {
   const next = [
-    { id: user.id, token, user, lastLoginAt: Date.now() },
+    { id: user.id, user, lastLoginAt: Date.now() },
     ...readAccounts().filter(a => a.id !== user.id),
   ].slice(0, MAX_ACCOUNTS);
   writeAccounts(next);
@@ -59,34 +62,20 @@ function upsertAccount(token, user) {
 }
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
+  const [user, setUser]         = useState(null);
   const [accounts, setAccounts] = useState(() => readAccounts());
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]   = useState(true);
   const userRef = useRef(null);
   useEffect(() => { userRef.current = user; }, [user]);
 
-  const setActiveAccount = (account) => {
-    if (!account) {
-      sessionStorage.removeItem(ACTIVE_KEY);
-      delete axios.defaults.headers.common.Authorization;
-      setToken(null);
-      setUser(null);
-      return;
-    }
-    sessionStorage.setItem(ACTIVE_KEY, account.id);
-    axios.defaults.headers.common.Authorization = `Bearer ${account.token}`;
-    setToken(account.token);
-    setUser(account.user);
-  };
-
+  // ── 401 自动踢出 ───────────────────────────────────────────────
   useEffect(() => {
     const id = axios.interceptors.response.use(
       res => res,
       err => {
         if (err.response?.status === 401 && userRef.current) {
-          setActiveAccount(null);
-          window.location.replace('/');
+          setUser(null);
+          window.location.replace('/login');
         }
         return Promise.reject(err);
       }
@@ -94,57 +83,38 @@ export const AuthProvider = ({ children }) => {
     return () => axios.interceptors.response.eject(id);
   }, []);
 
+  // ── 初始化：用 Cookie 向后端验证身份 ──────────────────────────
+  // 不从 localStorage 读取 token，直接请求 /api/auth/me。
+  // Cookie 由浏览器自动附带，后端验证后返回用户信息。
   useEffect(() => {
-    const stored = readAccounts();
-    setAccounts(stored);
-    const activeId = sessionStorage.getItem(ACTIVE_KEY);
-    const active = stored.find(a => a.id === activeId) || stored[0];
-
-    if (active) {
-      setActiveAccount(active);
-      axios.get('/api/auth/me')
-        .then(r => {
-          const updated = { ...active, user: r.data, lastLoginAt: Date.now() };
-          const next = [updated, ...stored.filter(a => a.id !== updated.id)].slice(0, MAX_ACCOUNTS);
-          writeAccounts(next);
-          setAccounts(next);
-          setUser(r.data);
-        })
-        .catch(() => setActiveAccount(null))
-        .finally(() => setLoading(false));
-      return;
-    }
-
     axios.get('/api/auth/me')
-      .then(r => setUser(r.data))
+      .then(r => {
+        setUser(r.data);
+        // 刷新"最近登录"记录中的用户信息（头像/昵称可能已更新）
+        const next = readAccounts().map(a => a.id === r.data.id ? { ...a, user: r.data, lastLoginAt: Date.now() } : a);
+        writeAccounts(next);
+        setAccounts(next);
+      })
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
   }, []);
 
-  const login = (token, userData) => {
-    if (!token) {
-      setUser(userData);
-      return;
-    }
-    const next = upsertAccount(token, userData);
+  // ── 登录成功回调（由 Login/Register 页面调用） ─────────────────
+  // 后端已将 JWT 写入 httpOnly Cookie，此处只记录用户信息用于 UI 展示。
+  const login = (userData) => {
+    setUser(userData);
+    const next = upsertAccount(userData);
     setAccounts(next);
-    setActiveAccount(next.find(a => a.id === userData.id));
   };
 
-  const switchAccount = (accountId) => {
-    const account = readAccounts().find(a => a.id === accountId);
-    if (!account) return false;
-    setActiveAccount(account);
-    return true;
-  };
-
+  // ── 移除"最近登录"记录（UI 操作，不影响当前 Cookie 会话） ────
   const removeAccount = (accountId) => {
     const next = readAccounts().filter(a => a.id !== accountId);
     writeAccounts(next);
     setAccounts(next);
-    if (userRef.current?.id === accountId) setActiveAccount(next[0] || null);
   };
 
+  // ── 登出 ──────────────────────────────────────────────────────
   const logout = async () => {
     try {
       if ('serviceWorker' in navigator) {
@@ -157,10 +127,13 @@ export const AuthProvider = ({ children }) => {
       }
     } catch {}
     await axios.post('/api/auth/logout').catch(() => {});
+    // 清除当前用户的最近登录记录
     if (userRef.current?.id) removeAccount(userRef.current.id);
-    else setActiveAccount(null);
+    sessionStorage.removeItem('csrf_token');
+    setUser(null);
   };
 
+  // ── 更新本地用户缓存（头像/昵称变更后调用） ─────────────────
   const updateUser = (data) => {
     setUser(prev => {
       const updated = { ...prev, ...data };
@@ -178,9 +151,7 @@ export const AuthProvider = ({ children }) => {
       logout,
       updateUser,
       loading,
-      token,
       accounts,
-      switchAccount,
       removeAccount,
       maxAccounts: MAX_ACCOUNTS,
     }}>

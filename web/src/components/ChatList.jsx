@@ -53,17 +53,27 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
         unreadCount: 0,
       } : c));
     };
+    // 群更新（群名/头像/公告等变化时刷新）
+    const onGroupUpdated = () => fetchConvs();
+    // 被踢出群 / 群解散：从列表中立即移除该会话
+    const onGroupKicked    = ({ conversationId }) =>
+      setConversations(prev => prev.filter(c => c.id !== conversationId));
+    const onGroupDismissed = ({ conversationId }) =>
+      setConversations(prev => prev.filter(c => c.id !== conversationId));
+
     socket.on('new_message', onMsg);
     socket.on('new_conversation', onNewConv);
     socket.on('conversation_messages_cleared', onCleared);
-    // 群更新（群名/头像/公告等变化时刷新）
-    const onGroupUpdated = () => fetchConvs();
     socket.on('group_updated', onGroupUpdated);
+    socket.on('group_kicked', onGroupKicked);
+    socket.on('group_dismissed', onGroupDismissed);
     return () => {
       socket.off('new_message', onMsg);
       socket.off('new_conversation', onNewConv);
       socket.off('conversation_messages_cleared', onCleared);
       socket.off('group_updated', onGroupUpdated);
+      socket.off('group_kicked', onGroupKicked);
+      socket.off('group_dismissed', onGroupDismissed);
     };
   }, [socket, fetchConvs]);
 
@@ -85,6 +95,17 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
     await axios.post(`/api/messages/conversation/${conv.id}/mute`, { muted });
     setConversations(prev => prev.map(c => c.id === conv.id ? { ...c, muted: muted ? 1 : 0 } : c));
     setCtxMenu(null);
+  };
+
+  const deleteConv = async (conv) => {
+    setCtxMenu(null);
+    if (conv.type === 'group') {
+      if (!window.confirm(`确认退出群聊「${conv.name}」？`)) return;
+      await axios.post(`/api/messages/conversation/${conv.id}/leave`).catch(() => {});
+    } else {
+      await axios.delete(`/api/messages/conversation/${conv.id}/messages`).catch(() => {});
+    }
+    setConversations(prev => prev.filter(c => c.id !== conv.id));
   };
 
   const filtered = conversations.filter(c => (c.name || '').toLowerCase().includes(searchQuery.toLowerCase()));
@@ -155,6 +176,10 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
             </div>
             <div className="wc-ctx-item" onClick={() => mute(ctxMenu.conv, !ctxMenu.conv.muted)}>
               {ctxMenu.conv.muted ? '取消免打扰' : '消息免打扰'}
+            </div>
+            <div className="wc-ctx-divider" />
+            <div className="wc-ctx-item danger" onClick={() => deleteConv(ctxMenu.conv)}>
+              {ctxMenu.conv.type === 'group' ? '退出群聊' : '删除聊天'}
             </div>
           </div>
         </>

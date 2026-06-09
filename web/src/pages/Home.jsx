@@ -3,11 +3,11 @@ import axios from 'axios';
 import ChatList from '../components/ChatList';
 import ChatWindow from '../components/ChatWindow';
 import ContactList from '../components/ContactList';
-import Discover from '../components/Discover';
 import Profile from '../components/Profile';
 import Avatar from '../components/Avatar';
 import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
+import { usePushNotification } from '../hooks/usePushNotification';
 
 function WcEmpty() {
   return (
@@ -34,9 +34,6 @@ const IcoChat = () => (
 const IcoContacts = () => (
   <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
 );
-const IcoDiscover = () => (
-  <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm4.65-11.15l-7.07 2.83-2.83 7.07 7.07-2.83 2.83-7.07zM12 13c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg>
-);
 const IcoProfile = () => (
   <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
 );
@@ -58,13 +55,164 @@ const IcoAdd = () => (
 const IcoAddAccount = () => (
   <svg viewBox="0 0 24 24"><path d="M13 8c0-2.21-1.79-4-4-4S5 5.79 5 8s1.79 4 4 4 4-1.79 4-4zm-2 0c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-4 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4zm8 0v3h3v3h2v-3h3v-2h-3v-3h-2v3h-3z"/></svg>
 );
+const IcoSettings = () => (
+  <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.03-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+);
 
 const TABS = [
+  { key: 'me',       Icon: IcoProfile,  label: '我',    isMe: true },
   { key: 'chats',    Icon: IcoChat,     label: '消息' },
   { key: 'contacts', Icon: IcoContacts, label: '通讯录' },
-  { key: 'discover', Icon: IcoDiscover, label: '发现' },
-  { key: 'profile',  Icon: IcoProfile,  label: '我' },
+  { key: 'settings', Icon: IcoSettings, label: '设置' },
 ];
+
+/* ── 我的资料弹窗 ── */
+function MyProfilePopup({ user, updateUser, anchorRef, onClose }) {
+  const popupRef = useRef(null);
+  const fileRef  = useRef(null);
+  const [pos, setPos]           = useState(null);
+  const [editingName, setEditingName] = useState(false);
+  const [nameVal, setNameVal]   = useState('');
+  const [nameSaving, setNameSaving] = useState(false);
+  const [nameErr, setNameErr]   = useState('');
+
+  useEffect(() => {
+    const rect = anchorRef.current?.getBoundingClientRect();
+    if (rect) setPos({ top: Math.max(8, rect.top), left: rect.right + 8 });
+  }, [anchorRef]);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (
+        popupRef.current && !popupRef.current.contains(e.target) &&
+        anchorRef.current && !anchorRef.current.contains(e.target)
+      ) onClose();
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [anchorRef, onClose]);
+
+  const uploadAvatar = async (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const fd = new FormData(); fd.append('avatar', file);
+    try {
+      const { data } = await axios.post('/api/users/avatar', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      updateUser({ avatar: data.avatar });
+    } catch {}
+    e.target.value = '';
+  };
+
+  const saveName = async () => {
+    const trimmed = nameVal.trim();
+    if (!trimmed) { setNameErr('昵称不能为空'); return; }
+    setNameSaving(true); setNameErr('');
+    try {
+      const { data } = await axios.put('/api/users/profile', { username: trimmed });
+      updateUser(data);
+      setEditingName(false);
+    } catch (err) {
+      setNameErr(err.response?.data?.error || '保存失败');
+    }
+    setNameSaving(false);
+  };
+
+  if (!pos) return null;
+
+  return (
+    <div ref={popupRef} style={{
+      position: 'fixed', top: pos.top, left: pos.left, zIndex: 500,
+      background: 'var(--bg-panel)', border: '1px solid var(--border-color)',
+      borderRadius: 14, padding: '20px 20px 16px', minWidth: 240,
+      boxShadow: '0 8px 32px rgba(0,0,0,.18)',
+    }}>
+      {/* 头像（可点击上传） */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+        <div
+          title="点击更换头像"
+          onClick={() => fileRef.current?.click()}
+          style={{
+            width: 56, height: 56, borderRadius: 14, background: 'var(--bg-hover)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 22, fontWeight: 700, color: 'var(--text-primary)',
+            overflow: 'hidden', flexShrink: 0, cursor: 'pointer', position: 'relative',
+          }}
+        >
+          {user?.avatar
+            ? <img src={user.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+            : (user?.username || '?')[0].toUpperCase()
+          }
+          <div style={{
+            position: 'absolute', inset: 0, background: 'rgba(0,0,0,.35)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            opacity: 0, transition: 'opacity .15s',
+          }}
+            onMouseEnter={e => e.currentTarget.style.opacity = 1}
+            onMouseLeave={e => e.currentTarget.style.opacity = 0}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="#fff">
+              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+            </svg>
+          </div>
+        </div>
+        <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={uploadAvatar} />
+        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>{user?.username || '—'}</div>
+      </div>
+
+      {/* 昵称行（可编辑） */}
+      <div style={{ borderTop: '1px solid var(--border-color)', padding: '10px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>昵称</span>
+          {!editingName
+            ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>{user?.username || '—'}</span>
+                <button onClick={() => { setNameVal(user?.username || ''); setEditingName(true); setNameErr(''); }}
+                  style={{ fontSize: 12, color: '#07C160', cursor: 'pointer', background: 'none' }}>修改</button>
+              </div>
+            )
+            : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input
+                  autoFocus
+                  value={nameVal}
+                  onChange={e => { setNameVal(e.target.value); setNameErr(''); }}
+                  onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditingName(false); }}
+                  maxLength={20}
+                  style={{
+                    fontSize: 13, padding: '3px 8px', borderRadius: 6, width: 110,
+                    border: '1px solid var(--border-color)', background: 'var(--bg-input)',
+                    color: 'var(--text-primary)', outline: 'none',
+                  }}
+                />
+                <button onClick={saveName} disabled={nameSaving}
+                  style={{ fontSize: 12, color: '#07C160', cursor: 'pointer', background: 'none', fontWeight: 600 }}>
+                  {nameSaving ? '…' : '保存'}
+                </button>
+                <button onClick={() => setEditingName(false)}
+                  style={{ fontSize: 12, color: 'var(--text-tertiary)', cursor: 'pointer', background: 'none' }}>取消</button>
+              </div>
+            )
+          }
+        </div>
+        {nameErr && <div style={{ fontSize: 12, color: '#FA5151', marginTop: 4 }}>{nameErr}</div>}
+      </div>
+
+      {/* ID 和手机号（只读） */}
+      {[
+        { label: 'ID',    value: user?.id ? user.id.slice(0, 8).toUpperCase() : '—' },
+        { label: '手机号', value: user?.phone || '—' },
+      ].map(({ label, value }) => (
+        <div key={label} style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '10px 0', borderTop: '1px solid var(--border-color)',
+        }}>
+          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{label}</span>
+          <span style={{ fontSize: 13, color: 'var(--text-primary)', fontFamily: 'monospace' }}>{value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 /* ── 左上角头像 — 点击展开账号切换/添加下拉面板 ── */
 function AccountSwitcher({ onNavigate }) {
@@ -431,9 +579,12 @@ export default function Home() {
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [addFriendRequest, setAddFriendRequest] = useState(0);
   const { socket, reconnectCount, registerUnreadCleared } = useSocket();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
+  usePushNotification(user);
   const activeConvIdRef = useRef(null);
   const addBtnRef = useRef(null);
+  const meRef = useRef(null);
+  const [showMePopup, setShowMePopup] = useState(false);
   useEffect(() => { activeConvIdRef.current = activeConv?.id ?? null; }, [activeConv?.id]);
 
   useEffect(() => {
@@ -473,18 +624,68 @@ export default function Home() {
     });
   }, [registerUnreadCleared]);
 
+  // 通知权限由 usePushNotification 统一申请，此处无需重复请求
+
+  const showNotification = useCallback((title, body, icon) => {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    try {
+      new Notification(title, {
+        body,
+        icon: icon || '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: title,
+        renotify: true,
+      });
+    } catch {}
+  }, []);
+
   useEffect(() => {
     if (!socket) return;
     const onMsg = (msg) => {
+      const isActiveConv = msg.conversation_id === activeConvIdRef.current;
       setUnread(prev => {
-        if (msg.conversation_id === activeConvIdRef.current) return prev;
+        if (isActiveConv) return prev;
         return { ...prev, [msg.conversation_id]: (prev[msg.conversation_id] || 0) + 1 };
       });
+      // 不在当前会话 或 窗口不可见时，推送浏览器通知
+      if (!isActiveConv || document.hidden) {
+        const bodyText =
+          msg.type === 'image' ? '[图片]' :
+          msg.type === 'voice' ? '[语音消息]' :
+          msg.type === 'file'  ? '[文件]' :
+          msg.type === 'video' ? '[视频]' :
+          (msg.content || '').slice(0, 80) || '发来了一条消息';
+        showNotification(msg.senderName || '新消息', bodyText, msg.senderAvatar);
+      }
     };
-    const onFriendReq = () => setFriendReqCount(prev => prev + 1);
+    const onFriendReq = (data) => {
+      setFriendReqCount(prev => prev + 1);
+      const name = data?.from?.username || data?.username || '有人';
+      showNotification('新的好友申请', `${name} 请求添加您为好友`);
+    };
+    const onFriendAccepted = (data) => {
+      const name = data?.accepter?.username || '对方';
+      showNotification('好友申请已通过', `${name} 已通过你的好友申请`);
+    };
     socket.on('new_message', onMsg);
     socket.on('new_friend_request', onFriendReq);
-    return () => { socket.off('new_message', onMsg); socket.off('new_friend_request', onFriendReq); };
+    socket.on('friend_request_accepted', onFriendAccepted);
+    return () => {
+      socket.off('new_message', onMsg);
+      socket.off('new_friend_request', onFriendReq);
+      socket.off('friend_request_accepted', onFriendAccepted);
+    };
+  }, [socket, showNotification]);
+
+  // 被踢出群时：清除当前活跃会话 + 清零未读（ChatWindow 可能未挂载，需在此兜底）
+  useEffect(() => {
+    if (!socket) return;
+    const onGroupKicked = ({ conversationId }) => {
+      setActiveConv(prev => (prev?.id === conversationId ? null : prev));
+      setUnread(prev => { const n = { ...prev }; delete n[conversationId]; return n; });
+    };
+    socket.on('group_kicked', onGroupKicked);
+    return () => socket.off('group_kicked', onGroupKicked);
   }, [socket]);
 
   const handleSelectConv = useCallback((conv) => {
@@ -496,6 +697,7 @@ export default function Home() {
   const handleTabChange = (t) => {
     setTab(t);
     setSearch('');
+    if (t !== 'chats') setActiveConv(null);
     if (t === 'contacts') setFriendReqCount(0);
   };
 
@@ -527,9 +729,8 @@ export default function Home() {
         return <ChatList onSelectConv={isMobile ? handleMobileSelectConv : handleSelectConv} activeConvId={activeConv?.id} unread={unread} searchQuery={search} />;
       case 'contacts':
         return <ContactList onStartChat={(conv) => handleSelectConv(conv)} searchQuery={search} addFriendRequest={addFriendRequest} />;
-      case 'discover':
-        return <Discover />;
       case 'profile':
+      case 'settings':
         return <Profile />;
       default:
         return null;
@@ -564,14 +765,19 @@ export default function Home() {
 
       {/* 左侧导航栏 */}
       <div className="wc-sidebar">
-        <AccountSwitcher onNavigate={() => handleTabChange('profile')} />
+        <AccountSwitcher onNavigate={() => handleTabChange('settings')} />
         {/* Tab 按钮紧跟头像，不用 spacer 下推，防止小屏被裁切 */}
         <div className="wc-sidebar-btns">
-          {TABS.map(({ key, Icon, label }) => {
+          {TABS.map(({ key, Icon, label, isMe }) => {
             const count = badges[key] || 0;
+            const handleClick = isMe
+              ? () => setShowMePopup(v => !v)
+              : () => { setShowMePopup(false); handleTabChange(key); };
             return (
-              <div key={key} className={`wc-sidebar-btn${tab === key ? ' active' : ''}`}
-                onClick={() => handleTabChange(key)} title={label}>
+              <div key={key}
+                ref={isMe ? meRef : undefined}
+                className={`wc-sidebar-btn${!isMe && tab === key ? ' active' : ''}`}
+                onClick={handleClick} title={label}>
                 <div className="icon"><Icon /></div>
                 <span className="wc-sidebar-label">{label}</span>
                 {count > 0 && (
@@ -687,6 +893,15 @@ export default function Home() {
         <CreateGroupModal
           onClose={() => setShowCreateGroup(false)}
           onCreated={(conv) => { setShowCreateGroup(false); handleSelectConv(conv); }}
+        />
+      )}
+
+      {showMePopup && (
+        <MyProfilePopup
+          user={user}
+          updateUser={updateUser}
+          anchorRef={meRef}
+          onClose={() => setShowMePopup(false)}
         />
       )}
     </div>

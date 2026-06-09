@@ -21,6 +21,5 @@ mobile/.expo/
 mobile/android/
 mobile/package-lock.json
 desktop/package-lock.json
-web/public/sw.js
 backend/backup/
 demo.html

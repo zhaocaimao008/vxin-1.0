@@ -5,7 +5,7 @@ import { useAuth } from './AuthContext';
 const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const [socket, setSocket]           = useState(null);
   const [connected, setConnected]     = useState(false);
   const [reconnectCount, setReconnectCount] = useState(0);
@@ -24,13 +24,13 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     if (!user) { setSocket(null); setConnected(false); return; }
 
-    // 从 localStorage 读取 CSRF Token 附加到 socket 认证信息
-    const csrfToken = localStorage.getItem('csrf_token');
-
-    const s = io('/', {
+    // Socket.io 不传 auth.token——后端从 Cookie 中提取 JWT。
+    // withCredentials 确保 WebSocket 握手时携带 httpOnly Cookie。
+    // Electron 本地文件模式下，VITE_SERVER_URL 指定远程服务器地址。
+    const serverUrl = import.meta.env.VITE_API_BASE || import.meta.env.VITE_SERVER_URL || '/';
+    const s = io(serverUrl, {
       transports: ['websocket'],
       withCredentials: true,
-      auth: token ? { token, csrfToken } : undefined,
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
@@ -69,7 +69,7 @@ export const SocketProvider = ({ children }) => {
       setSocket(null);
       setConnected(false);
     };
-  }, [user?.id, token]);
+  }, [user?.id]);
 
   return (
     <SocketContext.Provider value={{

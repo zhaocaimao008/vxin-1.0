@@ -3,7 +3,7 @@ import axios from 'axios';
 import Avatar from './Avatar';
 import { useAuth } from '../contexts/AuthContext';
 
-export default function UserProfile({ userId, onClose, onStartChat, onFriendAdded }) {
+export default function UserProfile({ userId, onClose, onStartChat, onFriendAdded, onFriendDeleted }) {
   const { user: currentUser } = useAuth();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -18,10 +18,13 @@ export default function UserProfile({ userId, onClose, onStartChat, onFriendAdde
 
   useEffect(() => {
     setLoading(true);
+    setAddStep('idle');
+    setErrMsg('');
     axios.get(`/api/users/${userId}`).then(r => {
       setUser(r.data);
       setBlocked(!!r.data.isBlocked);
-      if (r.data.hasPendingRequest) setAddStep('sent');
+      if (r.data.isFriend) setAddStep('idle');
+      else if (r.data.hasPendingRequest) setAddStep('sent');
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [userId]);
@@ -30,11 +33,24 @@ export default function UserProfile({ userId, onClose, onStartChat, onFriendAdde
     setSending(true);
     setErrMsg('');
     try {
-      await axios.post('/api/users/friend-request', { toId: userId, message: verifyMsg.trim() || '我是 ' + (user?.username || '') });
-      setAddStep('sent');
-      onFriendAdded?.();
+      const { data } = await axios.post('/api/users/friend-request', { toId: userId, message: verifyMsg.trim() || '我是 ' + (user?.username || '') });
+      if (data.autoAccepted) {
+        // 对方免验证，直接成为好友
+        setUser(u => ({ ...u, isFriend: true }));
+        onFriendAdded?.();
+      } else {
+        setAddStep('sent');
+        onFriendAdded?.();
+      }
     } catch (err) {
-      setErrMsg(err.response?.data?.error || '发送失败，请重试');
+      const msg = err.response?.data?.error || '发送失败，请重试';
+      setErrMsg(msg);
+      // 若服务端说已是好友或请求已存在，同步本地状态
+      if (msg === '已是好友') {
+        setUser(u => u ? { ...u, isFriend: true } : u);
+      } else if (msg === '请求已发送') {
+        setAddStep('sent');
+      }
     }
     setSending(false);
   };
@@ -56,9 +72,14 @@ export default function UserProfile({ userId, onClose, onStartChat, onFriendAdde
 
   const deleteFriend = async () => {
     if (!confirm(`确认删除好友「${user.remark || user.username}」？`)) return;
-    await axios.delete(`/api/users/contacts/${userId}`);
-    onFriendAdded?.();
-    onClose();
+    try {
+      await axios.delete(`/api/users/contacts/${userId}`);
+      onFriendAdded?.();
+      onFriendDeleted?.();
+      onClose();
+    } catch {
+      onClose();
+    }
   };
 
   const toggleBlock = async () => {

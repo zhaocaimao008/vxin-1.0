@@ -9,7 +9,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
-  const { login, accounts, switchAccount, removeAccount, maxAccounts } = useAuth();
+  const { login, accounts, removeAccount, maxAccounts } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -17,7 +17,7 @@ export default function Login() {
     setError(''); setLoading(true);
     try {
       const { data } = await axios.post('/api/auth/login', { phone, password });
-      login(data.token, data.user);
+      login(data.user);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.error || '登录失败');
@@ -47,11 +47,11 @@ export default function Login() {
           <p className="auth-brand-desc">企业级安全通讯平台</p>
         </div>
 
-        {/* 账号切换 */}
+        {/* 最近登录：点击填入手机号，仍需手动输入密码 */}
         {accounts.length > 0 && (
           <div className="auth-accounts">
             <div className="auth-accounts-header">
-              <span className="auth-accounts-title">已保存账号</span>
+              <span className="auth-accounts-title">最近登录</span>
               <span className="auth-accounts-count">{accounts.length}/{maxAccounts}</span>
             </div>
             {accounts.map(account => (
@@ -59,7 +59,8 @@ export default function Login() {
                 <button
                   type="button"
                   className="auth-account-btn"
-                  onClick={() => { if (switchAccount(account.id)) navigate('/'); }}
+                  onClick={() => setPhone(account.user?.phone || '')}
+                  title="填入手机号"
                 >
                   <div className="auth-account-avatar">
                     {(account.user?.username || '?')[0].toUpperCase()}
@@ -73,7 +74,7 @@ export default function Login() {
                   type="button"
                   className="auth-account-remove"
                   onClick={() => removeAccount(account.id)}
-                  title="移除账号"
+                  title="移除记录"
                 >✕</button>
               </div>
             ))}

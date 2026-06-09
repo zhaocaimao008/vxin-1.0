@@ -285,22 +285,22 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
 
   /* ── section 样式 ── */
   const S = {
-    panel: { width: 286, borderLeft: '1px solid #D8D8D8', background: '#EFEFEF', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 },
-    header: { padding: '0 14px', height: 52, background: '#F5F5F5', borderBottom: '1px solid #E0E0E0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 },
-    section: { background: '#fff', marginBottom: 8, borderRadius: 0 },
-    sectionHeader: { padding: '7px 14px 5px', fontSize: 11, fontWeight: 600, color: '#8A8A8A', letterSpacing: '.4px', textTransform: 'uppercase' },
-    row: { display: 'flex', alignItems: 'center', padding: '11px 14px', borderBottom: '1px solid #F0F0F0', gap: 10 },
-    rowLast: { display: 'flex', alignItems: 'center', padding: '11px 14px', gap: 10 },
-    rowLabel: { flex: 1, fontSize: 14, color: '#191919', lineHeight: 1.4 },
-    rowSub: { fontSize: 11.5, color: '#999', marginTop: 2, lineHeight: 1.4 },
-    closeBtn: { width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8A8A8A', fontSize: 14, cursor: 'pointer', borderRadius: 4, transition: 'background .12s' },
+    panel:       { width: 286, borderLeft: '1px solid var(--border-color)', background: 'var(--bg-panel)', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 },
+    header:      { padding: '0 14px', height: 52, background: 'var(--bg-panel)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 },
+    section:     { background: 'var(--bg-msg-other)', marginBottom: 8, borderRadius: 0 },
+    sectionHeader: { padding: '7px 14px 5px', fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '.4px', textTransform: 'uppercase' },
+    row:         { display: 'flex', alignItems: 'center', padding: '11px 14px', borderBottom: '1px solid var(--border-color)', gap: 10 },
+    rowLast:     { display: 'flex', alignItems: 'center', padding: '11px 14px', gap: 10 },
+    rowLabel:    { flex: 1, fontSize: 14, color: 'var(--text-primary)', lineHeight: 1.4 },
+    rowSub:      { fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: 2, lineHeight: 1.4 },
+    closeBtn:    { width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)', fontSize: 14, cursor: 'pointer', borderRadius: 4, transition: 'background .12s' },
   };
 
   if (loading) return (
     <div style={{ ...S.panel, alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-        <div style={{ width: 24, height: 24, border: '2px solid #E0E0E0', borderTopColor: '#07C160', borderRadius: '50%', animation: 'wc-spin .7s linear infinite' }} />
-        <span style={{ color: '#B2B2B2', fontSize: 12 }}>加载中…</span>
+        <div style={{ width: 24, height: 24, border: '2px solid var(--border-color)', borderTopColor: '#07C160', borderRadius: '50%', animation: 'wc-spin .7s linear infinite' }} />
+        <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>加载中…</span>
       </div>
     </div>
   );
@@ -310,7 +310,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
     <div style={S.panel}>
       {/* 顶部栏 */}
       <div style={S.header}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: '#191919', letterSpacing: '.2px' }}>群聊信息</span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '.2px' }}>群聊信息</span>
         <button
           style={S.closeBtn}
           onClick={onClose}
@@ -322,7 +322,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
       <div style={{ flex: 1, overflowY: 'auto' }}>
 
         {/* 群名称 + 头像 */}
-        <div style={{ background: '#fff', padding: '16px 14px 14px', display: 'flex', gap: 13, alignItems: 'center', marginBottom: 8, borderBottom: '1px solid #E8E8E8' }}>
+        <div style={{ background: 'var(--bg-msg-other)', padding: '16px 14px 14px', display: 'flex', gap: 13, alignItems: 'center', marginBottom: 8, borderBottom: '1px solid var(--border-color)' }}>
           <GroupAvatarUpload
             info={info}
             isAdmin={isAdmin}
@@ -335,18 +335,21 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
             {editName ? (
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <input value={nameVal} onChange={e => setNameVal(e.target.value)}
-                  style={{ flex: 1, fontSize: 14, border: '1px solid #07C160', borderRadius: 5, padding: '4px 8px', outline: 'none', color: '#191919' }}
+                  style={{ flex: 1, fontSize: 14, border: '1px solid #07C160', borderRadius: 5, padding: '4px 8px', outline: 'none', color: 'var(--text-primary)', background: 'var(--bg-input)' }}
                   autoFocus onKeyDown={e => e.key === 'Enter' && saveName()} />
                 <button style={{ color: '#07C160', fontSize: 12, fontWeight: 500 }} onClick={saveName}>保存</button>
-                <button style={{ color: '#999', fontSize: 12 }} onClick={() => setEditName(false)}>取消</button>
+                <button style={{ color: 'var(--text-tertiary)', fontSize: 12 }} onClick={() => setEditName(false)}>取消</button>
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ fontSize: 15, fontWeight: 600, color: '#191919', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{info.name}</span>
-                {isAdmin && <button style={{ color: '#C7C7CC', fontSize: 13, flexShrink: 0, padding: '0 2px' }} onClick={() => setEditName(true)}>✎</button>}
+                <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{info.name}</span>
+                {isAdmin && <button style={{ color: 'var(--text-tertiary)', fontSize: 13, flexShrink: 0, padding: '0 2px' }} onClick={() => setEditName(true)}>✎</button>}
               </div>
             )}
-            <div style={{ fontSize: 12, color: '#999', marginTop: 3 }}>{info.members.length} 位成员</div>
+            <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 3 }}>
+              {info.members.length} 位成员
+              {info.group_number && <span style={{ marginLeft: 8 }}>群号：{info.group_number}</span>}
+            </div>
           </div>
         </div>
 
@@ -357,7 +360,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
               <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, fill: '#FA8C16', flexShrink: 0 }}>
                 <path d="M18 11v2H6v-2h12zm-6-7L6.35 7H4v10h2.35L12 20l5.65-3H20V7h-2.35L12 4zm4 13.02l-4 2.26-4-2.26V9h8v8.02z"/>
               </svg>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#555', letterSpacing: '.2px' }}>群公告</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '.2px' }}>群公告</span>
             </div>
             {isAdmin && !editAnn && (
               <button style={{ fontSize: 12, color: '#07C160', fontWeight: 500 }} onClick={() => setEditAnn(true)}>编辑</button>
@@ -366,15 +369,15 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
           {editAnn ? (
             <>
               <textarea value={annVal} onChange={e => setAnnVal(e.target.value)}
-                style={{ width: '100%', height: 72, border: '1px solid #E5E5E5', borderRadius: 5, padding: '7px 10px', fontSize: 13, resize: 'none', outline: 'none', color: '#191919', lineHeight: 1.6 }}
+                style={{ width: '100%', height: 72, border: '1px solid var(--border-color)', borderRadius: 5, padding: '7px 10px', fontSize: 13, resize: 'none', outline: 'none', color: 'var(--text-primary)', background: 'var(--bg-input)', lineHeight: 1.6 }}
                 autoFocus placeholder="填写群公告…" />
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                <button style={{ flex: 1, padding: '7px', background: '#F5F5F5', borderRadius: 5, fontSize: 13, color: '#555' }} onClick={() => setEditAnn(false)}>取消</button>
+                <button style={{ flex: 1, padding: '7px', background: 'var(--bg-search)', borderRadius: 5, fontSize: 13, color: 'var(--text-secondary)' }} onClick={() => setEditAnn(false)}>取消</button>
                 <button style={{ flex: 1, padding: '7px', background: '#07C160', color: '#fff', borderRadius: 5, fontSize: 13, fontWeight: 500 }} onClick={saveAnn}>保存</button>
               </div>
             </>
           ) : (
-            <div style={{ fontSize: 13, color: info.announcement ? '#333' : '#C0C0C0', lineHeight: 1.65, maxHeight: 70, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: 13, color: info.announcement ? 'var(--text-primary)' : 'var(--text-tertiary)', lineHeight: 1.65, maxHeight: 70, overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {info.announcement || '暂无群公告，点击"编辑"添加'}
             </div>
           )}
@@ -393,7 +396,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
                 </svg>
               </div>
               <div style={{ flex: 1 }}>
-                <span style={{ fontSize: 14, color: '#191919', fontWeight: 500 }}>群管理</span>
+                <span style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 500 }}>群管理</span>
                 {(info.mute_all || info.no_private_chat || info.no_add_friend) && (
                   <div style={{ fontSize: 11, color: '#FA8C16', marginTop: 1 }}>
                     {[info.mute_all && '全员禁言', info.no_private_chat && '禁止私聊', info.no_add_friend && '禁止互加好友'].filter(Boolean).join(' · ')}
@@ -406,27 +409,27 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
             </div>
 
             {showManage && (
-              <div style={{ background: '#FAFAFA', borderTop: '1px solid #EFEFEF' }}>
+              <div style={{ background: 'var(--bg-search)', borderTop: '1px solid var(--border-color)' }}>
                 {/* 全员禁言 */}
-                <div style={{ display: 'flex', alignItems: 'center', padding: '12px 14px', borderBottom: '1px solid #F0F0F0', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', padding: '12px 14px', borderBottom: '1px solid var(--border-color)', gap: 10 }}>
                   <div style={{ width: 26, height: 26, borderRadius: 5, background: '#FFF0E0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, fill: '#FA8C16' }}><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, color: '#191919' }}>全员禁言</div>
-                    <div style={{ fontSize: 11.5, color: '#999', marginTop: 1 }}>开启后，只有群主和管理员可以发消息</div>
+                    <div style={{ fontSize: 14, color: 'var(--text-primary)' }}>全员禁言</div>
+                    <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: 1 }}>开启后，只有群主和管理员可以发消息</div>
                   </div>
                   <Toggle on={!!info.mute_all} onChange={toggleMuteAll} disabled={togglingMute} />
                 </div>
 
                 {/* 禁止私聊 */}
-                <div style={{ display: 'flex', alignItems: 'center', padding: '12px 14px', borderBottom: '1px solid #F0F0F0', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', padding: '12px 14px', borderBottom: '1px solid var(--border-color)', gap: 10 }}>
                   <div style={{ width: 26, height: 26, borderRadius: 5, background: '#E8F5E9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, fill: '#07C160' }}><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, color: '#191919' }}>禁止私聊</div>
-                    <div style={{ fontSize: 11.5, color: '#999', marginTop: 1 }}>开启后，普通成员无法与群成员私信</div>
+                    <div style={{ fontSize: 14, color: 'var(--text-primary)' }}>禁止私聊</div>
+                    <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: 1 }}>开启后，普通成员无法与群成员私信</div>
                   </div>
                   <Toggle on={!!info.no_private_chat} onChange={toggleNoPrivateChat} disabled={togglingNoPrivate} />
                 </div>
@@ -437,8 +440,8 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
                     <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, fill: '#FA5151' }}><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, color: '#191919' }}>禁止群成员互相添加好友</div>
-                    <div style={{ fontSize: 11.5, color: '#999', marginTop: 1 }}>开启后，群成员不可通过本群互加好友</div>
+                    <div style={{ fontSize: 14, color: 'var(--text-primary)' }}>禁止群成员互相添加好友</div>
+                    <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: 1 }}>开启后，群成员不可通过本群互加好友</div>
                   </div>
                   <Toggle on={!!info.no_add_friend} onChange={toggleNoAddFriend} disabled={togglingNoAddFriend} />
                 </div>
@@ -474,23 +477,23 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
         {/* 群成员列表 */}
         <div style={{ ...S.section, marginBottom: 8 }}>
           {/* 标题行 + 搜索框 */}
-          <div style={{ padding: '9px 14px 0', borderBottom: '1px solid #F5F5F5' }}>
+          <div style={{ padding: '9px 14px 0', borderBottom: '1px solid var(--border-color)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#888', letterSpacing: '.3px' }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '.3px' }}>
                 群成员 ({info.members.length})
               </span>
             </div>
             {/* 仅管理员显示搜索框（用于快速找人踢出） */}
             {isAdmin && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#F0F0F0', borderRadius: 5, padding: '4px 8px', marginBottom: 8 }}>
-                <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, fill: '#ADADAD', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'var(--bg-search)', borderRadius: 5, padding: '4px 8px', marginBottom: 8 }}>
+                <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, fill: 'var(--text-tertiary)', flexShrink: 0 }}>
                   <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
                 </svg>
                 <input
                   value={kickSearch}
                   onChange={e => setKickSearch(e.target.value)}
                   placeholder="搜索成员…"
-                  style={{ flex: 1, fontSize: 12, background: 'transparent', color: '#333' }}
+                  style={{ flex: 1, fontSize: 12, background: 'transparent', color: 'var(--text-primary)' }}
                 />
                 {kickSearch && (
                   <button style={{ color: '#ADADAD', fontSize: 13, lineHeight: 1 }} onClick={() => setKickSearch('')}>✕</button>
@@ -561,7 +564,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
 
         {/* 个人设置 */}
         <div style={{ ...S.section, marginBottom: 8 }}>
-          <div style={{ ...S.row, borderBottom: '1px solid #F5F5F5' }}>
+          <div style={{ ...S.row, borderBottom: '1px solid var(--border-color)' }}>
             <span style={S.rowLabel}>消息免打扰</span>
             <Toggle
               on={myMuted}
@@ -596,8 +599,8 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
         </div>
 
         {/* 群昵称 */}
-        <div style={{ background: '#fff', marginBottom: 8 }}>
-          <div style={{ padding: '0 14px', fontSize: 11, color: '#888', lineHeight: '32px', borderBottom: '1px solid #F5F5F5' }}>我在本群的昵称</div>
+        <div style={{ background: 'var(--bg-msg-other)', marginBottom: 8 }}>
+          <div style={{ padding: '0 14px', fontSize: 11, color: 'var(--text-tertiary)', lineHeight: '32px', borderBottom: '1px solid var(--border-color)' }}>我在本群的昵称</div>
           <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
             {editNickname ? (
               <>
@@ -607,29 +610,29 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
                   onChange={e => setNicknameVal(e.target.value)}
                   placeholder="设置群昵称（最多30字）"
                   maxLength={30}
-                  style={{ flex: 1, fontSize: 14, padding: '6px 10px', border: '1px solid #E5E5E5', borderRadius: 5 }}
+                  style={{ flex: 1, fontSize: 14, padding: '6px 10px', border: '1px solid var(--border-color)', borderRadius: 5, background: 'var(--bg-input)', color: 'var(--text-primary)' }}
                   onKeyDown={e => { if (e.key === 'Enter') saveNickname(); if (e.key === 'Escape') setEditNickname(false); }}
                 />
                 <button style={{ color: '#07C160', fontSize: 13 }} onClick={saveNickname}>保存</button>
-                <button style={{ color: '#888', fontSize: 13 }} onClick={() => setEditNickname(false)}>取消</button>
+                <button style={{ color: 'var(--text-tertiary)', fontSize: 13 }} onClick={() => setEditNickname(false)}>取消</button>
               </>
             ) : (
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => { setNicknameVal(myNickname || ''); setEditNickname(true); }}>
-                <span style={{ fontSize: 14, color: myNickname ? '#191919' : '#B2B2B2' }}>{myNickname || '未设置'}</span>
-                <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, fill: '#C7C7CC' }}><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                <span style={{ fontSize: 14, color: myNickname ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>{myNickname || '未设置'}</span>
+                <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, fill: 'var(--text-tertiary)' }}><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
               </div>
             )}
           </div>
         </div>
 
         {/* 群二维码 */}
-        <div style={{ background: '#fff', marginBottom: 8 }}>
+        <div style={{ background: 'var(--bg-msg-other)', marginBottom: 8 }}>
           <div
             style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
             onClick={loadQR}
           >
-            <span style={{ fontSize: 14, color: '#191919' }}>群二维码</span>
-            <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, fill: '#C7C7CC' }}><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+            <span style={{ fontSize: 14, color: 'var(--text-primary)' }}>群二维码</span>
+            <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, fill: 'var(--text-tertiary)' }}><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
           </div>
         </div>
 
@@ -637,17 +640,17 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
         <div style={{ padding: '0 12px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <button
             onClick={clearMessages}
-            style={{ width: '100%', padding: '11px', background: '#fff', color: '#FA5151', borderRadius: 7, fontSize: 14, fontWeight: 500, border: '1px solid rgba(250,81,81,.2)', cursor: 'pointer', transition: 'background .12s' }}
-            onMouseEnter={e => e.currentTarget.style.background = '#FFF5F5'}
-            onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+            style={{ width: '100%', padding: '11px', background: 'var(--bg-msg-other)', color: '#FA5151', borderRadius: 7, fontSize: 14, fontWeight: 500, border: '1px solid rgba(250,81,81,.2)', cursor: 'pointer', transition: 'background .12s' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-msg-other)'}
           >
             双向删除聊天记录
           </button>
           <button
             onClick={leaveGroup}
-            style={{ width: '100%', padding: '11px', background: '#fff', color: '#FA5151', borderRadius: 7, fontSize: 14, fontWeight: 500, border: '1px solid rgba(250,81,81,.2)', cursor: 'pointer', transition: 'background .12s' }}
-            onMouseEnter={e => e.currentTarget.style.background = '#FFF5F5'}
-            onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+            style={{ width: '100%', padding: '11px', background: 'var(--bg-msg-other)', color: '#FA5151', borderRadius: 7, fontSize: 14, fontWeight: 500, border: '1px solid rgba(250,81,81,.2)', cursor: 'pointer', transition: 'background .12s' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-msg-other)'}
           >
             {isOwner ? '解散群聊' : '退出群聊'}
           </button>

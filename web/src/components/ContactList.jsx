@@ -381,6 +381,7 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
           onClose={() => setViewProfile(null)}
           onStartChat={(conv) => { setViewProfile(null); onStartChat(conv); }}
           onFriendAdded={fetchContacts}
+          onFriendDeleted={() => { setViewProfile(null); fetchContacts(); }}
         />
       )}
     </div>

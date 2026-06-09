@@ -459,6 +459,19 @@ function AccountSwitcher({ user, accounts, login, switchAccount }) {
   );
 }
 
+async function doLogout(logout) {
+  try {
+    const reg = await navigator.serviceWorker?.ready;
+    const sub = await reg?.pushManager?.getSubscription();
+    if (sub) {
+      await axios.delete('/api/notifications/web-subscribe', { data: { endpoint: sub.endpoint } }).catch(() => {});
+      await sub.unsubscribe().catch(() => {});
+    }
+  } catch {}
+  logout();
+  window.location.href = '/login';
+}
+
 /* ── 设置总览页（二级） ── */
 function SettingsPage({ user, setSubPage, logout }) {
   return (
@@ -493,7 +506,7 @@ function SettingsPage({ user, setSubPage, logout }) {
             boxShadow: '0 1px 8px rgba(0,0,0,.06)',
             cursor: 'pointer', transition: 'opacity .15s',
           }}
-          onClick={() => { logout(); window.location.href = '/login'; }}
+          onClick={() => doLogout(logout)}
           onMouseEnter={e => e.currentTarget.style.opacity = '.7'}
           onMouseLeave={e => e.currentTarget.style.opacity = '1'}
         >
@@ -506,150 +519,36 @@ function SettingsPage({ user, setSubPage, logout }) {
 
 /* ── 主页面 ── */
 export default function Profile() {
-  const { user, updateUser, logout, accounts, login, switchAccount } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const [subPage, setSubPage] = useState(null);
-  const [editReturnTo, setEditReturnTo] = useState(null);
-  const [copied, setCopied]   = useState(false);
-  const fileRef = useRef(null);
 
-  const uploadAvatar = async (e) => {
-    const file = e.target.files[0]; if (!file) return;
-    const fd = new FormData(); fd.append('avatar', file);
-    const { data } = await axios.post('/api/users/avatar', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-    updateUser({ avatar: data.avatar });
-    e.target.value = '';
-  };
+  /* ── 子页 ── */
+  if (subPage === 'edit-name')     return <EditName user={user} updateUser={updateUser} onBack={() => setSubPage(null)} />;
+  if (subPage === 'devices')       return <DeviceList onBack={() => setSubPage(null)} />;
+  if (subPage === 'appearance')    return <AppearanceSettings onBack={() => setSubPage(null)} />;
+  if (subPage === 'notifications') return <NotificationSettings onBack={() => setSubPage(null)} />;
+  if (subPage === 'privacy')       return <PrivacySettings user={user} onBack={() => setSubPage(null)} />;
 
-  const copyId = (e) => {
-    e.stopPropagation();
-    if (!user?.wechat_id) return;
-    navigator.clipboard.writeText(user.wechat_id).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    });
-  };
-
-  const goEditName = (returnTo) => { setEditReturnTo(returnTo); setSubPage('edit-name'); };
-
-  /* ── 三级子页 ── */
-  if (subPage === 'edit-name')     return <EditName user={user} updateUser={updateUser} onBack={() => setSubPage(editReturnTo)} />;
-  if (subPage === 'devices')       return <DeviceList onBack={() => setSubPage('settings')} />;
-  if (subPage === 'appearance')    return <AppearanceSettings onBack={() => setSubPage('settings')} />;
-  if (subPage === 'notifications') return <NotificationSettings onBack={() => setSubPage('settings')} />;
-  if (subPage === 'privacy')       return <PrivacySettings user={user} onBack={() => setSubPage('settings')} />;
-
-  /* ── 二级：设置 ── */
-  if (subPage === 'settings') return <SettingsPage user={user} setSubPage={(p) => {
-    if (p === 'edit-name') { goEditName('settings'); }
-    else setSubPage(p);
-  }} logout={logout} />;
-
-  /* ── 一级：我的主页 ── */
+  /* ── 默认：直接显示设置内容 ── */
   return (
-    <div style={{ overflowY: 'auto', height: '100%', background: 'var(--bg-panel)' }}>
-
-      {/* ── Hero ── */}
-      <div style={{
-        background: 'linear-gradient(160deg, #1A2033 0%, #243352 60%, #1e3a5f 100%)',
-        padding: '36px 24px 0',
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
-        position: 'relative', overflow: 'hidden',
-      }}>
-        <div style={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(7,193,96,.18) 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: 20, left: -30, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, rgba(58,132,216,.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
-
-        {/* 头像 */}
-        <div style={{ position: 'relative', cursor: 'pointer', marginBottom: 14, zIndex: 1 }}
-          onClick={e => { e.stopPropagation(); fileRef.current?.click(); }}>
-          <div style={{ width: 88, height: 88, borderRadius: '50%', background: 'rgba(255,255,255,.15)', padding: 3, boxSizing: 'border-box', boxShadow: '0 4px 20px rgba(0,0,0,.3)' }}>
-            <div style={{ borderRadius: '50%', overflow: 'hidden', width: '100%', height: '100%' }}>
-              <Avatar src={user?.avatar} name={user?.username} size={82} />
-            </div>
-          </div>
-          <div style={{ position: 'absolute', bottom: 2, right: 2, width: 26, height: 26, borderRadius: '50%', background: '#07C160', border: '3px solid #1A2033', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(7,193,96,.4)' }}>
-            <svg viewBox="0 0 24 24" style={{ width: 12, height: 12, fill: '#fff' }}>
-              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-            </svg>
-          </div>
-          <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={uploadAvatar} />
-        </div>
-
-        {/* 昵称 */}
-        <div style={{ fontSize: 22, fontWeight: 700, color: '#fff', zIndex: 1, letterSpacing: -.3, marginBottom: user?.bio ? 6 : 18, textShadow: '0 1px 6px rgba(0,0,0,.4)' }}>
-          {user?.username || '未命名'}
-        </div>
-        {user?.bio && (
-          <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,.5)', marginBottom: 18, textAlign: 'center', maxWidth: 210, lineHeight: 1.5, zIndex: 1 }}>
-            {user.bio}
-          </div>
-        )}
-
-        {/* 过渡圆角 */}
-        <div style={{ width: '100%', height: 24, background: 'var(--bg-panel)', borderTopLeftRadius: 24, borderTopRightRadius: 24 }} />
-      </div>
-
-      {/* ── 信息卡 ── */}
-      <div style={{ padding: '0 14px', marginTop: -2 }}>
+    <PageBg>
+      <SLabel>设备与安全</SLabel>
+      <div style={{ padding: '0 14px' }}>
         <Card>
-          {/* 昵称 — 可点击修改 */}
-          <div onClick={() => goEditName(null)} style={{
-            display: 'flex', alignItems: 'center', padding: '15px 16px',
-            borderBottom: '1px solid var(--border-color)', gap: 12,
-            cursor: 'pointer', transition: 'background .12s',
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,.025)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#07C160', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <IcoUser />
-            </div>
-            <span style={{ width: 54, fontSize: 13.5, color: 'var(--text-secondary)', flexShrink: 0 }}>昵称</span>
-            <div style={{ flex: 1, fontSize: 15.5, fontWeight: 600, color: 'var(--text-primary)', textAlign: 'right' }}>
-              {user?.username || '—'}
-            </div>
-            <ChevronRight />
-          </div>
-
-          {/* ID号 */}
-          <div style={{ display: 'flex', alignItems: 'center', padding: '15px 16px', borderBottom: '1px solid var(--border-color)', gap: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#3A84D8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <IcoID />
-            </div>
-            <span style={{ width: 54, fontSize: 13.5, color: 'var(--text-secondary)', flexShrink: 0 }}>ID号</span>
-            <div style={{ flex: 1, fontSize: 14.5, fontWeight: 500, color: 'var(--text-primary)', textAlign: 'right', letterSpacing: .5, fontFamily: 'monospace' }}>
-              {user?.wechat_id || '未分配'}
-            </div>
-            {user?.wechat_id && (
-              <button onClick={copyId} style={{
-                marginLeft: 8, padding: '5px 11px', borderRadius: 8, fontSize: 12, flexShrink: 0,
-                background: copied ? 'rgba(7,193,96,.12)' : 'rgba(58,132,216,.1)',
-                color: copied ? '#07C160' : '#3A84D8',
-                border: `1px solid ${copied ? 'rgba(7,193,96,.3)' : 'rgba(58,132,216,.25)'}`,
-                transition: 'all .2s', cursor: 'pointer',
-              }}>
-                {copied ? '已复制' : '复制'}
-              </button>
-            )}
-          </div>
-
-          {/* 手机号 */}
-          <div style={{ display: 'flex', alignItems: 'center', padding: '15px 16px', gap: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#FF9500', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <IcoPhone />
-            </div>
-            <span style={{ width: 54, fontSize: 13.5, color: 'var(--text-secondary)', flexShrink: 0 }}>手机号</span>
-            <div style={{ flex: 1, fontSize: 15, fontWeight: 500, color: 'var(--text-primary)', textAlign: 'right', letterSpacing: 1 }}>
-              {user?.phone ? user.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1 **** $2') : '—'}
-            </div>
-          </div>
+          <CRow icon={<IcoDesktop />} bg="#AF52DE" label="设备管理" desc="查看同时登录的设备" onClick={() => setSubPage('devices')} />
+          <CRow icon={<IcoShield />}  bg="#636366" label="隐私与安全" desc="添加方式和好友权限" onClick={() => setSubPage('privacy')} last />
         </Card>
       </div>
 
-      {/* ── 设置 & 退出 ── */}
-      <div style={{ padding: '14px 14px 36px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <SLabel>偏好设置</SLabel>
+      <div style={{ padding: '0 14px' }}>
         <Card>
-          <CRow icon={<IcoGear />} bg="#8E8E93" label="设置" desc="账号信息、外观、隐私安全等" onClick={() => setSubPage('settings')} last />
+          <CRow icon={<IcoMoon />} bg="#5856D6" label="外观"  desc="日间和夜间模式"   onClick={() => setSubPage('appearance')} />
+          <CRow icon={<IcoBell />} bg="#FF3B30" label="通知"  desc="锁屏通知和声音"   onClick={() => setSubPage('notifications')} last />
         </Card>
+      </div>
 
+      <div style={{ padding: '20px 14px 32px' }}>
         <button
           style={{
             width: '100%', padding: '15px 0', borderRadius: 14,
@@ -658,13 +557,13 @@ export default function Profile() {
             boxShadow: '0 1px 8px rgba(0,0,0,.06)',
             cursor: 'pointer', transition: 'opacity .15s',
           }}
-          onClick={() => { logout(); window.location.href = '/login'; }}
+          onClick={() => doLogout(logout)}
           onMouseEnter={e => e.currentTarget.style.opacity = '.7'}
           onMouseLeave={e => e.currentTarget.style.opacity = '1'}
         >
           退出登录
         </button>
       </div>
-    </div>
+    </PageBg>
   );
 }

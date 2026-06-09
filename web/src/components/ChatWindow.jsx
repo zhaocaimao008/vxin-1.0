@@ -87,8 +87,22 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   const recorderRef = useRef(null);
   const streamRef = useRef(null);
   const textareaRef = useRef(null);
+  const inputAreaRef = useRef(null);
   const { socket, reconnectCount, disconnectAtRef, registerDelivered } = useSocket();
   const { user } = useAuth();
+
+  // ── 点击输入区外部关闭 emoji / more 面板 ────────────────────
+  useEffect(() => {
+    if (!showEmoji && !showMore) return;
+    const handler = (e) => {
+      if (inputAreaRef.current && !inputAreaRef.current.contains(e.target)) {
+        setShowEmoji(false);
+        setShowMore(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showEmoji, showMore]);
 
   // ── 手机软键盘弹起：viewport 缩小时滚动置底 ─────────────────
   useEffect(() => {
@@ -150,9 +164,11 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   }, [socket, conversation.otherUser?.id]);
 
   // 组件卸载（关闭会话/切换会话）时标记已读
-  const convIdRef = useRef(conversation.id);
+  const convIdRef   = useRef(conversation.id);
+  const convTypeRef = useRef(conversation.type);
   const messagesRef = useRef([]);
-  useEffect(() => { convIdRef.current = conversation.id; }, [conversation.id]);
+  useEffect(() => { convIdRef.current   = conversation.id;   }, [conversation.id]);
+  useEffect(() => { convTypeRef.current = conversation.type; }, [conversation.type]);
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => {
     const sendRead = () => {
@@ -285,11 +301,11 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     return () => window.removeEventListener('vxin:remark-changed', handler);
   }, [conversation.type, conversation.otherUser?.id]);
 
-  // Scroll to bottom when new messages come in
+  // 发送/收到消息时若已接近底部则自动跟随（阈值 400px 避免平滑动画期间误判）
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
-    const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+    const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 400;
     if (isAtBottom) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -318,8 +334,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   useEffect(() => {
     if (!socket) return;
     const onMsg = (msg) => {
-      if (msg.conversation_id !== conversation.id) return;
-      // ack 回调已把 tempId 消息替换为真实消息，跳过广播的重复项
+      if (msg.conversation_id !== convIdRef.current) return;
       if (confirmedMsgIds.current.has(msg.id)) {
         confirmedMsgIds.current.delete(msg.id);
         return;
@@ -328,15 +343,16 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         if (prev.find(m => m.id === msg.id)) return prev;
         return [...prev, msg];
       });
-      axios.post(`/api/messages/conversation/${conversation.id}/read`).catch(() => {});
+      axios.post(`/api/messages/conversation/${convIdRef.current}/read`).catch(() => {});
+      // 收到新消息后始终滚到底部（等 React 渲染完再滚）
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     };
     const onTyping = ({ userId, conversationId }) => {
-      if (conversationId !== conversation.id || userId === user.id) return;
-      const m = messages.find(m => m.sender_id === userId);
-      setTypingName(m?.senderName || '对方');
+      if (conversationId !== convIdRef.current || userId === user.id) return;
+      setTypingName(messagesRef.current.find(m => m.sender_id === userId)?.senderName || '对方');
     };
     const onStopTyping = ({ conversationId }) => {
-      if (conversationId === conversation.id) setTypingName('');
+      if (conversationId === convIdRef.current) setTypingName('');
     };
     const onDeleted = ({ msgId }) => {
       setMessages(prev => {
@@ -348,7 +364,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       });
     };
     const onCleared = ({ conversationId }) => {
-      if (conversationId !== conversation.id) return;
+      if (conversationId !== convIdRef.current) return;
       setMessages([]);
       setPinnedMessages([]);
     };
@@ -359,8 +375,8 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       setMessages(prev => prev.map(m => m.id === msgId ? { ...m, reactions } : m));
     };
     const onRead = ({ userId: uid, conversationId, readAt }) => {
-      if (conversationId !== conversation.id || uid === user.id) return;
-      if (conversation.type === 'private') {
+      if (conversationId !== convIdRef.current || uid === user.id) return;
+      if (convTypeRef.current === 'private') {
         setMessages(prev => {
           const copy = [...prev];
           for (let i = copy.length - 1; i >= 0; i--) {
@@ -369,7 +385,6 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
           return copy;
         });
       } else {
-        // 群聊：重新计算已读数（简单做法：增加每条<=readAt的消息readCount）
         setMessages(prev => prev.map(m =>
           m.sender_id !== uid && m.created_at <= readAt
             ? { ...m, readCount: (m.readCount || 0) + 1 }
@@ -377,54 +392,48 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         ));
       }
     };
-    const onRedPacketClaimed = ({ packetId }) => {
-      // 刷新当前展示的红包详情
-      setShowRedPacketDetail(prev => prev); // removed
-    };
     const onGroupUpdated = ({ id, name, avatar, announcement }) => {
-      if (id === conversation.id) {
-        setConversation(prev => ({
-          ...prev,
-          ...(name ? { name } : {}),
-          ...(avatar !== undefined ? { avatar } : {}),
-          ...(announcement !== undefined ? { announcement } : {}),
-        }));
-        axios.get(`/api/messages/conversation/${conversation.id}/info`).then(r => {
-          setMembers(r.data.members || []);
-          setMyGroupRole(r.data.myRole || 'member');
-          setGroupSettings({ mute_all: r.data.mute_all || 0, no_private_chat: r.data.no_private_chat || 0, no_add_friend: r.data.no_add_friend || 0 });
-        }).catch(() => {});
-      }
+      if (id !== convIdRef.current) return;
+      setConversation(prev => ({
+        ...prev,
+        ...(name ? { name } : {}),
+        ...(avatar !== undefined ? { avatar } : {}),
+        ...(announcement !== undefined ? { announcement } : {}),
+      }));
+      axios.get(`/api/messages/conversation/${convIdRef.current}/info`).then(r => {
+        setMembers(r.data.members || []);
+        setMyGroupRole(r.data.myRole || 'member');
+        setGroupSettings({ mute_all: r.data.mute_all || 0, no_private_chat: r.data.no_private_chat || 0, no_add_friend: r.data.no_add_friend || 0 });
+      }).catch(() => {});
     };
     const onPinned = (data) => {
-      if (data.convId !== conversation.id) return;
+      if (data.convId !== convIdRef.current) return;
       setPinnedMessages(prev => {
         if (prev.find(p => p.msgId === data.msgId)) return prev;
         return [{ msgId: data.msgId, content: data.content, type: data.type, pinnedByName: data.pinnedBy }, ...prev];
       });
     };
     const onUnpinned = ({ msgId, convId }) => {
-      if (convId !== conversation.id) return;
+      if (convId !== convIdRef.current) return;
       setPinnedMessages(prev => prev.filter(p => p.msgId !== msgId));
     };
     const onGroupSettingsUpdated = (data) => {
-      if (data.id === conversation.id) {
-        setGroupSettings(prev => ({ ...prev, mute_all: data.mute_all ?? prev.mute_all, no_private_chat: data.no_private_chat ?? prev.no_private_chat, no_add_friend: data.no_add_friend ?? prev.no_add_friend }));
-      }
+      if (data.id !== convIdRef.current) return;
+      setGroupSettings(prev => ({ ...prev, mute_all: data.mute_all ?? prev.mute_all, no_private_chat: data.no_private_chat ?? prev.no_private_chat, no_add_friend: data.no_add_friend ?? prev.no_add_friend }));
     };
     const onGroupKicked = ({ conversationId }) => {
-      if (conversationId === conversation.id) onClose?.();
+      if (conversationId === convIdRef.current) onClose?.();
     };
     const onGroupDismissed = ({ conversationId }) => {
-      if (conversationId === conversation.id) { alert('群聊已解散'); onClose?.(); }
+      if (conversationId === convIdRef.current) { alert('群聊已解散'); onClose?.(); }
     };
     // 送达回执：发送方收到，标记私聊消息为"已送达"
     const onDelivered = ({ messageId, messages: items }) => {
-      if (conversation.type !== 'private') return;
+      if (convTypeRef.current !== 'private') return;
       if (messageId) {
         setMessages(prev => prev.map(m => m.id === messageId ? { ...m, _delivered: true } : m));
       } else if (items?.length) {
-        const idSet = new Set(items.filter(i => i.conversationId === conversation.id).map(i => i.messageId));
+        const idSet = new Set(items.filter(i => i.conversationId === convIdRef.current).map(i => i.messageId));
         if (idSet.size > 0) {
           setMessages(prev => prev.map(m => idSet.has(m.id) ? { ...m, _delivered: true } : m));
         }
@@ -1326,6 +1335,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
           userId={showUserProfile}
           onClose={() => setShowUserProfile(null)}
           onStartChat={() => setShowUserProfile(null)}
+          onFriendDeleted={() => { setShowUserProfile(null); onClose?.(); }}
         />
       )}
 
@@ -1420,7 +1430,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         </div>
       ) : (
       /* ── Input area ── */
-      <div className="wc-input-area">
+      <div className="wc-input-area" ref={inputAreaRef}>
         {/* Toolbar */}
         <div className="wc-input-toolbar">
           <button
@@ -1774,22 +1784,22 @@ function PrivateChatSettings({ conversation, onClose, onConvUpdate, onCleared })
   };
 
   const S = {
-    panel: { width: 240, borderLeft: '1px solid #E0E0E0', background: '#F5F5F5', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 },
-    header: { padding: '0 14px', height: 52, background: '#EDEDED', borderBottom: '1px solid #E0E0E0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 },
-    section: { background: '#fff', marginBottom: 8 },
-    row: { display: 'flex', alignItems: 'center', padding: '12px 14px', borderBottom: '1px solid #F5F5F5', gap: 10 },
-    rowLabel: { flex: 1, fontSize: 14, color: '#191919' },
+    panel: { width: 240, borderLeft: '1px solid var(--border-color)', background: 'var(--bg-panel)', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 },
+    header: { padding: '0 14px', height: 52, background: 'var(--bg-panel)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 },
+    section: { background: 'var(--bg-msg-other)', marginBottom: 8 },
+    row: { display: 'flex', alignItems: 'center', padding: '12px 14px', borderBottom: '1px solid var(--border-color)', gap: 10 },
+    rowLabel: { flex: 1, fontSize: 14, color: 'var(--text-primary)' },
   };
 
   return (
     <div style={S.panel}>
       <div style={S.header}>
-        <span style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>聊天设置</span>
-        <button style={{ color: '#888', fontSize: 16, cursor: 'pointer', lineHeight: 1, padding: 2 }} onClick={onClose}>✕</button>
+        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>聊天设置</span>
+        <button style={{ color: 'var(--text-tertiary)', fontSize: 16, cursor: 'pointer', lineHeight: 1, padding: 2 }} onClick={onClose}>✕</button>
       </div>
       <div style={{ flex: 1, overflowY: 'auto' }}>
         <div style={{ ...S.section, marginTop: 8 }}>
-          <div style={{ ...S.row, borderBottom: '1px solid #F5F5F5' }}>
+          <div style={{ ...S.row, borderBottom: '1px solid var(--border-color)' }}>
             <span style={S.rowLabel}>消息免打扰</span>
             <div onClick={() => !saving && toggleMute(!muted)} style={{ width: 44, height: 26, borderRadius: 13, background: muted ? '#07C160' : '#D8D8D8', position: 'relative', cursor: saving ? 'not-allowed' : 'pointer', transition: 'background 0.2s', opacity: saving ? 0.5 : 1, flexShrink: 0 }}>
               <div style={{ position: 'absolute', top: 3, left: muted ? 21 : 3, width: 20, height: 20, borderRadius: 10, background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.25)', transition: 'left 0.18s' }} />
@@ -1805,7 +1815,7 @@ function PrivateChatSettings({ conversation, onClose, onConvUpdate, onCleared })
         <button
           onClick={clearMessages}
           disabled={saving}
-          style={{ display: 'block', width: 'calc(100% - 24px)', margin: '0 12px 20px', padding: '11px', background: '#fff', color: '#FA5151', borderRadius: 6, fontSize: 14, fontWeight: 500, border: '1px solid rgba(250,81,81,.25)', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}
+          style={{ display: 'block', width: 'calc(100% - 24px)', margin: '0 12px 20px', padding: '11px', background: 'var(--bg-msg-other)', color: '#FA5151', borderRadius: 6, fontSize: 14, fontWeight: 500, border: '1px solid rgba(250,81,81,.25)', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}
         >
           双向删除聊天记录
         </button>

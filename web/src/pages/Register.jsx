@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Register() {
-  const [form, setForm] = useState({ username: '', phone: '', password: '' });
+  const [form, setForm] = useState({ username: '', phone: '', password: '', inviteCode: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
@@ -16,7 +16,7 @@ export default function Register() {
     setError(''); setLoading(true);
     try {
       const { data } = await axios.post('/api/auth/register', form);
-      login(data.token, data.user);
+      login(data.user);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.error || '注册失败');
@@ -39,6 +39,11 @@ export default function Register() {
       <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
         <rect x="3" y="9" width="14" height="10" rx="2"/>
         <path d="M6 9V6a4 4 0 018 0v3"/>
+      </svg>
+    )},
+    { key: 'inviteCode', label: '邀请码', type: 'text', placeholder: '请输入6位邀请码', maxLength: 6, icon: (
+      <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M10 2l2.4 4.8 5.3.8-3.85 3.75.9 5.3L10 14.1l-4.75 2.55.9-5.3L2.3 7.6l5.3-.8z"/>
       </svg>
     )},
   ];
@@ -72,6 +77,7 @@ export default function Register() {
                   type={f.type}
                   placeholder={f.placeholder}
                   value={form[f.key]}
+                  maxLength={f.maxLength}
                   onChange={e => setForm({...form, [f.key]: e.target.value})}
                   onFocus={() => setFocusedField(f.key)}
                   onBlur={() => setFocusedField(null)}
@@ -90,7 +96,7 @@ export default function Register() {
             </div>
           )}
 
-          <button type="submit" className="auth-submit" disabled={loading || !form.username || !form.phone || !form.password}>
+          <button type="submit" className="auth-submit" disabled={loading || !form.username || !form.phone || !form.password || !form.inviteCode}>
             {loading ? <span className="auth-spinner" /> : '注册'}
           </button>
         </form>
