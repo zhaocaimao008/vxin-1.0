@@ -1,0 +1,9 @@
+node_modules
+.env
+.env.*
+dist-electron/
+*.log
+wechat.db
+*.db
+*.db-shm
+*.db-wal

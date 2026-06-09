@@ -1,0 +1,229 @@
+'use strict';
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
+const config = require('../../config');
+const { db } = require('../../db/connection');
+const { badRequest, notFound, unauthorized } = require('../../utils/http');
+const { purgeConversation } = require('../messages/shared');
+
+// ── 凭证校验（恒定时间比较，防时序侧信道）──────────────────────
+function timingSafeEqual(a, b) {
+  const ba = Buffer.from(a || '', 'utf8');
+  const bb = Buffer.from(b || '', 'utf8');
+  if (ba.length !== bb.length) return false;
+  return crypto.timingSafeEqual(ba, bb);
+}
+
+function verifyCredentials(username, password) {
+  if (!config.admin.username || !config.admin.password) {
+    throw badRequest('后台未配置：请在 .env 设置 ADMIN_USERNAME / ADMIN_PASSWORD');
+  }
+  const okUser = timingSafeEqual(username, config.admin.username);
+  const okPass = timingSafeEqual(password, config.admin.password);
+  if (!okUser || !okPass) throw unauthorized('账号或密码错误');
+  return true;
+}
+
+// ── 数据总览 ────────────────────────────────────────────────────
+function stats(onlineCount) {
+  const dayAgo = Math.floor(Date.now() / 1000) - 86400;
+  const one = sql => db.prepare(sql);
+  return {
+    users:         one('SELECT COUNT(*) n FROM users').get().n,
+    usersBanned:   one('SELECT COUNT(*) n FROM users WHERE banned=1').get().n,
+    usersToday:    one('SELECT COUNT(*) n FROM users WHERE created_at > ?').get(dayAgo).n,
+    online:        onlineCount,
+    messages:      one('SELECT COUNT(*) n FROM messages WHERE deleted=0').get().n,
+    messagesToday: one('SELECT COUNT(*) n FROM messages WHERE deleted=0 AND created_at > ?').get(dayAgo).n,
+    conversations: one("SELECT COUNT(*) n FROM conversations").get().n,
+    groups:        one("SELECT COUNT(*) n FROM conversations WHERE type='group'").get().n,
+    redPackets:    one('SELECT COUNT(*) n FROM red_packets').get().n,
+  };
+}
+
+// ── 用户列表（搜索 + 分页）──────────────────────────────────────
+function listUsers({ q, limit = 30, offset = 0, banned, period, online }) {
+  const lim = Math.min(parseInt(limit) || 30, 100);
+  const off = Math.max(parseInt(offset) || 0, 0);
+  const like = q ? `%${q}%` : null;
+  const truthy = v => v === '1' || v === 1 || v === true;
+
+  const conds = [], args = [];
+  if (q) { conds.push('(u.username LIKE ? OR u.phone LIKE ? OR u.wechat_id LIKE ?)'); args.push(like, like, like); }
+  if (truthy(banned)) conds.push('u.banned=1');
+  if (truthy(online)) conds.push("u.status='online'");
+  if (period === 'today') { conds.push('u.created_at > ?'); args.push(Math.floor(Date.now() / 1000) - 86400); }
+  const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
+
+  const total = db.prepare(`SELECT COUNT(*) n FROM users u ${where}`).get(...args).n;
+  const rows = db.prepare(`
+    SELECT u.id, u.username, u.phone, u.wechat_id, u.avatar, u.bio, u.status, u.banned, u.created_at,
+      (SELECT COUNT(*) FROM contacts WHERE user_id=u.id) AS contactCount,
+      (SELECT COUNT(*) FROM messages WHERE sender_id=u.id AND deleted=0) AS messageCount
+    FROM users u ${where}
+    ORDER BY u.created_at DESC
+    LIMIT ? OFFSET ?
+  `).all(...args, lim, off);
+  return { total, limit: lim, offset: off, users: rows };
+}
+
+function userDetail(id) {
+  const user = db.prepare(`
+    SELECT id, username, phone, wechat_id, avatar, cover_photo, bio, status, banned, created_at
+    FROM users WHERE id=?
+  `).get(id);
+  if (!user) throw notFound('用户不存在');
+  user.contactCount = db.prepare('SELECT COUNT(*) n FROM contacts WHERE user_id=?').get(id).n;
+  user.messageCount = db.prepare('SELECT COUNT(*) n FROM messages WHERE sender_id=? AND deleted=0').get(id).n;
+  user.groupCount   = db.prepare("SELECT COUNT(*) n FROM conversation_members cm JOIN conversations c ON c.id=cm.conversation_id AND c.type='group' WHERE cm.user_id=?").get(id).n;
+  user.sessions     = db.prepare('SELECT device, platform, ip, last_seen FROM user_sessions WHERE user_id=? ORDER BY last_seen DESC').all(id);
+  return user;
+}
+
+// ── 封禁 / 解封 ─────────────────────────────────────────────────
+function setBanned(id, banned) {
+  const user = db.prepare('SELECT id FROM users WHERE id=?').get(id);
+  if (!user) throw notFound('用户不存在');
+  db.prepare('UPDATE users SET banned=? WHERE id=?').run(banned ? 1 : 0, id);
+  return { id, banned: banned ? 1 : 0 };
+}
+
+// ── 重置密码 ────────────────────────────────────────────────────
+async function resetPassword(id, newPassword) {
+  if (!newPassword || newPassword.length < 6) throw badRequest('新密码至少6位');
+  const user = db.prepare('SELECT id FROM users WHERE id=?').get(id);
+  if (!user) throw notFound('用户不存在');
+  const hash = await bcrypt.hash(newPassword, 10);
+  db.prepare('UPDATE users SET password=? WHERE id=?').run(hash, id);
+  // 踢掉该用户所有会话
+  db.prepare('DELETE FROM user_sessions WHERE user_id=?').run(id);
+}
+
+// ── 彻底删除用户（级联清理，含其消息）──────────────────────────
+function deleteUser(id) {
+  const user = db.prepare('SELECT id FROM users WHERE id=?').get(id);
+  if (!user) throw notFound('用户不存在');
+
+  db.transaction(() => {
+    // 该用户发的消息及其衍生数据
+    const msgIds = db.prepare('SELECT id FROM messages WHERE sender_id=?').all(id).map(r => r.id);
+    if (msgIds.length) {
+      const ph = msgIds.map(() => '?').join(',');
+      db.prepare(`DELETE FROM message_reactions WHERE message_id IN (${ph})`).run(...msgIds);
+      db.prepare(`DELETE FROM message_deliveries WHERE message_id IN (${ph})`).run(...msgIds);
+      db.prepare(`DELETE FROM messages_fts WHERE message_id IN (${ph})`).run(...msgIds);
+      db.prepare(`DELETE FROM pinned_messages WHERE message_id IN (${ph})`).run(...msgIds);
+      db.prepare(`DELETE FROM messages WHERE id IN (${ph})`).run(...msgIds);
+    }
+    // 该用户参与/产生的关系数据
+    db.prepare('DELETE FROM message_reactions WHERE user_id=?').run(id);
+    db.prepare('DELETE FROM message_deliveries WHERE user_id=?').run(id);
+    db.prepare('DELETE FROM contacts WHERE user_id=? OR contact_id=?').run(id, id);
+    db.prepare('DELETE FROM friend_requests WHERE from_id=? OR to_id=?').run(id, id);
+    db.prepare('DELETE FROM blocked_users WHERE user_id=? OR blocked_id=?').run(id, id);
+    db.prepare('DELETE FROM conversation_settings WHERE user_id=?').run(id);
+    db.prepare('DELETE FROM conversation_members WHERE user_id=?').run(id);
+    db.prepare('DELETE FROM user_settings WHERE user_id=?').run(id);
+    db.prepare('DELETE FROM user_sessions WHERE user_id=?').run(id);
+    db.prepare('DELETE FROM push_subscriptions WHERE user_id=?').run(id);
+    db.prepare('DELETE FROM device_tokens WHERE user_id=?').run(id);
+    db.prepare('DELETE FROM collections WHERE user_id=?').run(id);
+    db.prepare('DELETE FROM red_packet_claims WHERE user_id=?').run(id);
+    db.prepare('DELETE FROM moments WHERE user_id=?').run(id);
+    // 清理只剩 0 个成员的私聊会话
+    db.prepare(`
+      DELETE FROM conversations WHERE type='private'
+        AND id NOT IN (SELECT DISTINCT conversation_id FROM conversation_members)
+    `).run();
+    db.prepare('DELETE FROM users WHERE id=?').run(id);
+  })();
+}
+
+// ── 消息监控（今日 / 搜索）──────────────────────────────────────
+function listMessages({ q, period, limit = 30, offset = 0 }) {
+  const lim = Math.min(parseInt(limit) || 30, 100);
+  const off = Math.max(parseInt(offset) || 0, 0);
+  const conds = ['m.deleted=0'], args = [];
+  if (period === 'today') { conds.push('m.created_at > ?'); args.push(Math.floor(Date.now() / 1000) - 86400); }
+  if (q) { conds.push('m.content LIKE ?'); args.push(`%${q}%`); }
+  const where = 'WHERE ' + conds.join(' AND ');
+
+  const total = db.prepare(`SELECT COUNT(*) n FROM messages m ${where}`).get(...args).n;
+  const rows = db.prepare(`
+    SELECT m.id, m.type, m.content, m.created_at, m.conversation_id,
+           u.username AS senderName, c.type AS convType, c.name AS convName
+    FROM messages m
+    JOIN users u ON u.id = m.sender_id
+    JOIN conversations c ON c.id = m.conversation_id
+    ${where}
+    ORDER BY m.created_at DESC LIMIT ? OFFSET ?
+  `).all(...args, lim, off);
+  return { total, limit: lim, offset: off, messages: rows };
+}
+
+// ── 群列表 / 详情 / 解散 ────────────────────────────────────────
+function listGroups({ q, limit = 30, offset = 0 }) {
+  const lim = Math.min(parseInt(limit) || 30, 100);
+  const off = Math.max(parseInt(offset) || 0, 0);
+  const like = q ? `%${q}%` : null;
+  const where = q ? "AND (c.name LIKE ? OR c.group_number LIKE ?)" : '';
+  const args = q ? [like, like] : [];
+
+  const total = db.prepare(`SELECT COUNT(*) n FROM conversations c WHERE c.type='group' ${where}`).get(...args).n;
+  const rows = db.prepare(`
+    SELECT c.id, c.name, c.group_number, c.avatar, c.owner_id, c.created_at,
+      ou.username AS ownerName,
+      (SELECT COUNT(*) FROM conversation_members WHERE conversation_id=c.id) AS memberCount,
+      (SELECT COUNT(*) FROM messages WHERE conversation_id=c.id AND deleted=0) AS messageCount
+    FROM conversations c
+    LEFT JOIN users ou ON ou.id = c.owner_id
+    WHERE c.type='group' ${where}
+    ORDER BY c.created_at DESC
+    LIMIT ? OFFSET ?
+  `).all(...args, lim, off);
+  return { total, limit: lim, offset: off, groups: rows };
+}
+
+function groupDetail(id) {
+  const conv = db.prepare("SELECT * FROM conversations WHERE id=? AND type='group'").get(id);
+  if (!conv) throw notFound('群不存在');
+  conv.members = db.prepare(`
+    SELECT u.id, u.username, u.avatar, cm.role, cm.joined_at
+    FROM conversation_members cm JOIN users u ON u.id=cm.user_id
+    WHERE cm.conversation_id=?
+    ORDER BY CASE cm.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END, cm.joined_at
+  `).all(id);
+  return conv;
+}
+
+function dismissGroup(io, id) {
+  const conv = db.prepare("SELECT id FROM conversations WHERE id=? AND type='group'").get(id);
+  if (!conv) throw notFound('群不存在');
+  purgeConversation(id); // 完整级联清理，含消息（修复外键约束 500）
+  if (io) io.to(id).emit('group_dismissed', { conversationId: id });
+}
+
+// ── 邀请码（运行时可改，存 admin_settings，回退 .env）────────────
+function getInviteCode() {
+  const row = db.prepare("SELECT value FROM admin_settings WHERE key='invite_code'").get();
+  return row?.value ?? config.inviteCode;
+}
+function setInviteCode(code) {
+  if (!code || !/^\d{6}$/.test(code)) throw badRequest('邀请码必须是6位数字');
+  db.prepare(`
+    INSERT INTO admin_settings (key, value, updated_at) VALUES ('invite_code', ?, strftime('%s','now'))
+    ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at
+  `).run(code);
+  return code;
+}
+
+// 随机生成并保存一个 6 位数字邀请码
+function generateInviteCode() {
+  return setInviteCode(String(Math.floor(100000 + Math.random() * 900000)));
+}
+
+module.exports = {
+  verifyCredentials, stats, listUsers, userDetail, setBanned, resetPassword,
+  deleteUser, listMessages, listGroups, groupDetail, dismissGroup,
+  getInviteCode, setInviteCode, generateInviteCode,
+};

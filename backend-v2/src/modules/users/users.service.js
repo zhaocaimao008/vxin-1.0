@@ -1,0 +1,126 @@
+'use strict';
+const { db } = require('../../db/connection');
+const { notFound, badRequest } = require('../../utils/http');
+
+// ── 设置序列化 ──────────────────────────────────────────────────
+const settingDefaults = {
+  add_by_vxin_id: 1, add_by_phone: 1, require_verify: 1, profile_visible: 1,
+  block_unknown_messages: 0, message_notify: 1, detail_preview: 1, sound: 1, vibrate: 0,
+};
+const toBool = v => !!Number(v);
+const toIntBool = v => (v ? 1 : 0);
+
+function ensureSettings(userId) {
+  db.prepare('INSERT OR IGNORE INTO user_settings (user_id) VALUES (?)').run(userId);
+  return db.prepare('SELECT * FROM user_settings WHERE user_id=?').get(userId);
+}
+
+function serializeSettings(row) {
+  const s = { ...settingDefaults, ...(row || {}) };
+  return {
+    addByVxinId: toBool(s.add_by_vxin_id), addByPhone: toBool(s.add_by_phone),
+    requireVerify: toBool(s.require_verify), profileVisible: toBool(s.profile_visible),
+    blockUnknownMessages: toBool(s.block_unknown_messages), messageNotify: toBool(s.message_notify),
+    detailPreview: toBool(s.detail_preview), sound: toBool(s.sound), vibrate: toBool(s.vibrate),
+  };
+}
+
+function normalizeSettings(body) {
+  const map = {
+    addByVxinId: 'add_by_vxin_id', addByPhone: 'add_by_phone', requireVerify: 'require_verify',
+    profileVisible: 'profile_visible', blockUnknownMessages: 'block_unknown_messages',
+    messageNotify: 'message_notify', detailPreview: 'detail_preview', sound: 'sound', vibrate: 'vibrate',
+  };
+  const patch = {};
+  for (const [k, dbKey] of Object.entries(map)) {
+    if (body[k] !== undefined) patch[dbKey] = toIntBool(body[k]);
+  }
+  return patch;
+}
+
+function getSettings(userId) {
+  return serializeSettings(ensureSettings(userId));
+}
+
+function updateSettings(userId, body) {
+  ensureSettings(userId);
+  const patch = normalizeSettings(body || {});
+  if (Object.keys(patch).length) {
+    const assignments = Object.keys(patch).map(k => `${k}=?`).join(',');
+    const values = [...Object.values(patch), Math.floor(Date.now() / 1000), userId];
+    db.prepare(`UPDATE user_settings SET ${assignments}, updated_at=? WHERE user_id=?`).run(...values);
+  }
+  return serializeSettings(ensureSettings(userId));
+}
+
+// ── 二维码 payload ──────────────────────────────────────────────
+function qrPayload(userId) {
+  const user = db.prepare('SELECT id,wechat_id FROM users WHERE id=?').get(userId);
+  if (!user) throw notFound('用户不存在');
+  return JSON.stringify({ type: 'vxin-user', id: user.id, vxinId: user.wechat_id });
+}
+
+// ── 搜索 ────────────────────────────────────────────────────────
+// 隐私：不返回 phone 字段（本 session S3 修复保留）
+function search(userId, q) {
+  if (!q) return [];
+  if (q.length > 50) throw badRequest('搜索内容过长');
+  return db.prepare(`
+    SELECT u.id, u.username, u.avatar, u.bio, u.wechat_id
+    FROM users u
+    LEFT JOIN user_settings s ON s.user_id = u.id
+    WHERE u.id != ?
+      AND (
+        u.username LIKE ?
+        OR (u.wechat_id = ? AND COALESCE(s.add_by_vxin_id, 1) = 1)
+        OR (u.phone = ? AND COALESCE(s.add_by_phone, 1) = 1)
+      )
+    LIMIT 20
+  `).all(userId, `%${q}%`, q, q);
+}
+
+// ── 资料 ────────────────────────────────────────────────────────
+function updateProfile(userId, { username, bio }) {
+  if (username) {
+    if (db.prepare('SELECT id FROM users WHERE username=? AND id!=?').get(username, userId))
+      throw badRequest('用户名已被占用');
+    db.prepare('UPDATE users SET username=? WHERE id=?').run(username, userId);
+  }
+  if (bio !== undefined) db.prepare('UPDATE users SET bio=? WHERE id=?').run(bio, userId);
+  return db.prepare('SELECT id,username,phone,avatar,bio,wechat_id,cover_photo FROM users WHERE id=?').get(userId);
+}
+
+function setAvatar(userId, url)  { db.prepare('UPDATE users SET avatar=? WHERE id=?').run(url, userId); }
+function setCover(userId, url)   { db.prepare('UPDATE users SET cover_photo=? WHERE id=?').run(url, userId); }
+
+// ── 用户详情（隐私可见性判定）──────────────────────────────────
+function getUserDetail(viewerId, targetId) {
+  const user = db.prepare('SELECT id,username,avatar,bio,status,wechat_id,cover_photo FROM users WHERE id=?').get(targetId);
+  if (!user) throw notFound('用户不存在');
+  const isFriend  = !!db.prepare('SELECT 1 FROM contacts WHERE user_id=? AND contact_id=?').get(viewerId, targetId);
+  const isBlocked = !!db.prepare('SELECT 1 FROM blocked_users WHERE user_id=? AND blocked_id=?').get(viewerId, targetId);
+  const contact   = db.prepare('SELECT remark FROM contacts WHERE user_id=? AND contact_id=?').get(viewerId, targetId);
+  const settings  = serializeSettings(ensureSettings(targetId));
+  const visible   = isFriend || targetId === viewerId || settings.profileVisible;
+  const pendingReq = db.prepare('SELECT id FROM friend_requests WHERE from_id=? AND to_id=? AND status=?').get(viewerId, targetId, 'pending');
+  return {
+    ...user,
+    bio: visible ? user.bio : '',
+    cover_photo: visible ? user.cover_photo : '',
+    isFriend, isBlocked,
+    remark: contact?.remark || '',
+    hasPendingRequest: !!pendingReq,
+  };
+}
+
+// ── 收藏 ────────────────────────────────────────────────────────
+function getCollections(userId) {
+  return db.prepare('SELECT * FROM collections WHERE user_id=? ORDER BY created_at DESC').all(userId)
+    .map(i => ({ ...i, extra: JSON.parse(i.extra || '{}') }));
+}
+
+module.exports = {
+  ensureSettings, serializeSettings, getSettings, updateSettings,
+  qrPayload, search, updateProfile, setAvatar, setCover,
+  getUserDetail, getCollections,
+};

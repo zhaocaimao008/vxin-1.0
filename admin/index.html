@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex,nofollow" />
+<title>v信 后台管理</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--green:#07C160;--green-d:#059A4C;--bg:#0d0d0d;--bg2:#161616;--bg3:#1f1f1f;
+    --bd:rgba(255,255,255,.08);--tx:#f5f5f5;--tx2:#8a8a8a;--red:#ff5f57;--amber:#febc2e}
+  body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Segoe UI',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px}
+  button{font-family:inherit;cursor:pointer}
+  input{font-family:inherit}
+  .hidden{display:none!important}
+  #login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{background:var(--bg2);border:1px solid var(--bd);border-radius:16px;padding:40px;width:100%;max-width:400px}
+  .logo{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:8px}
+  .logo i{width:38px;height:38px;border-radius:10px;background:var(--green);display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;color:#fff;font-size:20px}
+  .logo b{font-size:20px}
+  .sub{text-align:center;color:var(--tx2);margin-bottom:28px;font-size:13px}
+  label{display:block;font-size:13px;color:var(--tx2);margin:14px 0 6px}
+  .inp{width:100%;background:var(--bg3);border:1px solid var(--bd);border-radius:10px;padding:11px 14px;color:var(--tx);font-size:14px;outline:none}
+  .inp:focus{border-color:var(--green)}
+  .btn{background:var(--green);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-weight:600;font-size:14px;transition:background .15s}
+  .btn:hover{background:var(--green-d)}
+  .btn:disabled{opacity:.5;cursor:default}
+  .btn-block{width:100%;margin-top:24px}
+  .err{color:var(--red);font-size:13px;margin-top:14px;text-align:center;min-height:18px}
+  .note{color:var(--amber);font-size:13px;margin-top:12px;text-align:center}
+  nav{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:58px;background:rgba(13,13,13,.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--bd)}
+  nav .logo b{font-size:17px}nav .logo i{width:30px;height:30px;font-size:16px}
+  .who{color:var(--tx2);font-size:13px;margin-right:14px}
+  .lnk{color:var(--tx2);background:none;border:1px solid var(--bd);border-radius:8px;padding:6px 14px;font-size:13px}
+  .lnk:hover{color:var(--tx);border-color:rgba(255,255,255,.2)}
+  main{max-width:1180px;margin:0 auto;padding:24px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+  .stat{background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:18px}
+  .stat .v{font-size:28px;font-weight:800;line-height:1}
+  .stat .k{color:var(--tx2);font-size:12px;margin-top:8px}
+  .stat.hl .v{color:var(--green)}
+  .stat.click{cursor:pointer;transition:border-color .15s,transform .1s}
+  .stat.click:hover{border-color:rgba(7,193,96,.45)}
+  .stat.click:active{transform:scale(.98)}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:rgba(7,193,96,.12);border:1px solid rgba(7,193,96,.3);color:var(--green);border-radius:8px;padding:5px 10px;font-size:12px}
+  .chip b{background:none;border:none;color:var(--green);cursor:pointer;font-size:14px;line-height:1}
+  .tabs{display:flex;gap:6px;margin:24px 0 16px;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+  .tab{background:none;border:none;color:var(--tx2);padding:10px 16px;font-size:14px;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tab.on{color:var(--tx);border-bottom-color:var(--green);font-weight:600}
+  .bar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  .search{flex:1;min-width:200px;max-width:340px;background:var(--bg3);border:1px solid var(--bd);border-radius:10px;padding:9px 14px;color:var(--tx);outline:none}
+  .search:focus{border-color:var(--green)}
+  .muted{color:var(--tx2);font-size:13px}
+  .tbl{width:100%;border-collapse:collapse;background:var(--bg2);border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+  .tbl th{text-align:left;font-size:12px;color:var(--tx2);font-weight:600;padding:11px 14px;border-bottom:1px solid var(--bd);background:var(--bg3)}
+  .tbl td{padding:11px 14px;border-bottom:1px solid var(--bd);font-size:13px;vertical-align:middle}
+  .tbl tr:last-child td{border-bottom:none}
+  .tbl tr:hover td{background:rgba(255,255,255,.02)}
+  .av{width:30px;height:30px;border-radius:8px;background:var(--green);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;vertical-align:middle;margin-right:8px;overflow:hidden}
+  .av img{width:100%;height:100%;object-fit:cover}
+  .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px}
+  .tag.ok{background:rgba(7,193,96,.15);color:var(--green)}
+  .tag.ban{background:rgba(255,95,87,.15);color:var(--red)}
+  .tag.gray{background:rgba(255,255,255,.06);color:var(--tx2)}
+  .acts{display:flex;gap:6px;flex-wrap:wrap}
+  .mini{font-size:12px;padding:5px 10px;border-radius:7px;border:1px solid var(--bd);background:var(--bg3);color:var(--tx)}
+  .mini:hover{border-color:rgba(255,255,255,.2)}
+  .mini.danger{color:var(--red);border-color:rgba(255,95,87,.3)}
+  .mini.danger:hover{background:rgba(255,95,87,.1)}
+  .mini.warn{color:var(--amber);border-color:rgba(254,188,46,.3)}
+  .page{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:16px}
+  .panel{background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:24px;max-width:520px;margin-bottom:18px}
+  .panel h3{font-size:15px;margin-bottom:6px}
+  .panel p{color:var(--tx2);font-size:13px;margin-bottom:16px;line-height:1.6}
+  .qrbox{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin:8px 0 16px}
+  .qrbox img{width:160px;height:160px;border-radius:10px;background:#fff;padding:6px}
+  .seccode{font-family:monospace;background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font-size:13px;word-break:break-all}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:50;padding:24px}
+  .modal .card{max-width:560px;max-height:80vh;overflow:auto}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--bd);border-radius:10px;padding:12px 20px;font-size:13px;z-index:99;opacity:0;transition:opacity .2s;max-width:90vw}
+  .toast.show{opacity:1}.toast.ok{border-color:rgba(7,193,96,.4)}.toast.bad{border-color:rgba(255,95,87,.4);color:#ffb3ae}
+  .msgtxt{max-width:380px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<!-- 登录 -->
+<div id="login">
+  <div class="card">
+    <div class="logo"><i>V</i><b>v信 后台</b></div>
+    <div class="sub">管理员登录</div>
+    <label>账号</label><input id="lu" class="inp" autocomplete="username" placeholder="管理员账号" />
+    <label>密码</label><input id="lp" class="inp" type="password" autocomplete="current-password" placeholder="密码" />
+    <div id="codewrap" class="hidden">
+      <label>谷歌验证码</label>
+      <input id="lcode" class="inp" inputmode="numeric" maxlength="6" placeholder="6位动态验证码" />
+    </div>
+    <button id="lbtn" class="btn btn-block">登 录</button>
+    <div id="lerr" class="err"></div>
+    <div id="lnote" class="note hidden"></div>
+  </div>
+</div>
+
+<!-- 后台 -->
+<div id="app" class="hidden">
+  <nav>
+    <div class="logo"><i>V</i><b>v信 后台管理</b></div>
+    <div><span class="who" id="who"></span><button class="lnk" id="logout">退出登录</button></div>
+  </nav>
+  <main>
+    <div class="stats" id="stats"></div>
+    <div class="tabs">
+      <button class="tab on" data-tab="users">用户管理</button>
+      <button class="tab" data-tab="messages">消息监控</button>
+      <button class="tab" data-tab="groups">群组管理</button>
+      <button class="tab" data-tab="security">安全</button>
+      <button class="tab" data-tab="settings">设置</button>
+    </div>
+
+    <!-- 用户 -->
+    <div id="tab-users">
+      <div class="bar"><input class="search" id="uq" placeholder="搜索 用户名 / 手机号 / v信号" /><span id="ufilter"></span><span class="muted" id="ucount"></span></div>
+      <table class="tbl"><thead><tr><th>用户</th><th>手机号</th><th>v信号</th><th>好友</th><th>消息</th><th>状态</th><th>注册</th><th>操作</th></tr></thead><tbody id="ubody"></tbody></table>
+      <div class="page" id="upage"></div>
+    </div>
+
+    <!-- 消息 -->
+    <div id="tab-messages" class="hidden">
+      <div class="bar"><input class="search" id="mq" placeholder="搜索消息内容" /><span id="mfilter"></span><span class="muted" id="mcount"></span></div>
+      <table class="tbl"><thead><tr><th>发送者</th><th>内容</th><th>类型</th><th>会话</th><th>时间</th></tr></thead><tbody id="mbody"></tbody></table>
+      <div class="page" id="mpage"></div>
+    </div>
+
+    <!-- 群组 -->
+    <div id="tab-groups" class="hidden">
+      <div class="bar"><input class="search" id="gq" placeholder="搜索 群名 / 群号" /><span class="muted" id="gcount"></span></div>
+      <table class="tbl"><thead><tr><th>群名</th><th>群号</th><th>群主</th><th>成员</th><th>消息</th><th>创建</th><th>操作</th></tr></thead><tbody id="gbody"></tbody></table>
+      <div class="page" id="gpage"></div>
+    </div>
+
+    <!-- 安全 -->
+    <div id="tab-security" class="hidden">
+      <div class="panel" id="totpPanel"></div>
+      <div class="panel">
+        <h3>可信设备 / IP</h3>
+        <p>只有列表中的「设备 + IP」组合可免验证码登录；陌生组合登录需谷歌验证码。移除后该设备下次登录需重新验证。</p>
+        <table class="tbl"><thead><tr><th>设备</th><th>IP</th><th>最近登录</th><th>操作</th></tr></thead><tbody id="trbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- 设置 -->
+    <div id="tab-settings" class="hidden">
+      <div class="panel">
+        <h3>注册邀请码</h3>
+        <p>新用户注册必须填写的 6 位数字邀请码。可手动设置或随机生成，改后即时生效。</p>
+        <label>当前邀请码</label><input id="invcode" class="inp" maxlength="6" inputmode="numeric" placeholder="6位数字" />
+        <div style="display:flex;gap:10px;margin-top:18px"><button class="btn" id="invsave">保存</button><button class="mini" id="invgen" style="padding:11px 16px">随机生成6位</button></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="modal-root"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API='/api/admin';
+const $=id=>document.getElementById(id);
+let uState={q:'',offset:0,limit:30,banned:0,online:0,period:''};
+let mState={q:'',offset:0,limit:30,period:''};
+let gState={q:'',offset:0,limit:30};
+
+function getCookie(n){return document.cookie.split('; ').find(c=>c.startsWith(n+'='))?.split('=')[1];}
+async function api(path,{method='GET',body}={}){
+  const headers={'Content-Type':'application/json'};
+  if(method!=='GET'){const t=getCookie('csrf_token');if(t)headers['X-CSRF-Token']=t;}
+  const res=await fetch(API+path,{method,headers,credentials:'include',body:body?JSON.stringify(body):undefined});
+  let data;try{data=await res.json();}catch{data={};}
+  if(!res.ok){const e=new Error(data.error||('HTTP '+res.status));e.status=res.status;e.data=data;throw e;}
+  return data;
+}
+function toast(m,bad){const t=$('toast');t.textContent=m;t.className='toast show '+(bad?'bad':'ok');setTimeout(()=>t.className='toast',2400);}
+function esc(s){return(s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function fmtDate(ts){if(!ts)return'-';const d=new Date(ts*1000);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fmtTime(ts){if(!ts)return'-';const d=new Date(ts*1000),n=new Date();const sameDay=d.toDateString()===n.toDateString();const hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');return sameDay?hm:fmtDate(ts)+' '+hm;}
+function avatar(u){return u.avatar?`<span class="av"><img src="${esc(u.avatar)}"></span>`:`<span class="av">${esc((u.username||'?')[0])}</span>`;}
+const MTYPE={text:'文字',image:'图片',voice:'语音',video:'视频',file:'文件',red_packet:'红包',location:'位置',contact_card:'名片'};
+
+// ── 登录 ──
+async function doLogin(){
+  $('lerr').textContent='';$('lnote').classList.add('hidden');
+  const username=$('lu').value.trim(),password=$('lp').value,code=$('lcode').value.trim();
+  if(!username||!password){$('lerr').textContent='请填写账号和密码';return;}
+  $('lbtn').disabled=true;
+  try{
+    const body={username,password};if(code)body.code=code;
+    const r=await api('/login',{method:'POST',body});
+    enterApp(r.username);
+    if(r.needsTotpSetup){ toast('建议立即绑定谷歌验证器加固后台'); switchTab('security'); }
+  }catch(e){
+    if(e.data?.needCode){ $('codewrap').classList.remove('hidden'); $('lcode').focus(); $('lnote').textContent='陌生设备/IP，请输入谷歌验证码'; $('lnote').classList.remove('hidden'); }
+    else $('lerr').textContent=e.message;
+  }finally{$('lbtn').disabled=false;}
+}
+$('lbtn').onclick=doLogin;
+['lp','lcode'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();}));
+$('logout').onclick=async()=>{try{await api('/logout',{method:'POST'});}catch{}location.reload();};
+
+function enterApp(username){$('login').classList.add('hidden');$('app').classList.remove('hidden');$('who').textContent='管理员：'+username;loadStats();loadUsers();}
+
+// ── 总览 ──
+async function loadStats(){
+  try{
+    const s=await api('/stats');
+    const cards=[
+      ['用户总数',s.users,'allUsers',1],['当前在线',s.online,'online',1],['今日新增',s.usersToday,'todayUsers'],
+      ['消息总数',s.messages,'allMsg'],['今日消息',s.messagesToday,'todayMsg'],['群组',s.groups,'groups'],
+      ['已封禁',s.usersBanned,'banned'],['红包',s.redPackets,null],
+    ];
+    $('stats').innerHTML=cards.map(([k,v,act,hl])=>`<div class="stat ${hl?'hl':''} ${act?'click':''}" ${act?`data-act="${act}"`:''}><div class="v">${v}</div><div class="k">${k}</div></div>`).join('');
+    $('stats').querySelectorAll('.stat.click').forEach(c=>c.onclick=()=>statClick(c.dataset.act));
+  }catch(e){if(/未登录|过期/.test(e.message))location.reload();}
+}
+function statClick(act){
+  if(act==='groups'){switchTab('groups');return;}
+  if(act==='allMsg'||act==='todayMsg'){mState.q='';mState.period=act==='todayMsg'?'today':'';mState.offset=0;$('mq').value='';updateMsgChip();switchTab('messages');return;}
+  // 用户类
+  uState.q='';uState.offset=0;uState.banned=0;uState.online=0;uState.period='';$('uq').value='';
+  if(act==='banned')uState.banned=1; else if(act==='online')uState.online=1; else if(act==='todayUsers')uState.period='today';
+  updateUserChip();switchTab('users');
+}
+function updateUserChip(){
+  let label='';
+  if(uState.banned)label='仅看已封禁'; else if(uState.online)label='仅看在线'; else if(uState.period==='today')label='今日新增';
+  $('ufilter').innerHTML=label?`<span class="chip">${label} <b onclick="clearUserFilter()">✕</b></span>`:'';
+}
+function clearUserFilter(){uState.banned=0;uState.online=0;uState.period='';uState.offset=0;updateUserChip();loadUsers();}
+function updateMsgChip(){$('mfilter').innerHTML=mState.period==='today'?`<span class="chip">今日消息 <b onclick="clearMsgFilter()">✕</b></span>`:'';}
+function clearMsgFilter(){mState.period='';mState.offset=0;updateMsgChip();loadMessages();}
+
+// ── tabs ──
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.tab===name));
+  ['users','messages','groups','security','settings'].forEach(n=>$('tab-'+n).classList.toggle('hidden',n!==name));
+  if(name==='users')loadUsers();
+  if(name==='messages')loadMessages();
+  if(name==='groups')loadGroups();
+  if(name==='security')loadSecurity();
+  if(name==='settings')loadInvite();
+}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchTab(t.dataset.tab));
+
+// ── 用户 ──
+let uTimer;$('uq').addEventListener('input',e=>{clearTimeout(uTimer);uTimer=setTimeout(()=>{uState.q=e.target.value.trim();uState.offset=0;loadUsers();},300);});
+async function loadUsers(){
+  try{
+    const q=new URLSearchParams({q:uState.q,limit:uState.limit,offset:uState.offset,banned:uState.banned,online:uState.online,period:uState.period});
+    const r=await api('/users?'+q);
+    $('ucount').textContent=`共 ${r.total} 名`;
+    $('ubody').innerHTML=r.users.map(u=>`<tr>
+      <td>${avatar(u)}${esc(u.username)}</td><td class="muted">${esc(u.phone)}</td><td class="muted">${esc(u.wechat_id)}</td>
+      <td>${u.contactCount}</td><td>${u.messageCount}</td>
+      <td>${u.banned?'<span class="tag ban">已封禁</span>':(u.status==='online'?'<span class="tag ok">在线</span>':'<span class="tag gray">离线</span>')}</td>
+      <td class="muted">${fmtDate(u.created_at)}</td>
+      <td><div class="acts">
+        ${u.banned?`<button class="mini" onclick="unban('${u.id}')">解封</button>`:`<button class="mini warn" onclick="ban('${u.id}','${esc(u.username)}')">封禁</button>`}
+        <button class="mini" onclick="resetPw('${u.id}','${esc(u.username)}')">改密</button>
+        <button class="mini danger" onclick="delUser('${u.id}','${esc(u.username)}')">删除</button>
+      </div></td></tr>`).join('')||`<tr><td colspan="8" class="muted" style="text-align:center;padding:30px">无数据</td></tr>`;
+    renderPage('upage',uState,r.total,loadUsers);
+  }catch(e){if(/未登录|过期/.test(e.message))location.reload();else toast(e.message,1);}
+}
+async function ban(id,name){if(!confirm(`确定封禁「${name}」？该用户将无法登录。`))return;try{await api(`/users/${id}/ban`,{method:'POST'});toast('已封禁');loadUsers();loadStats();}catch(e){toast(e.message,1);}}
+async function unban(id){try{await api(`/users/${id}/unban`,{method:'POST'});toast('已解封');loadUsers();loadStats();}catch(e){toast(e.message,1);}}
+async function resetPw(id,name){const p=prompt(`为「${name}」设置新密码（至少6位）：`);if(!p)return;try{await api(`/users/${id}/reset-password`,{method:'POST',body:{newPassword:p}});toast('密码已重置');}catch(e){toast(e.message,1);}}
+async function delUser(id,name){if(!confirm(`⚠ 彻底删除「${name}」？\n将清除该用户及其所有消息、好友、群成员关系，不可恢复！`))return;try{await api(`/users/${id}`,{method:'DELETE'});toast('已删除');loadUsers();loadStats();}catch(e){toast(e.message,1);}}
+
+// ── 消息监控 ──
+let mTimer;$('mq').addEventListener('input',e=>{clearTimeout(mTimer);mTimer=setTimeout(()=>{mState.q=e.target.value.trim();mState.offset=0;loadMessages();},300);});
+async function loadMessages(){
+  try{
+    const q=new URLSearchParams({q:mState.q,limit:mState.limit,offset:mState.offset,period:mState.period});
+    const r=await api('/messages?'+q);
+    $('mcount').textContent=`共 ${r.total} 条`;
+    $('mbody').innerHTML=r.messages.map(m=>`<tr>
+      <td>${esc(m.senderName)}</td>
+      <td class="msgtxt">${m.type==='text'?esc(m.content):('['+(MTYPE[m.type]||m.type)+'] '+esc(m.content||''))}</td>
+      <td><span class="tag gray">${MTYPE[m.type]||m.type}</span></td>
+      <td class="muted">${m.convType==='group'?esc(m.convName||'群聊'):'私聊'}</td>
+      <td class="muted">${fmtTime(m.created_at)}</td></tr>`).join('')||`<tr><td colspan="5" class="muted" style="text-align:center;padding:30px">无数据</td></tr>`;
+    renderPage('mpage',mState,r.total,loadMessages);
+  }catch(e){if(/未登录|过期/.test(e.message))location.reload();else toast(e.message,1);}
+}
+
+// ── 群组 ──
+let gTimer;$('gq').addEventListener('input',e=>{clearTimeout(gTimer);gTimer=setTimeout(()=>{gState.q=e.target.value.trim();gState.offset=0;loadGroups();},300);});
+async function loadGroups(){
+  try{
+    const q=new URLSearchParams({q:gState.q,limit:gState.limit,offset:gState.offset});
+    const r=await api('/groups?'+q);
+    $('gcount').textContent=`共 ${r.total} 个`;
+    $('gbody').innerHTML=r.groups.map(g=>`<tr>
+      <td>${avatar({username:g.name,avatar:g.avatar})}${esc(g.name||'(未命名)')}</td><td class="muted">${esc(g.group_number)}</td>
+      <td>${esc(g.ownerName||'-')}</td><td>${g.memberCount}</td><td>${g.messageCount}</td><td class="muted">${fmtDate(g.created_at)}</td>
+      <td><div class="acts"><button class="mini" onclick="viewGroup('${g.id}')">成员</button><button class="mini danger" onclick="dismiss('${g.id}','${esc(g.name)}')">解散</button></div></td></tr>`).join('')||`<tr><td colspan="7" class="muted" style="text-align:center;padding:30px">无数据</td></tr>`;
+    renderPage('gpage',gState,r.total,loadGroups);
+  }catch(e){if(/未登录|过期/.test(e.message))location.reload();else toast(e.message,1);}
+}
+async function viewGroup(id){try{const g=await api('/groups/'+id);const rows=g.members.map(m=>`<tr><td>${avatar(m)}${esc(m.username)}</td><td>${m.role==='owner'?'群主':m.role==='admin'?'管理员':'成员'}</td><td class="muted">${fmtDate(m.joined_at)}</td></tr>`).join('');showModal(`<h3>${esc(g.name||'(未命名)')} · ${g.members.length}人</h3><div class="muted" style="margin-bottom:14px">群号 ${esc(g.group_number)} · 公告：${esc(g.announcement||'无')}</div><table class="tbl"><thead><tr><th>成员</th><th>角色</th><th>加入</th></tr></thead><tbody>${rows}</tbody></table>`);}catch(e){toast(e.message,1);}}
+async function dismiss(id,name){if(!confirm(`⚠ 解散群「${name}」？\n将移除所有成员并删除该群，不可恢复！`))return;try{await api('/groups/'+id,{method:'DELETE'});toast('已解散');loadGroups();loadStats();}catch(e){toast(e.message,1);}}
+
+// ── 安全 ──
+async function loadSecurity(){
+  try{
+    const s=await api('/security');
+    $('totpPanel').innerHTML = s.totpEnabled
+      ? `<h3>谷歌验证器 <span class="tag ok">已开启</span></h3><p>登录陌生设备/IP 时需要输入验证器中的 6 位动态码。</p>
+         <input id="distotp" class="inp" inputmode="numeric" maxlength="6" placeholder="输入验证码以关闭" style="max-width:220px">
+         <div style="margin-top:14px"><button class="mini danger" id="disbtn" style="padding:10px 16px">关闭谷歌验证</button></div>`
+      : `<h3>谷歌验证器 <span class="tag gray">未开启</span></h3><p>开启后，从陌生设备或 IP 登录后台需输入谷歌验证器动态码，大幅提升安全性。</p>
+         <button class="btn" id="setupbtn">开启谷歌验证</button>`;
+    if(s.totpEnabled) $('disbtn').onclick=disableTotp; else $('setupbtn').onclick=setupTotp;
+    $('trbody').innerHTML=s.trusted.map(t=>`<tr><td>${esc(t.label||'设备')}</td><td class="muted">${esc(t.ip)}</td><td class="muted">${fmtTime(t.last_seen)}</td><td><button class="mini danger" onclick="revoke('${t.id}')">移除</button></td></tr>`).join('')||`<tr><td colspan="4" class="muted" style="text-align:center;padding:24px">暂无</td></tr>`;
+  }catch(e){toast(e.message,1);}
+}
+async function setupTotp(){
+  try{
+    const r=await api('/security/totp/setup',{method:'POST'});
+    showModal(`<h3>绑定谷歌验证器</h3>
+      <p class="muted" style="margin-bottom:12px">用 Google Authenticator / 微软 Authenticator 扫描二维码，或手动输入密钥，然后填入当前 6 位验证码确认。</p>
+      <div class="qrbox"><img src="${r.qr}"><div><div class="muted" style="margin-bottom:6px">手动密钥：</div><div class="seccode">${r.secret}</div></div></div>
+      <input id="encode" class="inp" inputmode="numeric" maxlength="6" placeholder="验证器中的6位码" style="max-width:240px">
+      <div style="margin-top:16px"><button class="btn" id="enbtn">确认开启</button></div>`);
+    $('enbtn').onclick=async()=>{const code=$('encode').value.trim();try{await api('/security/totp/enable',{method:'POST',body:{code}});toast('谷歌验证已开启');closeModal();loadSecurity();}catch(e){toast(e.message,1);}};
+    $('encode').focus();
+  }catch(e){toast(e.message,1);}
+}
+async function disableTotp(){const code=$('distotp').value.trim();if(!code){toast('请输入验证码',1);return;}try{await api('/security/totp/disable',{method:'POST',body:{code}});toast('谷歌验证已关闭');loadSecurity();}catch(e){toast(e.message,1);}}
+async function revoke(id){if(!confirm('移除该可信设备？下次从它登录需谷歌验证码。'))return;try{await api('/security/trusted/'+id,{method:'DELETE'});toast('已移除');loadSecurity();}catch(e){toast(e.message,1);}}
+
+// ── 设置 ──
+async function loadInvite(){try{const r=await api('/invite-code');$('invcode').value=r.inviteCode;}catch(e){toast(e.message,1);}}
+$('invsave').onclick=async()=>{const code=$('invcode').value.trim();try{await api('/invite-code',{method:'PUT',body:{inviteCode:code}});toast('邀请码已更新');}catch(e){toast(e.message,1);}};
+$('invgen').onclick=async()=>{try{const r=await api('/invite-code/generate',{method:'POST'});$('invcode').value=r.inviteCode;toast('已生成并保存：'+r.inviteCode);}catch(e){toast(e.message,1);}};
+
+// ── 分页 / 弹窗 ──
+function renderPage(elId,state,total,reload){const el=$(elId);const pages=Math.ceil(total/state.limit)||1;const cur=Math.floor(state.offset/state.limit)+1;if(pages<=1){el.innerHTML='';return;}el.innerHTML=`<button class="mini" ${cur<=1?'disabled':''} id="${elId}-p">上一页</button><span class="muted">${cur} / ${pages}</span><button class="mini" ${cur>=pages?'disabled':''} id="${elId}-n">下一页</button>`;const p=$(elId+'-p'),n=$(elId+'-n');if(p)p.onclick=()=>{state.offset=Math.max(0,state.offset-state.limit);reload();};if(n)n.onclick=()=>{state.offset+=state.limit;reload();};}
+function showModal(html){$('modal-root').innerHTML=`<div class="modal" onclick="if(event.target===this)closeModal()"><div class="card">${html}<button class="btn btn-block" onclick="closeModal()">关闭</button></div></div>`;}
+function closeModal(){$('modal-root').innerHTML='';}
+
+// 启动：检查登录态
+(async()=>{try{const r=await api('/me');enterApp(r.username);}catch{}})();
+</script>
+</body>
+</html>
