@@ -74,13 +74,11 @@
   padding: 10px 14px;
   background: var(--bg-input-search);
   border-radius: var(--radius-full);
-  border: 1.5px solid transparent;
-  transition: background var(--dur-fast), border-color var(--dur-fast), box-shadow var(--dur-fast);
+  border: none;
+  transition: background var(--dur-fast);
 }
 .af-search:focus-within {
   background: var(--bg-chat);
-  border-color: var(--color-primary);
-  box-shadow: var(--ring-primary);
 }
 .af-search-ico { color: var(--gray-400); flex-shrink: 0; }
 .af-search-inp {

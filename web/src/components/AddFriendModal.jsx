@@ -139,6 +139,7 @@ export default function AddFriendModal({ onClose, initialQuery = '' }) {
                 value={query}
                 onChange={onChange}
                 onKeyDown={e => e.key === 'Enter' && doSearch(query)}
+                style={{ border: 'none', outline: 'none', boxShadow: 'none', WebkitAppearance: 'none', background: 'transparent' }}
               />
               {query && (
                 <button className="af-search-clr" onClick={clearSearch} aria-label="清空">
