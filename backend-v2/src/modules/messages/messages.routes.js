@@ -23,6 +23,7 @@ const rp   = require('../redpackets/redpackets.controller');
 // ── 会话创建 / 列表 ─────────────────────────────────────────────
 router.post('/conversation/private', auth, conv.createPrivate);
 router.post('/conversation/group',   auth, conv.createGroup);
+router.get ('/file-helper',          auth, conv.fileHelper);
 router.get ('/conversations',        auth, conv.list);
 router.get ('/conversation/:conversationId/members', auth, conv.members);
 router.get ('/unread-counts',        auth, conv.unreadCounts);

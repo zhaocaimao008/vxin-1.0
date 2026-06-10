@@ -26,6 +26,21 @@ function getOrCreatePrivate(myId, otherId) {
   return { conversationId: id };
 }
 
+// ── 文件传输助手：每个用户唯一的自聊会话（type=filehelper，仅自己一名成员）──
+function getOrCreateFileHelper(myId) {
+  const existing = db.prepare(`
+    SELECT c.id FROM conversations c
+    JOIN conversation_members cm ON cm.conversation_id=c.id AND cm.user_id=?
+    WHERE c.type='filehelper'
+  `).get(myId);
+  if (existing) return { conversationId: existing.id };
+
+  const id = uuidv4();
+  db.prepare("INSERT INTO conversations (id,type,name) VALUES (?,?,?)").run(id, 'filehelper', '文件传输助手');
+  db.prepare('INSERT INTO conversation_members (conversation_id,user_id) VALUES (?,?)').run(id, myId);
+  return { conversationId: id, created: true };
+}
+
 // ── 群聊：创建（io 由 controller 传入用于广播）──────────────────
 function createGroup(io, ownerId, { name, memberIds }) {
   if (!name || !memberIds?.length) throw badRequest('参数缺失');
@@ -245,7 +260,7 @@ function media(userId, { type = 'image', limit, before }) {
 }
 
 module.exports = {
-  getOrCreatePrivate, createGroup, listConversations, listMembers,
+  getOrCreatePrivate, getOrCreateFileHelper, createGroup, listConversations, listMembers,
   unreadCounts, myGroups, setPinned, setMuted, markRead,
   clearConversation, clearAllConversations, media,
 };

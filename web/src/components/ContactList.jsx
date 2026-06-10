@@ -259,6 +259,16 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
               color="#FF7A45" label="添加好友" badge={0}
               onClick={() => setShowAddFriend(true)}
             />
+            <EntryRow
+              icon={<svg viewBox="0 0 24 24" width="18" height="18" fill="#fff"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>}
+              color="#10AEFF" label="文件传输助手" badge={0}
+              onClick={async () => {
+                try {
+                  const { data } = await axios.get('/api/messages/file-helper');
+                  onStartChat({ id: data.conversationId, type: 'filehelper', name: '文件传输助手', avatar: '' });
+                } catch {}
+              }}
+            />
 
             <div style={{ height: 8, background: 'var(--divider)' }} />
 
