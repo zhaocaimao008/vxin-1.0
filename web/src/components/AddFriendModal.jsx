@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import Avatar from './Avatar';
 import UserProfile from './UserProfile';
@@ -47,6 +48,13 @@ export default function AddFriendModal({ onClose, initialQuery = '' }) {
   // 带入初始关键词时自动搜索（来自主搜索框「去网络搜索」兜底）
   useEffect(() => { if (initialQuery.trim()) doSearch(initialQuery); }, [initialQuery, doSearch]);
 
+  // Esc 关闭
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   const onChange = (e) => {
     const v = e.target.value;
     setQuery(v);
@@ -62,99 +70,142 @@ export default function AddFriendModal({ onClose, initialQuery = '' }) {
     inputRef.current?.focus();
   };
 
-  return (
-    <div className="af-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="af-panel" onClick={e => e.stopPropagation()}>
+  // ── 全局遮罩（fixed/inset0/z9999/flex 居中），Portal 直挂 body 脱离父级堆叠上下文 ──
+  const overlayStyle = {
+    position: 'fixed',
+    inset: 0,
+    zIndex: 9999,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    background: 'rgba(0, 0, 0, 0.4)',
+  };
+  // ── 白色内衬卡片（主题变量，自动适配深色模式）──
+  const cardStyle = {
+    width: 400,
+    maxWidth: '92vw',
+    maxHeight: '80vh',
+    display: 'flex',
+    flexDirection: 'column',
+    background: 'var(--bg-panel, #fff)',
+    borderRadius: 16,
+    boxShadow: '0 24px 64px rgba(0, 0, 0, 0.28)',
+    border: '1px solid var(--border-color)',
+    overflow: 'hidden',
+  };
+  const headerStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '16px 20px',
+    marginBottom: 0,
+    borderBottom: '1px solid var(--border-color)',
+    flexShrink: 0,
+  };
 
-        {/* ── 标题栏 ── */}
-        <div className="af-hd">
-          <span className="af-hd-title">添加好友</span>
-          <button className="af-hd-close" onClick={onClose} aria-label="关闭">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-            </svg>
-          </button>
-        </div>
+  return createPortal(
+    <>
+      <div style={overlayStyle} onClick={e => e.target === e.currentTarget && onClose()}>
+        <div style={cardStyle} onClick={e => e.stopPropagation()}>
 
-        {/* ── 搜索框 ── */}
-        <div className="af-search-wrap">
-          <div className="af-search">
-            <svg className="af-search-ico" viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
-              <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-            </svg>
-            <input
-              ref={inputRef}
-              className="af-search-inp"
-              placeholder="搜索 v信号、手机号或昵称"
-              value={query}
-              onChange={onChange}
-              onKeyDown={e => e.key === 'Enter' && doSearch(query)}
-            />
-            {query && (
-              <button className="af-search-clr" onClick={clearSearch} aria-label="清空">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
-                  <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/>
-                </svg>
-              </button>
-            )}
+          {/* ── 标题栏：两侧对齐，绝不飘出卡片 ── */}
+          <div style={headerStyle}>
+            <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>添加好友</span>
+            <button
+              onClick={onClose}
+              aria-label="关闭"
+              style={{
+                width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: 8, color: 'var(--text-secondary)', background: 'transparent', cursor: 'pointer',
+                border: 'none', flexShrink: 0,
+              }}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+              </svg>
+            </button>
           </div>
-        </div>
 
-        {/* ── 内容区 ── */}
-        <div className="af-body">
-
-          {/* 搜索中 */}
-          {searching && (
-            <div className="af-loading">
-              <div className="af-spinner" />
-              <span className="af-loading-txt">搜索中…</span>
-            </div>
-          )}
-
-          {/* 空闲态：引导图 */}
-          {!searching && !query && (
-            <div className="af-empty">
-              <div className="af-empty-icon-wrap">
-                <div className="af-empty-avatar-bg">
-                  <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"
-                    style={{ color: 'var(--color-primary)', opacity: .85 }}>
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                  </svg>
-                </div>
-                <div className="af-empty-plus">
-                  <svg viewBox="0 0 14 14" width="10" height="10" fill="none"
-                    stroke="#fff" strokeWidth="2" strokeLinecap="round">
-                    <line x1="7" y1="1" x2="7" y2="13"/>
-                    <line x1="1" y1="7" x2="13" y2="7"/>
-                  </svg>
-                </div>
-              </div>
-              <div className="af-empty-title">查找新朋友</div>
-              <div className="af-empty-sub">输入 v信号快速定位联系人</div>
-              <div className="af-tags">
-                <span className="af-tag">v信号</span>
-                <span className="af-tag">手机号</span>
-                <span className="af-tag">昵称</span>
-              </div>
-            </div>
-          )}
-
-          {/* 未找到结果 */}
-          {!searching && searched && results.length === 0 && (
-            <div className="af-notfound">
-              <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"
-                style={{ color: 'var(--gray-300)', marginBottom: 10 }}>
+          {/* ── 搜索框 ── */}
+          <div className="af-search-wrap">
+            <div className="af-search">
+              <svg className="af-search-ico" viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
                 <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
               </svg>
-              <div className="af-notfound-title">未找到「{query}」相关用户</div>
-              <div className="af-notfound-sub">可尝试搜索 v信号或手机号</div>
+              <input
+                ref={inputRef}
+                className="af-search-inp"
+                placeholder="搜索 v信号、手机号或昵称"
+                value={query}
+                onChange={onChange}
+                onKeyDown={e => e.key === 'Enter' && doSearch(query)}
+              />
+              {query && (
+                <button className="af-search-clr" onClick={clearSearch} aria-label="清空">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
+                    <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/>
+                  </svg>
+                </button>
+              )}
             </div>
-          )}
+          </div>
 
-          {/* 搜索结果 */}
-          {!searching && results.map(u => (
-            <AfResultItem key={u.id} user={u} onClick={() => setViewId(u.id)} />
-          ))}
+          {/* ── 内容区 ── */}
+          <div className="af-body" style={{ flex: 1, overflowY: 'auto', minHeight: 160 }}>
+
+            {/* 搜索中 */}
+            {searching && (
+              <div className="af-loading">
+                <div className="af-spinner" />
+                <span className="af-loading-txt">搜索中…</span>
+              </div>
+            )}
+
+            {/* 空闲态：引导图 */}
+            {!searching && !query && (
+              <div className="af-empty">
+                <div className="af-empty-icon-wrap">
+                  <div className="af-empty-avatar-bg">
+                    <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"
+                      style={{ color: 'var(--color-primary)', opacity: .85 }}>
+                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                  </div>
+                  <div className="af-empty-plus">
+                    <svg viewBox="0 0 14 14" width="10" height="10" fill="none"
+                      stroke="#fff" strokeWidth="2" strokeLinecap="round">
+                      <line x1="7" y1="1" x2="7" y2="13"/>
+                      <line x1="1" y1="7" x2="13" y2="7"/>
+                    </svg>
+                  </div>
+                </div>
+                <div className="af-empty-title">查找新朋友</div>
+                <div className="af-empty-sub">输入 v信号快速定位联系人</div>
+                <div className="af-tags">
+                  <span className="af-tag">v信号</span>
+                  <span className="af-tag">手机号</span>
+                  <span className="af-tag">昵称</span>
+                </div>
+              </div>
+            )}
+
+            {/* 未找到结果 */}
+            {!searching && searched && results.length === 0 && (
+              <div className="af-notfound">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"
+                  style={{ color: 'var(--gray-300)', marginBottom: 10 }}>
+                  <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                </svg>
+                <div className="af-notfound-title">未找到「{query}」相关用户</div>
+                <div className="af-notfound-sub">可尝试搜索 v信号或手机号</div>
+              </div>
+            )}
+
+            {/* 搜索结果 */}
+            {!searching && results.map(u => (
+              <AfResultItem key={u.id} user={u} onClick={() => setViewId(u.id)} />
+            ))}
+          </div>
         </div>
       </div>
 
@@ -166,6 +217,7 @@ export default function AddFriendModal({ onClose, initialQuery = '' }) {
           onFriendAdded={() => {}}
         />
       )}
-    </div>
+    </>,
+    document.body
   );
 }
