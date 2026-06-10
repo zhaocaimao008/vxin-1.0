@@ -109,20 +109,22 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
         {/* 联系人主列表 */}
         {tab === 'contacts' && (
           <>
-            {/* 新的朋友：仅在有待处理请求时出现（无请求则隐藏，保持纯净） */}
-            {requests.length > 0 && (
-              <div className="wc-contact-item" style={{ cursor: 'pointer' }} onClick={() => setTab('requests')}>
-                <div style={{ width: 44, height: 44, borderRadius: 8, background: '#07C160', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="wc-contact-item-name">新的朋友</div>
-                </div>
-                <span style={{ background: '#FA5151', color: '#fff', fontSize: 11, minWidth: 18, height: 18, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px', flexShrink: 0 }}>{requests.length}</span>
-              </div>
-            )}
-
-            {/* 文件传输助手 */}
+            {/* 功能入口 */}
+            <EntryRow
+              icon={<svg viewBox="0 0 24 24" width="18" height="18" fill="#fff"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>}
+              color="#07C160" label="新的朋友" badge={requests.length}
+              onClick={() => setTab('requests')}
+            />
+            <EntryRow
+              icon={<svg viewBox="0 0 24 24" width="18" height="18" fill="#fff"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>}
+              color="#1677FF" label="群聊" badge={0}
+              onClick={() => setTab('groups')}
+            />
+            <EntryRow
+              icon={<svg viewBox="0 0 24 24" width="18" height="18" fill="#fff"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>}
+              color="#FF7A45" label="添加好友" badge={0}
+              onClick={() => setShowAddFriend(true)}
+            />
             <EntryRow
               icon={<svg viewBox="0 0 24 24" width="18" height="18" fill="#fff"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>}
               color="#10AEFF" label="文件传输助手" badge={0}

@@ -111,14 +111,22 @@ export default function GlobalSearch({ query, onSelectConv, onNetworkSearch }) {
         </>
       )}
 
-      {/* 降级兜底：本地全无匹配时，仅留一行精致提示 */}
+      {/* 降级兜底：本地全无匹配才出现 */}
       {empty && (
-        <div
-          onClick={() => onNetworkSearch(query)}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 18px', cursor: 'pointer', fontSize: 13.5, color: 'var(--text-secondary)' }}
-          onMouseEnter={e => hover(e, true)} onMouseLeave={e => hover(e, false)}>
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="#07C160" style={{ flexShrink: 0 }}><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-          <span>未找到相关本地结果，去网络搜索添加<span style={{ color: '#07C160' }}>「{query}」</span></span>
+        <div style={{ padding: '8px 0' }}>
+          <div
+            onClick={() => onNetworkSearch(query)}
+            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', cursor: 'pointer' }}
+            onMouseEnter={e => hover(e, true)} onMouseLeave={e => hover(e, false)}>
+            <div style={{ width: 42, height: 42, borderRadius: 10, background: '#07C160', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, color: 'var(--text-primary)' }}>未找到「{query}」</div>
+              <div style={{ fontSize: 12.5, color: 'var(--text-tertiary)', marginTop: 2 }}>去网络搜索添加好友</div>
+            </div>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--text-tertiary)" style={{ flexShrink: 0 }}><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          </div>
         </div>
       )}
     </div>
