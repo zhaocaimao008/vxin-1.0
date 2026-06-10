@@ -98,6 +98,8 @@ export default function AddFriendModal({ onClose, initialQuery = '' }) {
 
   return createPortal(
     <>
+      {/* 打开资料卡时，搜索弹窗功成身退（隐藏），让资料卡独占前台、互不打架 */}
+      {!viewId && (
       <div style={overlayStyle} onClick={e => e.target === e.currentTarget && onClose()}>
         <div style={cardStyle} onClick={e => e.stopPropagation()}>
 
@@ -207,6 +209,7 @@ export default function AddFriendModal({ onClose, initialQuery = '' }) {
           </div>
         </div>
       </div>
+      )}
 
       {viewId && (
         <UserProfile
