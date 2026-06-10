@@ -179,8 +179,15 @@
     if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
       headers['Content-Type'] = 'application/json';
     }
+    // CSRF 双提交：非安全方法回传 csrf_token cookie 到 X-CSRF-Token（适配 backend-v2）
+    const _method = (options.method || 'GET').toUpperCase();
+    if (_method !== 'GET' && _method !== 'HEAD' && _method !== 'OPTIONS') {
+      const _m = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+      if (_m) headers['X-CSRF-Token'] = decodeURIComponent(_m[1]);
+    }
     const resp = await fetch(url, {
       ...options,
+      credentials: 'include',
       headers,
       body: options.body
         ? (typeof options.body === 'object' && !(options.body instanceof FormData)
