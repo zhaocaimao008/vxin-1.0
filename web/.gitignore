@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Build outputs (大型二进制产物，可重新生成，不入库)
+dist-electron/
+*.exe
+*.dmg
+*.deb
+*.AppImage
+*.asar
+
+# 注意：build/icons/ 品牌图标需入库，不要忽略
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Cache
+.cache/
+.gradle/
+
+# Mobile native projects (由 cap add 生成)
+android/
+ios/

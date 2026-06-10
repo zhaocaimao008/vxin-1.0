@@ -2,7 +2,7 @@
 
 const {
   app, BrowserWindow, ipcMain, Notification,
-  shell, nativeTheme, session,
+  shell, nativeTheme, session, Menu, systemPreferences,
 } = require('electron');
 const path = require('path');
 
@@ -20,33 +20,45 @@ nativeTheme.themeSource = 'system';
 
 // ── 窗口工厂 ─────────────────────────────────────────────────
 function createWindow() {
-  const win = new BrowserWindow({
+  const IS_WIN = process.platform === 'win32';
+
+  // 🎨 Windows 无边框窗口配置（支持Mica背景材质）
+  const windowConfig = {
     width:     1280,
     height:    800,
     minWidth:  900,
     minHeight: 600,
+    show: false,
 
-    // ── 无边框处理 ──────────────────────────────────────────
-    // macOS：hiddenInset 保留红绿灯按钮原生位置
-    // Linux / Windows：frame:false，由渲染层实现自定义标题栏
-    // Linux 注意：titleBarStyle 对 Linux 无效，不能设置，否则在部分发行版会异常
-    frame: !IS_MAC,
+    // 🔥 物理超度原生边框（全平台无边框沉浸式）
+    frame: false,
     ...(IS_MAC ? { titleBarStyle: 'hiddenInset' } : {}),
 
-    backgroundColor: '#1c1c1e',
-    show: false, // 等 ready-to-show 再显示，消除白屏闪烁
+    // 🔴 Windows Mica/Acrylic 毛玻璃材质 (Windows 11)
+    ...(IS_WIN ? {
+      vibrancy: 'acrylic',
+      visualEffectState: 'active',
+      backgroundColor: '#00000000', // 透明背景，配合毛玻璃
+    } : {}),
 
-    // Linux 需要显式指定 icon，否则 deb 包桌面图标为空白
-    ...(IS_LINUX ? { icon: path.join(__dirname, '../public/icon.png') } : {}),
+    // 🎯 运行时窗口图标（三端统一配置）
+    icon: path.join(__dirname, '../build/icons/icon.ico'),
 
     webPreferences: {
       preload:          path.join(__dirname, 'preload.js'),
-      contextIsolation: true,  // 必须：隔离主/渲染进程上下文
-      nodeIntegration:  false, // 必须：渲染进程禁止直接调用 Node.js API
-      sandbox:          true,  // 启用 Chromium 沙箱
+      contextIsolation: true,
+      nodeIntegration:  false,
+      sandbox:          true,
       spellcheck:       false,
+      // 🎨 启用 V8代码缓存，提速渲染
+      v8CacheDir:       path.join(__dirname, '.v8cache'),
     },
-  });
+  };
+
+  const win = new BrowserWindow(windowConfig);
+
+  // 🔥 彻底干掉顶部菜单栏（File/Edit/View...）
+  win.setMenu(null);
 
   // 内容就绪后再显示（防白屏）
   win.once('ready-to-show', () => win.show());

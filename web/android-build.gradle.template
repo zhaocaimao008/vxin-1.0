@@ -1,0 +1,113 @@
+// Android App Build Configuration for v信
+// 位置: android/app/build.gradle
+
+apply plugin: 'com.android.application'
+apply plugin: 'com.google.gms.google-services'
+
+android {
+  namespace "com.vxin.app"
+  compileSdk 34
+
+  defaultConfig {
+    applicationId "com.vxin.app"
+    minSdk 21
+    targetSdk 34
+    versionCode 1
+    versionName "1.0.0"
+
+    testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+    manifestPlaceholders = [
+      appAuthRedirectScheme: 'com.vxin.app'
+    ]
+  }
+
+  // 🔴 签名配置 (生产构建)
+  signingConfigs {
+    release {
+      keystore file("signing-key.jks")
+      keyAlias "vxin"
+      keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+      storePassword System.getenv("ANDROID_STORE_PASSWORD")
+    }
+    debug {
+      keystore file("debug.keystore")
+      keyAlias "androiddebugkey"
+      keyPassword "android"
+      storePassword "android"
+    }
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled true
+      shrinkResources true
+      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+      signingConfig signingConfigs.release
+    }
+    debug {
+      signingConfig signingConfigs.debug
+    }
+  }
+
+  // 编译选项
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_11
+    targetCompatibility JavaVersion.VERSION_11
+  }
+
+  buildFeatures {
+    viewBinding false
+  }
+
+  packagingOptions {
+    exclude 'META-INF/proguard/androidx-*.pro'
+  }
+}
+
+dependencies {
+  // Capacitor
+  implementation 'com.getcapacitor:capacitor-android:6.0.0'
+  implementation 'com.getcapacitor:capacitor-app:6.0.0'
+  implementation 'com.getcapacitor:capacitor-camera:6.0.0'
+  implementation 'com.getcapacitor:capacitor-filesystem:6.0.0'
+  implementation 'com.getcapacitor:capacitor-geolocation:6.0.0'
+  implementation 'com.getcapacitor:capacitor-network:6.0.0'
+  implementation 'com.getcapacitor:capacitor-push-notifications:6.0.0'
+  implementation 'com.getcapacitor:capacitor-storage:6.0.0'
+
+  // AndroidX
+  implementation 'androidx.appcompat:appcompat:1.6.1'
+  implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+  implementation 'androidx.core:core-splashscreen:1.0.1'
+
+  // Firebase (推送通知)
+  implementation platform('com.google.firebase:firebase-bom:32.2.0')
+  implementation 'com.google.firebase:firebase-messaging'
+
+  // Networking
+  implementation 'com.squareup.okhttp3:okhttp:4.11.0'
+
+  // 测试
+  testImplementation 'junit:junit:4.13.2'
+  androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+  androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
+
+// 任务：生成release APK
+task buildRelease {
+  dependsOn 'assembleRelease'
+  doLast {
+    println "✅ Release APK 已生成:"
+    println "   app/build/outputs/apk/release/app-release.apk"
+  }
+}
+
+// 任务：生成App Bundle (用于Google Play)
+task buildBundle {
+  dependsOn 'bundleRelease'
+  doLast {
+    println "✅ App Bundle 已生成:"
+    println "   app/build/outputs/bundle/release/app-release.aab"
+  }
+}

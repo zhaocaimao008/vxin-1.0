@@ -1,0 +1,254 @@
+/* ================================================================
+   AddFriendModal — 添加好友弹窗   v2
+   使用全局 Design Tokens，无魔法数字
+   ================================================================ */
+
+.af-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  background: var(--bg-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.af-panel {
+  width: 440px;
+  max-width: 92vw;
+  max-height: 72vh;
+  background: var(--bg-modal);
+  border-radius: var(--radius-modal);
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+  display: flex;
+  flex-direction: column;
+  animation: af-panel-in var(--dur-base) var(--ease-enter) both;
+}
+@keyframes af-panel-in {
+  from { opacity: 0; transform: translateY(12px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);   }
+}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+.af-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.af-hd-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-title);
+  letter-spacing: -.1px;
+}
+.af-hd-close {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: transparent;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.af-hd-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* ── Search ──────────────────────────────────────────────────────── */
+.af-search-wrap {
+  padding: 14px 20px 10px;
+  flex-shrink: 0;
+}
+.af-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg-input-search);
+  border-radius: var(--radius-full);
+  border: 1.5px solid transparent;
+  transition: background var(--dur-fast), border-color var(--dur-fast), box-shadow var(--dur-fast);
+}
+.af-search:focus-within {
+  background: var(--bg-chat);
+  border-color: var(--color-primary);
+  box-shadow: var(--ring-primary);
+}
+.af-search-ico { color: var(--gray-400); flex-shrink: 0; }
+.af-search-inp {
+  flex: 1;
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  background: none;
+  border: none;
+  outline: none;
+  font-family: var(--font-sans);
+}
+.af-search-inp::placeholder { color: var(--gray-400); }
+.af-search-clr {
+  display: flex;
+  align-items: center;
+  color: var(--gray-400);
+  cursor: pointer;
+  background: transparent;
+  transition: color var(--dur-fast);
+  padding: 2px;
+}
+.af-search-clr:hover { color: var(--text-secondary); }
+
+/* ── Body ────────────────────────────────────────────────────────── */
+.af-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: var(--sp-2);
+}
+.af-body::-webkit-scrollbar { width: 4px; }
+.af-body::-webkit-scrollbar-track { background: transparent; }
+.af-body::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 2px; }
+.af-body::-webkit-scrollbar-thumb:hover { background: var(--gray-300); }
+
+/* ── Loading ─────────────────────────────────────────────────────── */
+.af-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 52px 24px;
+  gap: 14px;
+}
+.af-spinner {
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid var(--gray-200);
+  border-top-color: var(--color-primary);
+  border-radius: var(--radius-full);
+  animation: af-spin .72s linear infinite;
+}
+@keyframes af-spin { to { transform: rotate(360deg); } }
+.af-loading-txt {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* ── Empty state (idle) ──────────────────────────────────────────── */
+.af-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 44px 24px 36px;
+  text-align: center;
+}
+
+/* Composed icon: avatar bg + plus badge */
+.af-empty-icon-wrap {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 22px;
+}
+.af-empty-avatar-bg {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-xl);
+  background: var(--color-primary-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.af-empty-plus {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  border: 2px solid var(--bg-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.af-empty-title {
+  font-size: var(--text-md);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.af-empty-sub {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-bottom: 18px;
+  line-height: var(--lh-relaxed);
+}
+
+/* Search hint tags */
+.af-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.af-tag {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  background: var(--bg-input-search);
+  border-radius: var(--radius-full);
+  padding: 4px 12px;
+  line-height: 1.5;
+  font-weight: var(--font-medium);
+}
+
+/* ── Not found state ─────────────────────────────────────────────── */
+.af-notfound {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 44px 24px;
+  text-align: center;
+  gap: 6px;
+}
+.af-notfound-title {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  font-weight: var(--font-medium);
+}
+.af-notfound-sub {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* ── Result items ────────────────────────────────────────────────── */
+.af-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 22px;
+  cursor: pointer;
+  transition: background var(--dur-fast);
+}
+.af-item:hover { background: var(--bg-hover); }
+.af-item-info { flex: 1; min-width: 0; }
+.af-item-name {
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  line-height: var(--lh-snug);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.af-item-sub {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.af-item-chevron { color: var(--gray-300); flex-shrink: 0; }

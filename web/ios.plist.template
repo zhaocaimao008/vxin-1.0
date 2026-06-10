@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- 应用基础配置 -->
+	<key>CFBundleDevelopmentRegion</key>
+	<string>zh_CN</string>
+
+	<key>CFBundleDisplayName</key>
+	<string>v信</string>
+
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+
+	<key>CFBundleIdentifier</key>
+	<string>com.vxin.app</string>
+
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.0</string>
+
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.vxin.app</string>
+			</array>
+		</dict>
+	</array>
+
+	<key>CFBundleVersion</key>
+	<string>1</string>
+
+	<!-- 🔴 刘海屏安全区域配置 -->
+	<key>UIRequiresFullScreen</key>
+	<false/>
+
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleLightContent</string>
+
+	<!-- 屏幕方向限制 -->
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+	</array>
+
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+
+	<!-- 网络安全传输 HTTPS -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<!-- 本地开发环境 -->
+			<key>localhost</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSTemporaryExceptionMinimumTLSVersion</key>
+				<string>TLSv1.0</string>
+			</dict>
+			<!-- 生产域名 -->
+			<key>api.91aigu.com</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+			</dict>
+		</dict>
+	</dict>
+
+	<!-- 权限声明 -->
+	<key>NSCameraUsageDescription</key>
+	<string>v信需要访问你的相机来发送照片和视频</string>
+
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>v信需要访问你的相册来发送照片</string>
+
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>v信需要访问你的相册来保存照片</string>
+
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>v信需要你的位置信息来分享位置</string>
+
+	<key>NSMicrophoneUsageDescription</key>
+	<string>v信需要访问你的麦克风来发送语音消息</string>
+
+	<!-- BackgroundModes - 后台任务 -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>voip</string>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
+
+	<!-- 后台刷新 -->
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.vxin.app.message-sync</string>
+	</array>
+
+	<!-- 防录屏 (可选，敏感内容) -->
+	<key>UIFileSharingEnabled</key>
+	<false/>
+
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<false/>
+
+	<!-- 字体 -->
+	<key>UIFonts</key>
+	<array/>
+
+	<!-- 启动屏配置 -->
+	<key>UILaunchScreen</key>
+	<dict/>
+
+	<!-- 主题 -->
+	<key>UIUserInterfaceStyle</key>
+	<string>Dark</string>
+
+	<!-- App Groups (可选，用于Widget等) -->
+	<key>AppGroup</key>
+	<string>group.com.vxin.app</string>
+</dict>
+</plist>

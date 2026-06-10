@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import Avatar from './Avatar';
 import ImagePreview from './ImagePreview';
@@ -171,6 +172,12 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   useEffect(() => { convTypeRef.current = conversation.type; }, [conversation.type]);
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => {
+    return () => {
+      if (recorderRef.current) stopRecording();
+      if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+    };
+  }, [conversation.id]);
+  useEffect(() => {
     const sendRead = () => {
       const lastMsg = messagesRef.current[messagesRef.current.length - 1];
       if (!lastMsg) return;
@@ -320,21 +327,25 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       try {
         const data = await fetchMessages(oldest);
         if (convIdRef.current !== snapConvId) return; // 已切换会话，丢弃
-        if (data.length === 0) { setHasMore(false); }
+        if (!data || data.length === 0) { setHasMore(false); }
         else {
           const prevScrollHeight = container.scrollHeight;
           setMessages(prev => [...data, ...prev]);
           setTimeout(() => { container.scrollTop = container.scrollHeight - prevScrollHeight; }, 0);
         }
-      } catch {}
-      setLoadingMore(false);
+      } catch (err) {
+        console.error('Failed to load more messages:', err);
+      } finally {
+        setLoadingMore(false);
+      }
     }
   }, [loadingMore, hasMore, messages, fetchMessages]);
 
   useEffect(() => {
     if (!socket) return;
     const onMsg = (msg) => {
-      if (msg.conversation_id !== convIdRef.current) return;
+      const currentConvId = convIdRef.current;
+      if (msg.conversation_id !== currentConvId) return;
       if (confirmedMsgIds.current.has(msg.id)) {
         confirmedMsgIds.current.delete(msg.id);
         return;
@@ -343,7 +354,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         if (prev.find(m => m.id === msg.id)) return prev;
         return [...prev, msg];
       });
-      axios.post(`/api/messages/conversation/${convIdRef.current}/read`).catch(() => {});
+      axios.post(`/api/messages/conversation/${currentConvId}/read`).catch(() => {});
       // 收到新消息后始终滚到底部（等 React 渲染完再滚）
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     };
@@ -798,7 +809,12 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         } catch { setUploadState({ name: '语音', progress: 0, status: 'error', errorMsg: '发送失败' }); }
         stream.getTracks().forEach(t => t.stop());
       };
-      recorder.start();
+      try {
+        recorder.start();
+      } catch (e) {
+        stream.getTracks().forEach(t => t.stop());
+        throw e;
+      }
       recorderRef.current = recorder;
       setRecording(true);
     } catch { alert('无法访问麦克风'); }
@@ -823,12 +839,48 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   const handleContextMenu = (e, msg) => {
     if (msg.deleted) return;
     e.preventDefault();
-    const x = Math.min(e.clientX, window.innerWidth - 180);
-    const y = Math.min(e.clientY, window.innerHeight - 320);
+    e.stopPropagation();
+
+    // 🔥 改进的菜单位置计算（使用Portal后固定到viewport）
+    let x = e.clientX;
+    let y = e.clientY;
+
+    // 菜单尺寸：宽度~220px，高度~280px
+    const MENU_WIDTH = 220;
+    const MENU_HEIGHT = 280;
+    const PADDING = 10;
+
+    // 右边界检查
+    if (x + MENU_WIDTH + PADDING > window.innerWidth) {
+      x = window.innerWidth - MENU_WIDTH - PADDING;
+    }
+
+    // 下边界检查
+    if (y + MENU_HEIGHT + PADDING > window.innerHeight) {
+      y = window.innerHeight - MENU_HEIGHT - PADDING;
+    }
+
+    // 上边界检查
+    if (y < PADDING) {
+      y = PADDING;
+    }
+
     setCtxMenu({ x, y, msg });
   };
 
   const closeCtx = () => setCtxMenu(null);
+
+  // 🔥 点击外部关闭菜单
+  useEffect(() => {
+    if (!ctxMenu) return;
+    const handler = () => closeCtx();
+    document.addEventListener('click', handler);
+    document.addEventListener('contextmenu', handler);
+    return () => {
+      document.removeEventListener('click', handler);
+      document.removeEventListener('contextmenu', handler);
+    };
+  }, [ctxMenu]);
 
   const ctxAction = async (action) => {
     const msg = ctxMenu?.msg;
@@ -1566,10 +1618,28 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
 
 
       {/* Context menu */}
-      {ctxMenu && (
+      {ctxMenu && createPortal(
         <>
-          <div className="wc-ctx-overlay" onClick={closeCtx} />
-          <div className="wc-ctx-menu" style={{ left: ctxMenu.x, top: ctxMenu.y }}>
+          <div
+            className="wc-ctx-overlay"
+            onClick={closeCtx}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              zIndex: 999,
+            }}
+          />
+          <div
+            className="wc-ctx-menu"
+            style={{
+              position: 'fixed',
+              left: ctxMenu.x + 'px',
+              top: ctxMenu.y + 'px',
+              zIndex: 1000,
+            }}>
             <div className="wc-ctx-emoji-row">
               {REACTIONS.map(e => (
                 <span key={e} className="wc-ctx-emoji" onClick={() => ctxAction(`react:${e}`)}>{e}</span>
@@ -1600,7 +1670,8 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
               </div>
             )}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
@@ -1660,11 +1731,13 @@ function VoicePlayer({ url }) {
   useEffect(() => {
     const audio = new Audio(url);
     audio.preload = 'metadata';
+    const handlePlay = () => setPlaying(true);
+    const handlePause = () => setPlaying(false);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('play', () => setPlaying(true));
-    audio.addEventListener('pause', () => setPlaying(false));
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
     audioRef.current = audio;
     return () => {
       audio.pause();
@@ -1672,10 +1745,10 @@ function VoicePlayer({ url }) {
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('ended', handleEnded);
-      audio.removeEventListener('play', () => setPlaying(true));
-      audio.removeEventListener('pause', () => setPlaying(false));
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
     };
-  }, [url]);
+  }, [url, handleLoadedMetadata, handleTimeUpdate, handleEnded]);
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 

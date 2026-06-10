@@ -6,10 +6,15 @@ const config = require('../../config');
 const { db, generateVxinId } = require('../../db/connection');
 const { badRequest, notFound, forbidden } = require('../../utils/http');
 
-// 运行时邀请码：优先 admin_settings，回退 .env（后台可改）
+// 运行时邀请码：支持多个逗号分隔（后台可改）
 function currentInviteCode() {
   const row = db.prepare("SELECT value FROM admin_settings WHERE key='invite_code'").get();
   return row?.value ?? config.inviteCode;
+}
+
+function isValidInviteCode(code) {
+  const raw = currentInviteCode();
+  return raw.split(',').map(s => s.trim()).includes(code);
 }
 
 // ── 工具 ────────────────────────────────────────────────────────
@@ -57,7 +62,7 @@ function upsertSession(userId, req) {
 async function register({ username, phone, password, inviteCode }) {
   if (!username || !phone || !password) throw badRequest('请填写所有字段');
   if (!inviteCode || !/^\d{6}$/.test(inviteCode)) throw badRequest('邀请码必须是6位数字');
-  if (inviteCode !== currentInviteCode()) throw badRequest('邀请码不正确');
+  if (!isValidInviteCode(inviteCode)) throw badRequest('邀请码不正确');
   if (!/^(?=.*[a-zA-Z])(?=.*\d).{8,}$/.test(password))
     throw badRequest('密码必须至少8位，且至少包含1个字母和1个数字');
 

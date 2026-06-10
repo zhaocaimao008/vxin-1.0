@@ -17,6 +17,7 @@ const { shutdown: shutdownWriter } = require('./db/writer');
 const server = http.createServer(app);
 
 const io = new Server(server, {
+  transports: ['websocket'], // 仅 websocket 防集群握手死锁
   cors: {
     origin: config.allowedOrigins,
     credentials: true,

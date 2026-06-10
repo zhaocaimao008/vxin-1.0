@@ -14,6 +14,14 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(''); setLoading(true);
+
+    // 🔴 前端验证邀请码
+    if (!form.inviteCode || !/^\d{6}$/.test(form.inviteCode)) {
+      setError('邀请码必须是6位数字');
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data } = await axios.post('/api/auth/register', form);
       login(data.user);
@@ -67,6 +75,10 @@ export default function Register() {
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '16px', padding: '8px 12px', backgroundColor: 'rgba(22, 119, 255, 0.08)', borderRadius: '6px', fontSize: '13px', color: '#666' }}>
+            💡 需要邀请码？请向已有账号的用户询问，或联系管理员获取
+          </div>
+
           {fields.map(f => (
             <div key={f.key} className={`auth-field ${focusedField === f.key ? 'focused' : ''} ${form[f.key] ? 'has-value' : ''}`}>
               <label className="auth-field-label">{f.label}</label>

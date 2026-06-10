@@ -217,7 +217,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
   /* 设置/取消管理员（仅群主） */
   const toggleAdmin = async (uid, currentRole) => {
     const newRole = currentRole === 'admin' ? 'member' : 'admin';
-    const name = info.members.find(m => m.id === uid)?.username;
+    const name = info.members.find(m => m.id === uid)?.username || '未知用户';
     const action = newRole === 'admin' ? `设置「${name}」为管理员` : `撤销「${name}」的管理员`;
     if (!confirm(action + '？')) return;
     await axios.put(`/api/messages/conversation/${conversation.id}/members/${uid}/role`, { role: newRole });
@@ -226,7 +226,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
 
   /* 移出成员 */
   const kickMember = async (uid) => {
-    const name = info.members.find(m => m.id === uid)?.username;
+    const name = info.members.find(m => m.id === uid)?.username || '未知用户';
     if (!confirm(`确认移出成员「${name}」？`)) return;
     await axios.delete(`/api/messages/conversation/${conversation.id}/members/${uid}`);
     setInfo(i => ({ ...i, members: i.members.filter(m => m.id !== uid) }));
