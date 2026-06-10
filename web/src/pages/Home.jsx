@@ -75,7 +75,6 @@ const IcoStar = () => (
 );
 
 const TABS = [
-  { key: 'me',        Icon: IcoProfile,  label: '我',     isMe: true },
   { key: 'chats',     Icon: IcoChat,     label: '消息' },
   { key: 'contacts',  Icon: IcoContacts, label: '通讯录' },
   { key: 'moments',   Icon: IcoMoments,  label: '朋友圈', feature: 'moments' },
