@@ -24,8 +24,8 @@ function AfResultItem({ user: u, onClick }) {
   );
 }
 
-export default function AddFriendModal({ onClose }) {
-  const [query, setQuery] = useState('');
+export default function AddFriendModal({ onClose, initialQuery = '' }) {
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
@@ -43,6 +43,9 @@ export default function AddFriendModal({ onClose }) {
       .catch(() => { setResults([]); setSearched(true); })
       .finally(() => setSearching(false));
   }, []);
+
+  // 带入初始关键词时自动搜索（来自主搜索框「去网络搜索」兜底）
+  useEffect(() => { if (initialQuery.trim()) doSearch(initialQuery); }, [initialQuery, doSearch]);
 
   const onChange = (e) => {
     const v = e.target.value;

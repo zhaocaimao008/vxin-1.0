@@ -7,6 +7,8 @@ import Profile from '../components/Profile';
 import Moments from '../components/Moments';
 import CallHistory from '../components/CallHistory';
 import Collections from '../components/Collections';
+import GlobalSearch from '../components/GlobalSearch';
+import AddFriendModal from '../components/AddFriendModal';
 import Avatar from '../components/Avatar';
 import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -586,6 +588,7 @@ function CreateGroupModal({ onClose, onCreated }) {
 export default function Home() {
   const [tab, setTab] = useState('chats');
   const [features, setFeatures] = useState({ moments: true, collect: true });
+  const [netSearchQ, setNetSearchQ] = useState(null); // null=关闭；字符串=带词打开网络搜索
   const [activeConv, setActiveConv] = useState(null);
   const [unread, setUnread] = useState({});
   const [friendReqCount, setFriendReqCount] = useState(0);
@@ -856,7 +859,13 @@ export default function Home() {
             </div>
 
             <div className="wc-panel-content">
-              {renderMain()}
+              {search.trim() ? (
+                <GlobalSearch
+                  query={search}
+                  onSelectConv={(conv) => { (isMobile ? handleMobileSelectConv : handleSelectConv)(conv); setSearch(''); }}
+                  onNetworkSearch={(q) => setNetSearchQ(q || search)}
+                />
+              ) : renderMain()}
             </div>
           </div>
         )}
@@ -935,6 +944,11 @@ export default function Home() {
           anchorRef={meRef}
           onClose={() => setShowMePopup(false)}
         />
+      )}
+
+      {/* 主搜索框「去网络搜索」兜底：带关键词打开添加好友 */}
+      {netSearchQ !== null && (
+        <AddFriendModal initialQuery={netSearchQ} onClose={() => setNetSearchQ(null)} />
       )}
     </div>
   );
