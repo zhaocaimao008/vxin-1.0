@@ -4,6 +4,9 @@ import ChatList from '../components/ChatList';
 import ChatWindow from '../components/ChatWindow';
 import ContactList from '../components/ContactList';
 import Profile from '../components/Profile';
+import Moments from '../components/Moments';
+import CallHistory from '../components/CallHistory';
+import Collections from '../components/Collections';
 import Avatar from '../components/Avatar';
 import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -59,11 +62,24 @@ const IcoSettings = () => (
   <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.63-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.03-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
 );
 
+const IcoMoments = () => (
+  <svg viewBox="0 0 24 24"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+);
+const IcoCall = () => (
+  <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+);
+const IcoStar = () => (
+  <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+);
+
 const TABS = [
-  { key: 'me',       Icon: IcoProfile,  label: '我',    isMe: true },
-  { key: 'chats',    Icon: IcoChat,     label: '消息' },
-  { key: 'contacts', Icon: IcoContacts, label: '通讯录' },
-  { key: 'settings', Icon: IcoSettings, label: '设置' },
+  { key: 'me',        Icon: IcoProfile,  label: '我',     isMe: true },
+  { key: 'chats',     Icon: IcoChat,     label: '消息' },
+  { key: 'contacts',  Icon: IcoContacts, label: '通讯录' },
+  { key: 'moments',   Icon: IcoMoments,  label: '朋友圈', feature: 'moments' },
+  { key: 'calls',     Icon: IcoCall,     label: '通话' },
+  { key: 'favorites', Icon: IcoStar,     label: '收藏',   feature: 'collect' },
+  { key: 'settings',  Icon: IcoSettings, label: '设置' },
 ];
 
 /* ── 我的资料弹窗 ── */
@@ -569,6 +585,7 @@ function CreateGroupModal({ onClose, onCreated }) {
 
 export default function Home() {
   const [tab, setTab] = useState('chats');
+  const [features, setFeatures] = useState({ moments: true, collect: true });
   const [activeConv, setActiveConv] = useState(null);
   const [unread, setUnread] = useState({});
   const [friendReqCount, setFriendReqCount] = useState(0);
@@ -602,6 +619,15 @@ export default function Home() {
 
   useEffect(() => {
     axios.get('/api/users/friend-requests').then(r => setFriendReqCount(r.data.length));
+  }, []);
+
+  // 功能开关：后台可隐藏朋友圈/收藏。若当前所在 tab 被关闭则退回消息页
+  useEffect(() => {
+    axios.get('/api/config').then(r => {
+      const f = r.data?.features || {};
+      setFeatures(f);
+      setTab(prev => ((prev === 'moments' && f.moments === false) || (prev === 'favorites' && f.collect === false)) ? 'chats' : prev);
+    }).catch(() => {});
   }, []);
 
   const fetchUnreadCounts = useCallback(() => {
@@ -729,6 +755,12 @@ export default function Home() {
         return <ChatList onSelectConv={isMobile ? handleMobileSelectConv : handleSelectConv} activeConvId={activeConv?.id} unread={unread} searchQuery={search} />;
       case 'contacts':
         return <ContactList onStartChat={(conv) => handleSelectConv(conv)} searchQuery={search} addFriendRequest={addFriendRequest} />;
+      case 'moments':
+        return <Moments />;
+      case 'calls':
+        return <CallHistory />;
+      case 'favorites':
+        return <Collections />;
       case 'profile':
       case 'settings':
         return <Profile />;
@@ -768,7 +800,7 @@ export default function Home() {
         <AccountSwitcher onNavigate={() => handleTabChange('settings')} />
         {/* Tab 按钮紧跟头像，不用 spacer 下推，防止小屏被裁切 */}
         <div className="wc-sidebar-btns">
-          {TABS.map(({ key, Icon, label, isMe }) => {
+          {TABS.filter(t => !t.feature || features[t.feature] !== false).map(({ key, Icon, label, isMe }) => {
             const count = badges[key] || 0;
             const handleClick = isMe
               ? () => setShowMePopup(v => !v)

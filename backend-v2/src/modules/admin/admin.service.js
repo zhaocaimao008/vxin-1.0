@@ -222,8 +222,27 @@ function generateInviteCode() {
   return setInviteCode(String(Math.floor(100000 + Math.random() * 900000)));
 }
 
+// ── 功能开关（后台可隐藏：朋友圈 / 收藏）默认开启 ────────────────
+function getFeatures() {
+  const get = k => db.prepare('SELECT value FROM admin_settings WHERE key=?').get(k)?.value;
+  return {
+    moments: get('feature_moments') !== 'off',
+    collect: get('feature_collect') !== 'off',
+  };
+}
+function setFeatures({ moments, collect }) {
+  const set = (k, on) => db.prepare(`
+    INSERT INTO admin_settings (key, value, updated_at) VALUES (?, ?, strftime('%s','now'))
+    ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at
+  `).run(k, on ? 'on' : 'off');
+  if (moments !== undefined) set('feature_moments', !!moments);
+  if (collect !== undefined) set('feature_collect', !!collect);
+  return getFeatures();
+}
+
 module.exports = {
   verifyCredentials, stats, listUsers, userDetail, setBanned, resetPassword,
   deleteUser, listMessages, listGroups, groupDetail, dismissGroup,
   getInviteCode, setInviteCode, generateInviteCode,
+  getFeatures, setFeatures,
 };

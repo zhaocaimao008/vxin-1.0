@@ -56,6 +56,10 @@ app.use('/api/notifications', require('./modules/notifications/notifications.rou
 app.use('/api/upload',        require('./modules/upload/upload.routes'));
 app.use('/api/admin',         require('./modules/admin/admin.routes'));
 
+// 公开配置（前端读取功能开关，决定朋友圈/收藏入口显隐）
+const { getFeatures } = require('./modules/admin/admin.service');
+app.get('/api/config', (req, res) => res.json({ features: getFeatures() }));
+
 // 健康检查
 app.get('/health', (req, res) => res.json({ ok: true, version: 2 }));
 

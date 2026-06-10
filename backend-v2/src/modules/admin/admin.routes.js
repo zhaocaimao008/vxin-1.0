@@ -47,4 +47,8 @@ router.get ('/invite-code',          adminAuth, c.getInviteCode);
 router.put ('/invite-code',          adminAuth, c.setInviteCode);
 router.post('/invite-code/generate', adminAuth, c.generateInviteCode);
 
+// ── 功能开关（朋友圈 / 收藏 显隐）──────────────────────────────
+router.get('/features', adminAuth, c.getFeatures);
+router.put('/features', adminAuth, c.setFeatures);
+
 module.exports = router;
