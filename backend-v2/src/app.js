@@ -51,6 +51,7 @@ app.use('/api', csrfProtection);
 app.use('/api/auth',          require('./modules/auth/auth.routes'));
 app.use('/api/users',         require('./modules/users/users.routes'));
 app.use('/api/messages',      require('./modules/messages/messages.routes'));
+app.use('/api/moments',       require('./modules/moments/moments.routes'));
 app.use('/api/notifications', require('./modules/notifications/notifications.routes'));
 app.use('/api/upload',        require('./modules/upload/upload.routes'));
 app.use('/api/admin',         require('./modules/admin/admin.routes'));

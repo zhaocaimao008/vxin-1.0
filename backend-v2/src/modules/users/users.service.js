@@ -119,8 +119,31 @@ function getCollections(userId) {
     .map(i => ({ ...i, extra: JSON.parse(i.extra || '{}') }));
 }
 
+// 取消收藏（仅能删自己的，幂等：不存在则报 404）
+function removeCollection(userId, collectionId) {
+  const r = db.prepare('DELETE FROM collections WHERE id=? AND user_id=?').run(collectionId, userId);
+  if (r.changes === 0) throw notFound('收藏不存在');
+  return { success: true };
+}
+
+// 通话历史（自己作为主叫或被叫的记录，含对方资料 + 方向）
+function getCallLogs(userId, limit = 50) {
+  const n = Math.min(Number(limit) || 50, 200);
+  return db.prepare(`
+    SELECT cl.id, cl.type, cl.status, cl.started_at, cl.ended_at, cl.duration, cl.created_at,
+           CASE WHEN cl.caller_id=? THEN 'out' ELSE 'in' END AS direction,
+           CASE WHEN cl.caller_id=? THEN cl.callee_id ELSE cl.caller_id END AS peer_id,
+           pu.username AS peer_name, pu.avatar AS peer_avatar
+    FROM call_logs cl
+    JOIN users pu ON pu.id = (CASE WHEN cl.caller_id=? THEN cl.callee_id ELSE cl.caller_id END)
+    WHERE cl.caller_id=? OR cl.callee_id=?
+    ORDER BY cl.created_at DESC
+    LIMIT ?
+  `).all(userId, userId, userId, userId, userId, n);
+}
+
 module.exports = {
   ensureSettings, serializeSettings, getSettings, updateSettings,
   qrPayload, search, updateProfile, setAvatar, setCover,
-  getUserDetail, getCollections,
+  getUserDetail, getCollections, removeCollection, getCallLogs,
 };

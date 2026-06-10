@@ -49,6 +49,8 @@ function claim(io, userId, packetId) {
 
       const fresh = db.prepare('SELECT * FROM red_packets WHERE id=?').get(packetId);
       if (fresh.claimed_count >= fresh.total_count) return { error: '红包已被领完' };
+      // 24h 过期不可领（即便定时任务尚未标记）
+      if (Math.floor(Date.now() / 1000) - fresh.created_at > 24 * 3600) return { error: '红包已过期' };
 
       const sumRow = db.prepare('SELECT COALESCE(SUM(amount),0) as s FROM red_packet_claims WHERE packet_id=?').get(packetId);
       const remaining = fresh.total_amount - sumRow.s;

@@ -283,6 +283,26 @@ function applySchema(db) {
       last_seen  INTEGER DEFAULT (strftime('%s','now')),
       UNIQUE(device_id, ip)
     )`,
+    // ── 通话记录（WebRTC 1对1 信令落库，生成通话历史/未接来电）──
+    `CREATE TABLE IF NOT EXISTS call_logs (
+      id         TEXT PRIMARY KEY,
+      caller_id  TEXT NOT NULL,
+      callee_id  TEXT NOT NULL,
+      type       TEXT DEFAULT 'audio',
+      status     TEXT DEFAULT 'missed',
+      started_at INTEGER DEFAULT (strftime('%s','now')),
+      ended_at   INTEGER DEFAULT NULL,
+      duration   INTEGER DEFAULT 0,
+      created_at INTEGER DEFAULT (strftime('%s','now'))
+    )`,
+    "CREATE INDEX IF NOT EXISTS idx_call_logs_caller ON call_logs(caller_id, created_at)",
+    "CREATE INDEX IF NOT EXISTS idx_call_logs_callee ON call_logs(callee_id, created_at)",
+    // ── 朋友圈索引（表已在主 schema 建好，补查询索引）──
+    "CREATE INDEX IF NOT EXISTS idx_moments_user ON moments(user_id, created_at)",
+    "CREATE INDEX IF NOT EXISTS idx_moments_time ON moments(created_at)",
+    "CREATE INDEX IF NOT EXISTS idx_moment_comments_moment ON moment_comments(moment_id, created_at)",
+    // ── 红包状态（active/expired，配合过期回收标记）──
+    "ALTER TABLE red_packets ADD COLUMN status TEXT DEFAULT 'active'",
   ];
   migrations.forEach(sql => { try { db.prepare(sql).run(); } catch {} });
 }

@@ -41,6 +41,8 @@ router.get ('/:id', auth, u.getUserDetail);
 
 // ── 两段路由（不被 /:id 影响）──────────────────────────────────
 router.get   ('/me/collections', auth, u.getCollections);
+router.delete('/me/collections/:id', auth, u.removeCollection);
+router.get   ('/me/call-logs', auth, u.getCallLogs);
 router.post  ('/block/:targetId', auth, c.block);
 router.delete('/block/:targetId', auth, c.unblock);
 router.get   ('/me/blocked',      auth, c.listBlocked);

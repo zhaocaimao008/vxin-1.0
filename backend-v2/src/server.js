@@ -10,6 +10,7 @@ const config = require('./config');
 const app = require('./app');
 const setupRealtime = require('./realtime');
 const { shutdown: shutdownWriter } = require('./db/writer');
+const { db } = require('./db/connection');
 
 // 确保上传目录存在
 ['avatars', 'files'].forEach(d => fs.mkdirSync(path.join(config.uploadsRoot, d), { recursive: true }));
@@ -30,6 +31,26 @@ app.set('io', io);
 app.set('onlineUsers', new Set());
 
 setupRealtime(io, app);
+
+// ── 定时维护（每10分钟）─────────────────────────────────────────
+//   1) 红包过期标记：24h 未领完的标记 expired（系统无钱包，仅状态回收）
+//   2) 清理过期群邀请令牌
+const MAINT_INTERVAL = 10 * 60 * 1000;
+const RED_PACKET_TTL = 24 * 3600;
+setInterval(() => {
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    const rp = db.prepare(
+      "UPDATE red_packets SET status='expired' WHERE status='active' AND claimed_count < total_count AND created_at < ?"
+    ).run(now - RED_PACKET_TTL);
+    const tok = db.prepare('DELETE FROM group_invite_tokens WHERE expires_at < ?').run(now);
+    if (rp.changes || tok.changes) {
+      console.log(`[maintenance] 红包过期标记 ${rp.changes}，清理过期群邀请 ${tok.changes}`);
+    }
+  } catch (e) {
+    console.warn('[maintenance] 失败:', e.message);
+  }
+}, MAINT_INTERVAL).unref();
 
 server.listen(config.port, () => {
   console.log(`v信后端 v2 已启动: http://localhost:${config.port}  (env=${config.env})`);

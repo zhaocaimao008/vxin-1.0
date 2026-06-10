@@ -34,3 +34,5 @@ exports.uploadCover = asyncHandler(async (req, res) => {
 
 exports.getUserDetail  = asyncHandler(async (req, res) => res.json(svc.getUserDetail(req.user.id, req.params.id)));
 exports.getCollections = asyncHandler(async (req, res) => res.json(svc.getCollections(req.user.id)));
+exports.removeCollection = asyncHandler(async (req, res) => res.json(svc.removeCollection(req.user.id, req.params.id)));
+exports.getCallLogs = asyncHandler(async (req, res) => res.json(svc.getCallLogs(req.user.id, req.query.limit)));
