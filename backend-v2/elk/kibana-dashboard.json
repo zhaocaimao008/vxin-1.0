@@ -1,0 +1,65 @@
+{
+  "version": "8.0.0",
+  "objects": [
+    {
+      "type": "index-pattern",
+      "id": "vxin-logs",
+      "attributes": {
+        "title": "vxin-logs-*",
+        "timeFieldName": "@timestamp",
+        "fields": "[{\"name\":\"@timestamp\",\"type\":\"date\"},{\"name\":\"timestamp\",\"type\":\"date\"},{\"name\":\"level\",\"type\":\"string\"},{\"name\":\"message\",\"type\":\"string\"},{\"name\":\"duration\",\"type\":\"number\"},{\"name\":\"method\",\"type\":\"string\"},{\"name\":\"path\",\"type\":\"string\"},{\"name\":\"statusCode\",\"type\":\"number\"},{\"name\":\"userId\",\"type\":\"string\"},{\"name\":\"ip\",\"type\":\"ip\"}]"
+      }
+    },
+    {
+      "type": "dashboard",
+      "id": "vxin-logs-dashboard",
+      "attributes": {
+        "title": "V信日志分析仪表板",
+        "panels": [
+          {
+            "version": "8.0.0",
+            "gridData": {
+              "x": 0,
+              "y": 0,
+              "w": 24,
+              "h": 15
+            },
+            "type": "visualization",
+            "embeddableConfig": {},
+            "panelIndex": "1",
+            "embeddableConfig": {
+              "vis": {
+                "title": "日志量趋势"
+              }
+            }
+          },
+          {
+            "version": "8.0.0",
+            "gridData": {
+              "x": 0,
+              "y": 15,
+              "w": 12,
+              "h": 15
+            },
+            "type": "visualization",
+            "panelIndex": "2"
+          },
+          {
+            "version": "8.0.0",
+            "gridData": {
+              "x": 12,
+              "y": 15,
+              "w": 12,
+              "h": 15
+            },
+            "type": "visualization",
+            "panelIndex": "3"
+          }
+        ],
+        "timeRestore": true,
+        "timeFrom": "now-24h",
+        "timeTo": "now"
+      }
+    }
+  ]
+}

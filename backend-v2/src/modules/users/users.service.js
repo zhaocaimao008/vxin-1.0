@@ -1,6 +1,7 @@
 'use strict';
 const { db } = require('../../db/connection');
 const { notFound, badRequest } = require('../../utils/http');
+const cache = require('../../utils/cache');
 
 // ── 设置序列化 ──────────────────────────────────────────────────
 const settingDefaults = {
@@ -80,23 +81,45 @@ function search(userId, q) {
 }
 
 // ── 资料 ────────────────────────────────────────────────────────
-function updateProfile(userId, { username, bio }) {
+async function updateProfile(userId, { username, bio }) {
   if (username) {
     if (db.prepare('SELECT id FROM users WHERE username=? AND id!=?').get(username, userId))
       throw badRequest('用户名已被占用');
     db.prepare('UPDATE users SET username=? WHERE id=?').run(username, userId);
   }
   if (bio !== undefined) db.prepare('UPDATE users SET bio=? WHERE id=?').run(bio, userId);
+  // P2 优化：删除用户缓存，下次查询重新加载
+  await cache.del(cache.keys.user(userId));
   return db.prepare('SELECT id,username,phone,avatar,bio,wechat_id,cover_photo FROM users WHERE id=?').get(userId);
 }
 
-function setAvatar(userId, url)  { db.prepare('UPDATE users SET avatar=? WHERE id=?').run(url, userId); }
-function setCover(userId, url)   { db.prepare('UPDATE users SET cover_photo=? WHERE id=?').run(url, userId); }
+async function setAvatar(userId, url) {
+  db.prepare('UPDATE users SET avatar=? WHERE id=?').run(url, userId);
+  // P2 优化：删除缓存
+  await cache.del(cache.keys.user(userId));
+}
+
+async function setCover(userId, url) {
+  db.prepare('UPDATE users SET cover_photo=? WHERE id=?').run(url, userId);
+  // P2 优化：删除缓存
+  await cache.del(cache.keys.user(userId));
+}
 
 // ── 用户详情（隐私可见性判定）──────────────────────────────────
-function getUserDetail(viewerId, targetId) {
-  const user = db.prepare('SELECT id,username,avatar,bio,status,wechat_id,cover_photo FROM users WHERE id=?').get(targetId);
-  if (!user) throw notFound('用户不存在');
+async function getUserDetail(viewerId, targetId) {
+  // P2 优化：尝试从缓存获取用户基本信息（TTL: 30 分钟）
+  const cacheKey = cache.keys.user(targetId);
+  let user = await cache.get(cacheKey);
+
+  if (!user) {
+    // 缓存未命中，从数据库查询
+    user = db.prepare('SELECT id,username,avatar,bio,status,wechat_id,cover_photo FROM users WHERE id=?').get(targetId);
+    if (!user) throw notFound('用户不存在');
+    // 写入缓存
+    await cache.set(cacheKey, user, 1800);
+  }
+
+  // 关系信息不缓存（每次实时查询）
   const isFriend  = !!db.prepare('SELECT 1 FROM contacts WHERE user_id=? AND contact_id=?').get(viewerId, targetId);
   const isBlocked = !!db.prepare('SELECT 1 FROM blocked_users WHERE user_id=? AND blocked_id=?').get(viewerId, targetId);
   const contact   = db.prepare('SELECT remark FROM contacts WHERE user_id=? AND contact_id=?').get(viewerId, targetId);

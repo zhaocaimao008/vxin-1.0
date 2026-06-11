@@ -3,12 +3,166 @@ const router = require('express').Router();
 const auth = require('../../middleware/auth');
 const m = require('./moments.controller');
 
-router.get   ('/',                auth, m.timeline);       // 时间线（本人+好友）
-router.post  ('/',                auth, m.create);         // 发布
-router.get   ('/user/:userId',    auth, m.userMoments);    // 某用户的动态
-router.delete('/comments/:commentId', auth, m.deleteComment); // 删评论（须在 /:id 之前）
-router.delete('/:id',             auth, m.remove);         // 删动态
-router.post  ('/:id/like',        auth, m.like);           // 点赞/取消
-router.post  ('/:id/comment',     auth, m.comment);        // 评论
+/**
+ * @swagger
+ * /moments:
+ *   get:
+ *     tags:
+ *       - Moments
+ *     summary: Get timeline
+ *     description: Get moments from self and friends
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Timeline moments
+ *   post:
+ *     tags:
+ *       - Moments
+ *     summary: Create moment
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               content:
+ *                 type: string
+ *               images:
+ *                 type: array
+ *               visibility:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Moment created
+ */
+router.get   ('/',                auth, m.timeline);
+router.post  ('/',                auth, m.create);
+
+/**
+ * @swagger
+ * /moments/user/{userId}:
+ *   get:
+ *     tags:
+ *       - Moments
+ *     summary: Get user moments
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User moments
+ */
+router.get   ('/user/:userId',    auth, m.userMoments);
+
+/**
+ * @swagger
+ * /moments/comments/{commentId}:
+ *   delete:
+ *     tags:
+ *       - Moments
+ *     summary: Delete comment
+ *     parameters:
+ *       - in: path
+ *         name: commentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Comment deleted
+ */
+router.delete('/comments/:commentId', auth, m.deleteComment);
+
+/**
+ * @swagger
+ * /moments/{id}:
+ *   delete:
+ *     tags:
+ *       - Moments
+ *     summary: Delete moment
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Moment deleted
+ */
+router.delete('/:id',             auth, m.remove);
+
+/**
+ * @swagger
+ * /moments/{id}/like:
+ *   post:
+ *     tags:
+ *       - Moments
+ *     summary: Like or unlike moment
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Like toggled
+ */
+router.post  ('/:id/like',        auth, m.like);
+
+/**
+ * @swagger
+ * /moments/{id}/comment:
+ *   post:
+ *     tags:
+ *       - Moments
+ *     summary: Comment on moment
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               content:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Comment created
+ */
+router.post  ('/:id/comment',     auth, m.comment);
 
 module.exports = router;

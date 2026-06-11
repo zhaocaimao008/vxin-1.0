@@ -1,0 +1,53 @@
+groups:
+  - name: vxin_backend_alerts
+    interval: 30s
+    rules:
+      # 高响应时间告警（>2秒）
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "高响应时间告警"
+          description: "P95 响应时间超过 2秒: {{ $value }}ms"
+
+      # 高错误率告警（>1%）
+      - alert: HighErrorRate
+        expr: 100 * (rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m])) > 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "高错误率告警"
+          description: "错误率超过 1%: {{ $value }}%"
+
+      # 缓存命中率低（<80%）
+      - alert: LowCacheHitRate
+        expr: 100 * (redis_cache_hits_total / (redis_cache_hits_total + redis_cache_misses_total)) < 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "缓存命中率低"
+          description: "缓存命中率低于 80%: {{ $value }}%"
+
+      # 数据库查询缓慢（>500ms）
+      - alert: SlowDatabaseQuery
+        expr: histogram_quantile(0.95, rate(db_query_duration_seconds_bucket[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "数据库查询响应缓慢"
+          description: "P95 数据库查询耗时: {{ $value }}秒"
+
+      # 服务不可用
+      - alert: ServiceDown
+        expr: up{job="vxin-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "服务不可用"
+          description: "V信后端服务未响应"

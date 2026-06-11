@@ -21,15 +21,160 @@ const grp  = require('../groups/groups.controller');
 const rp   = require('../redpackets/redpackets.controller');
 
 // ── 会话创建 / 列表 ─────────────────────────────────────────────
+
+/**
+ * @swagger
+ * /messages/conversation/private:
+ *   post:
+ *     tags:
+ *       - Messages
+ *     summary: Create private conversation
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               participantId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Conversation created
+ */
 router.post('/conversation/private', auth, conv.createPrivate);
+
+/**
+ * @swagger
+ * /messages/conversation/group:
+ *   post:
+ *     tags:
+ *       - Messages
+ *     summary: Create group conversation
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               members:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: Group created
+ */
 router.post('/conversation/group',   auth, conv.createGroup);
+
+/**
+ * @swagger
+ * /messages/file-helper:
+ *   get:
+ *     tags:
+ *       - Messages
+ *     summary: Get file helper conversation
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: File helper conversation
+ */
 router.get ('/file-helper',          auth, conv.fileHelper);
+
+/**
+ * @swagger
+ * /messages/conversations:
+ *   get:
+ *     tags:
+ *       - Messages
+ *     summary: List conversations
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of conversations
+ */
 router.get ('/conversations',        auth, conv.list);
+
+/**
+ * @swagger
+ * /messages/conversation/{conversationId}/members:
+ *   get:
+ *     tags:
+ *       - Messages
+ *     summary: List conversation members
+ *     parameters:
+ *       - in: path
+ *         name: conversationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of members
+ */
 router.get ('/conversation/:conversationId/members', auth, conv.members);
+
+/**
+ * @swagger
+ * /messages/unread-counts:
+ *   get:
+ *     tags:
+ *       - Messages
+ *     summary: Get unread counts
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Unread counts
+ */
 router.get ('/unread-counts',        auth, conv.unreadCounts);
+
+/**
+ * @swagger
+ * /messages/my-groups:
+ *   get:
+ *     tags:
+ *       - Messages
+ *     summary: List user's groups
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of groups
+ */
 router.get ('/my-groups',            auth, conv.myGroups);
 
 // ── 全局搜索 ────────────────────────────────────────────────────
+
+/**
+ * @swagger
+ * /messages/search:
+ *   get:
+ *     tags:
+ *       - Messages
+ *     summary: Global message search
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Search results
+ */
 router.get ('/search', auth, msg.searchGlobal);
 
 // ── 群：昵称 / 邀请链接 / 二维码 / 扫码进群 ──────────────────────
@@ -63,10 +208,127 @@ router.get   ('/conversation/:convId/search',   auth, msg.searchInConv);
 router.get('/media', auth, conv.media);
 
 // ── 单段 GET 通配：消息历史 ─────────────────────────────────────
+
+/**
+ * @swagger
+ * /messages/{conversationId}:
+ *   get:
+ *     tags:
+ *       - Messages
+ *     summary: Get message history
+ *     parameters:
+ *       - in: path
+ *         name: conversationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Message history
+ *   post:
+ *     tags:
+ *       - Messages
+ *     summary: Send message
+ *     parameters:
+ *       - in: path
+ *         name: conversationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               content:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Message sent
+ *   delete:
+ *     tags:
+ *       - Messages
+ *     summary: Delete message
+ *     parameters:
+ *       - in: path
+ *         name: conversationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Message deleted
+ */
 router.get('/:conversationId', auth, msg.history);
 
 // ── 转发 / 批量撤回（POST 单段字面量，必须早于 POST /:conversationId）──
+
+/**
+ * @swagger
+ * /messages/forward:
+ *   post:
+ *     tags:
+ *       - Messages
+ *     summary: Forward messages
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               messageIds:
+ *                 type: array
+ *               targetConversationId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Messages forwarded
+ */
 router.post('/forward',      auth, msg.forward);
+
+/**
+ * @swagger
+ * /messages/batch-delete:
+ *   post:
+ *     tags:
+ *       - Messages
+ *     summary: Batch delete messages
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               messageIds:
+ *                 type: array
+ *     responses:
+ *       200:
+ *         description: Messages deleted
+ */
 router.post('/batch-delete', auth, msg.batchDelete);
 
 // ── 单段 POST 通配：HTTP 发消息 ─────────────────────────────────
