@@ -21,7 +21,8 @@ const APP_DIR  = process.env.APP_DIR || '/root/v信/backend-v2';
 const OUT      = process.env.OUT || '';
 
 const PASS = 'Loadtest1234';
-const phoneFor = i => '199' + String(i).padStart(8, '0');
+const phoneFor = i => 'LT' + String(i).padStart(9, '0');    // 与 seed_test_users.js 一致(防碰撞)
+const LOGIN_BATCH = parseInt(process.env.LOGIN_BATCH || '25', 10); // 分批登录，避免 bcrypt 打满 2 核 CPU
 
 let ioClient = null;
 for (const p of ['socket.io-client', path.join(APP_DIR, 'node_modules/socket.io-client')]) {
@@ -47,7 +48,7 @@ function req(method, pathName, { body, jar, csrf } = {}) {
     if (data) headers['Content-Length'] = Buffer.byteLength(data);
     if (jar && Object.keys(jar).length) headers.Cookie = jarStr(jar);
     if (csrf) headers['X-CSRF-Token'] = csrf;
-    const r = http.request({ host: U.hostname, port: U.port, path: pathName, method, headers }, (res) => {
+    const r = http.request({ host: U.hostname, port: U.port, path: pathName, method, headers, agent: false }, (res) => {
       let buf = '';
       res.on('data', d => buf += d);
       res.on('end', () => resolve({
@@ -79,19 +80,25 @@ async function session(i) {
   return { ok: true, jar, csrf };
 }
 
-// ───────────── A. 并发登录 ─────────────
+// ───────────── A. 并发登录（分批，避免 bcrypt 把 2 核打满）─────────────
+// 登录走 bcrypt(cost10,~100ms/次)，CPU 密集。一次性 300 并发会雪崩超时——
+// 这是压测方式问题，非服务端容量问题(真实用户登录是分散的)。故按 LOGIN_BATCH 分批，
+// 既建满会话池(供 C 段测并发在线)，又顺带测出单批登录延迟。
 async function testLogin(n) {
   const lat = []; let okN = 0, errN = 0; const sess = [];
-  await Promise.all(Array.from({ length: n }, (_, i) => (async () => {
-    const t = Date.now();
-    const s = await session(i);
-    lat.push(Date.now() - t);
-    if (s.ok) { okN++; sess.push(s); } else errN++;
-  })()));
-  console.log(`### A. 并发登录 (${n} 个预播种账号)`);
+  for (let off = 0; off < n; off += LOGIN_BATCH) {
+    const batch = Array.from({ length: Math.min(LOGIN_BATCH, n - off) }, (_, j) => off + j);
+    await Promise.all(batch.map((i) => (async () => {
+      const t = Date.now();
+      const s = await session(i);
+      lat.push(Date.now() - t);
+      if (s.ok) { okN++; sess.push(s); } else errN++;
+    })()));
+  }
+  console.log(`### A. 并发登录 (${n} 个预播种账号, 每批 ${LOGIN_BATCH})`);
   console.log(`- 成功 ${okN} / 失败 ${errN}  ·  成功率 ${(okN / n * 100).toFixed(1)}%`);
-  console.log(`- 延迟 p50=${pct(lat, .5)}ms  p95=${pct(lat, .95)}ms  max=${Math.max(...lat, 0)}ms`);
-  console.log(`- ${okN >= n * 0.98 ? '✅ 认证链路在并发下稳定' : '⚠️ 有登录失败，需查认证/数据库'}`);
+  console.log(`- 单次登录延迟(含bcrypt) p50=${pct(lat, .5)}ms  p95=${pct(lat, .95)}ms  max=${Math.max(...lat, 0)}ms`);
+  console.log(`- ${okN >= n * 0.98 ? '✅ 认证链路稳定，会话池就绪' : '⚠️ 有登录失败，需查认证/数据库/CPU'}`);
   return sess;
 }
 

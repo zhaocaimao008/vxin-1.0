@@ -17,12 +17,14 @@ const path = require('path');
 const APP_DIR = process.env.APP_DIR || '/root/v信/backend-v2';
 const Database = require(path.join(APP_DIR, 'node_modules/better-sqlite3'));
 const bcrypt = require(path.join(APP_DIR, 'node_modules/bcryptjs'));
-let config; try { config = require(path.join(APP_DIR, 'src/config')); } catch (_) {}
-const DB_PATH = process.env.DB_PATH || (config && config.dbPath) || path.join(APP_DIR, 'wechat.db');
+// 不要 require('src/config')！它在缺 JWT_SECRET 时会 process.exit(1)，从 ops/ 目录跑必崩。
+const DB_PATH = process.env.DB_PATH || path.join(APP_DIR, 'wechat.db');
 
 const PREFIX = '__loadtest_';
 const PASS = 'Loadtest1234';
-const phoneFor = i => '199' + String(i).padStart(8, '0');   // 199 + 8位 = 11位
+// 手机号用非手机号格式的保留标记 "LT"+序号，绝不会与真实 11 位手机号碰撞。
+// 登录接口只做 phone 精确匹配、不校验格式，故合法可用。
+const phoneFor = i => 'LT' + String(i).padStart(9, '0');
 
 const db = new Database(DB_PATH);
 db.pragma('busy_timeout = 8000');

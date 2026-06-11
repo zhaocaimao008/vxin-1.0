@@ -239,6 +239,7 @@ fi
 say "参数: 并发连接=$LOAD_CONNS  发消息速率=${LOAD_MSG_RATE}/s  时长=${LOAD_DURATION}s"
 SEED_OK=0
 if [ "$MODE" != "check" ] || [ -f "$HERE/seed_test_users.js" ]; then
+  export JWT_SECRET="$(grep -m1 '^JWT_SECRET=' "$APP_DIR/.env" | cut -d= -f2-)"
   if APP_DIR="$APP_DIR" node "$HERE/seed_test_users.js" create "$LOAD_CONNS" 2>&1 | tee -a "$REPORT"; then
     SEED_OK=1
   else
@@ -248,12 +249,12 @@ fi
 
 LOAD_JSON="$REPORT_DIR/load_${TS}.json"
 TARGET_ONLINE="$TARGET_ONLINE" LOAD_CONNS="$LOAD_CONNS" LOAD_MSG_RATE="$LOAD_MSG_RATE" LOAD_DURATION="$LOAD_DURATION" \
-BACKEND_URL="$BACKEND_URL" APP_DIR="$APP_DIR" OUT="$LOAD_JSON" \
+BACKEND_URL="$BACKEND_URL" APP_DIR="$APP_DIR" OUT="$LOAD_JSON" JWT_SECRET="$JWT_SECRET" \
   node "$HERE/hermes_loadtest.js" 2>&1 | tee -a "$REPORT" || warn "压测脚本执行异常"
 
 # 清理测试账号
 if [ "$SEED_OK" = 1 ]; then
-  APP_DIR="$APP_DIR" node "$HERE/seed_test_users.js" cleanup 2>&1 | tee -a "$REPORT" >/dev/null \
+  APP_DIR="$APP_DIR" JWT_SECRET="$JWT_SECRET" node "$HERE/seed_test_users.js" cleanup 2>&1 | tee -a "$REPORT" >/dev/null \
     && note "已清理压测临时账号"
 fi
 
