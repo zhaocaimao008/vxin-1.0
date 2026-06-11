@@ -139,11 +139,15 @@ async function testConnectionsAndBroadcast(sess) {
 
   let connected = 0, failed = 0; const live = []; // {socket}
   let recv = 0; const blat = [];          // 广播接收计数 + 延迟
-  await Promise.all(sess.map(s => new Promise((resolve) => {
+  // 分批爬坡建连：避免一次性 N 个 TLS 握手挤爆 2 核 CPU(建连风暴假象)。
+  // 真实用户是陆续连上来的；CONN_BATCH=0 则回到一次性全建(测瞬时峰值)。
+  const CONN_BATCH = parseInt(process.env.CONN_BATCH || '100', 10);
+  const CONN_DELAY = parseInt(process.env.CONN_BATCH_DELAY || '700', 10);
+  const connectOne = (s) => new Promise((resolve) => {
     let done = false;
     const sock = ioClient(URL_STR, {
       transports: ['websocket'], extraHeaders: { Cookie: jarStr(s.jar) },
-      reconnection: false, timeout: 10000, rejectUnauthorized: false,
+      reconnection: false, timeout: 15000, rejectUnauthorized: false,
     });
     sock.on('new_message', (msg) => {
       if (msg && typeof msg.content === 'string' && msg.content.startsWith('bcast ')) {
@@ -153,10 +157,18 @@ async function testConnectionsAndBroadcast(sess) {
     });
     sock.on('connect', () => { if (!done) { done = true; connected++; live.push(sock); resolve(); } });
     sock.on('connect_error', () => { if (!done) { done = true; failed++; resolve(); } });
-    setTimeout(() => { if (!done) { done = true; failed++; try { sock.close(); } catch (_) {} resolve(); } }, 10500);
-  })));
+    setTimeout(() => { if (!done) { done = true; failed++; try { sock.close(); } catch (_) {} resolve(); } }, 15500);
+  });
+  if (CONN_BATCH > 0) {
+    for (let off = 0; off < sess.length; off += CONN_BATCH) {
+      await Promise.all(sess.slice(off, off + CONN_BATCH).map(connectOne));
+      if (off + CONN_BATCH < sess.length) await sleep(CONN_DELAY);
+    }
+  } else {
+    await Promise.all(sess.map(connectOne));
+  }
   const total = connected + failed;
-  console.log(`### C. 并发 WebSocket 长连接 (${isHttps ? '经 Nginx/TLS wss' : '直连 ws'})`);
+  console.log(`### C. 并发 WebSocket 长连接 (${isHttps ? '经 Nginx/TLS wss' : '直连 ws'}${CONN_BATCH > 0 ? `, 每批${CONN_BATCH}爬坡` : ''})`);
   console.log(`- 建立 ${connected} / ${total}  ·  成功率 ${total ? (connected / total * 100).toFixed(1) : 0}%`);
 
   // soak：持续在线，跨多个心跳周期(默认25s)采样存活
