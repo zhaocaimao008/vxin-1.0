@@ -3,11 +3,11 @@ const CACHE_NAME = 'vxin-v1';
 
 // ── 安装 ─────────────────────────────────────────────────────────
 self.addEventListener('install', () => {
-  self.skipWaiting();
+  // 不调用 skipWaiting —— 等待下次页面加载再激活，避免中途接管导致白屏
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(clients.claim());
+self.addEventListener('activate', () => {
+  // 不调用 clients.claim —— 同样避免中途接管
 });
 
 // ── Push 事件：收到推送消息 ──────────────────────────────────────

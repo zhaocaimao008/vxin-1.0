@@ -83,7 +83,7 @@ const TABS = [
 
 /* ── 左上角头像 — 点击展开账号切换/添加下拉面板 ── */
 function AccountSwitcher() {
-  const { user, accounts, login, switchAccount } = useAuth();
+  const { user, accounts, login } = useAuth();
   const [open, setOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -110,7 +110,7 @@ function AccountSwitcher() {
 
   const doSwitch = (id) => {
     if (id === user?.id) return;
-    if (switchAccount(id)) window.location.reload();
+    // 账号切换需重新登录（AuthContext 未提供 switchAccount）
   };
 
   const doAdd = async (e) => {
