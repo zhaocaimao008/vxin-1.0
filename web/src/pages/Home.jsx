@@ -39,9 +39,6 @@ const IcoChat = () => (
 const IcoContacts = () => (
   <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
 );
-const IcoProfile = () => (
-  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-);
 const IcoSearch = () => (
   <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, fill: 'currentColor' }}>
     <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
@@ -83,159 +80,13 @@ const TABS = [
   { key: 'settings',  Icon: IcoSettings, label: '设置' },
 ];
 
-/* ── 我的资料弹窗 ── */
-function MyProfilePopup({ user, updateUser, anchorRef, onClose }) {
-  const popupRef = useRef(null);
-  const fileRef  = useRef(null);
-  const [pos, setPos]           = useState(null);
-  const [editingName, setEditingName] = useState(false);
-  const [nameVal, setNameVal]   = useState('');
-  const [nameSaving, setNameSaving] = useState(false);
-  const [nameErr, setNameErr]   = useState('');
-
-  useEffect(() => {
-    const rect = anchorRef.current?.getBoundingClientRect();
-    if (rect) setPos({ top: Math.max(8, rect.top), left: rect.right + 8 });
-  }, [anchorRef]);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (
-        popupRef.current && !popupRef.current.contains(e.target) &&
-        anchorRef.current && !anchorRef.current.contains(e.target)
-      ) onClose();
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [anchorRef, onClose]);
-
-  const uploadAvatar = async (e) => {
-    const file = e.target.files[0]; if (!file) return;
-    const fd = new FormData(); fd.append('avatar', file);
-    try {
-      const { data } = await axios.post('/api/users/avatar', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      updateUser({ avatar: data.avatar });
-    } catch {}
-    e.target.value = '';
-  };
-
-  const saveName = async () => {
-    const trimmed = nameVal.trim();
-    if (!trimmed) { setNameErr('昵称不能为空'); return; }
-    setNameSaving(true); setNameErr('');
-    try {
-      const { data } = await axios.put('/api/users/profile', { username: trimmed });
-      updateUser(data);
-      setEditingName(false);
-    } catch (err) {
-      setNameErr(err.response?.data?.error || '保存失败');
-    }
-    setNameSaving(false);
-  };
-
-  if (!pos) return null;
-
-  return (
-    <div ref={popupRef} style={{
-      position: 'fixed', top: pos.top, left: pos.left, zIndex: 500,
-      background: 'var(--bg-panel)', border: '1px solid var(--border-color)',
-      borderRadius: 14, padding: '20px 20px 16px', minWidth: 240,
-      boxShadow: '0 8px 32px rgba(0,0,0,.18)',
-    }}>
-      {/* 头像（可点击上传） */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-        <div
-          title="点击更换头像"
-          onClick={() => fileRef.current?.click()}
-          style={{
-            width: 56, height: 56, borderRadius: 14, background: 'var(--bg-hover)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 22, fontWeight: 700, color: 'var(--text-primary)',
-            overflow: 'hidden', flexShrink: 0, cursor: 'pointer', position: 'relative',
-          }}
-        >
-          {user?.avatar
-            ? <img src={user.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
-            : (user?.username || '?')[0].toUpperCase()
-          }
-          <div style={{
-            position: 'absolute', inset: 0, background: 'rgba(0,0,0,.35)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            opacity: 0, transition: 'opacity .15s',
-          }}
-            onMouseEnter={e => e.currentTarget.style.opacity = 1}
-            onMouseLeave={e => e.currentTarget.style.opacity = 0}
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="#fff">
-              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-            </svg>
-          </div>
-        </div>
-        <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={uploadAvatar} />
-        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>{user?.username || '—'}</div>
-      </div>
-
-      {/* 昵称行（可编辑） */}
-      <div style={{ borderTop: '1px solid var(--border-color)', padding: '10px 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>昵称</span>
-          {!editingName
-            ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>{user?.username || '—'}</span>
-                <button onClick={() => { setNameVal(user?.username || ''); setEditingName(true); setNameErr(''); }}
-                  style={{ fontSize: 12, color: '#07C160', cursor: 'pointer', background: 'none' }}>修改</button>
-              </div>
-            )
-            : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input
-                  autoFocus
-                  value={nameVal}
-                  onChange={e => { setNameVal(e.target.value); setNameErr(''); }}
-                  onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditingName(false); }}
-                  maxLength={20}
-                  style={{
-                    fontSize: 13, padding: '3px 8px', borderRadius: 6, width: 110,
-                    border: '1px solid var(--border-color)', background: 'var(--bg-input)',
-                    color: 'var(--text-primary)', outline: 'none',
-                  }}
-                />
-                <button onClick={saveName} disabled={nameSaving}
-                  style={{ fontSize: 12, color: '#07C160', cursor: 'pointer', background: 'none', fontWeight: 600 }}>
-                  {nameSaving ? '…' : '保存'}
-                </button>
-                <button onClick={() => setEditingName(false)}
-                  style={{ fontSize: 12, color: 'var(--text-tertiary)', cursor: 'pointer', background: 'none' }}>取消</button>
-              </div>
-            )
-          }
-        </div>
-        {nameErr && <div style={{ fontSize: 12, color: '#FA5151', marginTop: 4 }}>{nameErr}</div>}
-      </div>
-
-      {/* ID 和手机号（只读） */}
-      {[
-        { label: 'ID',    value: user?.id ? user.id.slice(0, 8).toUpperCase() : '—' },
-        { label: '手机号', value: user?.phone || '—' },
-      ].map(({ label, value }) => (
-        <div key={label} style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '10px 0', borderTop: '1px solid var(--border-color)',
-        }}>
-          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{label}</span>
-          <span style={{ fontSize: 13, color: 'var(--text-primary)', fontFamily: 'monospace' }}>{value}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 /* ── 左上角头像 — 点击展开账号切换/添加下拉面板 ── */
-function AccountSwitcher({ onNavigate }) {
+function AccountSwitcher() {
   const { user, accounts, login, switchAccount } = useAuth();
   const [open, setOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [form, setForm] = useState({ phone: '', password: '' });
   const [err, setErr] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -399,8 +250,8 @@ function AccountSwitcher({ onNavigate }) {
             </div>
           )}
 
-          {/* 个人信息入口 */}
-          <div onClick={() => { setOpen(false); onNavigate(); }}
+          {/* 个人资料卡片 */}
+          <div onClick={() => setShowProfile(v => !v)}
             style={{
               display: 'flex', alignItems: 'center', gap: 10,
               padding: '11px 14px', cursor: 'pointer',
@@ -412,11 +263,44 @@ function AccountSwitcher({ onNavigate }) {
             <svg viewBox="0 0 24 24" style={{ width: 15, height: 15, fill: 'var(--text-secondary)', flexShrink: 0 }}>
               <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
             </svg>
-            <span style={{ flex: 1, fontSize: 13, color: 'var(--text-secondary)' }}>个人信息与设置</span>
-            <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, fill: 'var(--text-tertiary)', flexShrink: 0 }}>
+            <span style={{ flex: 1, fontSize: 13, color: 'var(--text-secondary)' }}>个人资料</span>
+            <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, fill: 'var(--text-tertiary)', flexShrink: 0, transform: showProfile ? 'rotate(90deg)' : 'none', transition: 'transform .2s' }}>
               <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
             </svg>
           </div>
+
+          {/* 资料详情（展开时显示） */}
+          {showProfile && (
+            <div style={{ padding: '10px 14px 14px', borderTop: '1px solid var(--border-color)', fontSize: 13 }}>
+              {/* v信号 */}
+              {user?.wechat_id && (
+                <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>v信号</span>
+                  <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace', fontWeight: 500 }}>{user.wechat_id}</span>
+                </div>
+              )}
+              {/* 手机号 */}
+              {user?.phone && (
+                <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>手机号</span>
+                  <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace', fontWeight: 500 }}>{user.phone}</span>
+                </div>
+              )}
+              {/* ID (二维码的内容) */}
+              {user?.id && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ color: 'var(--text-secondary)', marginBottom: 6 }}>二维码</div>
+                  <div style={{ padding: 8, background: 'var(--bg-input)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 120 }}>
+                    {/* 占位：二维码需要 qrcode 库生成，这里用 ID 展示 */}
+                    <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-tertiary)' }}>
+                      <div style={{ fontFamily: 'monospace', fontSize: 10, wordBreak: 'break-all', lineHeight: 1.3 }}>{user.id.slice(0, 16)}</div>
+                      <div style={{ marginTop: 4 }}>需要安装 qrcode 库显示二维码</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -602,8 +486,6 @@ export default function Home() {
   usePushNotification(user);
   const activeConvIdRef = useRef(null);
   const addBtnRef = useRef(null);
-  const meRef = useRef(null);
-  const [showMePopup, setShowMePopup] = useState(false);
   useEffect(() => { activeConvIdRef.current = activeConv?.id ?? null; }, [activeConv?.id]);
 
   useEffect(() => {
@@ -799,19 +681,15 @@ export default function Home() {
 
       {/* 左侧导航栏 */}
       <div className="wc-sidebar">
-        <AccountSwitcher onNavigate={() => handleTabChange('settings')} />
+        <AccountSwitcher />
         {/* Tab 按钮紧跟头像，不用 spacer 下推，防止小屏被裁切 */}
         <div className="wc-sidebar-btns">
-          {TABS.filter(t => !t.feature || features[t.feature] !== false).map(({ key, Icon, label, isMe }) => {
+          {TABS.filter(t => !t.feature || features[t.feature] !== false).map(({ key, Icon, label }) => {
             const count = badges[key] || 0;
-            const handleClick = isMe
-              ? () => setShowMePopup(v => !v)
-              : () => { setShowMePopup(false); handleTabChange(key); };
             return (
               <div key={key}
-                ref={isMe ? meRef : undefined}
-                className={`wc-sidebar-btn${!isMe && tab === key ? ' active' : ''}`}
-                onClick={handleClick} title={label}>
+                className={`wc-sidebar-btn${tab === key ? ' active' : ''}`}
+                onClick={() => handleTabChange(key)} title={label}>
                 <div className="icon"><Icon /></div>
                 <span className="wc-sidebar-label">{label}</span>
                 {count > 0 && (
@@ -933,15 +811,6 @@ export default function Home() {
         <CreateGroupModal
           onClose={() => setShowCreateGroup(false)}
           onCreated={(conv) => { setShowCreateGroup(false); handleSelectConv(conv); }}
-        />
-      )}
-
-      {showMePopup && (
-        <MyProfilePopup
-          user={user}
-          updateUser={updateUser}
-          anchorRef={meRef}
-          onClose={() => setShowMePopup(false)}
         />
       )}
 
