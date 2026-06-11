@@ -4,14 +4,18 @@
  * Socket 层的逐用户限流见 realtime/presence 中的 checkMsgRate。
  */
 const rateLimit = require('express-rate-limit');
+// IPv6 安全的 IP 取值助手；直接用 req.ip 会触发 express-rate-limit 的
+// ERR_ERL_KEY_GEN_IPV6 校验（启动期抛错导致进程崩溃）。
+const { ipKeyGenerator } = require('express-rate-limit');
 
 const json = msg => ({ error: msg });
 const base = { standardHeaders: true, legacyHeaders: false };
 
 // 登录：5 次失败 → 10 分钟锁定（需在 auth controller 中调用 recordFailedAttempt）
+// keyGenerator 以手机号为主键；无手机号时回退到 IPv6 归一化后的 IP。
 const loginLimiter = rateLimit({
   ...base, windowMs: 10 * 60 * 1000, max: 5,
-  keyGenerator: req => req.body.phone || req.ip,
+  keyGenerator: (req, res) => req.body?.phone || ipKeyGenerator(req.ip),
   handler: (req, res) => res.status(429).json(json('登录尝试过于频繁，账户已锁定10分钟')),
   message: json('登录尝试过于频繁，请10分钟后再试'),
 });
