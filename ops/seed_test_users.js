@@ -58,13 +58,18 @@ function create(n) {
   cleanup(); // 先清旧的，保证幂等
   const hash = bcrypt.hashSync(PASS, 10);
   const { v4: uuidv4 } = require(path.join(APP_DIR, 'node_modules/uuid'));
-  const ins = db.prepare("INSERT INTO users (id,username,phone,password,wechat_id,status) VALUES (?,?,?,?,?,'offline')");
+  // wechat_id 用非6位数字的标记 "LTV"+序号：真实用户都是 6 位纯数字，绝不碰撞。
+  // (原先用 '7'+5位 会落入真实用户 7xxxxx 段，碰一次就整事务回滚 → 0 账号)
+  // 另用 INSERT OR IGNORE 兜底，单条冲突不影响其余。
+  const ins = db.prepare("INSERT OR IGNORE INTO users (id,username,phone,password,wechat_id,status) VALUES (?,?,?,?,?,'offline')");
   const tx = db.transaction(() => {
     for (let i = 0; i < n; i++) {
-      ins.run(uuidv4(), `${PREFIX}${i}`, phoneFor(i), hash, '7' + String(100000 + i).slice(-5));
+      ins.run(uuidv4(), `${PREFIX}${i}`, phoneFor(i), hash, 'LTV' + String(i).padStart(8, '0'));
     }
   });
   tx();
+  const got = db.prepare(`SELECT COUNT(*) c FROM users WHERE username LIKE '${PREFIX}%'`).get().c;
+  if (got < n) console.log(`⚠️ 仅播种 ${got}/${n}（可能有残留冲突，建议先 cleanup）`);
   console.log(`create: 已播种 ${n} 个测试账号 (phone ${phoneFor(0)}..${phoneFor(n - 1)}, 密码 ${PASS})`);
 }
 
