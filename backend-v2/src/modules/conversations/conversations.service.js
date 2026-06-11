@@ -62,6 +62,18 @@ function createGroup(io, ownerId, { name, memberIds }) {
 // ── 会话列表（私聊内联 + unread correlated+LIMIT99 + 群成员 ROW_NUMBER 批量）──
 //   私聊 N+1 消除、unread 1709ms→34ms、群成员 N+1→1 query
 function listConversations(uid) {
+  // 确保用户有 filehelper 会话（自动创建）
+  const hasFileHelper = db.prepare(`
+    SELECT 1 FROM conversations c
+    JOIN conversation_members cm ON cm.conversation_id=c.id AND cm.user_id=?
+    WHERE c.type='filehelper'
+  `).get(uid);
+  if (!hasFileHelper) {
+    const id = uuidv4();
+    db.prepare("INSERT INTO conversations (id,type,name) VALUES (?,?,?)").run(id, 'filehelper', '文件传输助手');
+    db.prepare('INSERT INTO conversation_members (conversation_id,user_id) VALUES (?,?)').run(id, uid);
+  }
+
   const rows = db.prepare(`
     SELECT
       c.id, c.type, c.name, c.avatar, c.group_number,

@@ -41,6 +41,7 @@
     "@capacitor/storage": "^1.2.5",
     "axios": "^1.6.7",
     "dompurify": "^3.0.6",
+    "qrcode": "^1.5.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.1",

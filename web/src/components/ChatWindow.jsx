@@ -206,7 +206,18 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   }, [conversation.id]);
 
   // Sync conversation prop changes
-  useEffect(() => { setConversation(initialConv); }, [initialConv]);
+  useEffect(() => {
+    // 处理虚拟 filehelper ID：获取真实会话
+    if (initialConv?.id === '__file-helper__') {
+      axios.get('/api/messages/file-helper').then(({ data }) => {
+        setConversation({ ...initialConv, id: data.conversationId });
+      }).catch(() => {
+        setConversation(initialConv);
+      });
+    } else {
+      setConversation(initialConv);
+    }
+  }, [initialConv]);
 
   // 断线重连后补拉当前会话缺失消息
   useEffect(() => {
@@ -251,7 +262,18 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         if (ac.signal.aborted) return; // 会话已切走，丢弃结果
         setMessages(data);
         setHasMore(data.length === 40);
-        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'auto' }), 50);
+        // 搜索结果跳转：如果有 scrollToId，则滚到该消息；否则滚到底部
+        setTimeout(() => {
+          const scrollToId = conversation.scrollToId;
+          if (scrollToId) {
+            const targetEl = document.getElementById(`msg-${scrollToId}`);
+            if (targetEl) {
+              targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              return;
+            }
+          }
+          messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+        }, 50);
       })
       .catch(err => { if (axios.isCancel?.(err) || err.code === 'ERR_CANCELED') return; });
 

@@ -259,42 +259,43 @@ function collect(userId, msgId) {
   );
 }
 
-// ── 全局搜索（FTS5 trigram + 成员范围限定）──────────────────────
+// ── 全局搜索（普通 LIKE 搜索 + 成员范围限定）──────────────────────
 function searchGlobal(userId, { q, limit = 20, offset = 0 }) {
   if (!q || !q.trim()) return { results: [], total: 0 };
   if (q.length > 100) throw badRequest('搜索词过长');
 
   const safeLimit = Math.min(parseInt(limit) || 20, 50);
   const safeOffset = Math.min(Math.max(parseInt(offset) || 0, 0), 10000);
-  const ftsQuery = `"${q.replace(/"/g, '""')}"`;
+  const searchTerm = `%${q}%`;  // LIKE 搜索
 
   const total = db.prepare(`
     SELECT COUNT(*) AS cnt
-    FROM messages_fts fts
-    JOIN conversation_members cm ON cm.conversation_id = fts.conversation_id AND cm.user_id = ?
-    JOIN messages m ON m.id = fts.message_id AND m.deleted = 0
-    WHERE messages_fts MATCH ?
-  `).get(userId, ftsQuery)?.cnt || 0;
+    FROM messages m
+    JOIN conversation_members cm ON cm.conversation_id = m.conversation_id AND cm.user_id = ?
+    WHERE m.deleted = 0 AND m.content LIKE ?
+  `).get(userId, searchTerm)?.cnt || 0;
 
   const rows = db.prepare(`
     SELECT m.id, m.conversation_id, m.sender_id, m.content, m.created_at,
            u.username AS senderName, u.avatar AS senderAvatar,
            c.name AS convName, c.type AS convType,
-           ou.username AS ou_username
-    FROM messages_fts fts
-    JOIN conversation_members cm ON cm.conversation_id = fts.conversation_id AND cm.user_id = ?
-    JOIN messages m ON m.id = fts.message_id AND m.deleted = 0
+           ou.id AS ou_id, ou.username AS ou_username, ou.avatar AS ou_avatar, ou.status AS ou_status
+    FROM messages m
+    JOIN conversation_members cm ON cm.conversation_id = m.conversation_id AND cm.user_id = ?
     JOIN users u ON u.id = m.sender_id
     JOIN conversations c ON c.id = m.conversation_id
     LEFT JOIN conversation_members cm_o
            ON cm_o.conversation_id = m.conversation_id AND cm_o.user_id != ? AND c.type = 'private'
     LEFT JOIN users ou ON ou.id = cm_o.user_id
-    WHERE messages_fts MATCH ?
+    WHERE m.deleted = 0 AND m.content LIKE ?
     ORDER BY m.created_at DESC LIMIT ? OFFSET ?
-  `).all(userId, userId, ftsQuery, safeLimit, safeOffset);
+  `).all(userId, userId, searchTerm, safeLimit, safeOffset);
 
-  const results = rows.map(({ ou_username, ...msg }) => {
-    if (msg.convType === 'private') msg.convName = ou_username || '私聊';
+  const results = rows.map(({ ou_id, ou_username, ou_avatar, ou_status, ...msg }) => {
+    if (msg.convType === 'private') {
+      msg.convName = ou_username || '私聊';
+      msg.otherUser = ou_id ? { id: ou_id, username: ou_username, avatar: ou_avatar, status: ou_status } : null;
+    }
     return msg;
   });
   return { results, total, limit: safeLimit, offset: safeOffset };
@@ -305,15 +306,14 @@ function searchInConversation(convId, userId, q) {
   if (!q) return [];
   if (q.length > 100) throw badRequest('搜索词过长');
   requireMember(convId, userId);
-  const ftsQuery = `"${q.replace(/"/g, '""')}"`;
+  const searchTerm = `%${q}%`;
   return db.prepare(`
     SELECT m.*, u.username AS senderName, u.avatar AS senderAvatar
-    FROM messages_fts fts
-    JOIN messages m ON m.id = fts.message_id AND m.deleted = 0
+    FROM messages m
     JOIN users u ON u.id = m.sender_id
-    WHERE fts.conversation_id = ? AND messages_fts MATCH ?
+    WHERE m.conversation_id = ? AND m.deleted = 0 AND m.content LIKE ?
     ORDER BY m.created_at DESC LIMIT 30
-  `).all(convId, ftsQuery);
+  `).all(convId, searchTerm);
 }
 
 module.exports = {
