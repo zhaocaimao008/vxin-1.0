@@ -11,10 +11,13 @@ const ChevronRight = () => (
   </svg>
 );
 
-function Toggle({ checked, onChange }) {
+function Toggle({ checked, onChange, disabled }) {
   return (
     <button type="button" className={`wc-switch${checked ? ' on' : ''}`}
-      onClick={e => { e.stopPropagation(); onChange?.(!checked); }} aria-pressed={checked}>
+      onClick={e => { e.stopPropagation(); if (!disabled) onChange?.(!checked); }}
+      disabled={disabled}
+      aria-pressed={checked}
+      style={{ opacity: disabled ? 0.6 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}>
       <span />
     </button>
   );
@@ -271,9 +274,39 @@ function AppearanceSettings({ onBack }) {
 /* ── 通知 ── */
 function NotificationSettings({ onBack }) {
   const { notifySound, setNotifySound } = useSettings();
-  const [lockScreen, setLockScreen] = useState(localStorage.getItem('wc_lock_screen') !== '0');
-  const [preview, setPreview]       = useState(localStorage.getItem('wc_notify_preview') !== '0');
-  const setLS = (key, val) => localStorage.setItem(key, val ? '1' : '0');
+  const [messageNotify, setMessageNotify] = useState(true);
+  const [preview, setPreview]             = useState(true);
+  const [vibrate, setVibrate]             = useState(false);
+  const [saving, setSaving]               = useState(false);
+  const [loaded, setLoaded]               = useState(false);
+
+  // 初始化：从后端读取用户设置
+  useEffect(() => {
+    axios.get('/api/users/settings').then(r => {
+      const s = r.data || {};
+      setMessageNotify(s.message_notify !== 0);
+      setPreview(s.detail_preview !== 0);
+      setVibrate(s.vibrate === 1);
+      // 同步 localStorage（向后兼容老版本）
+      localStorage.setItem('wc_lock_screen', s.message_notify !== 0 ? '1' : '0');
+      localStorage.setItem('wc_notify_preview', s.detail_preview !== 0 ? '1' : '0');
+      setLoaded(true);
+    }).catch(() => setLoaded(true));
+  }, []);
+
+  const saveSettings = async (key, value) => {
+    setSaving(true);
+    try {
+      const payload = {
+        [key]: value ? 1 : 0,
+      };
+      await axios.put('/api/users/settings', payload);
+      localStorage.setItem(key === 'message_notify' ? 'wc_lock_screen' : 'wc_notify_preview', value ? '1' : '0');
+    } catch {}
+    setSaving(false);
+  };
+
+  if (!loaded) return <PageBg><PageHeader title="通知设置" onBack={onBack} /></PageBg>;
 
   return (
     <PageBg>
@@ -281,12 +314,14 @@ function NotificationSettings({ onBack }) {
       <SLabel>消息通知</SLabel>
       <div style={{ padding: '0 14px' }}>
         <Card>
-          <CRow label="锁屏通知" desc="手机锁屏时显示消息通知"
-            right={<Toggle checked={lockScreen} onChange={v => { setLockScreen(v); setLS('wc_lock_screen', v); }} />} />
+          <CRow label="锁屏通知" desc="关闭后不会收到消息推送"
+            right={<Toggle checked={messageNotify} onChange={v => { setMessageNotify(v); saveSettings('message_notify', v); }} disabled={saving} />} />
           <CRow label="消息详情预览" desc={'关闭后通知只显示"收到新消息"'}
-            right={<Toggle checked={preview} onChange={v => { setPreview(v); setLS('wc_notify_preview', v); }} />} />
-          <CRow label="通知声音" last
+            right={<Toggle checked={preview} onChange={v => { setPreview(v); saveSettings('detail_preview', v); }} disabled={saving} />} />
+          <CRow label="通知声音"
             right={<Toggle checked={notifySound} onChange={setNotifySound} />} />
+          <CRow label="通知震动" last
+            right={<Toggle checked={vibrate} onChange={v => { setVibrate(v); saveSettings('vibrate', v); }} disabled={saving} />} />
         </Card>
       </div>
     </PageBg>
