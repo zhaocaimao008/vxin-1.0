@@ -48,6 +48,10 @@ function cleanup() {
     for (const t of ['user_sessions', 'contacts']) {
       try { db.prepare(`DELETE FROM ${t} WHERE user_id IN (${ph})`).run(...ids); } catch (_) {}
     }
+    // 显式清测试群(固定 id)
+    try { db.prepare("DELETE FROM messages WHERE conversation_id='__lt_group__'").run(); } catch (_) {}
+    try { db.prepare("DELETE FROM conversation_members WHERE conversation_id='__lt_group__'").run(); } catch (_) {}
+    try { db.prepare("DELETE FROM conversations WHERE id='__lt_group__'").run(); } catch (_) {}
     db.prepare(`DELETE FROM users WHERE id IN (${ph})`).run(...ids);
   });
   tx();
@@ -70,6 +74,17 @@ function create(n) {
   tx();
   const got = db.prepare(`SELECT COUNT(*) c FROM users WHERE username LIKE '${PREFIX}%'`).get().c;
   if (got < n) console.log(`⚠️ 仅播种 ${got}/${n}（可能有残留冲突，建议先 cleanup）`);
+
+  // 建一个测试群(固定 id)，把全部测试账号拉进去 —— 供广播扇出测试(1发→N-1收)
+  const GROUP_ID = '__lt_group__';
+  const ids = db.prepare(`SELECT id FROM users WHERE username LIKE '${PREFIX}%' ORDER BY username`).all().map(r => r.id);
+  const gtx = db.transaction(() => {
+    db.prepare("INSERT OR IGNORE INTO conversations (id,type,name) VALUES (?,?,?)").run(GROUP_ID, 'group', '__loadtest_group__');
+    const m = db.prepare('INSERT OR IGNORE INTO conversation_members (conversation_id,user_id) VALUES (?,?)');
+    for (const uid of ids) m.run(GROUP_ID, uid);
+  });
+  gtx();
+  console.log(`group: 测试群 ${GROUP_ID} 已含 ${ids.length} 名成员`);
   console.log(`create: 已播种 ${n} 个测试账号 (phone ${phoneFor(0)}..${phoneFor(n - 1)}, 密码 ${PASS})`);
 }
 

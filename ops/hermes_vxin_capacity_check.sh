@@ -217,14 +217,23 @@ if pm2 jlist 2>/dev/null | grep -q "\"max_memory_restart\":null"; then
 fi
 
 # ═══════════════════════ 6. Nginx WebSocket 代理 ═══════════════════════
-hr; say "## 6. Nginx WebSocket 代理超时"
+hr; say "## 6. Nginx 反代（1000 WS 经此路径的真实瓶颈）"
 NGINX_CONF="/etc/nginx/nginx.conf"
 if grep -q "proxy_read_timeout" "$NGINX_CONF" 2>/dev/null; then
-  ok "Nginx 已设置 proxy_read_timeout（长连接不会被过早断开）"
+  ok "已设 proxy_read_timeout（长连接不会被 60s 默认值掐断）"
 else
-  warn "Nginx 未设 proxy_read_timeout，默认 60s 会周期性掐断 WebSocket"
-  note "建议在 /socket.io location 加: proxy_read_timeout 3600s; proxy_send_timeout 3600s;"
-  note "（脚本不自动改 Nginx 主配置以免误伤其它站点，请人工确认后加）"
+  warn "未设 proxy_read_timeout，默认 60s 会周期性掐断 WebSocket（应在 /socket.io 加 3600s）"
+fi
+# worker_connections：每条经 Nginx 代理的 WS 占 2 个连接槽(client↔nginx + nginx↔backend)。
+# 1000 WS 需 ~2000 槽/worker。默认 768/1024 会成为硬天花板。
+wc_val=$(grep -oP 'worker_connections\s+\K[0-9]+' "$NGINX_CONF" 2>/dev/null | head -1)
+workers=$(grep -oP 'worker_processes\s+\K\w+' "$NGINX_CONF" 2>/dev/null | head -1)
+say "worker_connections=${wc_val:-未知} · worker_processes=${workers:-未知}"
+if [ -n "$wc_val" ] && [ "$wc_val" -ge 8192 ]; then
+  ok "worker_connections 充足（≥8192，足以承载 1000 WS 双向代理）"
+else
+  warn "worker_connections=${wc_val:-默认} 偏低，1000 WS 经代理需 ≥4096"
+  note "修法: 在 nginx.conf 的 events{} 内设 worker_connections 8192; 顶层加 worker_rlimit_nofile 65535; 然后 nginx -t && reload"
 fi
 
 # ═══════════════════════ 7. 压测 ═══════════════════════
@@ -254,7 +263,10 @@ if [ "$MODE" != "check" ] || [ -f "$HERE/seed_test_users.js" ]; then
 fi
 
 LOAD_JSON="$REPORT_DIR/load_${TS}.json"
+# LOADTEST_URL：设为 https://你的域名 即可走真实 Nginx/TLS 路径压测；默认直连后端。
+# SOAK_SECONDS：长连接持续在线时长(跨多个心跳周期验证不掉线)。
 TARGET_ONLINE="$TARGET_ONLINE" LOAD_CONNS="$LOAD_CONNS" LOAD_MSG_RATE="$LOAD_MSG_RATE" LOAD_DURATION="$LOAD_DURATION" \
+LOGIN_BATCH="${LOGIN_BATCH:-25}" SOAK_SECONDS="${SOAK_SECONDS:-90}" LOADTEST_URL="${LOADTEST_URL:-$BACKEND_URL}" \
 BACKEND_URL="$BACKEND_URL" APP_DIR="$APP_DIR" OUT="$LOAD_JSON" JWT_SECRET="$JWT_SECRET" \
   node "$HERE/hermes_loadtest.js" 2>&1 | tee -a "$REPORT" || warn "压测脚本执行异常"
 
