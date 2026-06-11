@@ -75,13 +75,10 @@ export default function GlobalSearch({ query, onSelectConv, onNetworkSearch }) {
       return nameMatch && typeMatch;
     });
 
-    console.log('[GlobalSearch] q=', q, 'convs=', conversations.length, 'matched=', results.length);
-
     // 如果搜索词匹配"文件传输助手"但列表中没有，添加虚拟的 filehelper
     const fileHelperName = '文件传输助手';
     const hasFileHelper = conversations.some(c => c.type === 'filehelper');
     if (!hasFileHelper && fileHelperName.toLowerCase().includes(q)) {
-      console.log('[GlobalSearch] Adding virtual filehelper for q=', q);
       results = [...results, {
         id: '__file-helper__',
         type: 'filehelper',
@@ -104,7 +101,6 @@ export default function GlobalSearch({ query, onSelectConv, onNetworkSearch }) {
           msgType: m.type,
         }));
         setMessages(msgs);
-        console.log('[GlobalSearch] Loaded messages:', msgs.length);
       })
       .catch(err => {
         console.error('[GlobalSearch] Failed to search messages:', err.response?.status, err.message);
