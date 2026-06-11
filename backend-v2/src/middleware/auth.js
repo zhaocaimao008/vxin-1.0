@@ -13,21 +13,37 @@ module.exports = function auth(req, res, next) {
   const token = req.cookies?.[config.cookieName];
   if (!token) return res.status(401).json({ error: '未授权' });
 
-  // 检查 token 是否在黑名单中（logout 后）
-  if (isBlacklisted(token)) {
-    res.clearCookie(config.cookieName, { path: '/' });
-    return res.status(401).json({ error: '无效的Token，请重新登录' });
-  }
+  // 异步检查 token 是否在黑名单中（logout 后）
+  isBlacklisted(token).then(blacklisted => {
+    if (blacklisted) {
+      res.clearCookie(config.cookieName, { path: '/' });
+      return res.status(401).json({ error: '无效的Token，请重新登录' });
+    }
 
-  try {
-    req.user = jwt.verify(token, config.jwtSecret);
-    req.token = token;  // 保存 token 供 logout 使用
-    req.csrfToken = req.user.csrf;
-    res.cookie(config.csrfCookie, req.csrfToken, csrfCookieOptions(req));
-    res.setHeader('X-CSRF-Token', req.csrfToken);
-    next();
-  } catch {
-    res.clearCookie(config.cookieName, { path: '/' });
-    return res.status(401).json({ error: 'Token无效或已过期' });
-  }
+    try {
+      req.user = jwt.verify(token, config.jwtSecret);
+      req.token = token;  // 保存 token 供 logout 使用
+      req.csrfToken = req.user.csrf;
+      res.cookie(config.csrfCookie, req.csrfToken, csrfCookieOptions(req));
+      res.setHeader('X-CSRF-Token', req.csrfToken);
+      next();
+    } catch {
+      res.clearCookie(config.cookieName, { path: '/' });
+      return res.status(401).json({ error: 'Token无效或已过期' });
+    }
+  }).catch(err => {
+    console.error('[Auth] Blacklist check error:', err);
+    // 降级：允许通过，但记录错误
+    try {
+      req.user = jwt.verify(token, config.jwtSecret);
+      req.token = token;
+      req.csrfToken = req.user.csrf;
+      res.cookie(config.csrfCookie, req.csrfToken, csrfCookieOptions(req));
+      res.setHeader('X-CSRF-Token', req.csrfToken);
+      next();
+    } catch {
+      res.clearCookie(config.cookieName, { path: '/' });
+      return res.status(401).json({ error: 'Token无效或已过期' });
+    }
+  });
 };

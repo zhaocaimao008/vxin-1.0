@@ -40,7 +40,7 @@ exports.logout = asyncHandler(async (req, res) => {
   // 将 token 加入黑名单
   if (req.token && req.user.exp) {
     const { addToBlacklist } = require('../../utils/tokenBlacklist');
-    addToBlacklist(req.token, req.user.exp);
+    await addToBlacklist(req.token, req.user.exp);
   }
   res.clearCookie(config.cookieName, { path: '/' });
   res.json({ success: true });

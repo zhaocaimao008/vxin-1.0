@@ -7,9 +7,13 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const swaggerUi = require('swagger-ui-express');
 const config = require('./config');
 const csrfProtection = require('./middleware/csrf');
 const { notFoundHandler, errorHandler } = require('./middleware/error');
+const { requestLogger } = require('./utils/logger');
+const { metricsMiddleware, metrics } = require('./utils/monitoring');
+const swaggerSpec = require('./utils/swagger');
 
 const app = express();
 
@@ -39,10 +43,28 @@ app.use(cors({
   credentials: true,
 }));
 
+// 日志和监控中间件
+app.use(requestLogger);
+app.use(metricsMiddleware);
+
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(config.uploadsRoot));
+
+// ── API 文档 ────────────────────────────────────────────────────────
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// 性能指标端点（Prometheus 格式）
+app.get('/metrics', (req, res) => {
+  res.type('text/plain');
+  res.send(metrics.getPrometheusMetrics());
+});
+
+// 实时指标端点（JSON 格式，用于前端展示）
+app.get('/api/metrics', (req, res) => {
+  res.json(metrics.getMetrics());
+});
 
 // CSRF 双提交门控（路由之前）
 app.use('/api', csrfProtection);
