@@ -1,0 +1,125 @@
+name: 自动部署 V信后端
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend-v2/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:  # 允许手动触发
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: 测试
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: backend-v2/package-lock.json
+
+      - name: 安装依赖
+        working-directory: backend-v2
+        run: npm ci
+
+      - name: 运行测试
+        working-directory: backend-v2
+        run: npm test
+        env:
+          NODE_ENV: test
+
+  deploy:
+    name: 部署到香港服务器
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 配置 SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.DEPLOY_SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: 部署应用
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_SERVER_HOST }}
+          DEPLOY_PATH: /root/v信/backend-v2
+        run: |
+          ssh -i ~/.ssh/deploy_key ${DEPLOY_USER}@${DEPLOY_HOST} << 'DEPLOY_SCRIPT'
+          set -e
+
+          echo "📋 V信后端自动部署开始"
+          echo "时间: $(date)"
+          echo "================================"
+
+          # 进入应用目录
+          cd $DEPLOY_PATH || exit 1
+
+          echo "📥 步骤 1: 获取最新代码"
+          git fetch origin
+          git checkout main
+          git reset --hard origin/main
+
+          echo "📦 步骤 2: 安装依赖"
+          rm -rf node_modules package-lock.json
+          npm ci --only=production
+
+          echo "🛑 步骤 3: 停止旧应用"
+          pkill -f "npm start" || pkill -f "node.*server.js" || true
+          sleep 2
+
+          echo "🚀 步骤 4: 启动新应用"
+          PORT=3002 nohup npm start > /tmp/vxin-backend.log 2>&1 &
+
+          echo "✅ 步骤 5: 验证部署"
+          sleep 5
+          for i in {1..15}; do
+            if curl -s http://localhost:3002/health | grep -q "ok"; then
+              echo "✅ 应用健康检查通过！"
+              break
+            fi
+            echo "等待应用启动... ($i/15)"
+            sleep 1
+          done
+
+          echo "================================"
+          echo "🎉 部署成功！"
+          echo "时间: $(date)"
+
+          DEPLOY_SCRIPT
+
+      - name: 部署完成通知
+        if: success()
+        run: |
+          echo "✅ 部署成功！"
+          echo "时间: $(date)"
+          echo "版本: $(git rev-parse --short HEAD)"
+
+      - name: 部署失败通知
+        if: failure()
+        run: |
+          echo "❌ 部署失败！"
+          echo "请检查服务器日志: tail -f /tmp/vxin-backend.log"
+          exit 1
