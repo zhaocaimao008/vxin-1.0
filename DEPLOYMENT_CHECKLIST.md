@@ -1,4 +1,72 @@
-# V信后端 P3 生态系统部署检查清单
+# V信后端 GitHub Actions 自动部署检查清单
+
+## ✅ 已完成的工作（你无需操作）
+
+- ✅ 创建了 GitHub Actions 工作流（`.github/workflows/deploy.yml`）
+- ✅ 编写了详细配置文档（`.github/DEPLOYMENT_SETUP.md`）
+- ✅ 提供了快速参考指南（`.github/QUICK_START.md`）
+- ✅ 创建了配置向导脚本（`scripts/setup-deployment.sh`）
+- ✅ 提交了所有文件到 Git
+
+## 🚀 立即需要做的事（3 个步骤）
+
+### 第 1 步：推送到 GitHub（必需）
+
+```bash
+cd /root/v信
+git push origin main
+```
+
+### 第 2 步：生成和配置 SSH 密钥（必需）
+
+**自动配置（推荐）**：
+```bash
+bash /root/v信/scripts/setup-deployment.sh
+```
+
+**手动配置**：
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/vxin-deploy -C "vxin-backend-deploy"
+# 按 Enter（不设置密码）
+
+# 查看需要的值
+cat ~/.ssh/vxin-deploy          # 复制到 DEPLOY_SSH_KEY
+cat ~/.ssh/vxin-deploy.pub      # 复制到服务器
+```
+
+### 第 3 步：在 GitHub 添加 Secrets（必需）
+
+进入：**GitHub 仓库 → Settings → Secrets and variables → Actions → New repository secret**
+
+| Secret 名称 | 值 |
+|---|---|
+| `DEPLOY_SSH_KEY` | `~/.ssh/vxin-deploy` 的完整内容 |
+| `DEPLOY_SERVER_HOST` | 你的服务器 IP（如 `123.45.67.89`） |
+| `DEPLOY_USER` | SSH 用户名（通常 `root`） |
+
+### 第 4 步：在服务器上添加公钥（必需）
+
+```bash
+ssh root@<你的服务器IP>
+cat << 'EOF' >> ~/.ssh/authorized_keys
+<粘贴 ~/.ssh/vxin-deploy.pub 的内容>
+EOF
+chmod 600 ~/.ssh/authorized_keys
+exit
+```
+
+### 第 5 步：测试自动部署（验证）
+
+```bash
+cd /root/v信
+git add .
+git commit -m "test: trigger automatic deployment"
+git push origin main
+```
+
+然后检查 GitHub → Actions 标签，查看工作流运行状态。
+
+---
 
 ## 📋 部署前必检项
 
