@@ -7,7 +7,7 @@ const io = req => req.app.get('io');
 exports.createPrivate = asyncHandler(async (req, res) => res.json(svc.getOrCreatePrivate(req.user.id, req.body.userId)));
 exports.fileHelper    = asyncHandler(async (req, res) => res.json(svc.getOrCreateFileHelper(req.user.id)));
 exports.createGroup   = asyncHandler(async (req, res) => res.json(svc.createGroup(io(req), req.user.id, req.body)));
-exports.list          = asyncHandler(async (req, res) => res.json(svc.listConversations(req.user.id)));
+exports.list          = asyncHandler(async (req, res) => res.json(await svc.listConversations(req.user.id)));
 exports.members       = asyncHandler(async (req, res) => res.json(svc.listMembers(req.params.conversationId, req.user.id)));
 exports.unreadCounts  = asyncHandler(async (req, res) => res.json(svc.unreadCounts(req.user.id)));
 exports.myGroups      = asyncHandler(async (req, res) => res.json(svc.myGroups(req.user.id)));

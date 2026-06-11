@@ -7,24 +7,37 @@
 const redis = require('redis');
 
 let client = null;
+let disabled = false;      // Redis 不可用时置位，后续所有操作直接 no-op，避免阻塞请求
+let initPromise = null;
 
 function init() {
-  if (client) return Promise.resolve();
+  if (disabled) return Promise.resolve();
+  if (client?.isReady) return Promise.resolve();
+  if (initPromise) return initPromise;
 
   client = redis.createClient({
-    host: 'localhost',
-    port: 6379,
-    db: 0,
+    socket: {
+      host: 'localhost',
+      port: 6379,
+      connectTimeout: 1000,
+      // 连接失败快速放弃：重试 2 次后彻底禁用缓存，绝不让请求挂起
+      reconnectStrategy: (retries) => {
+        if (retries >= 2) { disabled = true; return false; }
+        return 200;
+      },
+    },
+    database: 0,
   });
 
-  return new Promise((resolve, reject) => {
-    client.on('error', err => console.error('[Redis Cache] Error:', err));
-    client.on('connect', () => {
-      console.log('[Redis Cache] Connected');
-      resolve();
-    });
-    client.connect().catch(reject);
-  });
+  // 吞掉错误事件，避免未捕获异常 & 日志刷屏
+  client.on('error', () => { disabled = true; });
+
+  initPromise = client.connect()
+    .then(() => { disabled = false; console.log('[Redis Cache] Connected'); })
+    .catch(() => { disabled = true; })   // Redis 未运行 → 禁用缓存，降级为无缓存
+    .finally(() => { initPromise = null; });
+
+  return initPromise;
 }
 
 // 缓存键生成器
@@ -38,11 +51,12 @@ const keys = {
 // 获取缓存
 async function get(key) {
   try {
-    if (!client) await init();
+    if (disabled) return null;
+    await init();
+    if (disabled || !client?.isReady) return null;
     const data = await client.get(key);
     return data ? JSON.parse(data) : null;
-  } catch (err) {
-    console.error('[Cache] Get error:', err.message);
+  } catch {
     return null;
   }
 }
@@ -50,44 +64,44 @@ async function get(key) {
 // 设置缓存（带 TTL）
 async function set(key, value, ttlSeconds = 300) {
   try {
-    if (!client) await init();
+    if (disabled) return;
+    await init();
+    if (disabled || !client?.isReady) return;
     await client.setEx(key, ttlSeconds, JSON.stringify(value));
-  } catch (err) {
-    console.error('[Cache] Set error:', err.message);
-  }
+  } catch { /* 缓存失败不影响主流程 */ }
 }
 
 // 删除缓存
 async function del(key) {
   try {
-    if (!client) await init();
+    if (disabled) return;
+    await init();
+    if (disabled || !client?.isReady) return;
     await client.del(key);
-  } catch (err) {
-    console.error('[Cache] Del error:', err.message);
-  }
+  } catch { /* noop */ }
 }
 
 // 删除匹配模式的缓存（如用户的所有缓存）
 async function delPattern(pattern) {
   try {
-    if (!client) await init();
+    if (disabled) return;
+    await init();
+    if (disabled || !client?.isReady) return;
     const keys = await client.keys(pattern);
     if (keys.length > 0) {
       await client.del(keys);
     }
-  } catch (err) {
-    console.error('[Cache] DelPattern error:', err.message);
-  }
+  } catch { /* noop */ }
 }
 
 // 清空所有缓存
 async function flush() {
   try {
-    if (!client) await init();
+    if (disabled) return;
+    await init();
+    if (disabled || !client?.isReady) return;
     await client.flushDb();
-  } catch (err) {
-    console.error('[Cache] Flush error:', err.message);
-  }
+  } catch { /* noop */ }
 }
 
 module.exports = {
