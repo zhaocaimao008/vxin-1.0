@@ -135,44 +135,20 @@ hr; say "## 4. SQLite 数据库（消息吞吐核心）"
 jmode=$(sqlite3 "$DB" "PRAGMA journal_mode;" 2>/dev/null)
 btimeout=$(sqlite3 "$DB" "PRAGMA busy_timeout;" 2>/dev/null)
 [ "$jmode" = "wal" ] && ok "journal_mode=WAL (并发读写已优化)" || warn "journal_mode=$jmode (建议 WAL)"
-say "应用内 busy_timeout(持久per-connection): 需在 db/connection.js 设置"
 
-# busy_timeout / synchronous 是 per-connection，必须在应用代码里设置才对线上生效
+# busy_timeout / synchronous 是 per-connection，写在 db/connection.js / worker.js 里（已入仓库）。
+# 这里只做"核验"，不再运行时改代码（运行时注入会被 git pull 冲突/stash 掉，不可靠）。
 CONN_JS="$APP_DIR/src/db/connection.js"
+WORKER_JS="$APP_DIR/src/db/worker.js"
 if grep -q "busy_timeout" "$CONN_JS" 2>/dev/null; then
-  ok "db/connection.js 已设置 busy_timeout"
+  ok "connection.js 已显式设置 busy_timeout (并发锁等待)"
+elif grep -q "timeout" "$WORKER_JS" 2>/dev/null; then
+  ok "写连接(worker.js)已设 timeout，主连接走 better-sqlite3 默认 5s"
 else
-  bad "db/connection.js 未设置 busy_timeout → 并发写会立即 SQLITE_BUSY 报错"
-  if [ "$MODE" != "check" ]; then
-    cp "$CONN_JS" "$CONN_JS.bak.$TS"
-    # 在第一次出现 better-sqlite3 打开 db 的语句后注入 pragma（幂等）
-    node - "$CONN_JS" <<'NODE'
-const fs = require('fs');
-const f = process.argv[2];
-let s = fs.readFileSync(f, 'utf8');
-if (!/busy_timeout/.test(s)) {
-  // 找到形如 const db = new Database(...) 的行，在其后插入 pragma
-  const m = s.match(/const\s+(\w+)\s*=\s*new\s+Database\([^)]*\);?/);
-  if (m) {
-    const v = m[1];
-    const inject = `\n${v}.pragma('busy_timeout = 5000');\n${v}.pragma('journal_mode = WAL');\n${v}.pragma('synchronous = NORMAL');\n${v}.pragma('wal_autocheckpoint = 1000');\n${v}.pragma('cache_size = -16000');\n${v}.pragma('foreign_keys = ON');\n`;
-    s = s.replace(m[0], m[0] + inject);
-    fs.writeFileSync(f, s);
-    console.log('injected');
-  } else {
-    console.log('nomatch');
-  }
-} else { console.log('exists'); }
-NODE
-    if grep -q "busy_timeout" "$CONN_JS"; then
-      fix "注入连接级 pragma: busy_timeout=5000, synchronous=NORMAL, cache_size=16MB, WAL"
-      note "已备份原文件: $CONN_JS.bak.$TS  ·  需 'pm2 restart $PM2_APP' 生效"
-      NEED_RESTART=1
-    else
-      warn "自动注入失败(未匹配 new Database)，请人工在 $CONN_JS 加: db.pragma('busy_timeout = 5000')"
-    fi
-  fi
+  warn "未在代码中显式设置 busy_timeout（better-sqlite3 默认 5s，通常够用）"
 fi
+grep -q "synchronous = NORMAL" "$CONN_JS" 2>/dev/null && ok "synchronous=NORMAL (WAL 下安全且更快)" \
+  || note "synchronous 未显式设为 NORMAL"
 
 # WAL checkpoint + ANALYZE + 完整性（安全操作）
 if [ "$MODE" != "check" ]; then
@@ -246,15 +222,40 @@ else
 fi
 
 # ═══════════════════════ 7. 压测 ═══════════════════════
-hr; say "## 7. 压力测试（实测吞吐 & 并发连接）"
-if [ ! -d "$APP_DIR/node_modules/ws" ] && [ ! -d "$APP_DIR/node_modules/socket.io-client" ]; then
-  warn "缺少 ws / socket.io-client，跳过长连接压测，仅做 HTTP 吞吐"
+hr; say "## 7. 压力测试（实测吞吐 & 并发在线）"
+HERE="$(dirname "$0")"
+
+# socket.io-client 是并发连接实测必需；缺失则尝试安装（仅装一次）
+if [ ! -d "$APP_DIR/node_modules/socket.io-client" ]; then
+  warn "缺少 socket.io-client（并发长连接实测必需）"
+  if [ "$MODE" != "check" ]; then
+    (cd "$APP_DIR" && npm i socket.io-client >/dev/null 2>&1) \
+      && fix "已安装 socket.io-client（用于 WebSocket 并发测试）" \
+      || warn "socket.io-client 安装失败，C 段长连接测试将跳过"
+  fi
 fi
+
+# 播种测试账号（跑完即清理，不污染真实数据）
 say "参数: 并发连接=$LOAD_CONNS  发消息速率=${LOAD_MSG_RATE}/s  时长=${LOAD_DURATION}s"
+SEED_OK=0
+if [ "$MODE" != "check" ] || [ -f "$HERE/seed_test_users.js" ]; then
+  if APP_DIR="$APP_DIR" node "$HERE/seed_test_users.js" create "$LOAD_CONNS" 2>&1 | tee -a "$REPORT"; then
+    SEED_OK=1
+  else
+    warn "测试账号播种失败，压测可能无可用账号"
+  fi
+fi
+
 LOAD_JSON="$REPORT_DIR/load_${TS}.json"
-LOAD_CONNS="$LOAD_CONNS" LOAD_MSG_RATE="$LOAD_MSG_RATE" LOAD_DURATION="$LOAD_DURATION" \
+TARGET_ONLINE="$TARGET_ONLINE" LOAD_CONNS="$LOAD_CONNS" LOAD_MSG_RATE="$LOAD_MSG_RATE" LOAD_DURATION="$LOAD_DURATION" \
 BACKEND_URL="$BACKEND_URL" APP_DIR="$APP_DIR" OUT="$LOAD_JSON" \
-  node "$(dirname "$0")/hermes_loadtest.js" 2>&1 | tee -a "$REPORT" || warn "压测脚本执行异常"
+  node "$HERE/hermes_loadtest.js" 2>&1 | tee -a "$REPORT" || warn "压测脚本执行异常"
+
+# 清理测试账号
+if [ "$SEED_OK" = 1 ]; then
+  APP_DIR="$APP_DIR" node "$HERE/seed_test_users.js" cleanup 2>&1 | tee -a "$REPORT" >/dev/null \
+    && note "已清理压测临时账号"
+fi
 
 # ═══════════════════════ 重启使代码级修复生效 ═══════════════════════
 if [ "${NEED_RESTART:-0}" = 1 ] && [ "$MODE" != "check" ]; then
@@ -272,7 +273,7 @@ if [ "$FAIL" -eq 0 ] && [ "$WARN" -eq 0 ]; then
 elif [ "$FAIL" -eq 0 ]; then
   say "🟡 **基本达标**：有 $WARN 项需关注（多为容量余量/Nginx超时），见上文。"
 else
-  say "🔴 **未达标**：有 $FAIL 项阻塞，重点看第5节(Socket集群)与第4节(SQLite)。"
+  say "🔴 **未达标**：有 $FAIL 项阻塞（见上文标 ❌ 的条目）。"
 fi
 
 cat >>"$REPORT" <<'APPENDIX'

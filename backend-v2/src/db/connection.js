@@ -11,6 +11,7 @@ const config = require('../config');
 const { applySchema, applyFts } = require('./schema');
 
 function tunePragmas(conn, { readonly = false } = {}) {
+  conn.pragma('busy_timeout = 5000');   // 并发锁等待 5s，避免高并发下立即 SQLITE_BUSY
   conn.pragma('cache_size = -32000');   // 32 MB page cache
   conn.pragma('temp_store = MEMORY');
   conn.pragma('mmap_size = 268435456'); // 256 MB mmap
