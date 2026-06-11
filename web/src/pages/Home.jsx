@@ -119,7 +119,7 @@ function AccountSwitcher() {
     setErr(''); setSubmitting(true);
     try {
       const { data } = await axios.post('/api/auth/login', form);
-      login(data.token, data.user);
+      login(data.user);
       window.location.reload();
     } catch (ex) {
       setErr(ex.response?.data?.error || '手机号或密码错误');
