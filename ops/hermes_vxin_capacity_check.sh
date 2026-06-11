@@ -171,7 +171,13 @@ fi
 
 # ═══════════════════════ 5. Socket.IO 集群一致性（1000在线关键风险）═══════════════════════
 hr; say "## 5. Socket.IO 集群一致性 ⚠️ 最高风险项"
-inst=$(pm2 jlist 2>/dev/null | grep -o "\"name\":\"$PM2_APP\"" | wc -l)
+# 准确统计进程数：必须按 jlist 的"进程条目"数，不能 grep "name"——
+# 一个进程的 JSON 里 name 会出现多次(顶层+pm2_env)，grep 会把单实例误数成 2。
+inst=$(pm2 jlist 2>/dev/null | python3 -c "import sys,json
+try: d=json.load(sys.stdin)
+except: d=[]
+print(sum(1 for a in d if a.get('name')=='$PM2_APP'))" 2>/dev/null)
+[ -z "$inst" ] && inst=$(pm2 jlist 2>/dev/null | grep -o '"pm_id"' | wc -l)  # python 不可用时的兜底
 has_adapter=0
 grep -rqs "redis-adapter\|createAdapter\|@socket.io/redis" "$APP_DIR/src" && has_adapter=1
 redis_up=0; (redis-cli ping 2>/dev/null | grep -qi pong) && redis_up=1
