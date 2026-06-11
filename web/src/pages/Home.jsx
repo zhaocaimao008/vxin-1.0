@@ -286,16 +286,12 @@ function AccountSwitcher() {
                   <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace', fontWeight: 500 }}>{user.phone}</span>
                 </div>
               )}
-              {/* ID (二维码的内容) */}
+              {/* 二维码 */}
               {user?.id && (
                 <div style={{ marginBottom: 10 }}>
                   <div style={{ color: 'var(--text-secondary)', marginBottom: 6 }}>二维码</div>
                   <div style={{ padding: 8, background: 'var(--bg-input)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 120 }}>
-                    {/* 占位：二维码需要 qrcode 库生成，这里用 ID 展示 */}
-                    <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-tertiary)' }}>
-                      <div style={{ fontFamily: 'monospace', fontSize: 10, wordBreak: 'break-all', lineHeight: 1.3 }}>{user.id.slice(0, 16)}</div>
-                      <div style={{ marginTop: 4 }}>需要安装 qrcode 库显示二维码</div>
-                    </div>
+                    <img src="/api/users/me/qrcode" alt="我的二维码" style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 4 }} />
                   </div>
                 </div>
               )}
