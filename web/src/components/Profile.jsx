@@ -404,7 +404,7 @@ function AccountSwitcher({ user, accounts, login, switchAccount }) {
     setError(''); setLoading(true);
     try {
       const { data } = await axios.post('/api/auth/login', form);
-      login(data.token, data.user);
+      login(data.user);
       window.location.reload();
     } catch (err) {
       setError(err.response?.data?.error || '手机号或密码错误');
