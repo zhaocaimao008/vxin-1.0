@@ -1,7 +1,7 @@
 apiVersion: 1
 
 providers:
-  - name: 'V信 Dashboards'
+  - name: 'vxin-dashboards'
     orgId: 1
     folder: ''
     type: file
@@ -9,4 +9,4 @@ providers:
     updateIntervalSeconds: 10
     allowUiUpdates: true
     options:
-      path: /etc/grafana/provisioning/dashboards/definitions
+      path: /etc/grafana/provisioning/dashboards

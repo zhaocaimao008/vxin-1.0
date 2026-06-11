@@ -2,50 +2,55 @@ version: '3.8'
 
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.0.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.0
     container_name: vxin-elasticsearch
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ports:
       - "9200:9200"
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
-      - vxin-logging
+      - elk-network
+    restart: unless-stopped
 
   logstash:
-    image: docker.elastic.co/logstash/logstash:8.0.0
+    image: docker.elastic.co/logstash/logstash:8.5.0
     container_name: vxin-logstash
     volumes:
-      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
-      - /root/v信/backend-v2/logs:/logs
-    ports:
-      - "5000:5000/udp"
-      - "9600:9600"
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - ../logs:/logs:ro
     environment:
       - "LS_JAVA_OPTS=-Xmx256m -Xms256m"
+    ports:
+      - "5000:5000"
     depends_on:
       - elasticsearch
     networks:
-      - vxin-logging
+      - elk-network
+    restart: unless-stopped
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.0.0
+    image: docker.elastic.co/kibana/kibana:8.5.0
     container_name: vxin-kibana
     ports:
       - "5601:5601"
     environment:
-      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=
     depends_on:
       - elasticsearch
     networks:
-      - vxin-logging
+      - elk-network
+    restart: unless-stopped
 
 volumes:
   elasticsearch_data:
 
 networks:
-  vxin-logging:
+  elk-network:
     driver: bridge

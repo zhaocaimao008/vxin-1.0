@@ -14,8 +14,13 @@ const { notFoundHandler, errorHandler } = require('./middleware/error');
 const { requestLogger } = require('./utils/logger');
 const { metricsMiddleware, metrics } = require('./utils/monitoring');
 const swaggerSpec = require('./utils/swagger');
+const sentry = require('./utils/sentry');
 
 const app = express();
+
+// ── Sentry 错误追踪初始化 ────────────────────────────────────────
+sentry.initSentry();
+sentry.attachSentryMiddleware(app);
 
 app.set('trust proxy', 1); // Nginx 反代后面
 
@@ -87,6 +92,7 @@ app.get('/health', (req, res) => res.json({ ok: true, version: 2 }));
 
 // ── 兜底 ────────────────────────────────────────────────────────
 app.use(notFoundHandler);
+sentry.attachSentryErrorHandler(app);
 app.use(errorHandler);
 
 module.exports = app;
