@@ -23,3 +23,4 @@ mobile/package-lock.json
 desktop/package-lock.json
 backend/backup/
 demo.html
+.deploy-config/
