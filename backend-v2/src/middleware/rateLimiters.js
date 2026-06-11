@@ -8,10 +8,12 @@ const rateLimit = require('express-rate-limit');
 const json = msg => ({ error: msg });
 const base = { standardHeaders: true, legacyHeaders: false };
 
-// 登录：15 分钟 10 次
+// 登录：5 次失败 → 10 分钟锁定（需在 auth controller 中调用 recordFailedAttempt）
 const loginLimiter = rateLimit({
-  ...base, windowMs: 15 * 60 * 1000, max: 10,
-  message: json('登录尝试过于频繁，请15分钟后再试'),
+  ...base, windowMs: 10 * 60 * 1000, max: 5,
+  keyGenerator: req => req.body.phone || req.ip,
+  handler: (req, res) => res.status(429).json(json('登录尝试过于频繁，账户已锁定10分钟')),
+  message: json('登录尝试过于频繁，请10分钟后再试'),
 });
 
 // 注册：1 小时 5 次

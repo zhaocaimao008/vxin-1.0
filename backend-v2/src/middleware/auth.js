@@ -7,12 +7,21 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const { csrfCookieOptions } = require('../utils/cookies');
+const { isBlacklisted } = require('../utils/tokenBlacklist');
 
 module.exports = function auth(req, res, next) {
   const token = req.cookies?.[config.cookieName];
   if (!token) return res.status(401).json({ error: '未授权' });
+
+  // 检查 token 是否在黑名单中（logout 后）
+  if (isBlacklisted(token)) {
+    res.clearCookie(config.cookieName, { path: '/' });
+    return res.status(401).json({ error: '无效的Token，请重新登录' });
+  }
+
   try {
     req.user = jwt.verify(token, config.jwtSecret);
+    req.token = token;  // 保存 token 供 logout 使用
     req.csrfToken = req.user.csrf;
     res.cookie(config.csrfCookie, req.csrfToken, csrfCookieOptions(req));
     res.setHeader('X-CSRF-Token', req.csrfToken);
