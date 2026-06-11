@@ -13,7 +13,7 @@ const config = {
 
   // ── 数据库 ──────────────────────────────────────────────────
   // 复用生产同一个 wechat.db（数据是契约，绝不另起炉灶）
-  dbPath: path.resolve(__dirname, '../../../backend/wechat.db'),
+  dbPath: path.resolve(__dirname, '../../wechat.db'),
 
   // ── 鉴权 ────────────────────────────────────────────────────
   jwtSecret:    process.env.JWT_SECRET,
