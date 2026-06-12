@@ -83,7 +83,7 @@ const TABS = [
 
 /* ── 左上角头像 — 点击展开账号切换/添加下拉面板 ── */
 function AccountSwitcher() {
-  const { user, accounts, login, switchAccount } = useAuth();
+  const { user, accounts, login, switchAccount, removeAccount, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -127,6 +127,21 @@ function AccountSwitcher() {
       setForm({ phone: acct.user?.phone || '', password: '' });
       setShowForm(true);
       setTimeout(() => passwordRef.current?.focus(), 80);
+    }
+  };
+
+  // 删除账号：当前账号→退出登录；其他账号→从本设备移除(最近登录+免密切换凭证)
+  const doRemove = async (e, id) => {
+    e.stopPropagation();
+    const acct = accounts.find(a => a.id === id);
+    const name = acct?.user?.username || '该账号';
+    if (id === user?.id) {
+      if (!window.confirm(`退出当前账号「${name}」？`)) return;
+      await logout();                 // 清会话+CSRF+从钱包移除当前账号
+      window.location.replace('/login');
+    } else {
+      if (!window.confirm(`从本设备删除账号「${name}」？删除后切换需重新输密码。`)) return;
+      removeAccount(id);              // 移除最近登录记录 + 钱包凭证
     }
   };
 
@@ -217,6 +232,15 @@ function AccountSwitcher() {
                   ? <span style={{ fontSize: 11, color: '#07C160', background: 'rgba(7,193,96,.12)', padding: '2px 7px', borderRadius: 99, flexShrink: 0 }}>当前</span>
                   : <span style={{ fontSize: 11, color: 'var(--text-tertiary)', flexShrink: 0 }}>切换</span>
                 }
+                {/* 删除/退出账号 */}
+                <button
+                  onClick={(e) => doRemove(e, a.id)}
+                  title={active ? '退出登录' : '从本设备删除'}
+                  style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)', background: 'transparent', cursor: 'pointer', marginLeft: 2 }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(250,81,81,.12)'; e.currentTarget.style.color = '#FA5151'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-tertiary)'; }}>
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
               </div>
             );
           })}

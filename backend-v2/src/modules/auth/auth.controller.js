@@ -46,6 +46,14 @@ exports.switchAccount = asyncHandler(async (req, res) => {
   res.json({ user });
 });
 
+// 从本设备移除某账号（删除/退出后不再可免密切换）。只影响本设备的钱包。
+exports.forget = asyncHandler(async (req, res) => {
+  const { userId } = req.body || {};
+  const walletId = req.cookies?.[config.walletCookie];
+  if (userId && walletId) svc.removeDeviceAccount(walletId, userId);
+  res.json({ success: true });
+});
+
 exports.me = asyncHandler(async (req, res) => {
   const user = svc.getMe(req.user.id);
   if (!user) {

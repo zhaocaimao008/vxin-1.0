@@ -119,11 +119,13 @@ export const AuthProvider = ({ children }) => {
     window.location.reload();
   };
 
-  // ── 移除"最近登录"记录（UI 操作，不影响当前 Cookie 会话） ────
+  // ── 移除"最近登录"记录 + 从本设备钱包删除（删除账号，不再可免密切换） ────
   const removeAccount = (accountId) => {
     const next = readAccounts().filter(a => a.id !== accountId);
     writeAccounts(next);
     setAccounts(next);
+    // 后端清掉本设备对该账号的免密切换凭证（best-effort）
+    axios.post('/api/auth/forget', { userId: accountId }).catch(() => {});
   };
 
   // ── 登出 ──────────────────────────────────────────────────────
