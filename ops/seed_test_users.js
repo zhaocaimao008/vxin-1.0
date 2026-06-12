@@ -6,7 +6,7 @@
  * 跑完即清理，绝不污染真实用户数据。
  *
  * 标记：username 以 "__loadtest_" 前缀；phone 用保留段 199+8位序号。
- * 清理只删带该前缀的账号及其会话/消息/成员，绝不触碰真实用户。
+ * 清理只删带该前缀的账号及其会话/消息，绝不触碰真实用户。
  *
  * 用法（在 backend-v2 同机执行）：
  *   APP_DIR=/root/v信/backend-v2 node seed_test_users.js create 300
@@ -45,6 +45,8 @@ function cleanup() {
       try { db.prepare(`DELETE FROM conversation_members WHERE conversation_id IN (${cph})`).run(...convs); } catch (_) {}
       try { db.prepare(`DELETE FROM conversations WHERE id IN (${cph})`).run(...convs); } catch (_) {}
     }
+    // 删好友请求（新增表，测试流程会创建记录，不删则 FK 约束失败）
+    try { db.prepare(`DELETE FROM friend_requests WHERE from_id IN (${ph}) OR to_id IN (${ph})`).run(...ids); } catch (_) {}
     for (const t of ['user_sessions', 'contacts']) {
       try { db.prepare(`DELETE FROM ${t} WHERE user_id IN (${ph})`).run(...ids); } catch (_) {}
     }
