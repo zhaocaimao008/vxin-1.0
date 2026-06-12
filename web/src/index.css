@@ -571,8 +571,8 @@ img { display: block; }
   padding: 0 2px;
 }
 .wc-msg-image {
-  max-width: 220px;
-  max-height: 220px;
+  max-width: 320px;
+  max-height: 420px;
   border-radius: 3px;
   cursor: zoom-in;
   display: block;
