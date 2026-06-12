@@ -63,6 +63,9 @@ router.post('/register',        registerLimiter, c.register);
  */
 router.post('/login',           loginLimiter,    c.login);
 
+// 免密切换账号（凭 wallet cookie，需本设备登录过该账号）
+router.post('/switch',          c.switchAccount);
+
 /**
  * @swagger
  * /auth/me:

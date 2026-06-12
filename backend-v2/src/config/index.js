@@ -19,6 +19,8 @@ const config = {
   jwtSecret:    process.env.JWT_SECRET,
   cookieName:   'vxin_token',
   csrfCookie:   'csrf_token',
+  walletCookie: 'vxin_wallet',     // 设备多账号钱包(丝滑切换), httpOnly 长效
+  walletMaxAge: 30 * 24 * 60 * 60, // 30天（秒）
   tokenMaxAge:  30 * 24 * 60 * 60, // 30天（秒）
   inviteCode:   process.env.INVITE_CODE || '',
 

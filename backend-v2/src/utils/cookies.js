@@ -41,4 +41,16 @@ function csrfCookieOptions(req) {
   };
 }
 
-module.exports = { authCookieOptions, csrfCookieOptions, isHttps, isCrossOrigin };
+// httpOnly 长效"设备钱包" Cookie（标识本设备，用于多账号丝滑切换）
+function walletCookieOptions(req) {
+  const cross = isCrossOrigin(req);
+  return {
+    httpOnly: true,
+    secure:   isHttps(req) || cross,
+    sameSite: cross ? 'none' : (isHttps(req) ? 'strict' : 'lax'),
+    maxAge:   config.walletMaxAge * 1000,
+    path:     '/',
+  };
+}
+
+module.exports = { authCookieOptions, csrfCookieOptions, walletCookieOptions, isHttps, isCrossOrigin };

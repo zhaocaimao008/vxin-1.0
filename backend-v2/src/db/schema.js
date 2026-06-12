@@ -303,6 +303,15 @@ function applySchema(db) {
     "CREATE INDEX IF NOT EXISTS idx_moment_comments_moment ON moment_comments(moment_id, created_at)",
     // ── 红包状态（active/expired，配合过期回收标记）──
     "ALTER TABLE red_packets ADD COLUMN status TEXT DEFAULT 'active'",
+    // ── 设备多账号（丝滑切换）：记录本设备(wallet)已密码登录过的账号，
+    //    切换时凭 wallet cookie 重签发 token，无需再输密码 ──
+    `CREATE TABLE IF NOT EXISTS device_accounts (
+      wallet_id  TEXT NOT NULL,
+      user_id    TEXT NOT NULL,
+      created_at INTEGER DEFAULT (strftime('%s','now')),
+      last_used  INTEGER DEFAULT (strftime('%s','now')),
+      PRIMARY KEY (wallet_id, user_id)
+    )`,
   ];
   migrations.forEach(sql => { try { db.prepare(sql).run(); } catch {} });
 }

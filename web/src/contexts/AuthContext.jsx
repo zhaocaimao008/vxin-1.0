@@ -107,6 +107,18 @@ export const AuthProvider = ({ children }) => {
     setAccounts(next);
   };
 
+  // ── 免密切换账号 ──────────────────────────────────────────────
+  // 后端凭 httpOnly 的 wallet cookie 校验"本设备登录过该账号"，重签发 token。
+  // 成功即换上新账号的 Cookie，reload 重建 socket / 拉取数据。
+  // 失败（如 wallet 过期、该账号未在本设备登录过）抛错，调用方回退到密码登录。
+  const switchAccount = async (accountId) => {
+    const { data } = await axios.post('/api/auth/switch', { userId: accountId });
+    const next = upsertAccount(data.user);
+    setAccounts(next);
+    setUser(data.user);
+    window.location.reload();
+  };
+
   // ── 移除"最近登录"记录（UI 操作，不影响当前 Cookie 会话） ────
   const removeAccount = (accountId) => {
     const next = readAccounts().filter(a => a.id !== accountId);
@@ -152,6 +164,7 @@ export const AuthProvider = ({ children }) => {
       updateUser,
       loading,
       accounts,
+      switchAccount,
       removeAccount,
       maxAccounts: MAX_ACCOUNTS,
     }}>

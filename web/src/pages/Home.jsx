@@ -83,7 +83,7 @@ const TABS = [
 
 /* ── 左上角头像 — 点击展开账号切换/添加下拉面板 ── */
 function AccountSwitcher() {
-  const { user, accounts, login } = useAuth();
+  const { user, accounts, login, switchAccount } = useAuth();
   const [open, setOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -110,17 +110,24 @@ function AccountSwitcher() {
     if (!open) { setShowForm(false); setErr(''); setForm({ phone: '', password: '' }); setSwitchTarget(null); }
   }, [open]);
 
-  // 切换账号：JWT 在 httpOnly Cookie 里，JS 无法直接替换，必须重新登录。
-  // 点击某个已登录过的账号 → 自动填入其手机号，展开表单，聚焦密码框，输密码即切换。
-  const doSwitch = (id) => {
-    if (id === user?.id) return;
+  // 切换账号：优先丝滑切换（后端凭 wallet cookie 免密重签发）。
+  // 仅当本设备没切换凭证（如缓存被清/换了浏览器/旧会话）才回退到密码登录。
+  const [switching, setSwitching] = useState(false);
+  const doSwitch = async (id) => {
+    if (id === user?.id || switching) return;
     const acct = accounts.find(a => a.id === id);
     if (!acct) return;
-    setErr('');
-    setSwitchTarget(acct.user || null);
-    setForm({ phone: acct.user?.phone || '', password: '' });
-    setShowForm(true);
-    setTimeout(() => passwordRef.current?.focus(), 80);
+    setErr(''); setSwitching(true);
+    try {
+      await switchAccount(id);   // 成功会 reload
+    } catch (ex) {
+      // 免密切换不可用 → 回退：填入手机号，要求输密码
+      setSwitching(false);
+      setSwitchTarget(acct.user || null);
+      setForm({ phone: acct.user?.phone || '', password: '' });
+      setShowForm(true);
+      setTimeout(() => passwordRef.current?.focus(), 80);
+    }
   };
 
   const doAdd = async (e) => {

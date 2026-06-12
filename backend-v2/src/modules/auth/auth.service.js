@@ -123,7 +123,38 @@ async function changePassword(userId, { oldPassword, newPassword }) {
   return signToken(user);
 }
 
+// ── 设备多账号（丝滑切换）────────────────────────────────────────
+// 记录"本设备(wallet)曾密码登录过 user"，切换时凭此免密重签发 token。
+function recordDeviceAccount(walletId, userId) {
+  if (!walletId || !userId) return;
+  const now = Math.floor(Date.now() / 1000);
+  db.prepare(`
+    INSERT INTO device_accounts (wallet_id, user_id, created_at, last_used)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(wallet_id, user_id) DO UPDATE SET last_used=excluded.last_used
+  `).run(walletId, userId, now, now);
+}
+
+function removeDeviceAccount(walletId, userId) {
+  if (!walletId || !userId) return;
+  db.prepare('DELETE FROM device_accounts WHERE wallet_id=? AND user_id=?').run(walletId, userId);
+}
+
+// 免密切换：校验本设备登录过该账号 → 重签发 token + 返回用户信息。
+function switchAccount(walletId, userId) {
+  if (!walletId) throw badRequest('请重新登录');
+  const owned = db.prepare('SELECT 1 FROM device_accounts WHERE wallet_id=? AND user_id=?').get(walletId, userId);
+  if (!owned) throw forbidden('该账号未在本设备登录过，请重新登录');
+  const user = db.prepare('SELECT * FROM users WHERE id=?').get(userId);
+  if (!user) { removeDeviceAccount(walletId, userId); throw notFound('用户不存在'); }
+  if (user.banned) { removeDeviceAccount(walletId, userId); throw forbidden('账号已被封禁'); }
+  db.prepare('UPDATE device_accounts SET last_used=? WHERE wallet_id=? AND user_id=?')
+    .run(Math.floor(Date.now() / 1000), walletId, userId);
+  return { token: signToken(user), user: serializeUser(user) };
+}
+
 module.exports = {
   register, login, getMe, refreshToken, upsertSession,
   listSessions, deleteSession, changePassword,
+  recordDeviceAccount, removeDeviceAccount, switchAccount,
 };
