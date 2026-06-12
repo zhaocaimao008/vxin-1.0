@@ -88,6 +88,7 @@ function AccountSwitcher() {
   const [showForm, setShowForm] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [form, setForm] = useState({ phone: '', password: '' });
+  const [switchTarget, setSwitchTarget] = useState(null); // 非空=正在切换到某个已登录账号(显示其昵称)
   const [err, setErr] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const phoneRef = useRef(null);
@@ -106,7 +107,7 @@ function AccountSwitcher() {
   }, [open]);
 
   useEffect(() => {
-    if (!open) { setShowForm(false); setErr(''); setForm({ phone: '', password: '' }); }
+    if (!open) { setShowForm(false); setErr(''); setForm({ phone: '', password: '' }); setSwitchTarget(null); }
   }, [open]);
 
   // 切换账号：JWT 在 httpOnly Cookie 里，JS 无法直接替换，必须重新登录。
@@ -116,6 +117,7 @@ function AccountSwitcher() {
     const acct = accounts.find(a => a.id === id);
     if (!acct) return;
     setErr('');
+    setSwitchTarget(acct.user || null);
     setForm({ phone: acct.user?.phone || '', password: '' });
     setShowForm(true);
     setTimeout(() => passwordRef.current?.focus(), 80);
@@ -139,6 +141,7 @@ function AccountSwitcher() {
     e.stopPropagation();
     setShowForm(v => !v);
     setErr('');
+    setSwitchTarget(null);   // 走"添加账户"入口，不是切换
     setForm({ phone: '', password: '' });
     if (!showForm) setTimeout(() => phoneRef.current?.focus(), 80);
   };
@@ -232,16 +235,21 @@ function AccountSwitcher() {
             </svg>
           </div>
 
-          {/* 添加账户表单 */}
+          {/* 登录表单：切换已有账号 或 添加新账号 */}
           {showForm && (
             <div style={{ padding: '4px 14px 14px' }}>
               <div style={{ margin: '8px 0', padding: '7px 10px', background: 'rgba(7,193,96,.08)', borderRadius: 8, border: '1px solid rgba(7,193,96,.18)' }}>
-                <span style={{ fontSize: 12, color: '#07C160', lineHeight: 1.5 }}>添加后旧账号不会退出，可随时切换</span>
+                <span style={{ fontSize: 12, color: '#07C160', lineHeight: 1.5 }}>
+                  {switchTarget
+                    ? `切换到「${switchTarget.username || '该账号'}」，请输入密码`
+                    : '添加后旧账号不会退出，可随时切换'}
+                </span>
               </div>
               <form onSubmit={doAdd} style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                 <input ref={phoneRef} type="tel" placeholder="手机号" value={form.phone}
+                  readOnly={!!switchTarget}
                   onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                  style={{ padding: '10px 12px', borderRadius: 9, border: '1px solid var(--border-color)', fontSize: 14, background: 'var(--bg-search)', color: 'var(--text-primary)', outline: 'none' }}
+                  style={{ padding: '10px 12px', borderRadius: 9, border: '1px solid var(--border-color)', fontSize: 14, background: switchTarget ? 'var(--bg-panel, #f0f0f0)' : 'var(--bg-search)', color: switchTarget ? 'var(--text-secondary)' : 'var(--text-primary)', outline: 'none' }}
                   onFocus={e => e.target.style.borderColor = '#07C160'}
                   onBlur={e => e.target.style.borderColor = 'var(--border-color)'} />
                 <input ref={passwordRef} type="password" placeholder="密码" value={form.password}
@@ -252,7 +260,7 @@ function AccountSwitcher() {
                 {err && <div style={{ padding: '5px 9px', background: 'rgba(250,81,81,.08)', borderRadius: 7, border: '1px solid rgba(250,81,81,.2)', color: '#FA5151', fontSize: 12 }}>{err}</div>}
                 <button type="submit" disabled={submitting}
                   style={{ padding: '11px 0', background: submitting ? 'rgba(7,193,96,.6)' : '#07C160', color: '#fff', borderRadius: 9, fontSize: 14, fontWeight: 600, letterSpacing: .3 }}>
-                  {submitting ? '登录中...' : '登录并切换'}
+                  {submitting ? '登录中...' : (switchTarget ? '登录并切换' : '登录并添加')}
                 </button>
               </form>
             </div>
