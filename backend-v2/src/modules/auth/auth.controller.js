@@ -43,6 +43,7 @@ exports.logout = asyncHandler(async (req, res) => {
     await addToBlacklist(req.token, req.user.exp);
   }
   res.clearCookie(config.cookieName, { path: '/' });
+  res.clearCookie(config.csrfCookie, { path: '/' });  // 同时清 CSRF cookie，避免残留导致下次登录/注册误报
   res.json({ success: true });
 });
 
