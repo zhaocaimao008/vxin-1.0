@@ -50,6 +50,8 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   const [myGroupRole, setMyGroupRole] = useState('member'); // 'owner'|'admin'|'member'
   const [groupSettings, setGroupSettings] = useState({ mute_all: 0, no_private_chat: 0, no_add_friend: 0 });
   const [showUserProfile, setShowUserProfile] = useState(null);
+  const [showCardPicker, setShowCardPicker] = useState(false);  // 分享名片：联系人选择器
+  const [cardContacts, setCardContacts] = useState([]);
   const [editingMsg, setEditingMsg] = useState(null);
   const [forwardMsg, setForwardMsg] = useState(null);
   const [ctxMenu, setCtxMenu] = useState(null);
@@ -631,6 +633,51 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     });
   };
 
+  // ── 分享名片：发送一条 contact_card 消息（content 为被分享用户的 JSON 快照）──
+  const openCardPicker = () => {
+    setShowMore(false);
+    axios.get('/api/users/contacts').then(r => setCardContacts(r.data || [])).catch(() => setCardContacts([]));
+    setShowCardPicker(true);
+  };
+
+  const sendContactCard = (contact) => {
+    if (!socket) return;
+    setShowCardPicker(false);
+    const card = {
+      uid: contact.id,
+      username: contact.remark || contact.username || '',
+      avatar: contact.avatar || '',
+      wechat_id: contact.wechat_id || '',
+    };
+    const content = JSON.stringify(card);
+    const tempId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const optimistic = {
+      id: tempId, conversation_id: conversation.id, sender_id: user.id,
+      senderName: user.username, senderAvatar: user.avatar,
+      content, type: 'contact_card', file_url: '',
+      created_at: Math.floor(Date.now() / 1000),
+      reply_to_id: null, replyTo: null, deleted: 0, edited: 0, reactions: [],
+      _status: 'sending', _tempId: tempId,
+    };
+    setMessages(prev => [...prev, optimistic]);
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+    const timer = setTimeout(() => {
+      pendingMsgsRef.current.delete(tempId);
+      setMessages(prev => prev.map(m => m._tempId === tempId ? { ...m, _status: 'error' } : m));
+    }, 5000);
+    pendingMsgsRef.current.set(tempId, timer);
+    socket.emit('send_message', { conversationId: conversation.id, content, type: 'contact_card' }, (ack) => {
+      clearTimeout(pendingMsgsRef.current.get(tempId));
+      pendingMsgsRef.current.delete(tempId);
+      if (ack?.success && ack.message) {
+        confirmedMsgIds.current.add(ack.message.id);
+        setMessages(prev => prev.map(m => m._tempId === tempId ? { ...ack.message } : m));
+      } else {
+        setMessages(prev => prev.map(m => m._tempId === tempId ? { ...m, _status: 'error' } : m));
+      }
+    });
+  };
+
   const startEdit = (msg) => {
     setEditingMsg({ id: msg.id, content: msg.content });
     setInput(msg.content);
@@ -1157,7 +1204,25 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                 </a>
               )}
               {/* location removed */}
-              {/* contact_card removed */}
+              {msg.type === 'contact_card' && (() => {
+                let card = {};
+                try { card = JSON.parse(msg.content); } catch { card = {}; }
+                return (
+                  <div
+                    onClick={() => card.uid && setShowUserProfile(card.uid)}
+                    style={{ width: 230, background: 'var(--bg-msg-other, #fff)', border: '1px solid var(--border-color, #e5e5e5)', borderRadius: 8, overflow: 'hidden', cursor: 'pointer' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px' }}>
+                      <Avatar src={card.avatar} name={card.username} size={44} style={{ borderRadius: 6, flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.username || '用户'}</div>
+                        {card.wechat_id && <div style={{ fontSize: 12, color: 'var(--text-tertiary, #999)', marginTop: 2 }}>v信号：{card.wechat_id}</div>}
+                      </div>
+                    </div>
+                    <div style={{ borderTop: '1px solid var(--border-color, #eee)', padding: '5px 12px', fontSize: 11, color: 'var(--text-tertiary, #999)' }}>个人名片</div>
+                  </div>
+                );
+              })()}
               {/* red_packet removed */}
             </div>
           </div>
@@ -1413,6 +1478,38 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         />
       )}
 
+      {/* ── 分享名片：联系人选择器 ── */}
+      {showCardPicker && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 650, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={e => e.target === e.currentTarget && setShowCardPicker(false)}
+        >
+          <div style={{ width: 380, maxWidth: '92vw', maxHeight: '74vh', background: 'var(--bg-msg-other, #fff)', borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border-color)' }}>
+              <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>选择要分享的名片</span>
+              <button onClick={() => setShowCardPicker(false)} style={{ fontSize: 18, color: 'var(--text-secondary)', background: 'none', cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {cardContacts.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '28px', color: 'var(--text-tertiary)', fontSize: 13 }}>暂无联系人</div>
+              )}
+              {cardContacts.map(c => (
+                <div key={c.id} onClick={() => sendContactCard(c)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 18px', cursor: 'pointer' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                  <Avatar src={c.avatar} name={c.remark || c.username} size={42} style={{ borderRadius: 6 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14.5, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.remark || c.username}</div>
+                    {c.wechat_id && <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 1 }}>v信号：{c.wechat_id}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── 文件上传进度条 ── */}
       {uploadState && (
         <div style={{
@@ -1550,6 +1647,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
               { bg:'#1890FF', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M20 6h-2.18c.07-.44.18-.88.18-1.36C18 2.05 15.96 0 13.5 0c-1.3 0-2.47.6-3.28 1.53L9 3 7.78 1.53C6.97.6 5.8 0 4.5 0 2.04 0 0 2.05 0 4.64c0 .48.11.92.18 1.36H0v2h20v-2zM20 10H4v8c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-8z"/></svg>, label:'文件', action:()=>fileInputRef.current?.click() },
               { bg:'#13C2C2', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>, label:'视频通话', action:()=>{ setShowMore(false); startCall('video'); } },
               { bg:'#07C160', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>, label:'语音通话', action:()=>{ setShowMore(false); startCall('audio'); } },
+              { bg:'#FA9D3B', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>, label:'名片', action: openCardPicker },
             ].map(item => (
               <div key={item.label} className="wc-more-item" onClick={item.action}>
                 <div className="wc-more-icon" style={{ background: item.bg }}>{item.svg}</div>

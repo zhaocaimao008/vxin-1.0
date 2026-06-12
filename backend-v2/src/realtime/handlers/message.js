@@ -47,7 +47,8 @@ module.exports = function registerMessageHandler(io, socket) {
 
   socket.on('send_message', async (data, ack) => {
     const { conversationId, content, reply_to_id } = data;
-    const type = ['text'].includes(data.type) ? data.type : 'text';
+    // 允许文本与名片(contact_card)；名片的 content 是被分享用户的 JSON 快照
+    const type = ['text', 'contact_card'].includes(data.type) ? data.type : 'text';
 
     if (!conversationId || !content) return;
     if (!presence.checkMsgRate(userId)) { ack?.({ success: false, error: '发送频率过高，请稍后再试' }); return; }
