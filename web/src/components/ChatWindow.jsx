@@ -855,6 +855,24 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     if (file) handleFileSelect(file);
   };
 
+  // 粘贴图片直接发送（截图 / 输入法表情包等剪贴板里的图片）
+  const handlePaste = useCallback((e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const it of items) {
+      if (it.type && it.type.startsWith('image/')) {
+        const blob = it.getAsFile();
+        if (!blob) continue;
+        e.preventDefault();  // 阻止把图片当文本/文件名塞进输入框
+        const ext = (it.type.split('/')[1] || 'png').split('+')[0];
+        const named = new File([blob], blob.name && blob.name !== 'image.png'
+          ? blob.name : `paste-${Date.now()}.${ext}`, { type: it.type });
+        handleFileSelect(named);
+        return;
+      }
+    }
+  }, [handleFileSelect]);
+
   // 拖拽上传
   const handleDragEnter = (e) => {
     e.preventDefault();
@@ -1733,6 +1751,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                     }
                   }}
                   onKeyDown={handleKeyDown}
+                  onPaste={handlePaste}
                   placeholder=""
                   rows={3}
                 />
