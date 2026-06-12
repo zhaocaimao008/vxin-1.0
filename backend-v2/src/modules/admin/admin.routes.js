@@ -1,8 +1,21 @@
 'use strict';
 const router = require('express').Router();
 const rateLimit = require('express-rate-limit');
+const config = require('../../config');
 const adminAuth = require('../../middleware/adminAuth');
 const c = require('./admin.controller');
+
+// ── 后台 IP 白名单门控（最外层）──────────────────────────────────
+// config.admin.ipWhitelist 为空时不限制(默认)；非空时仅放行列表内 IP。
+// trust proxy 已开，req.ip 为真实客户端 IP；兼容 IPv4-mapped IPv6 (::ffff:x.x.x.x)。
+const normIp = ip => (ip || '').replace(/^::ffff:/, '');
+router.use((req, res, next) => {
+  const wl = config.admin.ipWhitelist;
+  if (!wl.length) return next();
+  const ip = normIp(req.ip);
+  if (wl.includes(ip)) return next();
+  return res.status(403).json({ error: '后台仅限白名单 IP 访问' });
+});
 
 // 后台登录限流：15分钟 10 次
 const adminLoginLimiter = rateLimit({

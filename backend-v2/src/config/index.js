@@ -30,6 +30,8 @@ const config = {
     password:    process.env.ADMIN_PASSWORD || '',
     cookieName:  'vxin_admin_token',
     tokenMaxAge: 12 * 60 * 60, // 12小时（秒）
+    // IP 白名单(逗号分隔)。为空=不限制(默认，避免误锁)；非空时仅允许列表内 IP 访问后台。
+    ipWhitelist: (process.env.ADMIN_IP_WHITELIST || '').split(',').map(s => s.trim()).filter(Boolean),
   },
 
   // ── CORS ────────────────────────────────────────────────────
