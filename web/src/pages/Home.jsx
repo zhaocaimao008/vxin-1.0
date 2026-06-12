@@ -91,6 +91,7 @@ function AccountSwitcher() {
   const [err, setErr] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const phoneRef = useRef(null);
+  const passwordRef = useRef(null);
   const containerRef = useRef(null);
   const letter = (user?.username || '?')[0].toUpperCase();
 
@@ -108,9 +109,16 @@ function AccountSwitcher() {
     if (!open) { setShowForm(false); setErr(''); setForm({ phone: '', password: '' }); }
   }, [open]);
 
+  // 切换账号：JWT 在 httpOnly Cookie 里，JS 无法直接替换，必须重新登录。
+  // 点击某个已登录过的账号 → 自动填入其手机号，展开表单，聚焦密码框，输密码即切换。
   const doSwitch = (id) => {
     if (id === user?.id) return;
-    // 账号切换需重新登录（AuthContext 未提供 switchAccount）
+    const acct = accounts.find(a => a.id === id);
+    if (!acct) return;
+    setErr('');
+    setForm({ phone: acct.user?.phone || '', password: '' });
+    setShowForm(true);
+    setTimeout(() => passwordRef.current?.focus(), 80);
   };
 
   const doAdd = async (e) => {
@@ -236,7 +244,7 @@ function AccountSwitcher() {
                   style={{ padding: '10px 12px', borderRadius: 9, border: '1px solid var(--border-color)', fontSize: 14, background: 'var(--bg-search)', color: 'var(--text-primary)', outline: 'none' }}
                   onFocus={e => e.target.style.borderColor = '#07C160'}
                   onBlur={e => e.target.style.borderColor = 'var(--border-color)'} />
-                <input type="password" placeholder="密码" value={form.password}
+                <input ref={passwordRef} type="password" placeholder="密码" value={form.password}
                   onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
                   style={{ padding: '10px 12px', borderRadius: 9, border: '1px solid var(--border-color)', fontSize: 14, background: 'var(--bg-search)', color: 'var(--text-primary)', outline: 'none' }}
                   onFocus={e => e.target.style.borderColor = '#07C160'}
