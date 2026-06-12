@@ -765,6 +765,17 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     });
   }, [conversation.id]);
 
+  // ── 本地上传回退：云存储未配置(503)时，直传后端 /upload（入库+广播由后端完成）──
+  const uploadLocal = useCallback(async (file, onProgress) => {
+    const form = new FormData();
+    form.append('file', file);
+    if (replyTo?.id) form.append('reply_to_id', replyTo.id);
+    await axios.post(`/api/messages/${conversation.id}/upload`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (e) => { if (e.total) onProgress?.(Math.round(e.loaded / e.total * 100)); },
+    });
+  }, [conversation.id, replyTo]);
+
   // ── 统一文件处理入口（handleFileUpload / handleDrop 共用）────
   const handleFileSelect = useCallback(async (file) => {
     // 阻断并发上传：防止用户疯狂拖入多个文件
@@ -796,19 +807,32 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       return;
     }
 
+    const onProg = (p) => setUploadState(s => s ? { ...s, progress: p } : null);
     const doUpload = async () => {
       isUploadingRef.current = file.name;
       setUploadState({ name: file.name, progress: 0, status: 'uploading' });
+      const type = file.type.startsWith('image/') ? 'image'
+                 : file.type.startsWith('audio/') ? 'voice'
+                 : file.type.startsWith('video/') ? 'video'
+                 : 'file';
       try {
-        const publicUrl = await uploadToCloud(file, file.type, file.name, (p) => {
-          setUploadState(s => s ? { ...s, progress: p } : null);
-        });
+        let publicUrl;
+        try {
+          publicUrl = await uploadToCloud(file, file.type, file.name, onProg);
+        } catch (cloudErr) {
+          // 云存储未配置(503) → 回退本地上传；后端 /upload 自己入库+广播，无需再 emit
+          if (cloudErr.response?.status === 503) {
+            await uploadLocal(file, onProg);
+            isUploadingRef.current = false;
+            setUploadState(null);
+            setReplyTo(null);
+            setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+            return;
+          }
+          throw cloudErr;
+        }
         isUploadingRef.current = false;
         setUploadState(null);
-        const type = file.type.startsWith('image/') ? 'image'
-                   : file.type.startsWith('audio/') ? 'voice'
-                   : file.type.startsWith('video/') ? 'video'
-                   : 'file';
         socket?.emit('send_file_message', {
           conversationId: conversation.id, type,
           file_url: publicUrl, content: file.name,
@@ -823,7 +847,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       }
     };
     await doUpload();
-  }, [uploadToCloud, socket, conversation.id, replyTo, messagesEndRef]);
+  }, [uploadToCloud, uploadLocal, socket, conversation.id, replyTo, messagesEndRef]);
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
