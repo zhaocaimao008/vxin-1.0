@@ -9,6 +9,7 @@ function send(io, userId, { conversationId, totalAmount, totalCount, greeting })
   if (!conversationId || !totalAmount || !totalCount) throw badRequest('参数缺失');
   if (totalAmount < 1 || totalAmount > 20000) throw badRequest('金额范围 1-20000 金币');
   if (totalCount < 1 || totalCount > 100) throw badRequest('红包个数 1-100');
+  if (totalAmount < totalCount) throw badRequest('总金额不能小于红包个数（每个至少 1 金币）');
   requireMember(conversationId, userId, '无权操作');
 
   const packetId = uuidv4();
