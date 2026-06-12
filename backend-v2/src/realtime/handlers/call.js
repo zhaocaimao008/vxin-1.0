@@ -22,7 +22,18 @@ module.exports = function registerCallHandler(io, socket) {
   const userId = socket.user.id;
 
   socket.on('call:request', ({ to, type, caller }) => {
-    if (!to) return;
+    if (!to || to === userId) return;
+    // 防骚扰 / 防绕过拉黑：被叫已拉黑主叫，或双方无私聊会话(非任意ID都能拨)，则拒接。
+    const blocked = db.prepare('SELECT 1 FROM blocked_users WHERE user_id=? AND blocked_id=?').get(to, userId);
+    const shareConv = db.prepare(`
+      SELECT 1 FROM conversation_members cm1
+      JOIN conversation_members cm2 ON cm1.conversation_id = cm2.conversation_id
+      JOIN conversations c ON c.id = cm1.conversation_id AND c.type='private'
+      WHERE cm1.user_id=? AND cm2.user_id=? LIMIT 1`).get(userId, to);
+    if (blocked || !shareConv) {
+      socket.emit('call:response', { from: to, accepted: false }); // 给主叫一个"被拒"信号，避免界面一直转
+      return;
+    }
     const id = uuidv4();
     const t = type === 'video' ? 'video' : 'audio';
     activeCalls.set(`${userId}>${to}`, { id, answeredAt: null });
