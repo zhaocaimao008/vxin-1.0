@@ -167,6 +167,7 @@ function forward(io, userId, { msgId, conversationIds }) {
   if (!msgId || !conversationIds?.length) throw badRequest('参数缺失');
   const msg = db.prepare('SELECT * FROM messages WHERE id=? AND deleted=0').get(msgId);
   if (!msg) throw notFound('消息不存在');
+  requireMember(msg.conversation_id, userId, '无权转发该消息');  // 防越权：必须能读源消息才能转发
 
   const sent = [];
   conversationIds.forEach(convId => {
@@ -224,6 +225,7 @@ function react(io, userId, msgId, emoji) {
   if (!emoji) throw badRequest('参数缺失');
   const msg = db.prepare('SELECT conversation_id FROM messages WHERE id=?').get(msgId);
   if (!msg) throw notFound('消息不存在');
+  requireMember(msg.conversation_id, userId, '无权操作');  // 防越权：非会话成员不得贴表情
 
   const existing = db.prepare('SELECT * FROM message_reactions WHERE message_id=? AND user_id=?').get(msgId, userId);
   if (existing && existing.emoji === emoji) {

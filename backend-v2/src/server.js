@@ -69,4 +69,15 @@ function graceful(sig) {
 process.on('SIGTERM', () => graceful('SIGTERM'));
 process.on('SIGINT',  () => graceful('SIGINT'));
 
+// ── 进程级兜底：绝不因单个请求/socket 的异步异常拖垮整个进程 ──────────
+// Node 20 默认会因未处理的 Promise rejection 直接退出进程——对一台扛着上千
+// WebSocket 长连接的聊天服务器，这意味着一条坏消息就能让所有人掉线。
+// 这里记录日志并继续运行（rejection 不会破坏全局状态）。
+process.on('unhandledRejection', (reason) => {
+  console.error('[server] 未处理的 Promise rejection（已兜底，进程继续）:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[server] 未捕获异常（已兜底，进程继续）:', err);
+});
+
 module.exports = { server, io };
