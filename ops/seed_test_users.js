@@ -47,6 +47,8 @@ function cleanup() {
     }
     // 删好友请求（新增表，测试流程会创建记录，不删则 FK 约束失败）
     try { db.prepare(`DELETE FROM friend_requests WHERE from_id IN (${ph}) OR to_id IN (${ph})`).run(...ids); } catch (_) {}
+    // 删设备多账号记录（丝滑切换表）
+    try { db.prepare(`DELETE FROM device_accounts WHERE user_id IN (${ph})`).run(...ids); } catch (_) {}
     for (const t of ['user_sessions', 'contacts']) {
       try { db.prepare(`DELETE FROM ${t} WHERE user_id IN (${ph})`).run(...ids); } catch (_) {}
     }
