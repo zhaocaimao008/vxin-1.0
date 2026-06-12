@@ -17,7 +17,7 @@ exports.missed = asyncHandler(async (req, res) =>
   res.json(svc.missed(io(req), req.user.id, parseInt(req.query.after) || 0)));
 
 exports.send = asyncHandler(async (req, res) =>
-  res.json(svc.send(req.params.conversationId, req.user.id, req.body)));
+  res.json(await svc.send(req.params.conversationId, req.user.id, req.body)));
 
 exports.forward = asyncHandler(async (req, res) =>
   res.json({ success: true, sent: svc.forward(io(req), req.user.id, req.body) }));
@@ -41,9 +41,9 @@ exports.collect = asyncHandler(async (req, res) => {
   res.json({ success: true });
 });
 
-exports.searchGlobal = asyncHandler(async (req, res) => res.json(svc.searchGlobal(req.user.id, req.query)));
+exports.searchGlobal = asyncHandler(async (req, res) => res.json(await svc.searchGlobal(req.user.id, req.query)));
 exports.searchInConv = asyncHandler(async (req, res) =>
-  res.json(svc.searchInConversation(req.params.convId, req.user.id, req.query.q)));
+  res.json(await svc.searchInConversation(req.params.convId, req.user.id, req.query.q)));
 
 // ── 文件上传：权限门控 → multer+魔数 → 入库广播+推送 ─────────────
 exports.uploadGuard = (req, res, next) => {

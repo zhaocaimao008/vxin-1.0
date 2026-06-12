@@ -16,23 +16,23 @@ exports.getSettings    = asyncHandler(async (req, res) => res.json(svc.getSettin
 exports.updateSettings = asyncHandler(async (req, res) => res.json(svc.updateSettings(req.user.id, req.body)));
 exports.search         = asyncHandler(async (req, res) => res.json(svc.search(req.user.id, req.query.q)));
 
-exports.updateProfile  = asyncHandler(async (req, res) => res.json(svc.updateProfile(req.user.id, req.body)));
+exports.updateProfile  = asyncHandler(async (req, res) => res.json(await svc.updateProfile(req.user.id, req.body)));
 
 exports.uploadAvatar = asyncHandler(async (req, res) => {
   if (!req.file) throw badRequest('请选择图片');
   const url = `/uploads/avatars/${req.file.filename}`;
-  svc.setAvatar(req.user.id, url);
+  await svc.setAvatar(req.user.id, url);
   res.json({ avatar: url });
 });
 
 exports.uploadCover = asyncHandler(async (req, res) => {
   if (!req.file) throw badRequest('请选择图片');
   const url = `/uploads/avatars/${req.file.filename}`;
-  svc.setCover(req.user.id, url);
+  await svc.setCover(req.user.id, url);
   res.json({ cover_photo: url });
 });
 
-exports.getUserDetail  = asyncHandler(async (req, res) => res.json(svc.getUserDetail(req.user.id, req.params.id)));
+exports.getUserDetail  = asyncHandler(async (req, res) => res.json(await svc.getUserDetail(req.user.id, req.params.id)));
 exports.getCollections = asyncHandler(async (req, res) => res.json(svc.getCollections(req.user.id)));
 exports.removeCollection = asyncHandler(async (req, res) => res.json(svc.removeCollection(req.user.id, req.params.id)));
 exports.getCallLogs = asyncHandler(async (req, res) => res.json(svc.getCallLogs(req.user.id, req.query.limit)));

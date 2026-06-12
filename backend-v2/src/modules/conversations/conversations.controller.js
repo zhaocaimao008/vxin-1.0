@@ -12,11 +12,11 @@ exports.members       = asyncHandler(async (req, res) => res.json(svc.listMember
 exports.unreadCounts  = asyncHandler(async (req, res) => res.json(svc.unreadCounts(req.user.id)));
 exports.myGroups      = asyncHandler(async (req, res) => res.json(svc.myGroups(req.user.id)));
 
-exports.pin  = asyncHandler(async (req, res) => { svc.setPinned(req.user.id, req.params.convId, req.body.pinned); res.json({ success: true }); });
-exports.mute = asyncHandler(async (req, res) => { svc.setMuted(req.user.id, req.params.convId, req.body.muted); res.json({ success: true }); });
+exports.pin  = asyncHandler(async (req, res) => { await svc.setPinned(req.user.id, req.params.convId, req.body.pinned); res.json({ success: true }); });
+exports.mute = asyncHandler(async (req, res) => { await svc.setMuted(req.user.id, req.params.convId, req.body.muted); res.json({ success: true }); });
 
 exports.read = asyncHandler(async (req, res) => {
-  const r = svc.markRead(io(req), req.user.id, req.params.convId, req.body.messageId);
+  const r = await svc.markRead(io(req), req.user.id, req.params.convId, req.body.messageId);
   res.json({ success: true, ...r });
 });
 
