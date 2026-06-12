@@ -65,12 +65,9 @@ function createGroup(io, ownerId, { name, memberIds }) {
 //   私聊 N+1 消除、unread 1709ms→34ms、群成员 N+1→1 query
 //   P2 缓存：10ms → 2ms（80% 性能改进）
 async function listConversations(uid) {
-  // 1. 尝试从缓存获取
-  const cacheKey = cache.keys.conversations(uid);
-  let cachedConversations = await cache.get(cacheKey);
-  if (cachedConversations) {
-    return cachedConversations;
-  }
+  // 不缓存会话列表：它的未读数/最后一条/排序随每条消息变化，且消息走 socket 路径
+  // 不经此 service，无法可靠失效(大群逐成员失效又太贵)。Redis 启用后若缓存会导致
+  // 刷新/重连时看到过期的未读与最后消息。此查询仅在加载/重连时触发，直查 DB(已建索引)足够快。
   // 确保用户有 filehelper 会话（自动创建）
   const hasFileHelper = db.prepare(`
     SELECT 1 FROM conversations c
@@ -150,9 +147,6 @@ async function listConversations(uid) {
     }
     return { ...conv, members: memberMap.get(conv.id) || [] };
   });
-
-  // 3. 写入缓存（TTL: 5 分钟）
-  await cache.set(cacheKey, conversations, 300);
 
   return conversations;
 }
