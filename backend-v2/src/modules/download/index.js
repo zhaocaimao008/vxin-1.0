@@ -7,21 +7,21 @@ const DOWNLOADS = [
     icon: '🖥️',
     name: 'v信 Windows 安装版',
     desc: 'Windows 7/10/11 x64，含安装向导',
-    url: 'https://github.com/zhaocaimao008/vxin-1.0/releases/download/v1.0.0/v.-Setup-1.0.0.exe',
+    file: 'vxin-setup-1.0.0.exe',
     size: '~74 MB',
   },
   {
     icon: '📦',
     name: 'v信 Windows 便携版',
     desc: '免安装，直接运行，解压即用',
-    url: 'https://github.com/zhaocaimao008/vxin-1.0/releases/download/v1.0.0/v.-1.0.0-portable.exe',
+    file: 'vxin-portable-1.0.0.exe',
     size: '~74 MB',
   },
   {
     icon: '🤖',
     name: 'v信 Android APK',
     desc: 'Android 5.0+，需允许安装未知来源',
-    url: 'https://github.com/zhaocaimao008/vxin-1.0/releases/download/v1.0.0/vxin-android-1.0.0.apk',
+    file: 'vxin-android-1.0.0.apk',
     size: '~61 MB',
   },
   {
@@ -34,18 +34,22 @@ const DOWNLOADS = [
 ];
 
 router.get('/', (req, res) => {
-  const cards = DOWNLOADS.map(d => `
-    <div class="card${d.url ? '' : ' disabled'}">
+  const base = `${req.protocol}://${req.get('host')}`;
+  const cards = DOWNLOADS.map(d => {
+    const url = d.file ? `${base}/downloads/${d.file}` : null;
+    return `
+    <div class="card${url ? '' : ' disabled'}">
       <div class="icon">${d.icon}</div>
       <div class="info">
         <div class="name">${d.name}</div>
         <div class="desc">${d.desc}</div>
         ${d.size ? `<div class="size">${d.size}</div>` : ''}
       </div>
-      ${d.url
-        ? `<a class="btn" href="${d.url}">下载</a>`
+      ${url
+        ? `<a class="btn" href="${url}" download>下载</a>`
         : `<span class="btn-disabled">敬请期待</span>`}
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   res.type('html').send(`<!DOCTYPE html>
 <html lang="zh-CN">
