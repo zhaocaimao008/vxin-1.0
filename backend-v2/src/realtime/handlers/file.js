@@ -59,7 +59,9 @@ module.exports = function registerFileHandler(io, socket) {
       );
     }
 
-    socket.to(conversationId).emit('new_message', msg);
+    // io.to(含发送者本人)：文件/图片发送方没有乐观消息，需靠广播回显自己的消息，
+    // 否则发图后不刷新页面看不到(socket.to 会排除发送者)。onMsg 按 id 去重，无重复。
+    io.to(conversationId).emit('new_message', msg);
     ack?.({ success: true, message: msg });
 
     setImmediate(() => {
