@@ -1,289 +1,195 @@
 'use strict';
 
-const { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, Notification, shell } = require('electron');
+const { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, Notification, shell, dialog, nativeTheme } = require('electron');
 const path = require('path');
 
-const VXIN_URL = 'https://chat.91aigu.com';
+let Store;
+try { Store = require('electron-store'); } catch (_) { Store = null; }
+
+const store = Store ? new Store({
+  defaults: { serverUrl: 'https://chat.91aigu.com', theme: 'auto', startMinimized: false }
+}) : { get: (k, d) => d, set: () => {} };
 
 let mainWindow = null;
 let tray = null;
 let isQuitting = false;
 let unreadCount = 0;
 
-// ─── Tray icon helpers ────────────────────────────────────────────────────────
-
-function buildTrayIcon(badge) {
-  // Try to load the real icon; fall back to a programmatic placeholder
-  try {
-    const iconPath = path.join(__dirname, 'icon.png');
-    let img = nativeImage.createFromPath(iconPath);
-    if (!img.isEmpty()) {
-      // Resize to tray dimensions
-      if (process.platform === 'darwin') {
-        img = img.resize({ width: 16, height: 16 });
-        img.setTemplateImage(true);
-      } else {
-        img = img.resize({ width: 32, height: 32 });
-      }
-      return img;
-    }
-  } catch (_) {}
-  return nativeImage.createEmpty();
-}
-
-function updateTrayTooltip() {
-  if (!tray) return;
-  const base = 'v信';
-  tray.setToolTip(unreadCount > 0 ? `${base} (${unreadCount} 条未读)` : base);
-}
-
-function updateBadge(count) {
-  unreadCount = Math.max(0, count);
-
-  // macOS / Linux dock badge
-  if (process.platform === 'darwin' || process.platform === 'linux') {
-    app.setBadgeCount(unreadCount);
-  }
-
-  // Windows: update tray tooltip since no native badge API
-  updateTrayTooltip();
-}
-
-// ─── Tray ─────────────────────────────────────────────────────────────────────
-
-function createTray() {
-  const icon = buildTrayIcon(0);
-  tray = new Tray(icon);
-  tray.setToolTip('v信');
-
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: '打开 v信',
-      click() {
-        showWindow();
-      },
-    },
-    { type: 'separator' },
-    {
-      label: '退出',
-      click() {
-        isQuitting = true;
-        app.quit();
-      },
-    },
-  ]);
-
-  tray.setContextMenu(contextMenu);
-
-  tray.on('click', () => {
-    if (mainWindow) {
-      if (mainWindow.isVisible() && !mainWindow.isMinimized()) {
-        mainWindow.hide();
-      } else {
-        showWindow();
-      }
-    }
-  });
-
-  // Windows double-click
-  tray.on('double-click', () => {
-    showWindow();
-  });
-}
-
-function showWindow() {
-  if (!mainWindow) return;
-  if (mainWindow.isMinimized()) mainWindow.restore();
-  mainWindow.show();
-  mainWindow.focus();
-}
-
-// ─── Main window ──────────────────────────────────────────────────────────────
+// ── Window ────────────────────────────────────────────────────────────────────
 
 function createWindow() {
+  const startMinimized = store.get('startMinimized', false);
+
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 780,
-    minWidth: 900,
-    minHeight: 640,
-    title: 'v信',
-    show: false,   // defer until ready-to-show
-    backgroundColor: '#F7F8FA',
+    width: 1000, height: 700,
+    minWidth: 800, minHeight: 560,
+    show: !startMinimized,
+    backgroundColor: '#1a1a2e',
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
-    autoHideMenuBar: process.platform === 'win32',
-    icon: path.join(__dirname, 'icon.png'),
+    frame: process.platform !== 'win32',
     webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
-      spellcheck: true,
+      contextIsolation: true,
+      nodeIntegration: false,
     },
   });
 
-  mainWindow.loadURL(VXIN_URL);
+  // Windows: frameless custom title bar
+  if (process.platform === 'win32') {
+    mainWindow.setMenu(null);
+  }
 
-  // Show once DOM is ready (avoids white flash)
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-    mainWindow.focus();
-  });
+  mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 
-  // Hide to tray on close instead of quitting
   mainWindow.on('close', (e) => {
     if (!isQuitting) {
       e.preventDefault();
       mainWindow.hide();
-      // Notify user the first time
-      if (process.platform === 'win32' && tray) {
-        tray.displayBalloon({
-          iconType: 'info',
-          title: 'v信',
-          content: 'v信 已最小化到系统托盘，双击托盘图标可重新打开。',
-        });
-      }
     }
   });
 
-  // Open external links in default browser
+  mainWindow.on('closed', () => { mainWindow = null; });
+
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      shell.openExternal(url);
-    }
+    shell.openExternal(url);
     return { action: 'deny' };
   });
+}
 
-  // Block navigation away from the app URL
-  mainWindow.webContents.on('will-navigate', (e, url) => {
-    if (!url.startsWith(VXIN_URL)) {
-      e.preventDefault();
-      shell.openExternal(url);
+// ── Tray ──────────────────────────────────────────────────────────────────────
+
+function buildTrayIcon(badge) {
+  try {
+    const iconPath = path.join(__dirname, badge > 0 ? 'icon.png' : 'icon.png');
+    let img = nativeImage.createFromPath(iconPath);
+    if (!img.isEmpty()) {
+      const size = process.platform === 'darwin' ? 16 : 32;
+      img = img.resize({ width: size, height: size });
+      if (process.platform === 'darwin') img.setTemplateImage(true);
+      return img;
     }
+  } catch (_) {}
+  // Fallback: generate a colored square
+  const size = 32;
+  const canvas = Buffer.alloc(size * size * 4);
+  for (let i = 0; i < size * size; i++) {
+    canvas[i * 4] = 7; canvas[i * 4 + 1] = 193; canvas[i * 4 + 2] = 96; canvas[i * 4 + 3] = 255;
+  }
+  return nativeImage.createFromBuffer(canvas, { width: size, height: size });
+}
+
+function createTray() {
+  tray = new Tray(buildTrayIcon(0));
+  tray.setToolTip('v信');
+  updateTrayMenu();
+  tray.on('click', () => {
+    if (mainWindow) { mainWindow.show(); mainWindow.focus(); }
   });
 }
 
-// ─── IPC handlers ─────────────────────────────────────────────────────────────
-
-// Renderer → main: show native OS notification
-// Usage: window.electronAPI.notify({ title, body, badge })
-ipcMain.on('notify', (_, { title = 'v信', body = '', badge = 0 } = {}) => {
-  // Update badge count
-  if (typeof badge === 'number') updateBadge(badge);
-
-  // Only send native notification if window is hidden or minimized
-  const shouldNotify = !mainWindow || !mainWindow.isVisible() || mainWindow.isMinimized();
-  if (shouldNotify && Notification.isSupported()) {
-    const notif = new Notification({
-      title,
-      body,
-      icon: path.join(__dirname, 'icon.png'),
-      silent: false,
-    });
-    notif.on('click', () => showWindow());
-    notif.show();
+function updateTrayMenu() {
+  if (!tray) return;
+  const menu = Menu.buildFromTemplate([
+    { label: '显示 v信', click: () => { if (mainWindow) { mainWindow.show(); mainWindow.focus(); } } },
+    { type: 'separator' },
+    { label: '退出', click: () => { isQuitting = true; app.quit(); } },
+  ]);
+  tray.setContextMenu(menu);
+  if (unreadCount > 0) {
+    tray.setToolTip(`v信 (${unreadCount} 条未读)`);
+  } else {
+    tray.setToolTip('v信');
   }
-});
-
-// Renderer → main: update badge only
-ipcMain.on('badge', (_, count) => {
-  updateBadge(typeof count === 'number' ? count : 0);
-});
-
-// ─── App menu ─────────────────────────────────────────────────────────────────
-
-function buildMenu() {
-  const template = [];
-
-  // macOS app menu
-  if (process.platform === 'darwin') {
-    template.push({
-      label: app.name,
-      submenu: [
-        { label: `关于 v信`, role: 'about' },
-        { type: 'separator' },
-        { label: '服务', role: 'services' },
-        { type: 'separator' },
-        { label: `隐藏 v信`, role: 'hide' },
-        { label: '隐藏其他', role: 'hideOthers' },
-        { label: '全部显示', role: 'unhide' },
-        { type: 'separator' },
-        {
-          label: '退出',
-          accelerator: 'Cmd+Q',
-          click() { isQuitting = true; app.quit(); },
-        },
-      ],
-    });
-  }
-
-  // Edit menu — needed for copy/paste/undo in text inputs
-  template.push({
-    label: '编辑',
-    submenu: [
-      { label: '撤销', role: 'undo' },
-      { label: '重做', role: 'redo' },
-      { type: 'separator' },
-      { label: '剪切', role: 'cut' },
-      { label: '复制', role: 'copy' },
-      { label: '粘贴', role: 'paste' },
-      { label: '全选', role: 'selectAll' },
-    ],
-  });
-
-  // Window menu
-  template.push({
-    label: '窗口',
-    submenu: [
-      { label: '最小化', role: 'minimize' },
-      ...(process.platform === 'darwin'
-        ? [{ label: '缩放', role: 'zoom' }, { type: 'separator' }, { label: '前置所有窗口', role: 'front' }]
-        : [{ label: '全屏', role: 'togglefullscreen' }]
-      ),
-      { type: 'separator' },
-      { label: '刷新', role: 'reload' },
-      { label: '强制刷新', role: 'forceReload' },
-      { label: '开发者工具', role: 'toggleDevTools' },
-    ],
-  });
-
-  const menu = Menu.buildFromTemplate(template);
-  Menu.setApplicationMenu(menu);
 }
 
-// ─── App lifecycle ────────────────────────────────────────────────────────────
+// ── IPC ───────────────────────────────────────────────────────────────────────
 
-app.whenReady().then(() => {
-  buildMenu();
-  createTray();
-  createWindow();
+ipcMain.handle('get-server-url', () => store.get('serverUrl', 'https://chat.91aigu.com'));
+ipcMain.handle('set-server-url', (_, url) => { store.set('serverUrl', url); });
+ipcMain.handle('get-theme', () => store.get('theme', 'auto'));
+ipcMain.handle('set-theme', (_, theme) => {
+  store.set('theme', theme);
+  if (theme === 'dark') nativeTheme.themeSource = 'dark';
+  else if (theme === 'light') nativeTheme.themeSource = 'light';
+  else nativeTheme.themeSource = 'system';
+});
 
-  app.on('activate', () => {
-    // macOS: re-open on dock click
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+ipcMain.handle('set-badge', (_, count) => {
+  unreadCount = count;
+  updateTrayMenu();
+  if (process.platform === 'darwin') app.dock.setBadge(count > 0 ? String(count) : '');
+  if (process.platform === 'win32' && mainWindow) {
+    if (count > 0) {
+      const overlay = nativeImage.createEmpty();
+      mainWindow.setOverlayIcon(overlay, `${count} 条未读`);
     } else {
-      showWindow();
+      mainWindow.setOverlayIcon(null, '');
     }
-  });
-});
-
-app.on('before-quit', () => {
-  isQuitting = true;
-});
-
-app.on('window-all-closed', () => {
-  // On non-macOS, quit only when explicitly triggered (isQuitting=true).
-  // On macOS the tray keeps the app alive.
-  if (process.platform !== 'darwin' && isQuitting) {
-    app.quit();
   }
 });
 
-// Prevent multiple instances
+ipcMain.handle('show-notification', (_, { title, body, tag }) => {
+  if (Notification.isSupported()) {
+    const n = new Notification({ title, body, silent: false });
+    n.on('click', () => { if (mainWindow) { mainWindow.show(); mainWindow.focus(); } });
+    n.show();
+  }
+});
+
+ipcMain.handle('open-file-dialog', async (_, opts = {}) => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile'],
+    filters: opts.filters || [{ name: '所有文件', extensions: ['*'] }],
+  });
+  return result.canceled ? null : result.filePaths[0];
+});
+
+ipcMain.handle('read-file', async (_, filePath) => {
+  const fs = require('fs');
+  const data = fs.readFileSync(filePath);
+  return { buffer: data.buffer, name: path.basename(filePath), size: data.length };
+});
+
+ipcMain.handle('window-minimize', () => mainWindow?.minimize());
+ipcMain.handle('window-maximize', () => {
+  if (mainWindow?.isMaximized()) mainWindow.unmaximize();
+  else mainWindow?.maximize();
+});
+ipcMain.handle('window-close', () => mainWindow?.hide());
+ipcMain.handle('window-quit', () => { isQuitting = true; app.quit(); });
+
+ipcMain.handle('get-platform', () => process.platform);
+
+// ── App lifecycle ─────────────────────────────────────────────────────────────
+
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
 } else {
   app.on('second-instance', () => {
-    showWindow();
+    if (mainWindow) { if (mainWindow.isMinimized()) mainWindow.restore(); mainWindow.show(); mainWindow.focus(); }
   });
+
+  app.whenReady().then(() => {
+    // Apply saved theme
+    const theme = store.get('theme', 'auto');
+    if (theme === 'dark') nativeTheme.themeSource = 'dark';
+    else if (theme === 'light') nativeTheme.themeSource = 'light';
+
+    createWindow();
+    createTray();
+
+    app.on('activate', () => {
+      if (!mainWindow) createWindow();
+      else mainWindow.show();
+    });
+  });
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+      // Keep running in tray on Windows/Linux
+    }
+  });
+
+  app.on('before-quit', () => { isQuitting = true; });
 }
