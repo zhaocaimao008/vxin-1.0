@@ -3,6 +3,7 @@
  * Express 应用装配（不含 HTTP/Socket 启动，便于测试与复用）。
  * 中间件顺序：helmet → cors → cookieParser → body 解析 → 静态 → CSRF 门控 → 路由 → 错误处理。
  */
+const path = require('path');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -56,6 +57,14 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(config.uploadsRoot));
+app.use('/downloads', express.static(path.join(__dirname, '../../downloads'), {
+  setHeaders: (res, filePath) => {
+    res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
+  },
+}));
+
+// ── 下载中心页面 ─────────────────────────────────────────────────────
+app.use('/download', require('./modules/download'));
 
 // ── API 文档 ────────────────────────────────────────────────────────
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

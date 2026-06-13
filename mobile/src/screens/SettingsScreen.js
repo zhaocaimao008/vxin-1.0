@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Switch } from 'react-native';
+import { Alert, View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Switch, TextInput } from 'react-native';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { getServerUrl, saveServerUrl } from '../config';
@@ -63,6 +63,7 @@ export default function SettingsScreen() {
       ],
     );
   };
+  const [serverInput, setServerInput] = useState(getServerUrl());
   const titleMap = {
     main: '设置',
     profile: '个人资料',
@@ -70,6 +71,7 @@ export default function SettingsScreen() {
     permissions: '朋友权限',
     cleanup: '聊天记录清理',
     notifications: '消息通知',
+    server: '服务器地址',
   };
   const title = titleMap[page] || '设置';
 
@@ -190,6 +192,37 @@ export default function SettingsScreen() {
             </Section>
           </>
         )}
+
+        {page === 'server' && (
+          <>
+            <Section>
+              <View style={{ padding: 14 }}>
+                <Text style={{ fontSize: 13, color: '#7A8694', marginBottom: 8 }}>输入新服务器地址（以 https:// 开头）</Text>
+                <TextInput
+                  style={{ borderWidth: 1, borderColor: '#E8ECF0', borderRadius: 8, padding: 10, fontSize: 15, backgroundColor: '#F7F8FA' }}
+                  value={serverInput}
+                  onChangeText={setServerInput}
+                  placeholder="https://chat.91aigu.com"
+                  autoCapitalize="none"
+                  keyboardType="url"
+                />
+              </View>
+              <Row label="恢复默认服务器" onPress={() => setServerInput('https://chat.91aigu.com')} />
+            </Section>
+            <TouchableOpacity
+              style={{ margin: 16, backgroundColor: '#07C160', borderRadius: 10, padding: 14, alignItems: 'center' }}
+              onPress={async () => {
+                const url = serverInput.trim().replace(/\/$/, '');
+                if (!url.startsWith('http')) { Alert.alert('格式错误', '请以 http:// 或 https:// 开头'); return; }
+                await saveServerUrl(url);
+                axios.defaults.baseURL = url;
+                Alert.alert('已保存', '请重启 App 使新服务器地址生效', [{ text: '确定', onPress: () => setPage('main') }]);
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>保存</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </ScrollView>
     );
   }
@@ -225,6 +258,20 @@ export default function SettingsScreen() {
         <Row label="朋友权限" desc={loadingSettings ? '正在同步设置...' : '添加方式、资料可见范围和黑名单'} onPress={() => setPage('permissions')} />
         <Row label="消息通知" desc="新消息提醒、声音和内容预览" onPress={() => setPage('notifications')} />
         <Row label="聊天记录清理" desc="按会话清理或清空缓存" onPress={() => setPage('cleanup')} />
+      </Section>
+
+      <Section>
+        <Row
+          label="服务器地址"
+          desc={getServerUrl().replace(/^https?:\/\//, '')}
+          onPress={() => {
+            Alert.alert('修改服务器地址', '重启 App 后生效', [
+              { text: '取消', style: 'cancel' },
+              { text: '恢复默认', onPress: async () => { await saveServerUrl('https://chat.91aigu.com'); Alert.alert('已恢复', '请重启 App'); } },
+              { text: '手动输入', onPress: () => setPage('server') },
+            ]);
+          }}
+        />
       </Section>
 
       <TouchableOpacity activeOpacity={0.72} style={styles.logoutBtn} onPress={logout}>

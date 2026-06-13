@@ -7,6 +7,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { getServerUrl, saveServerUrl } from '../config';
 
 const C = {
   nav: '#1A2033',
@@ -45,6 +46,9 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [pwVisible, setPwVisible] = useState(false);
+  const [serverUrl, setServerUrl] = useState(getServerUrl());
+  const [editingServer, setEditingServer] = useState(false);
+  const [serverInput, setServerInput] = useState('');
   const { login, accounts, switchAccount, removeAccount, maxAccounts } = useAuth();
   const insets = useSafeAreaInsets();
 
@@ -209,6 +213,41 @@ export default function LoginScreen({ navigation }) {
 
         {/* Footer */}
         <Text style={styles.footer}>v信 · 企业级安全通讯</Text>
+
+        {/* Server URL */}
+        {!editingServer ? (
+          <TouchableOpacity style={styles.serverRow} onPress={() => { setServerInput(serverUrl); setEditingServer(true); }} activeOpacity={0.7}>
+            <Text style={styles.serverLabel}>服务器: </Text>
+            <Text style={styles.serverValue} numberOfLines={1}>{serverUrl.replace(/^https?:\/\//, '')}</Text>
+            <Text style={styles.serverEdit}> [修改]</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.serverEditRow}>
+            <TextInput
+              style={styles.serverInput}
+              value={serverInput}
+              onChangeText={setServerInput}
+              placeholder="https://your-server.com"
+              placeholderTextColor="rgba(255,255,255,0.3)"
+              autoCapitalize="none"
+              keyboardType="url"
+              autoFocus
+            />
+            <TouchableOpacity style={styles.serverSaveBtn} activeOpacity={0.8} onPress={async () => {
+              const url = serverInput.trim().replace(/\/$/, '');
+              if (!url.startsWith('http')) { Alert.alert('格式错误', '请以 http:// 或 https:// 开头'); return; }
+              await saveServerUrl(url);
+              axios.defaults.baseURL = url;
+              setServerUrl(url);
+              setEditingServer(false);
+            }}>
+              <Text style={{ color: C.green, fontWeight: '600', fontSize: 14 }}>保存</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={{ padding: 8 }} onPress={() => setEditingServer(false)}>
+              <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>取消</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -451,5 +490,39 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.3)',
     marginTop: 28,
     letterSpacing: 0.5,
+  },
+  serverRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingVertical: 4,
+  },
+  serverLabel: { fontSize: 11, color: 'rgba(255,255,255,0.35)' },
+  serverValue: { fontSize: 11, color: 'rgba(255,255,255,0.45)', maxWidth: 200 },
+  serverEdit:  { fontSize: 11, color: 'rgba(255,255,255,0.35)' },
+  serverEditRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    gap: 6,
+  },
+  serverInput: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    fontSize: 13,
+    color: '#fff',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  serverSaveBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(7,193,96,0.15)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: C.green,
   },
 });
