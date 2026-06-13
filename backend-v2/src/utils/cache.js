@@ -16,9 +16,9 @@ function init() {
   if (initPromise) return initPromise;
 
   client = redis.createClient({
+    url: process.env.REDIS_URL || 'redis://localhost:6379',
+    database: 0,
     socket: {
-      host: 'localhost',
-      port: 6379,
       connectTimeout: 1000,
       // 连接失败快速放弃：重试 2 次后彻底禁用缓存，绝不让请求挂起
       reconnectStrategy: (retries) => {
@@ -26,7 +26,6 @@ function init() {
         return 200;
       },
     },
-    database: 0,
   });
 
   // 吞掉错误事件，避免未捕获异常 & 日志刷屏

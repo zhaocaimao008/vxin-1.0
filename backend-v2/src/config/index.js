@@ -12,8 +12,7 @@ const config = {
   port: parseInt(process.env.PORT_V2 || process.env.PORT, 10) || 3003,
 
   // ── 数据库 ──────────────────────────────────────────────────
-  // 复用生产同一个 wechat.db（数据是契约，绝不另起炉灶）
-  dbPath: path.resolve(__dirname, '../../wechat.db'),
+  dbPath: process.env.DB_PATH || path.resolve(__dirname, '../../wechat.db'),
 
   // ── 鉴权 ────────────────────────────────────────────────────
   jwtSecret:    process.env.JWT_SECRET,
@@ -35,7 +34,15 @@ const config = {
   },
 
   // ── CORS ────────────────────────────────────────────────────
+  // CORS_ORIGINS（逗号分隔）：新部署只需在 .env 设置自己的域名即可，无需改代码。
+  // CORS_ORIGINS_ONLY=true：忽略内置白名单，仅使用 CORS_ORIGINS（完全覆盖模式）。
   allowedOrigins: (() => {
+    const extra = process.env.CORS_ORIGINS
+      ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+    if (process.env.CORS_ORIGINS_ONLY === 'true') {
+      return [...new Set([...extra, 'http://localhost:3000', 'http://localhost:5173'])];
+    }
     const defaults = [
       'https://chat.91aigu.com',
       'https://vxin.91aigu.com',
@@ -49,15 +56,12 @@ const config = {
       'http://104.244.95.70:8086',
       'http://93.179.127.50:8086',
     ];
-    const extra = process.env.CORS_ORIGINS
-      ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)
-      : [];
     return [...new Set([...defaults, ...extra])];
   })(),
 
   // ── 应用 ────────────────────────────────────────────────────
-  appUrl:       process.env.APP_URL || 'https://chat.91aigu.com',
-  uploadsRoot:  path.resolve(__dirname, '../../../backend/uploads'),
+  appUrl:      process.env.APP_URL || 'https://chat.91aigu.com',
+  uploadsRoot: process.env.UPLOADS_ROOT || path.resolve(__dirname, '../../../backend/uploads'),
 
   // ── 业务常量 ────────────────────────────────────────────────
   limits: {

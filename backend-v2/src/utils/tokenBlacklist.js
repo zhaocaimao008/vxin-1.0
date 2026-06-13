@@ -15,9 +15,8 @@ const memoryBlacklist = new Set();
 async function initRedis() {
   try {
     redisClient = redis.createClient({
-      host: 'localhost',
-      port: 6379,
-      db: 1,  // 使用 db 1，cache 用 db 0
+      url: process.env.REDIS_URL || 'redis://localhost:6379',
+      database: 1,  // 使用 db 1，cache 用 db 0
     });
 
     redisClient.on('error', err => {

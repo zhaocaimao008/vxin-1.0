@@ -11,7 +11,7 @@ module.exports = {
     {
       name: 'vxin-server-v2',
       script: 'src/server.js',
-      cwd: '/root/v信/backend-v2',
+      cwd: __dirname,
       instances: 1,
       exec_mode: 'fork',
       max_memory_restart: '600M',   // 2GB 小机防 OOM：超限自动重启
