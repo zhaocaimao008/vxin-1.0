@@ -11,6 +11,16 @@
 </head>
 <body>
 
+<!-- Windows frameless titlebar -->
+<div id="win-titlebar">
+  <span id="win-titlebar-title">v信</span>
+  <div class="win-title-btns">
+    <button class="win-btn" id="win-min" title="最小化">&#x2014;</button>
+    <button class="win-btn" id="win-max" title="最大化">&#x25A1;</button>
+    <button class="win-btn close" id="win-close" title="关闭">&#x2715;</button>
+  </div>
+</div>
+
 <!-- Login -->
 <div id="login-screen">
   <div class="login-card">
@@ -77,12 +87,6 @@
       </svg>
     </div>
 
-    <!-- Windows custom title bar controls -->
-    <div class="win-controls">
-      <div class="win-btn" id="win-min" title="最小化">─</div>
-      <div class="win-btn" id="win-max" title="最大化">□</div>
-      <div class="win-btn close" id="win-close" title="关闭">✕</div>
-    </div>
   </nav>
 
   <!-- List panel -->

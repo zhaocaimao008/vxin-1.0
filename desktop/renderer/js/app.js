@@ -20,7 +20,7 @@ async function boot() {
   const platform = await window.electron?.getPlatform?.();
   if (platform) {
     state.platform = platform;
-    document.getElementById('app').setAttribute('data-platform', platform);
+    document.documentElement.setAttribute('data-platform', platform);
   }
 
   // 2. Init login (will auto-login if token in localStorage)
