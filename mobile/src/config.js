@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const DEFAULT_SERVER = 'https://chat.91aigu.com';
+const DEFAULT_SERVER = 'https://dipsin.com';
 const STORAGE_KEY = 'vxin_server_url';
 
 let _serverUrl = DEFAULT_SERVER;

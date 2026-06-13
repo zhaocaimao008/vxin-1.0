@@ -202,12 +202,12 @@ export default function SettingsScreen() {
                   style={{ borderWidth: 1, borderColor: '#E8ECF0', borderRadius: 8, padding: 10, fontSize: 15, backgroundColor: '#F7F8FA' }}
                   value={serverInput}
                   onChangeText={setServerInput}
-                  placeholder="https://chat.91aigu.com"
+                  placeholder="https://dipsin.com"
                   autoCapitalize="none"
                   keyboardType="url"
                 />
               </View>
-              <Row label="恢复默认服务器" onPress={() => setServerInput('https://chat.91aigu.com')} />
+              <Row label="恢复默认服务器" onPress={() => setServerInput('https://dipsin.com')} />
             </Section>
             <TouchableOpacity
               style={{ margin: 16, backgroundColor: '#07C160', borderRadius: 10, padding: 14, alignItems: 'center' }}
@@ -267,7 +267,7 @@ export default function SettingsScreen() {
           onPress={() => {
             Alert.alert('修改服务器地址', '重启 App 后生效', [
               { text: '取消', style: 'cancel' },
-              { text: '恢复默认', onPress: async () => { await saveServerUrl('https://chat.91aigu.com'); Alert.alert('已恢复', '请重启 App'); } },
+              { text: '恢复默认', onPress: async () => { await saveServerUrl('https://dipsin.com'); Alert.alert('已恢复', '请重启 App'); } },
               { text: '手动输入', onPress: () => setPage('server') },
             ]);
           }}

@@ -4,15 +4,13 @@ import { state, setToken, setMe, loadPersisted } from '../state.js';
 export function initLogin({ onSuccess }) {
   const screen = document.getElementById('login-screen');
   const errEl   = document.getElementById('login-err');
-  const serverDisplay = document.getElementById('server-url-display');
-  const tabs = document.querySelectorAll('.login-tab');
+  const tabs    = document.querySelectorAll('.login-tab');
   const tabLogin = document.getElementById('tab-login');
   const tabReg   = document.getElementById('tab-register');
 
   async function loadServer() {
     const url = await window.electron?.getServerUrl?.() || state.serverUrl;
     state.serverUrl = url;
-    serverDisplay.textContent = url.replace(/^https?:\/\//, '');
   }
 
   loadServer();
@@ -74,15 +72,6 @@ export function initLogin({ onSuccess }) {
       errEl.textContent = err.message;
     } finally {
       btn.disabled = false; btn.textContent = '注册';
-    }
-  });
-
-  document.getElementById('btn-change-server').addEventListener('click', async () => {
-    const newUrl = prompt('服务器地址', state.serverUrl);
-    if (newUrl && newUrl.startsWith('http')) {
-      state.serverUrl = newUrl.replace(/\/$/, '');
-      await window.electron?.setServerUrl?.(state.serverUrl);
-      serverDisplay.textContent = state.serverUrl.replace(/^https?:\/\//, '');
     }
   });
 

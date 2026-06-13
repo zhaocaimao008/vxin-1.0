@@ -1,6 +1,6 @@
 // Central reactive state
 export const state = {
-  serverUrl: 'https://chat.91aigu.com',
+  serverUrl: 'https://dipsin.com',
   token: null,
   me: null,
   conversations: [],      // [{id, name, avatar, lastMsg, unread, isPinned, isMuted}]

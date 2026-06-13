@@ -7,7 +7,7 @@ let Store;
 try { Store = require('electron-store'); } catch (_) { Store = null; }
 
 const store = Store ? new Store({
-  defaults: { serverUrl: 'https://chat.91aigu.com', theme: 'auto', startMinimized: false }
+  defaults: { serverUrl: 'https://dipsin.com', theme: 'auto', startMinimized: false }
 }) : { get: (k, d) => d, set: () => {} };
 
 let mainWindow = null;
@@ -104,7 +104,7 @@ function updateTrayMenu() {
 
 // ── IPC ───────────────────────────────────────────────────────────────────────
 
-ipcMain.handle('get-server-url', () => store.get('serverUrl', 'https://chat.91aigu.com'));
+ipcMain.handle('get-server-url', () => store.get('serverUrl', 'https://dipsin.com'));
 ipcMain.handle('set-server-url', (_, url) => { store.set('serverUrl', url); });
 ipcMain.handle('get-theme', () => store.get('theme', 'auto'));
 ipcMain.handle('set-theme', (_, theme) => {
