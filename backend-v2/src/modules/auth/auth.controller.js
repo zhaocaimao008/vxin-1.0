@@ -24,7 +24,7 @@ exports.register = asyncHandler(async (req, res) => {
   setAuthCookie(req, res, token);
   svc.recordDeviceAccount(ensureWallet(req, res), user.id);
   svc.upsertSession(user.id, req);
-  res.json({ user });
+  res.json({ token, user });
 });
 
 exports.login = asyncHandler(async (req, res) => {
@@ -32,7 +32,7 @@ exports.login = asyncHandler(async (req, res) => {
   setAuthCookie(req, res, token);
   svc.recordDeviceAccount(ensureWallet(req, res), user.id);
   svc.upsertSession(user.id, req);
-  res.json({ user });
+  res.json({ token, user });
 });
 
 // 免密切换账号：凭 wallet cookie 校验本设备登录过该账号 → 重签发 token

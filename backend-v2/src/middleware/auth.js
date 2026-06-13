@@ -10,7 +10,10 @@ const { csrfCookieOptions } = require('../utils/cookies');
 const { isBlacklisted } = require('../utils/tokenBlacklist');
 
 module.exports = function auth(req, res, next) {
-  const token = req.cookies?.[config.cookieName];
+  // Cookie first (web); fall back to Bearer header (Electron desktop)
+  const bearerHeader = req.headers['authorization'];
+  const token = req.cookies?.[config.cookieName] ||
+    (bearerHeader?.startsWith('Bearer ') ? bearerHeader.slice(7) : null);
   if (!token) return res.status(401).json({ error: '未授权' });
 
   // 异步检查 token 是否在黑名单中（logout 后）
