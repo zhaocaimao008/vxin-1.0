@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Switch } from 'react-native';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import { API_BASE } from '../config';
+import { getServerUrl, saveServerUrl } from '../config';
 
 export default function SettingsScreen() {
   const { user, token, logout } = useAuth();
@@ -20,7 +20,7 @@ export default function SettingsScreen() {
     vibrate: false,
   });
   const qrSource = {
-    uri: `${API_BASE}/api/users/me/qrcode`,
+    uri: `${getServerUrl()}/api/users/me/qrcode`,
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   };
   useEffect(() => {

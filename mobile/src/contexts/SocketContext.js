@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
-import { SOCKET_URL } from '../config';
+import { getServerUrl } from '../config';
 import { useAuth } from './AuthContext';
 
 const SocketContext = createContext(null);
@@ -24,7 +24,7 @@ export const SocketProvider = ({ children }) => {
 
     if (!token) return;
 
-    const s = io(SOCKET_URL, {
+    const s = io(getServerUrl(), {
       auth: { token },
       transports: ['websocket', 'polling'],
       reconnection: true,

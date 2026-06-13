@@ -10,7 +10,14 @@
       "backgroundColor": "#07C160"
     },
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.vxin.app",
+      "supportsTablet": true,
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "用于拍摄和发送图片",
+        "NSMicrophoneUsageDescription": "用于语音消息和通话",
+        "NSPhotoLibraryUsageDescription": "用于发送相册中的图片"
+      }
     },
     "android": {
       "package": "com.vxin.app",

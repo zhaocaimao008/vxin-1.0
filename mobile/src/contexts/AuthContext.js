@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { API_BASE } from '../config';
+import { loadServerUrl, getServerUrl } from '../config';
 
-axios.defaults.baseURL = API_BASE;
+// baseURL is set after loadServerUrl() resolves in useEffect
 
 const AuthContext = createContext(null);
 const ACCOUNTS_KEY = 'vxin_accounts_v1';
@@ -46,6 +46,8 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     (async () => {
+      const serverUrl = await loadServerUrl();
+      axios.defaults.baseURL = serverUrl;
       const stored = await readAccounts();
       setAccounts(stored);
       const activeId = await AsyncStorage.getItem(ACTIVE_KEY);
