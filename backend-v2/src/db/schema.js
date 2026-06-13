@@ -312,6 +312,14 @@ function applySchema(db) {
       last_used  INTEGER DEFAULT (strftime('%s','now')),
       PRIMARY KEY (wallet_id, user_id)
     )`,
+    // ── 用户自定义表情包（收藏的表情，点一下直接发）──
+    `CREATE TABLE IF NOT EXISTS user_stickers (
+      id         TEXT PRIMARY KEY,
+      user_id    TEXT NOT NULL,
+      url        TEXT NOT NULL,
+      created_at INTEGER DEFAULT (strftime('%s','now'))
+    )`,
+    "CREATE INDEX IF NOT EXISTS idx_user_stickers ON user_stickers(user_id, created_at DESC)",
   ];
   migrations.forEach(sql => { try { db.prepare(sql).run(); } catch {} });
 }

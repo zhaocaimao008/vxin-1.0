@@ -81,6 +81,7 @@ app.use('/api/messages',      require('./modules/messages/messages.routes'));
 app.use('/api/moments',       require('./modules/moments/moments.routes'));
 app.use('/api/notifications', require('./modules/notifications/notifications.routes'));
 app.use('/api/upload',        require('./modules/upload/upload.routes'));
+app.use('/api/stickers',      require('./modules/stickers/stickers.routes'));
 app.use('/api/admin',         require('./modules/admin/admin.routes'));
 
 // 公开配置（前端读取功能开关，决定朋友圈/收藏入口显隐）

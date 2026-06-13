@@ -25,6 +25,7 @@ const BLOCKED_EXTENSIONS = new Set([
   '.msi','.dll','.com','.scr','.pif','.hta','.cpl',
 ]);
 import EmojiPicker from './EmojiPicker';
+import StickerPanel from './StickerPanel';
 import GroupInfo, { GroupAvatar } from './GroupInfo';
 import UserProfile from './UserProfile';
 import ForwardModal from './ForwardModal';
@@ -41,6 +42,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   const [input, setInput] = useState('');
   const [typingName, setTypingName] = useState('');
   const [showEmoji, setShowEmoji] = useState(false);
+  const [showStickers, setShowStickers] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [voiceMode, setVoiceMode] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -94,18 +96,19 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   const { socket, reconnectCount, disconnectAtRef, registerDelivered } = useSocket();
   const { user } = useAuth();
 
-  // ── 点击输入区外部关闭 emoji / more 面板 ────────────────────
+  // ── 点击输入区外部关闭 emoji / more / 表情包 面板 ────────────────────
   useEffect(() => {
-    if (!showEmoji && !showMore) return;
+    if (!showEmoji && !showMore && !showStickers) return;
     const handler = (e) => {
       if (inputAreaRef.current && !inputAreaRef.current.contains(e.target)) {
         setShowEmoji(false);
         setShowMore(false);
+        setShowStickers(false);
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [showEmoji, showMore]);
+  }, [showEmoji, showMore, showStickers]);
 
   // ── 手机软键盘弹起：viewport 缩小时滚动置底 ─────────────────
   useEffect(() => {
@@ -873,6 +876,14 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     }
   }, [handleFileSelect]);
 
+  // 发送表情包（后端创建 image 消息并广播，发送方经 socket 回显）
+  const sendSticker = useCallback((stickerId) => {
+    setShowStickers(false);
+    axios.post('/api/stickers/send', { conversationId: conversation.id, stickerId })
+      .then(() => setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 80))
+      .catch(err => alert(err.response?.data?.error || '发送失败'));
+  }, [conversation.id, messagesEndRef]);
+
   // 拖拽上传
   const handleDragEnter = (e) => {
     e.preventDefault();
@@ -1002,6 +1013,13 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       case 'reply':
         setReplyTo(msg); setEditingMsg(null);
         textareaRef.current?.focus();
+        break;
+
+      case 'addSticker':
+        try {
+          await axios.post('/api/stickers/collect', { url: msg.file_url });
+          alert('已添加到我的表情');
+        } catch (e) { alert(e.response?.data?.error || '添加失败'); }
         break;
 
       case 'copy':
@@ -1649,8 +1667,14 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
           <button
             className={`wc-tool-btn${showEmoji ? ' active' : ''}`}
             title="表情"
-            onClick={() => { setShowEmoji(v => !v); setShowMore(false); }}
+            onClick={() => { setShowEmoji(v => !v); setShowMore(false); setShowStickers(false); }}
           ><IcoEmoji /></button>
+
+          <button
+            className={`wc-tool-btn${showStickers ? ' active' : ''}`}
+            title="表情包"
+            onClick={() => { setShowStickers(v => !v); setShowEmoji(false); setShowMore(false); }}
+          ><svg viewBox="0 0 24 24" style={{ width: 22, height: 22, fill: 'currentColor' }}><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h10l6-6V5c0-1.1-.9-2-2-2zM9 11c-.83 0-1.5-.67-1.5-1.5S8.17 8 9 8s1.5.67 1.5 1.5S9.83 11 9 11zm3.5 5c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5zM15 11c-.83 0-1.5-.67-1.5-1.5S14.17 8 15 8s1.5.67 1.5 1.5S15.83 11 15 11zm-1 9.5V15h5.5L14 20.5z"/></svg></button>
 
           <button
             className={`wc-tool-btn${voiceMode ? ' active' : ''}`}
@@ -1701,6 +1725,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
 
         {/* Emoji panel — 在输入框上方展开，输入框始终可见 */}
         {showEmoji && <EmojiPicker onSelect={e => { setInput(prev => prev + e); textareaRef.current?.focus(); }} />}
+        {showStickers && <StickerPanel onSend={sendSticker} />}
 
         {/* Text / Voice input — 始终显示 */}
         {!showMore && (
@@ -1823,6 +1848,9 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
             {/* 转发：所有类型消息都可转发 */}
             <div className="wc-ctx-item" onClick={() => ctxAction('forward')}>转发</div>
             <div className="wc-ctx-item" onClick={() => ctxAction('collect')}>收藏</div>
+            {ctxMenu.msg.type === 'image' && (
+              <div className="wc-ctx-item" onClick={() => ctxAction('addSticker')}>添加到表情</div>
+            )}
             <div className="wc-ctx-divider" />
             {/* 撤回：自己的消息2分钟内，或群主/管理员删除任意消息 */}
             {(ctxMenu.msg.sender_id === user.id ||

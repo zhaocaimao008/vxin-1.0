@@ -13,7 +13,7 @@ const { shutdown: shutdownWriter } = require('./db/writer');
 const { db } = require('./db/connection');
 
 // 确保上传目录存在
-['avatars', 'files'].forEach(d => fs.mkdirSync(path.join(config.uploadsRoot, d), { recursive: true }));
+['avatars', 'files', 'stickers'].forEach(d => fs.mkdirSync(path.join(config.uploadsRoot, d), { recursive: true }));
 
 const server = http.createServer(app);
 
