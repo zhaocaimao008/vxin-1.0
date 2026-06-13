@@ -20,6 +20,8 @@ let unreadCount = 0;
 function createWindow() {
   const startMinimized = store.get('startMinimized', false);
 
+  const serverUrl = store.get('serverUrl', 'https://dipsin.com');
+
   mainWindow = new BrowserWindow({
     width: 1000, height: 700,
     minWidth: 800, minHeight: 560,
@@ -31,15 +33,16 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      // 将服务器地址同步传入 preload，供 React 在渲染前读取
+      additionalArguments: [`--server-url=${serverUrl}`],
     },
   });
 
-  // Windows: frameless custom title bar
   if (process.platform === 'win32') {
     mainWindow.setMenu(null);
   }
 
-  mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  mainWindow.loadFile(path.join(__dirname, 'web-dist', 'index.html'));
 
   mainWindow.on('close', (e) => {
     if (!isQuitting) {

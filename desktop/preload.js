@@ -1,6 +1,13 @@
 'use strict';
 const { contextBridge, ipcRenderer } = require('electron');
 
+// 从 main 进程通过 additionalArguments 同步传入的服务器地址
+// React 在 module 顶层就能同步读取，不需要等待异步 IPC
+const serverUrlArg = process.argv.find(a => a.startsWith('--server-url='));
+const serverUrl = serverUrlArg ? serverUrlArg.slice('--server-url='.length) : 'https://dipsin.com';
+
+contextBridge.exposeInMainWorld('__ELECTRON_CONFIG__', { serverUrl });
+
 contextBridge.exposeInMainWorld('electron', {
   getServerUrl:     ()       => ipcRenderer.invoke('get-server-url'),
   setServerUrl:     (url)    => ipcRenderer.invoke('set-server-url', url),

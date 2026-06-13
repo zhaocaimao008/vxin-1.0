@@ -75,7 +75,8 @@ export const AuthProvider = ({ children }) => {
       err => {
         if (err.response?.status === 401 && userRef.current) {
           setUser(null);
-          window.location.replace('/login');
+          if (window.__ELECTRON_CONFIG__) window.location.hash = '#/login';
+          else window.location.replace('/login');
         }
         return Promise.reject(err);
       }
