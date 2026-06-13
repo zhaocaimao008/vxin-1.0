@@ -27,8 +27,8 @@ export const api = {
   delete: (path, body,   opts) => api.request('DELETE', path, body,   opts),
 
   // Auth
-  login:    (username, password) => api.post('/api/auth/login', { username, password }),
-  register: (username, nickname, password) => api.post('/api/auth/register', { username, nickname, password }),
+  login:    (phone, password) => api.post('/api/auth/login', { phone, password }),
+  register: (username, phone, password, inviteCode) => api.post('/api/auth/register', { username, phone, password, inviteCode }),
   me:       () => api.get('/api/auth/me'),
 
   // Conversations

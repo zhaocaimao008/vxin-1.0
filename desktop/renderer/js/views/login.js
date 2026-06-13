@@ -31,18 +31,18 @@ export function initLogin({ onSuccess }) {
   document.getElementById('login-password').addEventListener('keydown', e => {
     if (e.key === 'Enter') document.getElementById('btn-login').click();
   });
-  document.getElementById('reg-password').addEventListener('keydown', e => {
+  document.getElementById('reg-invite').addEventListener('keydown', e => {
     if (e.key === 'Enter') document.getElementById('btn-register').click();
   });
 
   document.getElementById('btn-login').addEventListener('click', async () => {
     const btn = document.getElementById('btn-login');
-    const username = document.getElementById('login-username').value.trim();
+    const phone = document.getElementById('login-phone').value.trim();
     const password = document.getElementById('login-password').value;
-    if (!username || !password) { errEl.textContent = '请填写账号和密码'; return; }
+    if (!phone || !password) { errEl.textContent = '请填写手机号和密码'; return; }
     btn.disabled = true; btn.textContent = '登录中…';
     try {
-      const res = await api.login(username, password);
+      const res = await api.login(phone, password);
       setToken(res.token);
       setMe(res.user || res);
       screen.classList.add('hidden');
@@ -57,13 +57,13 @@ export function initLogin({ onSuccess }) {
   document.getElementById('btn-register').addEventListener('click', async () => {
     const btn = document.getElementById('btn-register');
     const username = document.getElementById('reg-username').value.trim();
-    const nickname = document.getElementById('reg-nickname').value.trim();
+    const phone    = document.getElementById('reg-phone').value.trim();
     const password = document.getElementById('reg-password').value;
-    if (!username || !nickname || !password) { errEl.textContent = '请填写所有字段'; return; }
-    if (password.length < 6) { errEl.textContent = '密码至少 6 位'; return; }
+    const inviteCode = document.getElementById('reg-invite').value.trim();
+    if (!username || !phone || !password || !inviteCode) { errEl.textContent = '请填写所有字段'; return; }
     btn.disabled = true; btn.textContent = '注册中…';
     try {
-      const res = await api.register(username, nickname, password);
+      const res = await api.register(username, phone, password, inviteCode);
       setToken(res.token);
       setMe(res.user || res);
       screen.classList.add('hidden');
