@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Avatar from './Avatar';
+import { mediaUrl } from '../utils/url';
 
 /* ── 群头像拼图（微信风格 N宫格，支持自定义头像） ── */
 export function GroupAvatar({ members = [], size = 46, avatar = '' }) {
   // 有自定义群头像直接显示
   if (avatar) {
-    return <img src={avatar} alt="" style={{ width: size, height: size, borderRadius: Math.round(size * 0.22), objectFit: 'cover', flexShrink: 0 }} />;
+    return <img src={mediaUrl(avatar)} alt="" style={{ width: size, height: size, borderRadius: Math.round(size * 0.22), objectFit: 'cover', flexShrink: 0 }} />;
   }
   const n = Math.min(members.length, 9);
   if (n === 0) return <Avatar name="群" size={size} />;
@@ -17,7 +18,7 @@ export function GroupAvatar({ members = [], size = 46, avatar = '' }) {
     <div style={{ width: size, height: size, borderRadius: Math.round(size * 0.22), background: '#DCDCDC', display: 'grid', overflow: 'hidden', gridTemplateColumns: `repeat(${grid}, ${cellSize}px)`, gap: 2, padding: 2, flexShrink: 0 }}>
       {members.slice(0, grid * grid).map((m, i) => (
         <div key={i} style={{ width: cellSize, height: cellSize, borderRadius: 2, overflow: 'hidden', background: '#C0C0C0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {m.avatar ? <img src={m.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: cellSize * 0.45, fontWeight: 600, color: '#fff' }}>{(m.username || '?')[0]}</span>}
+          {m.avatar ? <img src={mediaUrl(m.avatar)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: cellSize * 0.45, fontWeight: 600, color: '#fff' }}>{(m.username || '?')[0]}</span>}
         </div>
       ))}
     </div>
@@ -37,7 +38,7 @@ function GroupAvatarUpload({ info, isAdmin, uploading, inputRef, onAvatarClick, 
       title={isAdmin ? '点击更换群头像' : undefined}
     >
       {info.avatar
-        ? <img src={info.avatar} alt="" style={{ width: 50, height: 50, borderRadius: r, objectFit: 'cover', display: 'block' }} />
+        ? <img src={mediaUrl(info.avatar)} alt="" style={{ width: 50, height: 50, borderRadius: r, objectFit: 'cover', display: 'block' }} />
         : <GroupAvatar members={info.members} size={50} />
       }
       {isAdmin && (hovered || uploading) && (

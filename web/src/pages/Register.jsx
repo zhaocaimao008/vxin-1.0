@@ -24,7 +24,7 @@ export default function Register() {
 
     try {
       const { data } = await axios.post('/api/auth/register', form);
-      login(data.user);
+      login(data.user, data.token);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.error || '注册失败');
@@ -65,9 +65,9 @@ export default function Register() {
       <div className="auth-container" style={{ width: 400 }}>
         <div className="auth-brand">
           <div className="auth-brand-icon">
-            <svg viewBox="0 0 28 28" width="28" height="28" fill="none">
-              <rect width="28" height="28" rx="8" fill="currentColor"/>
-              <path d="M8 10h12M8 14h8M8 18h10" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+            <svg viewBox="0 0 40 40" width="38" height="38" fill="none">
+              <path d="M5 7a3 3 0 013-3h16a3 3 0 013 3v12a3 3 0 01-3 3H14l-5 5V7z" fill="rgba(255,255,255,.3)"/>
+              <path d="M17 15a3 3 0 013-3h11a3 3 0 013 3v10a3 3 0 01-3 3h-3v4l-5-4h-3a3 3 0 01-3-3V15z" fill="white"/>
             </svg>
           </div>
           <h1 className="auth-brand-name">创建账号</h1>
@@ -75,7 +75,7 @@ export default function Register() {
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '16px', padding: '8px 12px', backgroundColor: 'rgba(22, 119, 255, 0.08)', borderRadius: '6px', fontSize: '13px', color: '#666' }}>
+          <div style={{ marginBottom: '16px', padding: '9px 14px', background: 'rgba(7,193,96,.1)', border: '1px solid rgba(7,193,96,.2)', borderRadius: '8px', fontSize: '13px', color: 'rgba(255,255,255,.65)' }}>
             💡 需要邀请码？请向已有账号的用户询问，或联系管理员获取
           </div>
 

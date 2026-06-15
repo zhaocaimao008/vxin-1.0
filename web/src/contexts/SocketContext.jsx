@@ -27,11 +27,16 @@ export const SocketProvider = ({ children }) => {
     // Socket.io 不传 auth.token——后端从 Cookie 中提取 JWT。
     // withCredentials 确保 WebSocket 握手时携带 httpOnly Cookie。
     // Electron 本地文件模式下，VITE_SERVER_URL 指定远程服务器地址。
-    const serverUrl = window.__ELECTRON_CONFIG__?.serverUrl ||
-      import.meta.env.VITE_API_BASE || import.meta.env.VITE_SERVER_URL || '/';
+    const serverUrl = window.__ELECTRON_CONFIG__
+      ? (localStorage.getItem('vxin_server_url') || window.__ELECTRON_CONFIG__.serverUrl)
+      : (import.meta.env.VITE_API_BASE || import.meta.env.VITE_SERVER_URL || '/');
+    const electronToken = window.__ELECTRON_CONFIG__
+      ? sessionStorage.getItem('vxin_electron_token')
+      : null;
     const s = io(serverUrl, {
       transports: ['websocket'],
       withCredentials: true,
+      ...(electronToken ? { auth: { token: electronToken } } : {}),
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,

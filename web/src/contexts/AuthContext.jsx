@@ -32,6 +32,21 @@ axios.interceptors.request.use(
 
 const AuthContext = createContext(null);
 
+// Electron 模式下 Cookie 跨域无法自动携带，用 sessionStorage 存 token，
+// 设到 axios Authorization header 实现 Bearer 鉴权
+const ELECTRON_TOKEN_KEY = 'vxin_electron_token';
+
+function setElectronToken(token) {
+  if (!window.__ELECTRON_CONFIG__) return;
+  if (token) {
+    sessionStorage.setItem(ELECTRON_TOKEN_KEY, token);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    sessionStorage.removeItem(ELECTRON_TOKEN_KEY);
+    delete axios.defaults.headers.common['Authorization'];
+  }
+}
+
 // ── 多账号"最近登录"记录 ──────────────────────────────────────────
 // 只存 { id, user, lastLoginAt }，不存 token。
 // token 始终只在后端签发的 httpOnly Cookie 中，JS 无法读取。
@@ -75,6 +90,7 @@ export const AuthProvider = ({ children }) => {
       err => {
         if (err.response?.status === 401 && userRef.current) {
           setUser(null);
+          setElectronToken(null);
           if (window.__ELECTRON_CONFIG__) window.location.hash = '#/login';
           else window.location.replace('/login');
         }
@@ -84,10 +100,12 @@ export const AuthProvider = ({ children }) => {
     return () => axios.interceptors.response.eject(id);
   }, []);
 
-  // ── 初始化：用 Cookie 向后端验证身份 ──────────────────────────
-  // 不从 localStorage 读取 token，直接请求 /api/auth/me。
-  // Cookie 由浏览器自动附带，后端验证后返回用户信息。
+  // ── 初始化：恢复 Electron Bearer token，然后验证身份 ────────
   useEffect(() => {
+    if (window.__ELECTRON_CONFIG__) {
+      const stored = sessionStorage.getItem(ELECTRON_TOKEN_KEY);
+      if (stored) axios.defaults.headers.common['Authorization'] = `Bearer ${stored}`;
+    }
     axios.get('/api/auth/me')
       .then(r => {
         setUser(r.data);
@@ -101,8 +119,8 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // ── 登录成功回调（由 Login/Register 页面调用） ─────────────────
-  // 后端已将 JWT 写入 httpOnly Cookie，此处只记录用户信息用于 UI 展示。
-  const login = (userData) => {
+  const login = (userData, token) => {
+    setElectronToken(token || null);
     setUser(userData);
     const next = upsertAccount(userData);
     setAccounts(next);
@@ -142,10 +160,28 @@ export const AuthProvider = ({ children }) => {
       }
     } catch {}
     await axios.post('/api/auth/logout').catch(() => {});
-    // 清除当前用户的最近登录记录
     if (userRef.current?.id) removeAccount(userRef.current.id);
     sessionStorage.removeItem('csrf_token');
+    setElectronToken(null);
     setUser(null);
+  };
+
+  // ── 切换服务器（无需重装客户端） ─────────────────────────────
+  // 1. 保存新 URL 到 localStorage（Electron 运行时）和 electron-store（下次启动）
+  // 2. 更新 axios baseURL
+  // 3. 清除当前登录态 → PrivateRoute 自动跳转登录页 → 用户用新服务器账号重新登录
+  const changeServer = async (newUrl) => {
+    const clean = newUrl.trim().replace(/\/$/, '');
+    try { await axios.post('/api/auth/logout'); } catch {}
+    if (window.__ELECTRON_CONFIG__) {
+      localStorage.setItem('vxin_server_url', clean);
+      window.electron?.setServerUrl?.(clean);
+    }
+    axios.defaults.baseURL = clean;
+    setElectronToken(null);
+    sessionStorage.removeItem('csrf_token');
+    setUser(null);
+    setAccounts([]);
   };
 
   // ── 更新本地用户缓存（头像/昵称变更后调用） ─────────────────
@@ -165,6 +201,7 @@ export const AuthProvider = ({ children }) => {
       login,
       logout,
       updateUser,
+      changeServer,
       loading,
       accounts,
       switchAccount,

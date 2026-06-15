@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Avatar from './Avatar';
 import { useAuth } from '../contexts/AuthContext';
+import { mediaUrl } from '../utils/url';
 
 export default function UserProfile({ userId, onClose, onStartChat, onFriendAdded, onFriendDeleted }) {
   const { user: currentUser } = useAuth();
@@ -119,7 +120,7 @@ export default function UserProfile({ userId, onClose, onStartChat, onFriendAdde
         {/* 顶部封面区 */}
         <div className="up-header">
           {user.cover_photo
-            ? <img src={user.cover_photo} className="up-cover" alt="" />
+            ? <img src={mediaUrl(user.cover_photo)} className="up-cover" alt="" />
             : <div className="up-cover-default" />
           }
           <button className="up-close-btn" onClick={onClose}>

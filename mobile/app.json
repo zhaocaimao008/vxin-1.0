@@ -21,8 +21,9 @@
     },
     "android": {
       "package": "com.vxin.app",
-      "versionCode": 8,
+      "versionCode": 15,
       "adaptiveIcon": {
+        "foregroundImage": "./assets/icon-foreground.png",
         "backgroundColor": "#07C160"
       },
       "permissions": [
@@ -40,7 +41,8 @@
     },
     "plugins": [
       "expo-image-picker",
-      "expo-document-picker"
+      "expo-document-picker",
+      "@config-plugins/react-native-webrtc"
     ],
     "extra": {
       "eas": {

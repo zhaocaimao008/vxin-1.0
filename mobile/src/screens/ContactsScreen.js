@@ -7,6 +7,7 @@ import {
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import { useSocket } from '../contexts/SocketContext';
+import { mediaUrl } from '../config';
 
 const C = {
   nav: '#1A2033',
@@ -36,7 +37,7 @@ function Avatar({ src, name, size = 44 }) {
   for (let i = 0; i < (name || '').length; i++) hash = (name.charCodeAt(i) + ((hash << 5) - hash));
   const bg = colors[Math.abs(hash) % colors.length];
   const letter = (name || '?')[0].toUpperCase();
-  if (src) return <Image source={{ uri: src }} style={{ width: size, height: size, borderRadius: C.radius }} />;
+  if (src) return <Image source={{ uri: mediaUrl(src) }} style={{ width: size, height: size, borderRadius: C.radius }} />;
   return (
     <View style={{ width: size, height: size, borderRadius: C.radius, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
       <Text style={{ color: '#fff', fontSize: size * 0.42, fontWeight: '600' }}>{letter}</Text>

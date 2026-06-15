@@ -12,6 +12,9 @@ import ChatScreen from '../screens/ChatScreen';
 import ContactsScreen from '../screens/ContactsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import MomentsScreen from '../screens/MomentsScreen';
+import CollectionsScreen from '../screens/CollectionsScreen';
+import GroupInfoScreen from '../screens/GroupInfoScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -237,6 +240,21 @@ export default function AppNavigator() {
               name="Settings"
               component={SettingsScreen}
               options={{ title: '设置' }}
+            />
+            <Stack.Screen
+              name="Moments"
+              component={MomentsScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="Collections"
+              component={CollectionsScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="GroupInfo"
+              component={GroupInfoScreen}
+              options={{ headerShown: false }}
             />
           </>
         ) : (

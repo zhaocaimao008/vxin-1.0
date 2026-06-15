@@ -1,7 +1,7 @@
 'use strict';
 const router = require('express').Router();
 const auth = require('../../middleware/auth');
-const { loginLimiter, registerLimiter } = require('../../middleware/rateLimiters');
+const { loginLimiter, registerLimiter, switchLimiter, forgetLimiter } = require('../../middleware/rateLimiters');
 const c = require('./auth.controller');
 
 /**
@@ -64,9 +64,9 @@ router.post('/register',        registerLimiter, c.register);
 router.post('/login',           loginLimiter,    c.login);
 
 // 免密切换账号（凭 wallet cookie，需本设备登录过该账号）
-router.post('/switch',          c.switchAccount);
+router.post('/switch',          switchLimiter, c.switchAccount);
 // 从本设备移除某账号（删除最近登录/退出后清理钱包）
-router.post('/forget',          c.forget);
+router.post('/forget',          forgetLimiter, c.forget);
 
 /**
  * @swagger

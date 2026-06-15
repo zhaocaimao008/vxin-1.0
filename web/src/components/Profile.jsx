@@ -3,6 +3,7 @@ import axios from 'axios';
 import Avatar from './Avatar';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
+import { goLogin } from '../utils/url';
 
 /* ─── 小工具 ─── */
 const ChevronRight = () => (
@@ -33,6 +34,7 @@ const IcoMoon    = () => <Ico d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c
 const IcoBell    = () => <Ico d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>;
 const IcoShield  = () => <Ico d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>;
 const IcoGear    = () => <Ico d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>;
+const IcoServer  = () => <Ico d="M4 1h16a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1zm0 8h16a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1v-4a1 1 0 011-1zm0 8h16a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1v-4a1 1 0 011-1zM6 4a1 1 0 100 2 1 1 0 000-2zm0 8a1 1 0 100 2 1 1 0 000-2zm0 8a1 1 0 100 2 1 1 0 000-2z"/>;
 const IcoEdit    = () => <Ico d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>;
 
 /* ─── 通用 UI 零件 ─── */
@@ -504,10 +506,89 @@ async function doLogout(logout) {
     }
   } catch {}
   logout();
-  window.location.href = '/login';
+  goLogin();
 }
 
 /* ── 设置总览页（二级） ── */
+function ServerSettings({ onBack }) {
+  const { changeServer } = useAuth();
+  const currentUrl = localStorage.getItem('vxin_server_url') || window.__ELECTRON_CONFIG__?.serverUrl || 'https://dipsin.com';
+  const [input, setInput] = useState(currentUrl);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const testConn = async () => {
+    const url = input.trim().replace(/\/$/, '');
+    if (!url.startsWith('http')) { setTestResult({ ok: false, msg: '格式错误，请以 http:// 或 https:// 开头' }); return; }
+    setTesting(true); setTestResult(null);
+    try {
+      await fetch(`${url}/health`, { signal: AbortSignal.timeout(6000) });
+      setTestResult({ ok: true, msg: '连接成功 ✓' });
+    } catch {
+      setTestResult({ ok: false, msg: '无法连接到该服务器，请检查地址' });
+    } finally { setTesting(false); }
+  };
+
+  const handleSave = async () => {
+    const url = input.trim().replace(/\/$/, '');
+    if (!url.startsWith('http')) return;
+    setSaving(true);
+    await changeServer(url);
+    setSaving(false);
+  };
+
+  return (
+    <PageBg>
+      <PageHeader title="服务器地址" onBack={onBack} />
+      <div style={{ padding: '20px 14px 0' }}>
+        <div style={{ marginBottom: 6, fontSize: 12, color: 'var(--text-secondary)' }}>服务器地址（支持 IP 或域名）</div>
+        <input
+          value={input}
+          onChange={e => { setInput(e.target.value); setTestResult(null); }}
+          placeholder="https://example.com"
+          style={{
+            width: '100%', boxSizing: 'border-box', padding: '12px 14px',
+            fontSize: 14, background: 'var(--bg-search)',
+            border: '1.5px solid var(--border-color)', borderRadius: 10,
+            color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit',
+          }}
+        />
+        {testResult && (
+          <div style={{ marginTop: 8, fontSize: 13, color: testResult.ok ? '#07C160' : '#FA5151' }}>
+            {testResult.msg}
+          </div>
+        )}
+      </div>
+      <div style={{ padding: '12px 14px 0', display: 'flex', gap: 10 }}>
+        <button onClick={testConn} disabled={testing} style={{
+          flex: 1, padding: '12px 0', borderRadius: 10, fontSize: 14, fontWeight: 500,
+          cursor: 'pointer', background: 'var(--bg-search)',
+          border: '1px solid var(--border-color)', color: 'var(--text-primary)',
+        }}>
+          {testing ? '检测中...' : '测试连接'}
+        </button>
+        <button onClick={handleSave} disabled={saving || !input.trim().startsWith('http')} style={{
+          flex: 1, padding: '12px 0', borderRadius: 10, fontSize: 14, fontWeight: 600,
+          cursor: 'pointer', background: saving ? '#ccc' : '#07C160', border: 'none', color: '#fff',
+        }}>
+          {saving ? '切换中...' : '保存并切换'}
+        </button>
+      </div>
+      <div style={{ padding: '10px 14px' }}>
+        <button onClick={() => setInput('https://dipsin.com')} style={{
+          background: 'none', border: 'none', color: '#07C160', fontSize: 13, cursor: 'pointer', padding: 0,
+        }}>恢复默认 (dipsin.com)</button>
+      </div>
+      <div style={{ padding: '0 14px 20px' }}>
+        <div style={{ padding: '10px 14px', background: 'rgba(0,0,0,.04)', borderRadius: 8, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+          切换服务器后当前账号会自动退出，用新服务器的账号重新登录即可，无需重装客户端。
+        </div>
+      </div>
+    </PageBg>
+  );
+}
+
 function SettingsPage({ user, setSubPage, logout }) {
   return (
     <PageBg>
@@ -530,6 +611,20 @@ function SettingsPage({ user, setSubPage, logout }) {
           <CRow icon={<IcoBell />} bg="#FF3B30" label="通知" desc="锁屏通知和声音" onClick={() => setSubPage('notifications')} last />
         </Card>
       </div>
+
+      {/* 服务器 — 仅桌面端 */}
+      {window.__ELECTRON_CONFIG__ && (
+        <>
+          <SLabel>连接</SLabel>
+          <div style={{ padding: '0 14px' }}>
+            <Card>
+              <CRow icon={<IcoServer />} bg="#34C759" label="服务器地址"
+                desc={(localStorage.getItem('vxin_server_url') || window.__ELECTRON_CONFIG__?.serverUrl || '').replace(/^https?:\/\//, '')}
+                onClick={() => setSubPage('server')} last />
+            </Card>
+          </div>
+        </>
+      )}
 
       {/* 退出 */}
       <div style={{ padding: '20px 14px 32px' }}>
@@ -563,6 +658,7 @@ export default function Profile() {
   if (subPage === 'appearance')    return <AppearanceSettings onBack={() => setSubPage(null)} />;
   if (subPage === 'notifications') return <NotificationSettings onBack={() => setSubPage(null)} />;
   if (subPage === 'privacy')       return <PrivacySettings user={user} onBack={() => setSubPage(null)} />;
+  if (subPage === 'server')        return <ServerSettings onBack={() => setSubPage(null)} />;
 
   /* ── 默认：直接显示设置内容 ── */
   return (
@@ -582,6 +678,19 @@ export default function Profile() {
           <CRow icon={<IcoBell />} bg="#FF3B30" label="通知"  desc="锁屏通知和声音"   onClick={() => setSubPage('notifications')} last />
         </Card>
       </div>
+
+      {window.__ELECTRON_CONFIG__ && (
+        <>
+          <SLabel>连接</SLabel>
+          <div style={{ padding: '0 14px' }}>
+            <Card>
+              <CRow icon={<IcoServer />} bg="#34C759" label="服务器地址"
+                desc={(localStorage.getItem('vxin_server_url') || window.__ELECTRON_CONFIG__?.serverUrl || '').replace(/^https?:\/\//, '')}
+                onClick={() => setSubPage('server')} last />
+            </Card>
+          </div>
+        </>
+      )}
 
       <div style={{ padding: '20px 14px 32px' }}>
         <button

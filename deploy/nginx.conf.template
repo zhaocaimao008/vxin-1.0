@@ -1,0 +1,42 @@
+# v信 nginx 配置模板 —— 由 deploy/setup.sh 自动填充 __DOMAIN__ / __PORT__ / __WEBROOT__
+# 换服务器无需手改：脚本会根据传入域名生成最终配置。
+server {
+    listen 80;
+    server_name __DOMAIN__;
+
+    client_max_body_size 50m;
+    root __WEBROOT__;
+    index index.html;
+
+    # ── API：反向代理到本机后端 ──────────────────────────────
+    location /api/ {
+        proxy_pass http://127.0.0.1:__PORT__;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # ── WebSocket（Socket.io 实时消息）──────────────────────
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:__PORT__;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade           $http_upgrade;
+        proxy_set_header Connection        "upgrade";
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_read_timeout 86400;
+    }
+
+    # ── 上传文件 / 健康检查 / 下载页 ─────────────────────────
+    location /uploads/  { proxy_pass http://127.0.0.1:__PORT__; }
+    location /health    { proxy_pass http://127.0.0.1:__PORT__; }
+    location /download  { proxy_pass http://127.0.0.1:__PORT__; }
+
+    # ── 前端 SPA：相对路径，天然适配任何域名 ─────────────────
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

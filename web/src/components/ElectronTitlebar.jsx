@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 function WinBtn({ onClick, isClose, children }) {
   const [hov, setHov] = useState(false);
@@ -19,6 +19,11 @@ function WinBtn({ onClick, isClose, children }) {
 }
 
 export default function ElectronTitlebar() {
+  useEffect(() => {
+    document.documentElement.classList.add('electron-app');
+    return () => document.documentElement.classList.remove('electron-app');
+  }, []);
+
   if (!window.__ELECTRON_CONFIG__) return null;
   return (
     <div style={{

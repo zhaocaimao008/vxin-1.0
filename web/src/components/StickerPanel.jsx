@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
+import { mediaUrl } from '../utils/url';
 
 // 我的表情包：点一下直接发送；可上传新增、长按/✕ 删除。
 export default function StickerPanel({ onSend }) {
@@ -54,7 +55,7 @@ export default function StickerPanel({ onSend }) {
         {stickers.map(s => (
           <div key={s.id} onClick={() => onSend(s.id)}
             style={{ position: 'relative', cursor: 'pointer', aspectRatio: '1 / 1', borderRadius: 8, overflow: 'hidden', background: 'var(--bg-search)', border: '1px solid var(--border-color)' }}>
-            <img src={s.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <img src={mediaUrl(s.url)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
             <button onClick={(e) => del(e, s.id)} title="删除"
               style={{ position: 'absolute', top: 2, right: 2, width: 16, height: 16, borderRadius: 8, background: 'rgba(0,0,0,.5)', color: '#fff', fontSize: 11, lineHeight: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>✕</button>
           </div>

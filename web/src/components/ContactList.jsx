@@ -19,12 +19,13 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
   const listRef = useRef(null);
   const { socket } = useSocket();
 
+  // 统一兜底成数组：若接口异常返回非数组，避免下方 .filter/.map 抛错导致整页白屏
   const fetchContacts = useCallback(() =>
-    axios.get('/api/users/contacts').then(r => setContacts(r.data)), []);
+    axios.get('/api/users/contacts').then(r => setContacts(Array.isArray(r.data) ? r.data : [])).catch(() => setContacts([])), []);
   const fetchRequests = useCallback(() =>
-    axios.get('/api/users/friend-requests').then(r => setRequests(r.data)), []);
+    axios.get('/api/users/friend-requests').then(r => setRequests(Array.isArray(r.data) ? r.data : [])).catch(() => setRequests([])), []);
   const fetchGroups = useCallback(() =>
-    axios.get('/api/messages/my-groups').then(r => setGroups(r.data)), []);
+    axios.get('/api/messages/my-groups').then(r => setGroups(Array.isArray(r.data) ? r.data : [])).catch(() => setGroups([])), []);
 
   useEffect(() => {
     fetchContacts(); fetchRequests(); fetchGroups();

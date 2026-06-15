@@ -20,5 +20,14 @@ export async function saveServerUrl(url) {
 
 export function getServerUrl() { return _serverUrl; }
 
+// 把后端返回的相对资源路径（/uploads/avatars/...）补成绝对地址。
+// RN 的 <Image source={{uri}}> 不支持相对路径，必须拼上服务器地址。
+export function mediaUrl(u) {
+  if (!u) return u;
+  if (/^(https?:|data:|file:|content:)/i.test(u)) return u;
+  const base = _serverUrl.replace(/\/$/, '');
+  return u.startsWith('/') ? base + u : `${base}/${u}`;
+}
+
 export const API_BASE   = () => _serverUrl;
 export const SOCKET_URL = () => _serverUrl;

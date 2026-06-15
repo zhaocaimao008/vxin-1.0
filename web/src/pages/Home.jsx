@@ -10,9 +10,11 @@ import Collections from '../components/Collections';
 import GlobalSearch from '../components/GlobalSearch';
 import AddFriendModal from '../components/AddFriendModal';
 import Avatar from '../components/Avatar';
+import AuthImage from '../components/AuthImage';
 import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
 import { usePushNotification } from '../hooks/usePushNotification';
+import { mediaUrl, goLogin } from '../utils/url';
 
 function WcEmpty() {
   return (
@@ -138,7 +140,7 @@ function AccountSwitcher() {
     if (id === user?.id) {
       if (!window.confirm(`退出当前账号「${name}」？`)) return;
       await logout();                 // 清会话+CSRF+从钱包移除当前账号
-      window.location.replace('/login');
+      goLogin();
     } else {
       if (!window.confirm(`从本设备删除账号「${name}」？删除后切换需重新输密码。`)) return;
       removeAccount(id);              // 移除最近登录记录 + 钱包凭证
@@ -176,7 +178,7 @@ function AccountSwitcher() {
         <div className="wc-sidebar-avatar-inner"
           style={{ outline: open ? '2.5px solid rgba(255,255,255,.9)' : '2.5px solid transparent', outlineOffset: 2, transition: 'outline-color .15s', overflow: 'hidden' }}>
           {user?.avatar
-            ? <img src={user.avatar} alt="" style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover', display: 'block' }} />
+            ? <img src={mediaUrl(user.avatar)} alt="" style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover', display: 'block' }} />
             : letter
           }
         </div>
@@ -338,7 +340,7 @@ function AccountSwitcher() {
                 <div style={{ marginBottom: 10 }}>
                   <div style={{ color: 'var(--text-secondary)', marginBottom: 6 }}>二维码</div>
                   <div style={{ padding: 8, background: 'var(--bg-input)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 120 }}>
-                    <img src="/api/users/me/qrcode" alt="我的二维码" style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 4 }} />
+                    <AuthImage src="/api/users/me/qrcode" alt="我的二维码" style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 4 }} />
                   </div>
                 </div>
               )}
@@ -810,7 +812,7 @@ export default function Home() {
               <button className="wc-modal-close" onClick={() => setShowQR(false)}>✕</button>
             </div>
             <div className="wc-modal-body" style={{ padding: '20px 20px 24px' }}>
-              <img src="/api/users/me/qrcode" alt="我的二维码"
+              <AuthImage src="/api/users/me/qrcode" alt="我的二维码"
                 style={{ width: 200, height: 200, borderRadius: 8, display: 'block', margin: '0 auto' }} />
               <p style={{ marginTop: 14, color: 'var(--text-tertiary)', fontSize: 13 }}>扫描二维码添加我为好友</p>
             </div>

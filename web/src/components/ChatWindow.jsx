@@ -28,11 +28,13 @@ import EmojiPicker from './EmojiPicker';
 import StickerPanel from './StickerPanel';
 import GroupInfo, { GroupAvatar } from './GroupInfo';
 import UserProfile from './UserProfile';
+import RedPacketModal from './RedPacketModal';
 import ForwardModal from './ForwardModal';
 import CallModal from './CallModal';
 import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
 import { format, formatFull } from '../utils/time';
+import { mediaUrl } from '../utils/url';
 
 const REACTIONS = ['👍','❤️','😄','😮','😢','🙏'];
 
@@ -56,6 +58,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   const [cardContacts, setCardContacts] = useState([]);
   const [editingMsg, setEditingMsg] = useState(null);
   const [forwardMsg, setForwardMsg] = useState(null);
+  const [showRedPacket, setShowRedPacket] = useState(false);
   const [ctxMenu, setCtxMenu] = useState(null);
   // 多选模式
   const [multiSelect, setMultiSelect] = useState(false);
@@ -76,7 +79,8 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   const [msgSearchQ, setMsgSearchQ] = useState('');
   const [msgSearchResults, setMsgSearchResults] = useState([]);
   const [msgSearching, setMsgSearching] = useState(false);
-  // Location, Contact card, Red packet removed
+  // 红包：详情弹窗 { packet, claims, myClaim, justClaimed } | null
+  const [redPacketDetail, setRedPacketDetail] = useState(null);
   const [claiming, setClaiming] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -564,6 +568,32 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       }
     });
   }, [socket]);
+
+  // 打开红包：拉详情，未领且未领完则先领取，再展示详情
+  const openRedPacket = async (packetId) => {
+    if (!packetId || claiming) return;
+    setClaiming(true);
+    try {
+      let { data: detail } = await axios.get(`/api/redpackets/${packetId}`);
+      let justClaimed = false;
+      const finished = detail.claimed_count >= detail.total_count;
+      if (!detail.myClaim && !finished) {
+        try {
+          await axios.post(`/api/redpackets/${packetId}/claim`);
+          justClaimed = true;
+          ({ data: detail } = await axios.get(`/api/redpackets/${packetId}`));
+        } catch (e) {
+          // 已领完/已过期等：仍展示详情，错误金额由后端透传
+          ({ data: detail } = await axios.get(`/api/redpackets/${packetId}`));
+        }
+      }
+      setRedPacketDetail({ ...detail, justClaimed });
+    } catch (e) {
+      alert(e.response?.data?.error || '红包打开失败');
+    } finally {
+      setClaiming(false);
+    }
+  };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -1237,11 +1267,11 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
               )}
               {msg.type === 'image' && (
                 <img
-                  src={msg.file_url}
+                  src={mediaUrl(msg.file_url)}
                   alt=""
                   className="wc-msg-image"
                   style={{ cursor: 'zoom-in' }}
-                  onClick={() => setLightboxUrl(msg.file_url)}
+                  onClick={() => setLightboxUrl(mediaUrl(msg.file_url))}
                   onLoad={() => {
                     // 图片加载完成后高度变化，若用户在底部则补一次置底
                     const c = messagesContainerRef.current;
@@ -1252,10 +1282,10 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                 />
               )}
               {msg.type === 'voice' && (
-                <VoicePlayer url={msg.file_url} />
+                <VoicePlayer url={mediaUrl(msg.file_url)} />
               )}
               {msg.type === 'file' && (
-                <a href={msg.file_url} download={msg.content} className="wc-msg-file" style={{ textDecoration: 'none', color: 'inherit' }}>
+                <a href={mediaUrl(msg.file_url)} download={msg.content} className="wc-msg-file" style={{ textDecoration: 'none', color: 'inherit' }}>
                   <div className="wc-msg-file-icon">📄</div>
                   <div>
                     <div className="wc-msg-file-name">{msg.content}</div>
@@ -1283,7 +1313,33 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                   </div>
                 );
               })()}
-              {/* red_packet removed */}
+              {msg.type === 'red_packet' && (() => {
+                let rp = {};
+                try { rp = JSON.parse(msg.content); } catch { rp = {}; }
+                return (
+                  <div
+                    onClick={() => openRedPacket(rp.packetId)}
+                    style={{
+                      width: 220, cursor: 'pointer', borderRadius: 8, overflow: 'hidden',
+                      background: 'linear-gradient(135deg,#F9A825,#F4511E)', color: '#fff',
+                      boxShadow: '0 1px 4px rgba(0,0,0,.15)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px' }}>
+                      <div style={{ fontSize: 30, lineHeight: 1 }}>🧧</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {rp.greeting || '恭喜发财，大吉大利'}
+                        </div>
+                        <div style={{ fontSize: 11, opacity: .85, marginTop: 2 }}>点击领取红包</div>
+                      </div>
+                    </div>
+                    <div style={{ borderTop: '1px solid rgba(255,255,255,.25)', padding: '4px 14px', fontSize: 11, opacity: .9 }}>
+                      v信红包
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
           {/* 群消息已读数 */}
@@ -1699,6 +1755,12 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
           </label>
 
           <button
+            className="wc-tool-btn"
+            title="发红包"
+            onClick={() => { setShowRedPacket(true); setShowMore(false); setShowEmoji(false); }}
+          ><svg viewBox="0 0 24 24" style={{ width: 22, height: 22, fill: 'currentColor' }}><path d="M19 6h-2V4c0-.9-.7-1.7-1.6-1.9.4-1.2 1.5-2 2.9-2 1.7 0 3 1.3 3 3 0 .5-.1 1-.3 1.4h.9c.6 0 1.2.4 1.2 1v2c0 .6-.5 1-1.2 1zm-2 4h4v8.5c0 1-.8 1.9-1.8 1.9H2.8C1.8 20.4 1 19.5 1 18.5V6c0-.5.3-1 .8-1.4L17 4v6zM4 14c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm10 0c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2z"/></svg></button>
+
+          <button
             className={`wc-tool-btn${showMore ? ' active' : ''}`}
             title="更多"
             onClick={() => { setShowMore(v => !v); setShowEmoji(false); }}
@@ -1863,6 +1925,62 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
           </div>
         </>,
         document.body
+      )}
+
+      {showRedPacket && (
+        <RedPacketModal
+          conversation={conversation}
+          onClose={() => setShowRedPacket(false)}
+          onSent={() => {
+            // 红包消息由 socket 事件自动添加，这里不需要手动处理
+            setInput('');
+          }}
+        />
+      )}
+      {redPacketDetail && (
+        <div
+          onClick={() => setRedPacketDetail(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000 }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ width: 320, background: 'linear-gradient(180deg,#F4511E 0%,#F4511E 140px,#fff 140px,#fff 100%)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,.3)' }}
+          >
+            <div style={{ padding: '26px 20px 18px', textAlign: 'center', color: '#fff' }}>
+              <div style={{ fontSize: 36 }}>🧧</div>
+              <div style={{ fontSize: 15, marginTop: 8, fontWeight: 600 }}>{redPacketDetail.senderName} 的红包</div>
+              <div style={{ fontSize: 13, opacity: .9, marginTop: 4 }}>{redPacketDetail.greeting}</div>
+            </div>
+            <div style={{ background: '#fff', padding: '0 20px 20px' }}>
+              {redPacketDetail.myClaim ? (
+                <div style={{ textAlign: 'center', padding: '14px 0 10px' }}>
+                  {redPacketDetail.justClaimed && <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>领取成功</div>}
+                  <span style={{ fontSize: 30, fontWeight: 700, color: '#F4511E' }}>{redPacketDetail.myClaim.amount}</span>
+                  <span style={{ fontSize: 14, color: '#F4511E', marginLeft: 4 }}>金币</span>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '14px 0 10px', fontSize: 14, color: '#999' }}>
+                  {redPacketDetail.claimed_count >= redPacketDetail.total_count ? '手慢了，红包派完了' : '红包已过期'}
+                </div>
+              )}
+              <div style={{ fontSize: 12, color: '#999', textAlign: 'center', marginBottom: 8 }}>
+                已领取 {redPacketDetail.claimed_count}/{redPacketDetail.total_count} 个
+              </div>
+              <div style={{ maxHeight: 200, overflowY: 'auto', borderTop: '1px solid #eee' }}>
+                {(redPacketDetail.claims || []).map(c => (
+                  <div key={c.id || c.user_id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 2px', fontSize: 14, borderBottom: '1px solid #f5f5f5' }}>
+                    <span style={{ color: '#333' }}>{c.username}{c.user_id === user.id ? '（我）' : ''}</span>
+                    <span style={{ color: '#F4511E', fontWeight: 600 }}>{c.amount} 金币</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div
+              onClick={() => setRedPacketDetail(null)}
+              style={{ textAlign: 'center', padding: '12px', fontSize: 14, color: '#888', cursor: 'pointer', background: '#fff', borderTop: '1px solid #f0f0f0' }}
+            >关闭</div>
+          </div>
+        </div>
       )}
     </div>
   );

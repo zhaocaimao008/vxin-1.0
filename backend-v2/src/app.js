@@ -43,7 +43,8 @@ app.use(helmet({
 
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || config.allowedOrigins.includes(origin)) return cb(null, true);
+    // origin === 'null'：Electron 桌面端 file:// 页面发送的字面量 "null"，需放行
+    if (!origin || origin === 'null' || config.allowedOrigins.includes(origin)) return cb(null, true);
     cb(new Error('Not allowed by CORS'));
   },
   credentials: true,
@@ -67,16 +68,27 @@ app.use('/downloads', express.static(path.join(__dirname, '../../downloads'), {
 app.use('/download', require('./modules/download'));
 
 // ── API 文档 ────────────────────────────────────────────────────────
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// 生产环境禁掉 Swagger，防止 API 合同泄漏
+if (config.env === 'production') {
+  app.use('/api-docs', (req, res) => res.status(404).json({ error: 'Not found' }));
+} else {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+}
 
-// 性能指标端点（Prometheus 格式）
+// 性能指标端点（Prometheus 格式）—— 生产环境也用不上
 app.get('/metrics', (req, res) => {
+  if (config.env === 'production') {
+    return res.status(404).json({ error: 'Not found' });
+  }
   res.type('text/plain');
   res.send(metrics.getPrometheusMetrics());
 });
 
 // 实时指标端点（JSON 格式，用于前端展示）
 app.get('/api/metrics', (req, res) => {
+  if (config.env === 'production') {
+    return res.status(404).json({ error: 'Not found' });
+  }
   res.json(metrics.getMetrics());
 });
 
@@ -91,6 +103,7 @@ app.use('/api/moments',       require('./modules/moments/moments.routes'));
 app.use('/api/notifications', require('./modules/notifications/notifications.routes'));
 app.use('/api/upload',        require('./modules/upload/upload.routes'));
 app.use('/api/stickers',      require('./modules/stickers/stickers.routes'));
+app.use('/api/redpackets',    require('./modules/redpackets/redpackets.routes'));
 app.use('/api/admin',         require('./modules/admin/admin.routes'));
 
 // 公开配置（前端读取功能开关，决定朋友圈/收藏入口显隐）

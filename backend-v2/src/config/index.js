@@ -61,7 +61,11 @@ const config = {
 
   // ── 应用 ────────────────────────────────────────────────────
   appUrl:      process.env.APP_URL || 'https://chat.91aigu.com',
-  uploadsRoot: process.env.UPLOADS_ROOT || path.resolve(__dirname, '../../../backend/uploads'),
+  // 未显式配置时：老部署沿用 backend/uploads（兼容线上），全新部署自包含到 backend-v2/uploads
+  uploadsRoot: process.env.UPLOADS_ROOT || (() => {
+    const legacy = path.resolve(__dirname, '../../../backend/uploads');
+    return require('fs').existsSync(legacy) ? legacy : path.resolve(__dirname, '../../uploads');
+  })(),
 
   // ── 业务常量 ────────────────────────────────────────────────
   limits: {

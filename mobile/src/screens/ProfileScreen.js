@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../contexts/AuthContext';
+import { mediaUrl } from '../config';
 
 const C = {
   nav: '#1A2033',
@@ -32,7 +33,7 @@ function AvatarDisplay({ user, size = 70 }) {
   const bg = colors[Math.abs(hash) % colors.length];
   const letter = (name || '?')[0].toUpperCase();
   if (user?.avatar) {
-    return <Image source={{ uri: user.avatar }} style={{ width: size, height: size, borderRadius: C.radiusLg }} />;
+    return <Image source={{ uri: mediaUrl(user.avatar) }} style={{ width: size, height: size, borderRadius: C.radiusLg }} />;
   }
   return (
     <View style={{ width: size, height: size, borderRadius: C.radiusLg, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
@@ -49,7 +50,7 @@ function AvatarSmall({ user, size = 44 }) {
   const bg = colors[Math.abs(hash) % colors.length];
   const letter = (name || '?')[0].toUpperCase();
   if (user?.avatar) {
-    return <Image source={{ uri: user.avatar }} style={{ width: size, height: size, borderRadius: C.radius }} />;
+    return <Image source={{ uri: mediaUrl(user.avatar) }} style={{ width: size, height: size, borderRadius: C.radius }} />;
   }
   return (
     <View style={{ width: size, height: size, borderRadius: C.radius, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
@@ -230,11 +231,9 @@ export default function ProfileScreen({ navigation }) {
       {/* Settings rows */}
       <View style={styles.section}>
         <View style={styles.card}>
-          <SettingsRow label="我的收藏" onPress={() => {}} />
+          <SettingsRow label="我的收藏" onPress={() => navigation.navigate('Collections')} />
           <View style={styles.cardDivider} />
-          <SettingsRow label="朋友圈" onPress={() => {}} />
-          <View style={styles.cardDivider} />
-          <SettingsRow label="支付" onPress={() => {}} />
+          <SettingsRow label="朋友圈" onPress={() => navigation.navigate('Moments')} />
         </View>
       </View>
 

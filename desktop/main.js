@@ -42,6 +42,17 @@ function createWindow() {
     mainWindow.setMenu(null);
   }
 
+  // 放行媒体权限：否则语音消息 / 音视频通话的 getUserMedia 会被 Electron 默认拒绝
+  const ses = mainWindow.webContents.session;
+  const GRANTED = ['media', 'audioCapture', 'videoCapture', 'notifications', 'clipboard-read', 'clipboard-sanitized-write'];
+  ses.setPermissionRequestHandler((wc, permission, callback) => {
+    callback(GRANTED.includes(permission));
+  });
+  // 部分 Chromium 版本走 check handler（同步），一并放行
+  if (ses.setPermissionCheckHandler) {
+    ses.setPermissionCheckHandler((wc, permission) => GRANTED.includes(permission));
+  }
+
   mainWindow.loadFile(path.join(__dirname, 'web-dist', 'index.html'));
 
   mainWindow.on('close', (e) => {

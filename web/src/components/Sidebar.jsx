@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { mediaUrl } from '../utils/url';
 
 const IcoChat = () => (
   <svg viewBox="0 0 24 24">
@@ -41,7 +42,7 @@ export default function Sidebar({ tab, onTabChange, badges = {} }) {
       {/* 头像 */}
       <div className="wc-sidebar-avatar" onClick={() => onTabChange('profile')} title={user?.username || ''}>
         {user?.avatar
-          ? <img src={user.avatar} alt="" className="wc-sidebar-avatar-img" />
+          ? <img src={mediaUrl(user.avatar)} alt="" className="wc-sidebar-avatar-img" />
           : <div className="wc-sidebar-avatar-inner">{letter}</div>
         }
       </div>

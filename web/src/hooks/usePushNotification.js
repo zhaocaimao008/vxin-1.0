@@ -14,6 +14,9 @@ export function usePushNotification(user) {
 
   useEffect(() => {
     if (!user) return;
+    // Electron 桌面端用原生通知（window.electron.showNotification），
+    // 且 file:// 下无法注册 Service Worker，直接跳过 web-push。
+    if (window.__ELECTRON_CONFIG__) return;
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
 
     let cancelled = false;

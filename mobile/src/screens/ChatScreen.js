@@ -12,7 +12,9 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
 import CallScreen from './CallScreen';
-import { getServerUrl } from '../config';
+import ForwardModal from '../components/ForwardModal';
+import { getServerUrl, mediaUrl } from '../config';
+import RedPacketModal from '../components/RedPacketModal';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -41,7 +43,7 @@ function Avatar({ src, name, size = 38, radius }) {
   for (let i = 0; i < (name || '').length; i++) hash = (name.charCodeAt(i) + ((hash << 5) - hash));
   const bg = colors[Math.abs(hash) % colors.length];
   const r = radius ?? size * 0.22;
-  if (src) return <Image source={{ uri: src }} style={{ width: size, height: size, borderRadius: r }} />;
+  if (src) return <Image source={{ uri: mediaUrl(src) }} style={{ width: size, height: size, borderRadius: r }} />;
   return (
     <View style={{ width: size, height: size, borderRadius: r, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
       <Text style={{ color: '#fff', fontSize: size * 0.42, fontWeight: '600' }}>{(name || '?')[0].toUpperCase()}</Text>
@@ -79,6 +81,10 @@ export default function ChatScreen({ route, navigation }) {
   const [members, setMembers]         = useState([]);
   const [mentionSearch, setMentionSearch] = useState(null); // null = not showing
   const [mentionResults, setMentionResults] = useState([]);
+  const [showRedPacket, setShowRedPacket] = useState(false);
+  const [redPacketDetail, setRedPacketDetail] = useState(null); // { ...detail, justClaimed } | null
+  const [claimingRP, setClaimingRP] = useState(false);
+  const [forwardMsg, setForwardMsg] = useState(null);
   const flatListRef = useRef(null);
   const inputRef    = useRef(null);
   const pendingAcks = useRef({});
@@ -95,6 +101,13 @@ export default function ChatScreen({ route, navigation }) {
       title: (conversation.name || '聊天') + sub,
       headerStyle: { backgroundColor: C.bgCard },
       headerTitleStyle: { fontSize: 17, fontWeight: '600', color: C.text },
+      headerRight: conversation.type === 'group'
+        ? () => (
+            <TouchableOpacity onPress={() => navigation.navigate('GroupInfo', { conversationId: conversation.id })} style={{ paddingHorizontal: 6 }}>
+              <Text style={{ fontSize: 22, color: C.text }}>⋯</Text>
+            </TouchableOpacity>
+          )
+        : undefined,
     });
   }, [navigation, conversation]);
 
@@ -113,14 +126,18 @@ export default function ChatScreen({ route, navigation }) {
     axios.post(`/api/messages/conversation/${conversation.id}/read`).catch(() => {});
 
     if (conversation.type === 'group') {
-      axios.get(`/api/groups/${conversation.groupId || conversation.id}/members`)
-        .then(r => setMembers(r.data?.members || r.data || []))
+      axios.get(`/api/messages/conversation/${conversation.id}/info`)
+        .then(r => setMembers(r.data?.members || []))
         .catch(() => {});
     }
 
-    // Load pinned message
-    axios.get(`/api/conversations/${conversation.id}/pin`)
-      .then(r => setPinnedMsg(r.data?.message || null))
+    // Load pinned message（取最新一条）
+    axios.get(`/api/messages/conversation/${conversation.id}/pinned-messages`)
+      .then(r => {
+        const list = r.data || [];
+        const top = Array.isArray(list) ? list[0] : null;
+        setPinnedMsg(top ? { id: top.msgId, content: top.content, type: top.type } : null);
+      })
       .catch(() => {});
   }, [conversation.id]);
 
@@ -172,8 +189,11 @@ export default function ChatScreen({ route, navigation }) {
       );
     };
 
-    const onPinned = ({ conversationId, message }) => {
-      if (conversationId === conversation.id) setPinnedMsg(message);
+    const onPinned = ({ msgId, convId, content, type }) => {
+      if (convId === conversation.id) setPinnedMsg({ id: msgId, content, type });
+    };
+    const onUnpinned = ({ convId, msgId }) => {
+      if (convId === conversation.id) setPinnedMsg(prev => (prev && String(prev.id) === String(msgId) ? null : prev));
     };
 
     const onRead = (data) => {
@@ -197,7 +217,8 @@ export default function ChatScreen({ route, navigation }) {
     socket.on('message_edited', onEdited);
     socket.on('message_reaction', onReaction);
     socket.on('typing', onTyping);
-    socket.on('pinned_message', onPinned);
+    socket.on('message_pinned', onPinned);
+    socket.on('message_unpinned', onUnpinned);
     socket.on('message_read', onRead);
     socket.on('call:incoming', onIncomingCall);
 
@@ -207,7 +228,8 @@ export default function ChatScreen({ route, navigation }) {
       socket.off('message_edited', onEdited);
       socket.off('message_reaction', onReaction);
       socket.off('typing', onTyping);
-      socket.off('pinned_message', onPinned);
+      socket.off('message_pinned', onPinned);
+    socket.off('message_unpinned', onUnpinned);
       socket.off('message_read', onRead);
       socket.off('call:incoming', onIncomingCall);
     };
@@ -229,7 +251,7 @@ export default function ChatScreen({ route, navigation }) {
 
     if (editingId) {
       setEditingId(null);
-      axios.put(`/api/messages/${editingId}`, { content: text }).catch(e => Alert.alert('编辑失败', e.message));
+      axios.put(`/api/messages/${editingId}/edit`, { content: text }).catch(e => Alert.alert('编辑失败', e.response?.data?.error || e.message));
       setMessages(prev => prev.map(m => String(m.id) === String(editingId) ? { ...m, content: text } : m));
       return;
     }
@@ -271,35 +293,36 @@ export default function ChatScreen({ route, navigation }) {
   const uploadAndSend = async (fileObj, msgType) => {
     setSending(true);
     try {
-      const fd = new FormData();
-      fd.append('file', fileObj);
-      const { data: presign } = await axios.post('/api/upload/presign', {
-        filename: fileObj.name, contentType: fileObj.type, ext: fileObj.name?.split('.').pop()
+      // 优先：云存储预签名直传（与 Web 一致）
+      const { data: cred } = await axios.post('/api/upload/credential', {
+        filename: fileObj.name,
+        contentType: fileObj.type,
+        conversationId: conversation.id,
       });
-      // Upload to R2
-      await fetch(presign.uploadUrl, { method: 'PUT', headers: { 'Content-Type': fileObj.type }, body: fileObj });
-      const fileUrl = presign.fileUrl;
+      const blob = await (await fetch(fileObj.uri)).blob();
+      const putResp = await fetch(cred.uploadUrl, {
+        method: 'PUT', headers: { 'Content-Type': fileObj.type }, body: blob,
+      });
+      if (!putResp.ok) throw new Error(`上传失败 HTTP ${putResp.status}`);
       socket?.emit('send_message', {
         conversationId: conversation.id,
         type: msgType,
-        content: fileUrl,
-        fileUrl,
+        content: cred.publicUrl,
+        fileUrl: cred.publicUrl,
         fileName: fileObj.name,
         fileSize: fileObj.size,
       });
-    } catch {
-      // Fallback: multipart form upload
+    } catch (e) {
+      // 云存储未配置(503)等：回退到后端本地直传（后端负责入库+广播）
       try {
         const fd = new FormData();
-        fd.append('file', fileObj);
-        const { data } = await axios.post('/api/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-        const fileUrl = data.url || data.fileUrl;
-        socket?.emit('send_message', {
-          conversationId: conversation.id,
-          type: msgType, content: fileUrl, fileUrl,
-          fileName: fileObj.name, fileSize: fileObj.size,
+        fd.append('file', { uri: fileObj.uri, type: fileObj.type, name: fileObj.name });
+        await axios.post(`/api/messages/${conversation.id}/upload`, fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
-      } catch (err2) { Alert.alert('上传失败', err2.message || '请重试'); }
+      } catch (err2) {
+        Alert.alert('上传失败', err2.response?.data?.error || err2.message || '请重试');
+      }
     } finally { setSending(false); }
   };
 
@@ -417,15 +440,12 @@ export default function ChatScreen({ route, navigation }) {
         setReactionTarget(msg.id);
         break;
       case '转发':
-        Alert.alert('转发', '暂不支持转发到其他对话，消息内容已复制', [
-          { text: '复制内容', onPress: () => Clipboard.setString(msg.content || '') },
-          { text: '取消', style: 'cancel' },
-        ]);
+        setForwardMsg(msg);
         break;
       case '置顶':
-        axios.post(`/api/conversations/${conversation.id}/pin`, { messageId: msg.id })
-          .then(() => setPinnedMsg(msg))
-          .catch(e => Alert.alert('置顶失败', e.response?.data?.message || e.message));
+        axios.post(`/api/messages/conversation/${conversation.id}/pin-message`, { msgId: msg.id })
+          .then(() => setPinnedMsg({ id: msg.id, content: msg.content, type: msg.type }))
+          .catch(e => Alert.alert('置顶失败', e.response?.data?.error || e.message));
         break;
       case '编辑':
         setEditingId(msg.id);
@@ -450,7 +470,7 @@ export default function ChatScreen({ route, navigation }) {
   const sendReaction = (emoji) => {
     if (!reactionTarget) return;
     setReactionTarget(null);
-    axios.post(`/api/messages/${reactionTarget}/reactions`, { emoji }).catch(() => {});
+    axios.post(`/api/messages/${reactionTarget}/react`, { emoji }).catch(() => {});
   };
 
   const sendSticker = (url) => {
@@ -466,6 +486,29 @@ export default function ChatScreen({ route, navigation }) {
         ? { id: targetId, name: conversation.name }
         : { id: targetId, name: conversation.otherUser?.nickname || conversation.otherUser?.username || conversation.name, avatar: conversation.otherUser?.avatar },
       remoteId: targetId });
+  };
+
+  // 打开红包：拉详情，未领且未领完则先领取，再展示详情
+  const openRedPacket = async (packetId) => {
+    if (!packetId || claimingRP) return;
+    setClaimingRP(true);
+    try {
+      let { data: detail } = await axios.get(`/api/redpackets/${packetId}`);
+      let justClaimed = false;
+      const finished = detail.claimed_count >= detail.total_count;
+      if (!detail.myClaim && !finished) {
+        try {
+          await axios.post(`/api/redpackets/${packetId}/claim`);
+          justClaimed = true;
+        } catch (_) { /* 已领完/过期：照常展示详情 */ }
+        ({ data: detail } = await axios.get(`/api/redpackets/${packetId}`));
+      }
+      setRedPacketDetail({ ...detail, justClaimed });
+    } catch (e) {
+      Alert.alert('提示', e.response?.data?.error || '红包打开失败');
+    } finally {
+      setClaimingRP(false);
+    }
   };
 
   // ── Render message ─────────────────────────────────────────────────────────
@@ -485,7 +528,7 @@ export default function ChatScreen({ route, navigation }) {
         case 'image':
           return (
             <TouchableOpacity onPress={() => setLightbox(msg.fileUrl || msg.file_url || msg.content)}>
-              <Image source={{ uri: msg.fileUrl || msg.file_url || msg.content }} style={S.msgImage} resizeMode="cover" />
+              <Image source={{ uri: mediaUrl(msg.fileUrl || msg.file_url || msg.content) }} style={S.msgImage} resizeMode="cover" />
             </TouchableOpacity>
           );
         case 'file':
@@ -511,8 +554,9 @@ export default function ChatScreen({ route, navigation }) {
             </View>
           );
         case 'sticker':
-          return <Image source={{ uri: msg.fileUrl || msg.content }} style={S.stickerImg} resizeMode="contain" />;
-        case 'contact': {
+          return <Image source={{ uri: mediaUrl(msg.fileUrl || msg.content) }} style={S.stickerImg} resizeMode="contain" />;
+        case 'contact':
+        case 'contact_card': {
           let card = {};
           try { card = typeof msg.content === 'string' ? JSON.parse(msg.content) : msg.content; } catch (_) {}
           return (
@@ -523,6 +567,19 @@ export default function ChatScreen({ route, navigation }) {
                 <Text style={[S.contactHint, isMe && { color: 'rgba(255,255,255,.7)' }]}>个人名片</Text>
               </View>
             </View>
+          );
+        }
+        case 'red_packet': {
+          let rp = {};
+          try { rp = typeof msg.content === 'string' ? JSON.parse(msg.content) : msg.content; } catch (_) {}
+          return (
+            <TouchableOpacity activeOpacity={0.85} onPress={() => openRedPacket(rp.packetId)} style={S.rpBubble}>
+              <Text style={S.rpIcon}>🧧</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={S.rpGreeting} numberOfLines={1}>{rp.greeting || '恭喜发财，大吉大利'}</Text>
+                <Text style={S.rpHint}>点击领取红包</Text>
+              </View>
+            </TouchableOpacity>
           );
         }
         default:
@@ -607,7 +664,7 @@ export default function ChatScreen({ route, navigation }) {
           <Text style={S.pinnedIcon}>📌</Text>
           <Text style={S.pinnedText} numberOfLines={1}>{pinnedMsg.content || '[图片]'}</Text>
           <TouchableOpacity onPress={() => {
-            axios.delete(`/api/conversations/${conversation.id}/pin`).catch(() => {});
+            axios.delete(`/api/messages/conversation/${conversation.id}/pin-message/${pinnedMsg.id}`).catch(() => {});
             setPinnedMsg(null);
           }}>
             <Text style={S.pinnedClose}>✕</Text>
@@ -714,6 +771,9 @@ export default function ChatScreen({ route, navigation }) {
         }} disabled={sending}>
           <Text style={{ fontSize: 20 }}>➕</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={S.toolBtn} onPress={() => setShowRedPacket(true)} disabled={sending}>
+          <Text style={{ fontSize: 20 }}>🧧</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={[S.sendBtn, (!input.trim() || !socket) && S.sendBtnOff]}
           onPress={sendText}
@@ -739,7 +799,7 @@ export default function ChatScreen({ route, navigation }) {
       {/* Image lightbox */}
       <Modal visible={!!lightbox} transparent animationType="fade" onRequestClose={() => setLightbox(null)}>
         <TouchableOpacity style={S.lightboxOverlay} activeOpacity={1} onPress={() => setLightbox(null)}>
-          {lightbox && <Image source={{ uri: lightbox }} style={S.lightboxImg} resizeMode="contain" />}
+          {lightbox && <Image source={{ uri: mediaUrl(lightbox) }} style={S.lightboxImg} resizeMode="contain" />}
         </TouchableOpacity>
       </Modal>
 
@@ -747,6 +807,54 @@ export default function ChatScreen({ route, navigation }) {
       {activeCall && socket && (
         <CallScreen socket={socket} user={user} call={activeCall} onClose={() => setActiveCall(null)} />
       )}
+
+      {/* Red packet modal */}
+      <RedPacketModal
+        visible={showRedPacket}
+        conversation={conversation}
+        onClose={() => setShowRedPacket(false)}
+        onSent={() => setInput('')}
+      />
+
+      {/* Forward modal */}
+      <ForwardModal visible={!!forwardMsg} message={forwardMsg} onClose={() => setForwardMsg(null)} />
+
+      {/* Red packet detail */}
+      <Modal visible={!!redPacketDetail} transparent animationType="fade" onRequestClose={() => setRedPacketDetail(null)}>
+        <TouchableOpacity style={S.rpOverlay} activeOpacity={1} onPress={() => setRedPacketDetail(null)}>
+          <View style={S.rpCard} onStartShouldSetResponder={() => true}>
+            <View style={S.rpCardTop}>
+              <Text style={{ fontSize: 36 }}>🧧</Text>
+              <Text style={S.rpCardSender}>{redPacketDetail?.senderName} 的红包</Text>
+              <Text style={S.rpCardGreeting}>{redPacketDetail?.greeting}</Text>
+            </View>
+            <View style={S.rpCardBody}>
+              {redPacketDetail?.myClaim ? (
+                <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+                  {redPacketDetail.justClaimed && <Text style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>领取成功</Text>}
+                  <Text style={S.rpAmount}>{redPacketDetail.myClaim.amount} <Text style={{ fontSize: 14 }}>金币</Text></Text>
+                </View>
+              ) : (
+                <Text style={S.rpEmpty}>
+                  {redPacketDetail && redPacketDetail.claimed_count >= redPacketDetail.total_count ? '手慢了，红包派完了' : '红包已过期'}
+                </Text>
+              )}
+              <Text style={S.rpProgress}>已领取 {redPacketDetail?.claimed_count}/{redPacketDetail?.total_count} 个</Text>
+              <ScrollView style={{ maxHeight: 200, borderTopWidth: 1, borderTopColor: '#eee' }}>
+                {(redPacketDetail?.claims || []).map(c => (
+                  <View key={c.id || c.user_id} style={S.rpClaimRow}>
+                    <Text style={{ fontSize: 14, color: '#333' }}>{c.username}{String(c.user_id) === String(user?.id) ? '（我）' : ''}</Text>
+                    <Text style={{ fontSize: 14, color: '#F4511E', fontWeight: '600' }}>{c.amount} 金币</Text>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+            <TouchableOpacity style={S.rpClose} onPress={() => setRedPacketDetail(null)}>
+              <Text style={{ color: '#888', fontSize: 14 }}>关闭</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -808,6 +916,23 @@ const S = StyleSheet.create({
   contactCard:{ flexDirection: 'row', alignItems: 'center', gap: 10, minWidth: 150 },
   contactName:{ fontSize: 14, fontWeight: '600', color: C.text },
   contactHint:{ fontSize: 11, color: C.textSub, marginTop: 2 },
+  // 红包气泡
+  rpBubble:   { flexDirection: 'row', alignItems: 'center', gap: 10, minWidth: 180, backgroundColor: '#F4511E', borderRadius: 8, padding: 12, marginHorizontal: -2, marginVertical: -2 },
+  rpIcon:     { fontSize: 28 },
+  rpGreeting: { fontSize: 14, fontWeight: '600', color: '#fff' },
+  rpHint:     { fontSize: 11, color: 'rgba(255,255,255,.85)', marginTop: 2 },
+  // 红包详情弹窗
+  rpOverlay:  { flex: 1, backgroundColor: 'rgba(0,0,0,.5)', alignItems: 'center', justifyContent: 'center' },
+  rpCard:     { width: 300, borderRadius: 14, overflow: 'hidden', backgroundColor: '#fff' },
+  rpCardTop:  { backgroundColor: '#F4511E', alignItems: 'center', paddingVertical: 22, paddingHorizontal: 18 },
+  rpCardSender:{ fontSize: 15, fontWeight: '700', color: '#fff', marginTop: 8 },
+  rpCardGreeting:{ fontSize: 13, color: 'rgba(255,255,255,.9)', marginTop: 4 },
+  rpCardBody: { paddingHorizontal: 18, paddingBottom: 14 },
+  rpAmount:   { fontSize: 30, fontWeight: '700', color: '#F4511E' },
+  rpEmpty:    { textAlign: 'center', paddingVertical: 14, fontSize: 14, color: '#999' },
+  rpProgress: { fontSize: 12, color: '#999', textAlign: 'center', marginBottom: 8 },
+  rpClaimRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
+  rpClose:    { alignItems: 'center', paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#f0f0f0' },
   // Reactions
   reactionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 },
   reactionPill: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 12, backgroundColor: C.bgCard, borderWidth: 1, borderColor: C.border },

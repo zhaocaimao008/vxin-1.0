@@ -52,8 +52,8 @@ setInterval(() => {
   }
 }, MAINT_INTERVAL).unref();
 
-server.listen(config.port, () => {
-  console.log(`v信后端 v2 已启动: http://localhost:${config.port}  (env=${config.env})`);
+server.listen(config.port, '127.0.0.1', () => {
+  console.log(`v信后端 v2 已启动: http://127.0.0.1:${config.port}  (env=${config.env})`);
 });
 
 // 优雅退出：通知 worker flush 落盘后再退出（pm2 restart / 停服时不丢写）

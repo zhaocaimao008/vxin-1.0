@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 
+const isElectron = !!window.__ELECTRON_CONFIG__;
+
 export default function Login() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -12,12 +14,43 @@ export default function Login() {
   const { login, accounts, removeAccount, maxAccounts } = useAuth();
   const navigate = useNavigate();
 
+  // ── 服务器切换（仅桌面端，登录前即可切换，无需重装） ──
+  const currentServer = isElectron
+    ? (localStorage.getItem('vxin_server_url') || window.__ELECTRON_CONFIG__.serverUrl)
+    : '';
+  const [showServer, setShowServer] = useState(false);
+  const [serverInput, setServerInput] = useState(currentServer);
+  const [serverTest, setServerTest] = useState(null);
+  const [serverBusy, setServerBusy] = useState(false);
+
+  const testServer = async () => {
+    const url = serverInput.trim().replace(/\/$/, '');
+    if (!url.startsWith('http')) { setServerTest({ ok: false, msg: '请以 http:// 或 https:// 开头' }); return; }
+    setServerBusy(true); setServerTest(null);
+    try {
+      // 只要服务器有 HTTP 响应就算可达（health 返回 200）
+      await fetch(`${url}/health`, { signal: AbortSignal.timeout(6000) });
+      setServerTest({ ok: true, msg: '连接成功 ✓' });
+    } catch {
+      setServerTest({ ok: false, msg: '无法连接到该服务器，请检查地址' });
+    } finally { setServerBusy(false); }
+  };
+
+  const saveServer = () => {
+    const url = serverInput.trim().replace(/\/$/, '');
+    if (!url.startsWith('http')) { setServerTest({ ok: false, msg: '请以 http:// 或 https:// 开头' }); return; }
+    localStorage.setItem('vxin_server_url', url);
+    window.electron?.setServerUrl?.(url);
+    // 重载页面，main.jsx 会读取新地址重设 axios baseURL 和 socket
+    window.location.reload();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
       const { data } = await axios.post('/api/auth/login', { phone, password });
-      login(data.user);
+      login(data.user, data.token);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.error || '登录失败');
@@ -35,16 +68,13 @@ export default function Login() {
         {/* Logo区域 */}
         <div className="auth-brand">
           <div className="auth-brand-icon">
-            <svg viewBox="0 0 32 32" width="32" height="32" fill="none">
-              <path d="M6 8C6 6.9 6.9 6 8 6h16c1.1 0 2 .9 2 2v3H6V8z" fill="rgba(255,255,255,.25)"/>
-              <rect x="6" y="11" width="20" height="15" rx="1" fill="rgba(255,255,255,.12)"/>
-              <path d="M10 16h12M10 20h8" stroke="#fff" strokeWidth="1.8" strokeLinecap="round"/>
-              <circle cx="24" cy="22" r="5" fill="#07C160"/>
-              <path d="M22 22l1.5 1.5L26 20" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg viewBox="0 0 40 40" width="38" height="38" fill="none">
+              <path d="M5 7a3 3 0 013-3h16a3 3 0 013 3v12a3 3 0 01-3 3H14l-5 5V7z" fill="rgba(255,255,255,.3)"/>
+              <path d="M17 15a3 3 0 013-3h11a3 3 0 013 3v10a3 3 0 01-3 3h-3v4l-5-4h-3a3 3 0 01-3-3V15z" fill="white"/>
             </svg>
           </div>
           <h1 className="auth-brand-name">v信</h1>
-          <p className="auth-brand-desc">企业级安全通讯平台</p>
+          <p className="auth-brand-desc">安全 · 私密 · 畅聊</p>
         </div>
 
         {/* 最近登录：点击填入手机号，仍需手动输入密码 */}
@@ -144,6 +174,44 @@ export default function Login() {
         <p className="auth-footer">
           还没有账号？<Link to="/register" className="auth-link">注册新账号</Link>
         </p>
+
+        {/* 服务器切换 — 仅桌面端 */}
+        {isElectron && (
+          <div className="auth-server">
+            {!showServer ? (
+              <button type="button" className="auth-server-toggle" onClick={() => setShowServer(true)}>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style={{ marginRight: 5, verticalAlign: '-2px' }}>
+                  <path d="M4 1h16a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1zm0 8h16a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1v-4a1 1 0 011-1zm2-5a1 1 0 100 2 1 1 0 000-2zm0 8a1 1 0 100 2 1 1 0 000-2z"/>
+                </svg>
+                当前服务器：{currentServer.replace(/^https?:\/\//, '')} · 切换
+              </button>
+            ) : (
+              <div className="auth-server-panel">
+                <div className="auth-server-title">服务器地址（IP 或域名）</div>
+                <input
+                  className="auth-server-input"
+                  value={serverInput}
+                  onChange={e => { setServerInput(e.target.value); setServerTest(null); }}
+                  placeholder="https://example.com"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                />
+                {serverTest && (
+                  <div className="auth-server-result" style={{ color: serverTest.ok ? '#07C160' : '#FF7575' }}>
+                    {serverTest.msg}
+                  </div>
+                )}
+                <div className="auth-server-btns">
+                  <button type="button" onClick={testServer} disabled={serverBusy} className="auth-server-btn ghost">
+                    {serverBusy ? '检测中…' : '测试连接'}
+                  </button>
+                  <button type="button" onClick={saveServer} className="auth-server-btn primary">保存并切换</button>
+                </div>
+                <button type="button" className="auth-server-cancel" onClick={() => { setShowServer(false); setServerInput(currentServer); setServerTest(null); }}>取消</button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

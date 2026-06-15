@@ -40,4 +40,16 @@ const uploadCredentialLimiter = rateLimit({
   validate: { xForwardedForHeader: false },
 });
 
-module.exports = { loginLimiter, registerLimiter, sendMsgLimiter, uploadCredentialLimiter };
+// 免密切换账号：单 IP 每分钟 10 次（限暴力尝试，无需断然封禁）
+const switchLimiter = rateLimit({
+  ...base, windowMs: 60 * 1000, max: 10,
+  message: json('切换账号过于频繁，请稍后再试'),
+});
+
+// forget（移除设备账号）：单 IP 每分钟 5 次
+const forgetLimiter = rateLimit({
+  ...base, windowMs: 60 * 1000, max: 5,
+  message: json('操作过于频繁，请稍后再试'),
+});
+
+module.exports = { loginLimiter, registerLimiter, sendMsgLimiter, uploadCredentialLimiter, switchLimiter, forgetLimiter };

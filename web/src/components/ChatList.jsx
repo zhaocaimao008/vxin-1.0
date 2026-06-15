@@ -116,6 +116,7 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
     if (conv.lastMessageType === 'voice') return '[语音]';
     if (conv.lastMessageType === 'file') return '[文件]';
     if (conv.lastMessageType === 'contact_card') return '[名片]';
+    if (conv.lastMessageType === 'red_packet') return '[红包]';
     if (conv.type === 'group' && conv.lastSenderName && conv.lastSenderName !== user?.username)
       return `${conv.lastSenderName}: ${conv.lastMessage}`;
     return conv.lastMessage;

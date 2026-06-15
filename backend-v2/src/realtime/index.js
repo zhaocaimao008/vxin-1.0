@@ -16,11 +16,13 @@ const registerTyping  = require('./handlers/typing');
 const registerCall    = require('./handlers/call');
 
 module.exports = function setupRealtime(io, app) {
-  // ── 握手鉴权（Cookie-only）──────────────────────────────────
+  // ── 握手鉴权（Cookie 优先，Electron 降级到 auth.token）──────
   io.use((socket, next) => {
     const cookieHeader = socket.handshake.headers.cookie || '';
     const match = cookieHeader.match(new RegExp(`${config.cookieName}=([^;]+)`));
-    const token = match ? decodeURIComponent(match[1]) : null;
+    const cookieToken = match ? decodeURIComponent(match[1]) : null;
+    const bearerToken = socket.handshake.auth?.token || null;
+    const token = cookieToken || bearerToken;
     if (!token) return next(new Error('未授权'));
     try {
       socket.user = jwt.verify(token, config.jwtSecret);

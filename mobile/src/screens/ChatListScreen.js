@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import { useSocket } from '../contexts/SocketContext';
+import { mediaUrl } from '../config';
 
 const C = {
   nav: '#1A2033',
@@ -31,7 +32,7 @@ function Avatar({ src, name, size = 46 }) {
   for (let i = 0; i < (name || '').length; i++) hash = (name.charCodeAt(i) + ((hash << 5) - hash));
   const bg = colors[Math.abs(hash) % colors.length];
   const letter = (name || '?')[0].toUpperCase();
-  if (src) return <Image source={{ uri: src }} style={{ width: size, height: size, borderRadius: C.radius }} />;
+  if (src) return <Image source={{ uri: mediaUrl(src) }} style={{ width: size, height: size, borderRadius: C.radius }} />;
   return (
     <View style={{ width: size, height: size, borderRadius: C.radius, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
       <Text style={{ color: '#fff', fontSize: size * 0.4, fontWeight: '600' }}>{letter}</Text>
@@ -58,6 +59,8 @@ function previewText(conv) {
   if (conv.lastMessageType === 'image') return '[图片]';
   if (conv.lastMessageType === 'file') return '[文件]';
   if (conv.lastMessageType === 'voice') return '[语音]';
+  if (conv.lastMessageType === 'red_packet') return '[红包]';
+  if (conv.lastMessageType === 'contact_card' || conv.lastMessageType === 'contact') return '[名片]';
   return conv.lastMessage || '';
 }
 
@@ -87,6 +90,9 @@ export default function ChatListScreen() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [contacts, setContacts] = useState([]);
+  const [msgResults, setMsgResults] = useState([]);
+  const [searchingMsg, setSearchingMsg] = useState(false);
   const navigation = useNavigation();
   const { socket } = useSocket();
   const convMapRef = useRef({});
@@ -134,7 +140,7 @@ export default function ChatListScreen() {
         }
         const updated = {
           ...prev[idx],
-          lastMessage: msg.type === 'image' ? '[图片]' : msg.type === 'file' ? '[文件]' : msg.content,
+          lastMessage: msg.type === 'image' ? '[图片]' : msg.type === 'file' ? '[文件]' : msg.type === 'red_packet' ? '[红包]' : msg.content,
           lastMessageType: msg.type,
           lastTime: msg.created_at || Math.floor(Date.now() / 1000),
           unreadCount: (prev[idx].unreadCount || 0) + 1,
@@ -162,6 +168,45 @@ export default function ChatListScreen() {
     setConversations(prev => prev.map(c => c.id === conv.id ? { ...c, unreadCount: 0 } : c));
     navigation.navigate('Chat', { conversation: conv });
   };
+
+  // 全局搜索：联系人本地过滤 + 历史消息走接口（去抖 250ms）
+  useEffect(() => {
+    if (!search.trim() && contacts.length === 0) {
+      axios.get('/api/users/contacts').then(r => setContacts(r.data || [])).catch(() => {});
+    }
+  }, [search]);
+
+  useEffect(() => {
+    const q = search.trim();
+    if (!q) { setMsgResults([]); setSearchingMsg(false); return; }
+    setSearchingMsg(true);
+    const t = setTimeout(() => {
+      axios.get(`/api/messages/search?q=${encodeURIComponent(q)}&limit=20`)
+        .then(r => setMsgResults(r.data.results || []))
+        .catch(() => setMsgResults([]))
+        .finally(() => setSearchingMsg(false));
+    }, 250);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const openContact = async (c) => {
+    try {
+      const { data } = await axios.post('/api/messages/conversation/private', { userId: c.id });
+      navigation.navigate('Chat', { conversation: { id: data.conversationId, type: 'private', name: c.remark || c.username, avatar: c.avatar, otherUser: c } });
+    } catch (_) {}
+  };
+
+  const openMsgLocation = (m) => {
+    navigation.navigate('Chat', { conversation: { id: m.conversation_id, type: m.convType, name: m.convName, avatar: m.avatar || '', scrollToId: m.id } });
+  };
+
+  const q = search.trim().toLowerCase();
+  const matchedContacts = q ? contacts.filter(c =>
+    (c.remark || '').toLowerCase().includes(q) ||
+    (c.username || '').toLowerCase().includes(q) ||
+    (c.wechat_id || '').toLowerCase().includes(q)
+  ) : [];
+  const matchedGroups = q ? conversations.filter(c => c.type === 'group' && (c.name || '').toLowerCase().includes(q)) : [];
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
@@ -234,6 +279,25 @@ export default function ChatListScreen() {
         <View style={styles.loadingWrap}>
           <ActivityIndicator color={C.green} size="large" />
         </View>
+      ) : q ? (
+        /* ── 全局搜索结果 ── */
+        <FlatList
+          keyExtractor={(item) => item._key}
+          data={[
+            ...matchedContacts.map(c => ({ _key: 'c' + c.id, _kind: 'contact', data: c })),
+            ...matchedGroups.map(g => ({ _key: 'g' + g.id, _kind: 'group', data: g })),
+            ...msgResults.map(m => ({ _key: 'm' + m.id, _kind: 'msg', data: m })),
+          ]}
+          renderItem={({ item }) => (
+            <SearchRow item={item} q={q} onContact={openContact} onGroup={openChat} onMsg={openMsgLocation} />
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyWrap}>
+              <Text style={styles.emptyText}>{searchingMsg ? '搜索中…' : '没有找到相关结果'}</Text>
+            </View>
+          }
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+        />
       ) : (
         <FlatList
           data={filtered}
@@ -252,9 +316,7 @@ export default function ChatListScreen() {
               <View style={styles.emptyIcon}>
                 <Text style={styles.emptyIconText}>v</Text>
               </View>
-              <Text style={styles.emptyText}>
-                {search ? '没有匹配的会话' : '暂无会话\n开始和同事聊天吧'}
-              </Text>
+              <Text style={styles.emptyText}>暂无会话{'\n'}开始和同事聊天吧</Text>
             </View>
           }
           contentContainerStyle={filtered.length === 0 ? { flex: 1 } : null}
@@ -262,6 +324,39 @@ export default function ChatListScreen() {
         />
       )}
     </View>
+  );
+}
+
+// 搜索结果行（联系人/群聊/历史消息）
+function SearchRow({ item, q, onContact, onGroup, onMsg }) {
+  const { _kind, data } = item;
+  if (_kind === 'contact') {
+    return (
+      <TouchableOpacity style={styles.item} activeOpacity={0.72} onPress={() => onContact(data)}>
+        <Avatar src={data.avatar} name={data.remark || data.username} />
+        <View style={styles.info}><Text style={styles.name} numberOfLines={1}>{data.remark || data.username}</Text>
+          <Text style={styles.preview} numberOfLines={1}>联系人</Text></View>
+      </TouchableOpacity>
+    );
+  }
+  if (_kind === 'group') {
+    return (
+      <TouchableOpacity style={styles.item} activeOpacity={0.72} onPress={() => onGroup(data)}>
+        <Avatar src={data.avatar} name={data.name} />
+        <View style={styles.info}><Text style={styles.name} numberOfLines={1}>{data.name}</Text>
+          <Text style={styles.preview} numberOfLines={1}>群聊</Text></View>
+      </TouchableOpacity>
+    );
+  }
+  // msg
+  return (
+    <TouchableOpacity style={styles.item} activeOpacity={0.72} onPress={() => onMsg(data)}>
+      <Avatar src={data.senderAvatar} name={data.senderName} />
+      <View style={styles.info}>
+        <Text style={styles.name} numberOfLines={1}>{data.senderName}{data.convType === 'group' ? ` · ${data.convName}` : ''}</Text>
+        <Text style={styles.preview} numberOfLines={1}>{data.content}</Text>
+      </View>
+    </TouchableOpacity>
   );
 }
 

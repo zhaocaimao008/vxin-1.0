@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Alert, View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Switch, TextInput } from 'react-native';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import { getServerUrl, saveServerUrl } from '../config';
+import { getServerUrl, saveServerUrl, mediaUrl } from '../config';
 
 export default function SettingsScreen() {
-  const { user, token, logout } = useAuth();
+  const { user, token, logout, changeServer } = useAuth();
   const [page, setPage] = useState('main');
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [settings, setSettings] = useState({
@@ -21,7 +21,7 @@ export default function SettingsScreen() {
   });
   const qrSource = {
     uri: `${getServerUrl()}/api/users/me/qrcode`,
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,  // RN Image 支持 headers，QR 鉴权 OK
   };
   useEffect(() => {
     let alive = true;
@@ -111,7 +111,7 @@ export default function SettingsScreen() {
             <Section>
               <View style={styles.profile}>
                 {user?.avatar ? (
-                  <Image source={{ uri: user.avatar }} style={styles.avatar} />
+                  <Image source={{ uri: mediaUrl(user.avatar) }} style={styles.avatar} />
                 ) : (
                   <View style={styles.avatarFallback}>
                     <Text style={styles.avatarText}>{(user?.username || '?')[0].toUpperCase()}</Text>
@@ -214,9 +214,10 @@ export default function SettingsScreen() {
               onPress={async () => {
                 const url = serverInput.trim().replace(/\/$/, '');
                 if (!url.startsWith('http')) { Alert.alert('格式错误', '请以 http:// 或 https:// 开头'); return; }
-                await saveServerUrl(url);
-                axios.defaults.baseURL = url;
-                Alert.alert('已保存', '请重启 App 使新服务器地址生效', [{ text: '确定', onPress: () => setPage('main') }]);
+                Alert.alert('切换服务器', `将切换到 ${url}\n\n当前账号会自动退出，需要重新登录新服务器的账号。`, [
+                  { text: '取消', style: 'cancel' },
+                  { text: '确认切换', style: 'destructive', onPress: () => changeServer(url) },
+                ]);
               }}
             >
               <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>保存</Text>
@@ -237,7 +238,7 @@ export default function SettingsScreen() {
 
       <View style={styles.profile}>
         {user?.avatar ? (
-          <Image source={{ uri: user.avatar }} style={styles.avatar} />
+          <Image source={{ uri: mediaUrl(user.avatar) }} style={styles.avatar} />
         ) : (
           <View style={styles.avatarFallback}>
             <Text style={styles.avatarText}>{(user?.username || '?')[0].toUpperCase()}</Text>
@@ -267,7 +268,7 @@ export default function SettingsScreen() {
           onPress={() => {
             Alert.alert('修改服务器地址', '重启 App 后生效', [
               { text: '取消', style: 'cancel' },
-              { text: '恢复默认', onPress: async () => { await saveServerUrl('https://dipsin.com'); Alert.alert('已恢复', '请重启 App'); } },
+              { text: '恢复默认', onPress: () => changeServer('https://dipsin.com') },
               { text: '手动输入', onPress: () => setPage('server') },
             ]);
           }}

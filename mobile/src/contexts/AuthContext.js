@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { loadServerUrl, getServerUrl } from '../config';
+import { loadServerUrl, saveServerUrl, getServerUrl } from '../config';
 
 // baseURL is set after loadServerUrl() resolves in useEffect
 
@@ -98,6 +98,16 @@ export const AuthProvider = ({ children }) => {
     else await setActiveAccount(null);
   };
 
+  const changeServer = async (newUrl) => {
+    const clean = newUrl.trim().replace(/\/$/, '');
+    try { await axios.post('/api/auth/logout'); } catch {}
+    await saveServerUrl(clean);
+    axios.defaults.baseURL = clean;
+    await setActiveAccount(null);
+    await AsyncStorage.removeItem(ACTIVE_KEY);
+    setAccounts([]);
+  };
+
   const updateUser = async (data) => {
     const updated = { ...user, ...data };
     setUser(updated);
@@ -107,7 +117,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, accounts, maxAccounts: MAX_ACCOUNTS, login, logout, switchAccount, removeAccount, updateUser, loading }}>
+    <AuthContext.Provider value={{ user, token, accounts, maxAccounts: MAX_ACCOUNTS, login, logout, switchAccount, removeAccount, updateUser, changeServer, loading }}>
       {children}
     </AuthContext.Provider>
   );
