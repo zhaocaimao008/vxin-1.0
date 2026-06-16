@@ -2,7 +2,7 @@
 const { v4: uuidv4 } = require('uuid');
 const config = require('../../config');
 const { readDb } = require('../../db/connection');
-const { write, writeAsync } = require('../../db/writer');
+const { writeAsync } = require('../../db/writer');
 const { pushNewMessage } = require('../../utils/push');
 const presence = require('../presence');
 
@@ -75,7 +75,7 @@ module.exports = function registerMessageHandler(io, socket) {
       reactions: [], replyTo: null,
     };
 
-    // 有 reply 时等 worker commit 后再装配 replyTo（消除竞态）；否则 fire-and-forget
+    // 一律等 worker commit 后再广播/回执，确保消息已落库（消除丢失与读后不一致）
     if (reply_to_id) {
       await writeAsync(
         'INSERT INTO messages (id,conversation_id,sender_id,type,content,reply_to_id,created_at) VALUES (?,?,?,?,?,?,?)',
@@ -87,7 +87,7 @@ module.exports = function registerMessageHandler(io, socket) {
         WHERE m.id = ? AND m.conversation_id = ?
       `).get(reply_to_id, conversationId) || null;
     } else {
-      write(
+      await writeAsync(
         'INSERT INTO messages (id,conversation_id,sender_id,type,content,reply_to_id,created_at) VALUES (?,?,?,?,?,?,?)',
         [id, conversationId, userId, type, content, null, created_at]
       );

@@ -15,8 +15,8 @@ function currentInviteCode() {
 function isValidInviteCode(code) {
   if (!/^\d{6}$/.test(code)) return false;
   const raw = currentInviteCode();
-  // 如果配置了邀请码，检查是否匹配；否则接受任何 6 位邀请码（用于测试）
-  if (!raw) return true;
+  // 必须先配置邀请码才能注册：未配置时一律拒绝（不再默认放行任意 6 位码）
+  if (!raw) return false;
   return raw.split(',').map(s => s.trim()).includes(code);
 }
 

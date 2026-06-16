@@ -116,7 +116,7 @@ export default function ChatScreen({ route, navigation }) {
     setLoadingMsgs(true);
     const baseUrl = getServerUrl();
     const token = axios.defaults.headers.common.Authorization;
-    axios.get(`/api/messages/conversation/${conversation.id}?limit=60`)
+    axios.get(`/api/messages/${conversation.id}?limit=60`)
       .then(r => {
         const data = r.data?.messages || r.data?.data || r.data || [];
         setMessages(Array.isArray(data) ? data : []);

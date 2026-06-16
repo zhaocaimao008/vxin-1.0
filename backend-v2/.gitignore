@@ -1,6 +1,7 @@
 node_modules
 .env
 .env.*
+.bot_tokens.json
 dist-electron/
 *.log
 wechat.db

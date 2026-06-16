@@ -284,7 +284,7 @@ function NotificationSettings({ onBack }) {
 
   // 初始化：从后端读取用户设置
   useEffect(() => {
-    axios.get('/api/users/settings').then(r => {
+    axios.get('/api/users/me/settings').then(r => {
       const s = r.data || {};
       setMessageNotify(s.message_notify !== 0);
       setPreview(s.detail_preview !== 0);
@@ -302,7 +302,7 @@ function NotificationSettings({ onBack }) {
       const payload = {
         [key]: value ? 1 : 0,
       };
-      await axios.put('/api/users/settings', payload);
+      await axios.put('/api/users/me/settings', payload);
       localStorage.setItem(key === 'message_notify' ? 'wc_lock_screen' : 'wc_notify_preview', value ? '1' : '0');
     } catch {}
     setSaving(false);
