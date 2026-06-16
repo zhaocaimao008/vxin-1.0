@@ -80,9 +80,13 @@ function userMoments(viewerId, targetId) {
   if (targetId !== viewerId && !isFriend(viewerId, targetId)) throw forbidden('仅好友可见');
   const rows = db.prepare(`
     SELECT * FROM moments
-    WHERE user_id=? AND (visibility != 'private' OR user_id=?)
+    WHERE user_id=? AND (
+      visibility='all'
+      OR (visibility='friends' AND ? IN (SELECT contact_id FROM contacts WHERE user_id=?))
+      OR user_id=?
+    )
     ORDER BY created_at DESC LIMIT 50
-  `).all(targetId, viewerId);
+  `).all(targetId, viewerId, targetId, viewerId);
   return rows.map(m => enrich(viewerId, m));
 }
 

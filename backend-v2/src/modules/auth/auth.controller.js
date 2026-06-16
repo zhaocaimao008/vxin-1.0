@@ -69,20 +69,19 @@ exports.refresh = asyncHandler(async (req, res) => {
 });
 
 exports.logout = asyncHandler(async (req, res) => {
-  // 将 token 加入黑名单
-  if (req.token && req.user?.exp) {
-    const { addToBlacklist } = require('../../utils/tokenBlacklist');
-    await addToBlacklist(req.token, req.user.exp);
-  }
-  // 退出即从本设备钱包移除当前账号（其余账号仍可丝滑切换）。
+  // 将 token 加入黑名单 + 从本设备钱包移除当前账号（其余账号仍可丝滑切换）。
   // logout 路由无 auth 中间件，故从 cookie 解码取 userId。
   try {
     const jwt = require('jsonwebtoken');
     const tok = req.cookies?.[config.cookieName];
     const walletId = req.cookies?.[config.walletCookie];
-    if (tok && walletId) {
+    if (tok) {
       const payload = jwt.verify(tok, config.jwtSecret);
-      svc.removeDeviceAccount(walletId, payload.id);
+      const { addToBlacklist } = require('../../utils/tokenBlacklist');
+      await addToBlacklist(tok, payload.exp);
+      if (walletId) {
+        svc.removeDeviceAccount(walletId, payload.id);
+      }
     }
   } catch (_) { /* token 无效就算了 */ }
   res.clearCookie(config.cookieName, { path: '/' });

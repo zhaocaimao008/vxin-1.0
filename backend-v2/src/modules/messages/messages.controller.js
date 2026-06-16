@@ -17,7 +17,7 @@ exports.missed = asyncHandler(async (req, res) =>
   res.json(svc.missed(io(req), req.user.id, parseInt(req.query.after) || 0)));
 
 exports.send = asyncHandler(async (req, res) =>
-  res.json(await svc.send(req.params.conversationId, req.user.id, req.body)));
+  res.json(await svc.send(io(req), req.params.conversationId, req.user.id, req.body)));
 
 exports.forward = asyncHandler(async (req, res) =>
   res.json({ success: true, sent: svc.forward(io(req), req.user.id, req.body) }));

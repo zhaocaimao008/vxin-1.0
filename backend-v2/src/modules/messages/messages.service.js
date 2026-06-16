@@ -110,9 +110,25 @@ function missed(io, userId, after) {
     `).all(...replyIds).forEach(r => replyMap.set(r.id, r));
   }
 
+  // 批量 reactions (fix missed() reactions bug)
+  const msgIds = messages.map(m => m.id).filter(Boolean);
+  const reactionsMap = new Map();
+  if (msgIds.length > 0) {
+    const rph = msgIds.map(() => '?').join(',');
+    db.prepare(`
+      SELECT message_id, emoji, COUNT(*) as count,
+             group_concat(user_id) as userIds
+      FROM message_reactions WHERE message_id IN (${rph})
+      GROUP BY message_id, emoji
+    `).all(...msgIds).forEach(r => {
+      if (!reactionsMap.has(r.message_id)) reactionsMap.set(r.message_id, []);
+      reactionsMap.get(r.message_id).push({ emoji: r.emoji, count: r.count, userIds: r.userIds.split(',') });
+    });
+  }
+
   const enriched = messages.map(msg => {
     msg.replyTo = msg.reply_to_id ? (replyMap.get(msg.reply_to_id) || null) : null;
-    msg.reactions = [];
+    msg.reactions = reactionsMap.get(msg.id) || [];
     return msg;
   });
 
@@ -137,7 +153,7 @@ function missed(io, userId, after) {
 }
 
 // ── HTTP 发送（fallback）────────────────────────────────────────
-async function send(convId, userId, { content, type = 'text', reply_to_id }) {
+async function send(io, convId, userId, { content, type = 'text', reply_to_id }) {
   if (!content) throw badRequest('消息不能为空');
   if (typeof content === 'string' && content.length > MAX) throw badRequest(`消息内容不能超过 ${MAX} 个字符`);
   requireMember(convId, userId, '无权发送');
@@ -149,7 +165,9 @@ async function send(convId, userId, { content, type = 'text', reply_to_id }) {
   await cache.delPattern(`search:*${userId}*`);  // 清除该用户的搜索缓存
   await cache.del(cache.keys.conversations(userId));  // 清除对话列表缓存
 
-  return buildMessage(id);
+  const msg = buildMessage(id);
+  if (io) io.to(convId).emit('new_message', msg);
+  return msg;
 }
 
 // ── 文件消息（本地上传后入库 + 广播）───────────────────────────

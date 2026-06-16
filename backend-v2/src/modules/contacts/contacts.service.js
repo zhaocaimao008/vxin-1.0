@@ -85,11 +85,15 @@ function listSentRequests(userId) {
 function handleRequest(io, userId, requestId, action) {
   const request = db.prepare('SELECT * FROM friend_requests WHERE id=? AND to_id=?').get(requestId, userId);
   if (!request) throw notFound('请求不存在');
-  db.prepare('UPDATE friend_requests SET status=? WHERE id=?').run(action, requestId);
+  db.transaction(() => {
+    db.prepare('UPDATE friend_requests SET status=? WHERE id=?').run(action, requestId);
+    if (action === 'accepted') {
+      const add = db.prepare('INSERT OR IGNORE INTO contacts (id,user_id,contact_id) VALUES (?,?,?)');
+      add.run(uuidv4(), request.from_id, request.to_id);
+      add.run(uuidv4(), request.to_id, request.from_id);
+    }
+  })();
   if (action === 'accepted') {
-    const add = db.prepare('INSERT OR IGNORE INTO contacts (id,user_id,contact_id) VALUES (?,?,?)');
-    add.run(uuidv4(), request.from_id, request.to_id);
-    add.run(uuidv4(), request.to_id, request.from_id);
     const accepter = db.prepare('SELECT id,username,avatar FROM users WHERE id=?').get(userId);
     if (io) io.to(`user_${request.from_id}`).emit('friend_request_accepted', { accepter });
   }

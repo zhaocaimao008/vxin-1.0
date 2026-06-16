@@ -1,10 +1,23 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Platform, PermissionsAndroid } from 'react-native';
 import {
   RTCPeerConnection, RTCSessionDescription, RTCIceCandidate,
   mediaDevices, MediaStream, RTCView,
 } from 'react-native-webrtc';
 import InCallManager from 'react-native-incall-manager';
+
+// Android 6+ 运行时权限：getUserMedia 前必须申请摄像头/麦克风，否则拿不到媒体流
+async function ensureCallPermissions(needCamera) {
+  if (Platform.OS !== 'android') return true;
+  try {
+    const perms = [PermissionsAndroid.PERMISSIONS.RECORD_AUDIO];
+    if (needCamera) perms.push(PermissionsAndroid.PERMISSIONS.CAMERA);
+    const res = await PermissionsAndroid.requestMultiple(perms);
+    return perms.every(p => res[p] === PermissionsAndroid.RESULTS.GRANTED);
+  } catch (_) {
+    return false;
+  }
+}
 
 const ICE_SERVERS = {
   iceServers: [
@@ -70,6 +83,7 @@ export default function CallScreen({ socket, user, call, onClose }) {
 
   // ── 建立 PC + 获取本地媒体 ─────────────────────────────────
   const initPC = useCallback(async () => {
+    await ensureCallPermissions(isVideo);
     let stream;
     try {
       stream = await mediaDevices.getUserMedia({
