@@ -5,6 +5,7 @@ dist/
 *.db
 *.db-shm
 *.db-wal
+*.db.bak*
 uploads/avatars/*
 uploads/files/*
 uploads/moments/*
