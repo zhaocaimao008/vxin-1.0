@@ -15,6 +15,7 @@ uploads/moments/*
 .DS_Store
 *.log
 backend/.bot_tokens.json
+**/.bot_tokens.json
 mobile/vxin.apk
 tests/test-reports/
 tests/node_modules/
