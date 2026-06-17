@@ -55,12 +55,13 @@ export default function Sidebar({ tab, onTabChange, badges = {} }) {
             const count = badges[key] || 0;
             return (
               <div
-              key={key}
-              className={`wc-sidebar-btn${tab === key ? ' active' : ''}`}
-              onClick={() => onTabChange(key)}
-              aria-label={label}
-              role="tab"
-              aria-selected={tab === key}
+                key={key}
+                className={`wc-sidebar-btn${tab === key ? ' active' : ''}`}
+                onClick={() => onTabChange(key)}
+                title={label}
+                aria-label={label}
+                role="tab"
+                aria-selected={tab === key}
               >
                 <div className="icon"><Icon /></div>
                 {count > 0 && (
