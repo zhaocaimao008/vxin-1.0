@@ -11,7 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
-import CallScreen from './CallScreen';
+import { useCall } from '../contexts/CallContext';
 import ForwardModal from '../components/ForwardModal';
 import { getServerUrl, mediaUrl } from '../config';
 import RedPacketModal from '../components/RedPacketModal';
@@ -74,7 +74,6 @@ export default function ChatScreen({ route, navigation }) {
   const [sending, setSending]         = useState(false);
   const [typingUsers, setTypingUsers] = useState([]);
   const [pinnedMsg, setPinnedMsg]     = useState(null);
-  const [activeCall, setActiveCall]   = useState(null);
   const [showEmoji, setShowEmoji]     = useState(false);
   const [lightbox, setLightbox]       = useState(null); // uri string
   const [reactionTarget, setReactionTarget] = useState(null); // msgId
@@ -92,6 +91,7 @@ export default function ChatScreen({ route, navigation }) {
   const isTypingRef = useRef(false);
   const { user } = useAuth();
   const { socket } = useSocket();
+  const { startCall: startGlobalCall } = useCall();
   const insets = useSafeAreaInsets();
 
   // Header
@@ -206,12 +206,6 @@ export default function ChatScreen({ route, navigation }) {
       });
     };
 
-    const onIncomingCall = ({ from, type, caller }) => {
-      if (from !== conversation.id && from !== conversation.otherUser?.id) return;
-      setActiveCall({ type, direction: 'incoming',
-        remoteUser: { id: from, name: caller?.name || caller?.username, avatar: caller?.avatar },
-        remoteId: from });
-    };
 
     socket.on('new_message', onNewMsg);
     socket.on('message_deleted', onRecalled);
@@ -227,7 +221,6 @@ export default function ChatScreen({ route, navigation }) {
     socket.on('message_pinned', onPinned);
     socket.on('message_unpinned', onUnpinned);
     socket.on('message_read', onRead);
-    socket.on('call:incoming', onIncomingCall);
 
     return () => {
       socket.off('new_message', onNewMsg);
@@ -239,7 +232,6 @@ export default function ChatScreen({ route, navigation }) {
       socket.off('message_pinned', onPinned);
     socket.off('message_unpinned', onUnpinned);
       socket.off('message_read', onRead);
-      socket.off('call:incoming', onIncomingCall);
     };
   }, [socket, conversation.id, user?.id]);
 
@@ -488,12 +480,14 @@ export default function ChatScreen({ route, navigation }) {
   const startCall = (type) => {
     const targetId = conversation.type === 'group' ? conversation.id : (conversation.otherUser?.id || conversation.partnerId || conversation.id);
     if (!targetId) return;
-    socket?.emit('call:request', { to: targetId, type, caller: { id: user.id, name: user.nickname || user.username, avatar: user.avatar } });
-    setActiveCall({ type, direction: 'outgoing',
+    startGlobalCall({
+      type,
+      remoteId: targetId,
+      caller: { id: user.id, name: user.nickname || user.username, avatar: user.avatar },
       remoteUser: conversation.type === 'group'
         ? { id: targetId, name: conversation.name }
         : { id: targetId, name: conversation.otherUser?.nickname || conversation.otherUser?.username || conversation.name, avatar: conversation.otherUser?.avatar },
-      remoteId: targetId });
+    });
   };
 
   // 打开红包：拉详情，未领且未领完则先领取，再展示详情
@@ -811,11 +805,6 @@ export default function ChatScreen({ route, navigation }) {
           {lightbox && <Image source={{ uri: mediaUrl(lightbox) }} style={S.lightboxImg} resizeMode="contain" />}
         </TouchableOpacity>
       </Modal>
-
-      {/* Call overlay */}
-      {activeCall && socket && (
-        <CallScreen socket={socket} user={user} call={activeCall} onClose={() => setActiveCall(null)} />
-      )}
 
       {/* Red packet modal */}
       <RedPacketModal

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { SocketProvider } from './src/contexts/SocketContext';
+import { CallProvider } from './src/contexts/CallContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
 class ErrorBoundary extends React.Component {
@@ -34,7 +35,9 @@ export default function App() {
       <SafeAreaProvider>
         <AuthProvider>
           <SocketProvider>
-            <AppNavigator />
+            <CallProvider>
+              <AppNavigator />
+            </CallProvider>
           </SocketProvider>
         </AuthProvider>
       </SafeAreaProvider>
