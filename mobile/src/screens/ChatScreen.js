@@ -159,34 +159,28 @@ export default function ChatScreen({ route, navigation }) {
       });
     };
 
-    const onRecalled = ({ messageId, conversationId }) => {
+    const onRecalled = ({ msgId, messageId, conversationId }) => {
       if (conversationId !== conversation.id) return;
+      const id = msgId ?? messageId;
       setMessages(prev => prev.map(m =>
-        String(m.id) === String(messageId) ? { ...m, recalled: true, content: '[消息已撤回]' } : m
+        String(m.id) === String(id) ? { ...m, recalled: true, content: '[消息已撤回]' } : m
       ));
     };
 
-    const onEdited = (msg) => {
-      if ((msg.conversationId || msg.conversation_id) !== conversation.id) return;
-      setMessages(prev => prev.map(m => String(m.id) === String(msg.id) ? { ...m, ...msg } : m));
+    const onEdited = ({ msgId, content, conversationId, conversation_id }) => {
+      if ((conversationId || conversation_id) !== conversation.id) return;
+      setMessages(prev => prev.map(m => String(m.id) === String(msgId) ? { ...m, content, edited: true } : m));
     };
 
-    const onReaction = (data) => {
-      if (data.conversationId !== conversation.id) return;
-      setMessages(prev => prev.map(m => {
-        if (String(m.id) !== String(data.messageId)) return m;
-        const reactions = (m.reactions || []).filter(r => !(r.userId === data.userId && r.emoji === data.emoji));
-        if (data.action !== 'remove') reactions.push({ userId: data.userId, emoji: data.emoji });
-        return { ...m, reactions };
-      }));
+    const onReaction = ({ msgId, reactions }) => {
+      // 后端发送整条消息重新聚合后的 reactions 数组，直接替换即可
+      setMessages(prev => prev.map(m => String(m.id) === String(msgId) ? { ...m, reactions: reactions || [] } : m));
     };
 
-    const onTyping = ({ userId, conversationId, isTyping: on, username }) => {
+    const onTyping = ({ userId, conversationId }) => {
+      // 后端 typing 事件即"开始输入"（无 isTyping 字段）；用户名在渲染时解析
       if (conversationId !== conversation.id || userId === user?.id) return;
-      setTypingUsers(prev => on
-        ? (prev.find(u => u.id === userId) ? prev : [...prev, { id: userId, username }])
-        : prev.filter(u => u.id !== userId)
-      );
+      setTypingUsers(prev => prev.find(u => u.id === userId) ? prev : [...prev, { id: userId }]);
     };
 
     const onPinned = ({ msgId, convId, content, type }) => {
@@ -196,13 +190,20 @@ export default function ChatScreen({ route, navigation }) {
       if (convId === conversation.id) setPinnedMsg(prev => (prev && String(prev.id) === String(msgId) ? null : prev));
     };
 
-    const onRead = (data) => {
-      if (data.conversationId !== conversation.id) return;
-      setMessages(prev => prev.map(m =>
-        String(m.id) === String(data.messageId)
-          ? { ...m, readBy: [...(m.readBy || []), data.userId] }
-          : m
-      ));
+    const onRead = ({ userId: readerId, conversationId, lastReadMessageId }) => {
+      // 后端发 lastReadMessageId：将该消息及之前我发的消息都标记为对方已读
+      if (conversationId !== conversation.id || !readerId || readerId === user?.id) return;
+      setMessages(prev => {
+        const idx = prev.findIndex(m => String(m.id) === String(lastReadMessageId));
+        if (idx < 0) return prev;
+        return prev.map((m, i) => {
+          const mine = String(m.sender_id || m.senderId) === String(user?.id);
+          if (i <= idx && mine && !(m.readBy || []).includes(readerId)) {
+            return { ...m, readBy: [...(m.readBy || []), readerId] };
+          }
+          return m;
+        });
+      });
     };
 
     const onIncomingCall = ({ from, type, caller }) => {
@@ -311,13 +312,13 @@ export default function ChatScreen({ route, navigation }) {
         method: 'PUT', headers: { 'Content-Type': fileObj.type }, body: blob,
       });
       if (!putResp.ok) throw new Error(`上传失败 HTTP ${putResp.status}`);
-      socket?.emit('send_message', {
+      // 媒体消息走 send_file_message（send_message 只接受 text/contact_card 并丢弃 file_url）
+      socket?.emit('send_file_message', {
         conversationId: conversation.id,
         type: msgType,
-        content: cred.publicUrl,
-        fileUrl: cred.publicUrl,
-        fileName: fileObj.name,
-        fileSize: fileObj.size,
+        file_url: cred.publicUrl,
+        content: fileObj.name,
+        reply_to_id: replyTo?.id || null,
       });
     } catch (e) {
       // 云存储未配置(503)等：回退到后端本地直传（后端负责入库+广播）
@@ -382,7 +383,7 @@ export default function ChatScreen({ route, navigation }) {
     if (!socket) return;
     if (!isTypingRef.current) {
       isTypingRef.current = true;
-      socket.emit('typing', { conversationId: conversation.id, isTyping: true });
+      socket.emit('typing', { conversationId: conversation.id });
     }
     clearTimeout(typingTimer.current);
     typingTimer.current = setTimeout(stopTyping, 3000);
@@ -391,7 +392,7 @@ export default function ChatScreen({ route, navigation }) {
   const stopTyping = () => {
     if (isTypingRef.current && socket) {
       isTypingRef.current = false;
-      socket.emit('typing', { conversationId: conversation.id, isTyping: false });
+      socket.emit('stop_typing', { conversationId: conversation.id });
     }
     clearTimeout(typingTimer.current);
   };
@@ -594,12 +595,11 @@ export default function ChatScreen({ route, navigation }) {
       }
     };
 
-    // Reactions display
+    // Reactions display（后端为预聚合结构：{ emoji, count, userIds[] }）
     const grouped = {};
     (msg.reactions || []).forEach(r => {
-      if (!grouped[r.emoji]) grouped[r.emoji] = { count: 0, mine: false };
-      grouped[r.emoji].count++;
-      if (String(r.userId) === String(user?.id)) grouped[r.emoji].mine = true;
+      const ids = (r.userIds || []).map(String);
+      grouped[r.emoji] = { count: r.count ?? ids.length, mine: ids.includes(String(user?.id)) };
     });
 
     return (
@@ -693,7 +693,7 @@ export default function ChatScreen({ route, navigation }) {
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
           ListFooterComponent={typingUsers.length > 0 ? (
             <View style={S.typingRow}>
-              <Text style={S.typingText}>{typingUsers.map(u => u.username).join(', ')} 正在输入…</Text>
+              <Text style={S.typingText}>{typingUsers.map(u => { const mm = members.find(x => String(x.id) === String(u.id)); return mm?.nickname || mm?.username || '对方'; }).join(', ')} 正在输入…</Text>
             </View>
           ) : null}
         />
