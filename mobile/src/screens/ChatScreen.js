@@ -504,7 +504,9 @@ export default function ChatScreen({ route, navigation }) {
       let { data: detail } = await axios.get(`/api/redpackets/${packetId}`);
       let justClaimed = false;
       const finished = detail.claimed_count >= detail.total_count;
-      if (!detail.myClaim && !finished) {
+      const isSender = String(detail.sender_id) === String(user?.id);
+      // 发送者不领自己的红包（仅看详情）；未领且未领完才自动领取
+      if (!detail.myClaim && !finished && !isSender) {
         try {
           await axios.post(`/api/redpackets/${packetId}/claim`);
           justClaimed = true;
@@ -840,6 +842,11 @@ export default function ChatScreen({ route, navigation }) {
                 <View style={{ alignItems: 'center', paddingVertical: 12 }}>
                   {redPacketDetail.justClaimed && <Text style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>领取成功</Text>}
                   <Text style={S.rpAmount}>{redPacketDetail.myClaim.amount} <Text style={{ fontSize: 14 }}>金币</Text></Text>
+                </View>
+              ) : String(redPacketDetail?.sender_id) === String(user?.id) ? (
+                <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+                  <Text style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>你发出的红包</Text>
+                  <Text style={S.rpAmount}>{redPacketDetail?.total_amount} <Text style={{ fontSize: 14 }}>金币</Text></Text>
                 </View>
               ) : (
                 <Text style={S.rpEmpty}>

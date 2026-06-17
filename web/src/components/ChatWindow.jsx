@@ -577,7 +577,9 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       let { data: detail } = await axios.get(`/api/redpackets/${packetId}`);
       let justClaimed = false;
       const finished = detail.claimed_count >= detail.total_count;
-      if (!detail.myClaim && !finished) {
+      const isSender = String(detail.sender_id) === String(user.id);
+      // 发送者不领自己的红包（仅看详情）
+      if (!detail.myClaim && !finished && !isSender) {
         try {
           await axios.post(`/api/redpackets/${packetId}/claim`);
           justClaimed = true;
@@ -1956,6 +1958,12 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                 <div style={{ textAlign: 'center', padding: '14px 0 10px' }}>
                   {redPacketDetail.justClaimed && <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>领取成功</div>}
                   <span style={{ fontSize: 30, fontWeight: 700, color: '#F4511E' }}>{redPacketDetail.myClaim.amount}</span>
+                  <span style={{ fontSize: 14, color: '#F4511E', marginLeft: 4 }}>金币</span>
+                </div>
+              ) : String(redPacketDetail.sender_id) === String(user.id) ? (
+                <div style={{ textAlign: 'center', padding: '14px 0 10px' }}>
+                  <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>你发出的红包</div>
+                  <span style={{ fontSize: 30, fontWeight: 700, color: '#F4511E' }}>{redPacketDetail.total_amount}</span>
                   <span style={{ fontSize: 14, color: '#F4511E', marginLeft: 4 }}>金币</span>
                 </div>
               ) : (
