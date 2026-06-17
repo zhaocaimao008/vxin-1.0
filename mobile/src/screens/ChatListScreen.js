@@ -59,6 +59,7 @@ function previewText(conv) {
   if (conv.lastMessageType === 'image') return '[图片]';
   if (conv.lastMessageType === 'file') return '[文件]';
   if (conv.lastMessageType === 'voice') return '[语音]';
+  if (conv.lastMessageType === 'video') return '[视频]';
   if (conv.lastMessageType === 'red_packet') return '[红包]';
   if (conv.lastMessageType === 'contact_card' || conv.lastMessageType === 'contact') return '[名片]';
   return conv.lastMessage || '';

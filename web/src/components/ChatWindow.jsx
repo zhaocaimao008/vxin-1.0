@@ -1257,7 +1257,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                 <div className="wc-msg-reply">
                   <div className="wc-msg-reply-name">{msg.replyTo.senderName}</div>
                   <div className="wc-msg-reply-text">
-                    {msg.replyTo.type === 'image' ? '[图片]' : msg.replyTo.type === 'voice' ? '[语音]' : msg.replyTo.content}
+                    {msg.replyTo.type === 'image' ? '[图片]' : msg.replyTo.type === 'voice' ? '[语音]' : msg.replyTo.type === 'video' ? '[视频]' : msg.replyTo.type === 'red_packet' ? '[红包]' : msg.replyTo.type === 'file' ? '[文件]' : msg.replyTo.content}
                   </div>
                 </div>
               )}
@@ -1285,6 +1285,14 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
               )}
               {msg.type === 'voice' && (
                 <VoicePlayer url={mediaUrl(msg.file_url)} />
+              )}
+              {msg.type === 'video' && (
+                <video
+                  src={mediaUrl(msg.file_url)}
+                  controls
+                  preload="metadata"
+                  style={{ maxWidth: 240, maxHeight: 320, borderRadius: 8, display: 'block', background: '#000' }}
+                />
               )}
               {msg.type === 'file' && (
                 <a href={mediaUrl(msg.file_url)} download={msg.content} className="wc-msg-file" style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -1688,7 +1696,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="wc-reply-bar-name">回复 {replyTo.senderName}</div>
             <div className="wc-reply-bar-text">
-              {replyTo.type === 'image' ? '[图片]' : replyTo.type === 'voice' ? '[语音]' : replyTo.content}
+              {replyTo.type === 'image' ? '[图片]' : replyTo.type === 'voice' ? '[语音]' : replyTo.type === 'video' ? '[视频]' : replyTo.type === 'red_packet' ? '[红包]' : replyTo.type === 'file' ? '[文件]' : replyTo.content}
             </div>
           </div>
           <button className="wc-reply-bar-close" onClick={() => setReplyTo(null)}>✕</button>

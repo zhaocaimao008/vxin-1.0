@@ -102,6 +102,8 @@ export default function ForwardModal({ message, onClose }) {
     if (message.type === 'image') return '[图片]';
     if (message.type === 'file') return `[文件] ${message.content}`;
     if (message.type === 'voice') return '[语音]';
+    if (message.type === 'video') return '[视频]';
+    if (message.type === 'red_packet') return '[红包]';
     return message.content?.slice(0, 50) + (message.content?.length > 50 ? '...' : '');
   };
 

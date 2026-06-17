@@ -3,7 +3,7 @@ import {
   View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet,
   Image, KeyboardAvoidingView, Platform, ActivityIndicator,
   ActionSheetIOS, Alert, Clipboard, Pressable, Modal, ScrollView,
-  Dimensions,
+  Dimensions, Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import axios from 'axios';
@@ -557,6 +557,15 @@ export default function ChatScreen({ route, navigation }) {
               <Text style={[S.voiceDur, isMe && { color: 'rgba(255,255,255,.9)' }]}>{msg.duration || 0}"</Text>
             </View>
           );
+        case 'video': {
+          const vurl = mediaUrl(msg.fileUrl || msg.file_url || msg.content);
+          return (
+            <TouchableOpacity activeOpacity={0.85} onPress={() => vurl && Linking.openURL(vurl)} style={S.videoBox}>
+              <View style={S.videoPlay}><Text style={{ fontSize: 22, color: '#fff', marginLeft: 3 }}>▶</Text></View>
+              <Text style={[S.videoLabel, isMe && { color: 'rgba(255,255,255,.9)' }]}>点击播放视频</Text>
+            </TouchableOpacity>
+          );
+        }
         case 'sticker':
           return <Image source={{ uri: mediaUrl(msg.fileUrl || msg.content) }} style={S.stickerImg} resizeMode="contain" />;
         case 'contact':
@@ -610,7 +619,7 @@ export default function ChatScreen({ route, navigation }) {
               <View style={[S.quoteBox, isMe ? S.quoteBoxMe : S.quoteBoxOther]}>
                 <Text style={S.quoteName} numberOfLines={1}>{msg.replyTo.senderNickname || msg.replyTo.senderName}</Text>
                 <Text style={S.quoteText} numberOfLines={1}>
-                  {msg.replyTo.type === 'image' ? '[图片]' : msg.replyTo.type === 'voice' ? '[语音]' : (msg.replyTo.content || '')}
+                  {msg.replyTo.type === 'image' ? '[图片]' : msg.replyTo.type === 'voice' ? '[语音]' : msg.replyTo.type === 'video' ? '[视频]' : msg.replyTo.type === 'red_packet' ? '[红包]' : (msg.replyTo.content || '')}
                 </Text>
               </View>
             )}
@@ -915,6 +924,9 @@ const S = StyleSheet.create({
   voiceDur:   { fontSize: 13, color: C.text },
   // Sticker
   stickerImg: { width: 100, height: 100 },
+  videoBox:   { width: 160, height: 110, borderRadius: 8, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  videoPlay:  { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,.25)', alignItems: 'center', justifyContent: 'center' },
+  videoLabel: { fontSize: 11, color: 'rgba(255,255,255,.85)' },
   // Contact card
   contactCard:{ flexDirection: 'row', alignItems: 'center', gap: 10, minWidth: 150 },
   contactName:{ fontSize: 14, fontWeight: '600', color: C.text },

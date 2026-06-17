@@ -114,6 +114,7 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
     if (!conv.lastMessage) return '';
     if (conv.lastMessageType === 'image') return '[图片]';
     if (conv.lastMessageType === 'voice') return '[语音]';
+    if (conv.lastMessageType === 'video') return '[视频]';
     if (conv.lastMessageType === 'file') return '[文件]';
     if (conv.lastMessageType === 'contact_card') return '[名片]';
     if (conv.lastMessageType === 'red_packet') return '[红包]';
