@@ -213,10 +213,16 @@ export default function ChatScreen({ route, navigation }) {
     };
 
     socket.on('new_message', onNewMsg);
-    socket.on('message_recalled', onRecalled);
+    socket.on('message_deleted', onRecalled);
     socket.on('message_edited', onEdited);
     socket.on('message_reaction', onReaction);
+    const onStopTyping = ({ userId, conversationId }) => {
+      if (conversationId !== conversation.id || userId === user?.id) return;
+      setTypingUsers(prev => prev.filter(u => u.id !== userId));
+    };
+
     socket.on('typing', onTyping);
+    socket.on('stop_typing', onStopTyping);
     socket.on('message_pinned', onPinned);
     socket.on('message_unpinned', onUnpinned);
     socket.on('message_read', onRead);
@@ -224,10 +230,11 @@ export default function ChatScreen({ route, navigation }) {
 
     return () => {
       socket.off('new_message', onNewMsg);
-      socket.off('message_recalled', onRecalled);
+      socket.off('message_deleted', onRecalled);
       socket.off('message_edited', onEdited);
       socket.off('message_reaction', onReaction);
       socket.off('typing', onTyping);
+      socket.off('stop_typing', onStopTyping);
       socket.off('message_pinned', onPinned);
     socket.off('message_unpinned', onUnpinned);
       socket.off('message_read', onRead);

@@ -40,9 +40,9 @@ export default function Sidebar({ tab, onTabChange, badges = {} }) {
   return (
     <div className="wc-sidebar">
       {/* 头像 */}
-      <div className="wc-sidebar-avatar" onClick={() => onTabChange('profile')} title={user?.username || ''}>
+      <div className="wc-sidebar-avatar" onClick={() => onTabChange('profile')} title={user?.username || ''} role="tab" aria-label="个人资料" aria-selected={tab === 'profile'}>
         {user?.avatar
-          ? <img src={mediaUrl(user.avatar)} alt="" className="wc-sidebar-avatar-img" />
+          ? <img src={mediaUrl(user.avatar)} alt={`${user?.username || ''} 头像`} className="wc-sidebar-avatar-img" />
           : <div className="wc-sidebar-avatar-inner">{letter}</div>
         }
       </div>
@@ -55,10 +55,12 @@ export default function Sidebar({ tab, onTabChange, badges = {} }) {
             const count = badges[key] || 0;
             return (
               <div
-                key={key}
-                className={`wc-sidebar-btn${tab === key ? ' active' : ''}`}
-                onClick={() => onTabChange(key)}
-                title={label}
+              key={key}
+              className={`wc-sidebar-btn${tab === key ? ' active' : ''}`}
+              onClick={() => onTabChange(key)}
+              aria-label={label}
+              role="tab"
+              aria-selected={tab === key}
               >
                 <div className="icon"><Icon /></div>
                 {count > 0 && (

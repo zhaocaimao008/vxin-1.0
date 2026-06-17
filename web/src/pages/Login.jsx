@@ -114,13 +114,14 @@ export default function Login() {
         {/* 登录表单 */}
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className={`auth-field ${focusedField === 'phone' ? 'focused' : ''} ${phone ? 'has-value' : ''}`}>
-            <label className="auth-field-label">手机号</label>
+            <label className="auth-field-label" htmlFor="login-phone">手机号</label>
             <div className="auth-field-input-wrap">
-              <svg className="auth-field-icon" viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <svg className="auth-field-icon" viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
                 <rect x="3" y="1" width="14" height="18" rx="3"/>
                 <line x1="8" y1="15" x2="12" y2="15"/>
               </svg>
               <input
+                id="login-phone"
                 className="auth-field-input"
                 type="tel"
                 placeholder="请输入手机号"
@@ -134,13 +135,14 @@ export default function Login() {
           </div>
 
           <div className={`auth-field ${focusedField === 'password' ? 'focused' : ''} ${password ? 'has-value' : ''}`}>
-            <label className="auth-field-label">密码</label>
+            <label className="auth-field-label" htmlFor="login-password">密码</label>
             <div className="auth-field-input-wrap">
-              <svg className="auth-field-icon" viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <svg className="auth-field-icon" viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
                 <rect x="3" y="9" width="14" height="10" rx="2"/>
                 <path d="M6 9V6a4 4 0 018 0v3"/>
               </svg>
               <input
+                id="login-password"
                 className="auth-field-input"
                 type="password"
                 placeholder="请输入密码"

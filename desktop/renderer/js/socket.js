@@ -44,7 +44,7 @@ export function connectSocket() {
     stateEmit('socket:message', msg);
   });
 
-  socket.on('message_recalled', ({ messageId, conversationId }) => {
+  socket.on('message_deleted', ({ messageId, conversationId }) => {
     recallMessage(conversationId, messageId);
     stateEmit('socket:recalled', { messageId, conversationId });
   });
@@ -66,12 +66,25 @@ export function connectSocket() {
     setTyping(conversationId, userId, isTyping);
   });
 
+  socket.on('stop_typing', ({ userId, conversationId }) => {
+    setTyping(conversationId, userId, false);
+  });
+
   socket.on('user_online', (data) => stateEmit('socket:online', data));
   socket.on('user_offline', (data) => stateEmit('socket:offline', data));
 
   socket.on('group_updated', (data) => stateEmit('socket:group_updated', data));
 
-  socket.on('pinned_message', ({ conversationId, message }) => {
+  socket.on('new_conversation', (conv) => {
+    upsertConversation(conv);
+    stateEmit('socket:new_conv', conv);
+  });
+
+  socket.on('friend_request_accepted', (data) => {
+    stateEmit('socket:friend_accepted', data);
+  });
+
+  socket.on('message_pinned', ({ conversationId, message }) => {
     state.pinnedMessages[conversationId] = message;
     stateEmit('socket:pinned', { conversationId, message });
   });

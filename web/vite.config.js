@@ -14,11 +14,11 @@ export default defineConfig(({ mode }) => ({
   // viteSingleFile 将所有 JS/CSS 内联进 index.html，base 主要影响非内联资源
   base: isDesktop(mode) ? './' : '/',
 
-  // ── esbuild：生产/desktop 环境剥离所有 console.* / debugger ──
-  esbuild: {
-    drop: (mode === 'production' || isDesktop(mode)) ? ['console', 'debugger'] : [],
+  // ── oxc (Vite 8+)：生产/desktop 环境剥离所有 console.* / debugger ──
+  oxc: (mode === 'production' || isDesktop(mode)) ? {
+    drop: ['console', 'debugger'],
     legalComments: 'none',
-  },
+  } : undefined,
 
   build: {
     sourcemap:             false,

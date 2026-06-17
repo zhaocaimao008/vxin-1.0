@@ -22,8 +22,14 @@ export default function App() {
   return (
     <SettingsProvider>
     <AuthProvider>
+      {/* ── Skip-link：无障碍跳过导航 ── */}
+      <a href="#main-content" className="skip-link" style={{
+        position: 'absolute', left: '-9999px', zIndex: 9999,
+        padding: '8px 16px', background: '#1677FF', color: '#fff',
+        fontSize: 14, textDecoration: 'none', borderRadius: '0 0 4px 0',
+      }}>跳过导航，直达内容</a>
       {isElectron && <ElectronTitlebar />}
-      <div style={isElectron ? { paddingTop: 30, height: '100vh', boxSizing: 'border-box', overflow: 'hidden' } : {}}>
+      <div id="main-content" style={isElectron ? { paddingTop: 30, height: '100vh', boxSizing: 'border-box', overflow: 'hidden' } : {}}>
         <Router>
           <Routes>
             <Route path="/login" element={<Login />} />

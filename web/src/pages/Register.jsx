@@ -81,10 +81,11 @@ export default function Register() {
 
           {fields.map(f => (
             <div key={f.key} className={`auth-field ${focusedField === f.key ? 'focused' : ''} ${form[f.key] ? 'has-value' : ''}`}>
-              <label className="auth-field-label">{f.label}</label>
+              <label className="auth-field-label" htmlFor={`reg-${f.key}`}>{f.label}</label>
               <div className="auth-field-input-wrap">
-                <span className="auth-field-icon">{f.icon}</span>
+                <span className="auth-field-icon" aria-hidden="true">{f.icon}</span>
                 <input
+                  id={`reg-${f.key}`}
                   className="auth-field-input"
                   type={f.type}
                   placeholder={f.placeholder}

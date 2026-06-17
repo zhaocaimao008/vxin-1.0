@@ -9,31 +9,18 @@
   --green-hover:     #06AE56;
   --link-color:      #1677FF;   /* 企业微信蓝色链接 */
 
-  /* ── Surface（企业微信 Light Mode）── */
-  --bg-nav:          #1A2033;   /* 侧边栏：深藏青，企业感强 */
-  --bg-panel:        #F7F8FA;   /* 会话面板：企业微信标准浅灰 */
-  --bg-panel-header: #F7F8FA;
-  --bg-chat:         #FFFFFF;
-  --bg-chat-header:  #FFFFFF;   /* 聊天顶栏：纯白更干净 */
-  --bg-input:        #FFFFFF;
-  --bg-search:       #ECEEF2;   /* 搜索栏：略带蓝灰 */
-  --bg-msg-mine:     #9BE87D;   /* 我的气泡：企业版偏淡 */
+  /* ── Surface（引用 design-tokens.css v2 作为来源，此处仅保留 v1 独有变量）── */
+  --bg-search:       #ECEEF2;   /* 搜索栏：略带蓝灰（v2 无此变量） */
+  --bg-msg-mine:     #9BE87D;   /* 我的气泡：偏淡绿 */
   --bg-msg-other:    #FFFFFF;
-  --bg-hover:        rgba(0,0,0,.04);
-  --bg-active:       #E8F3FF;   /* 选中会话：企业微信蓝选中态 */
-  --bg-active-hover: #D6E9FF;
 
   /* ── Text ── */
-  --text-primary:    #1F2D3D;   /* 企业微信主文字：深蓝黑 */
-  --text-secondary:  #7A8694;   /* 辅助文字：蓝灰 */
   --text-tertiary:   #B0BAC5;
   --text-placeholder:#B0BAC5;
 
   /* ── Border ── */
-  --border-color:    #E8ECF0;
   --border-light:    rgba(0,0,0,.04);
   --border-strong:   rgba(0,0,0,.09);
-  --divider:         #EEF0F3;
 
   /* ── Spacing (8px grid) ── */
   --sp-1:  4px;
@@ -73,6 +60,18 @@
   --dur-fast: 80ms;
 }
 
+/* ── prefers-reduced-motion: 尊重用户无障碍设置 ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .wc-msg-row { animation: none !important; }
+  .lg-card { animation: none !important; }
+}
+
 /* ── 毛玻璃面板动画 ── */
 @keyframes bubbleIn {
   from { opacity: 0; transform: translateY(8px); }
@@ -81,6 +80,22 @@
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(.95); }
   to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── Skip-link：键盘聚焦时可见 ── */
+.skip-link:focus {
+  position: fixed !important;
+  left: 8px !important;
+  top: 4px !important;
+  outline: 3px solid #FFD700;
+}
+
+/* ── 侧边栏切换过渡 ── */
+.wc-sidebar-btn {
+  transition: background 130ms ease, transform 80ms ease;
+}
+.wc-sidebar-btn:active {
+  transform: scale(.92);
 }
 
 /* ── 菊花旋转动画（发送中状态） ── */
@@ -472,6 +487,8 @@ img { display: block; }
   text-align: center;
   padding: 10px 0 6px;
   flex-shrink: 0;
+  content-visibility: auto;
+  contain-intrinsic-size: 28px;
 }
 .wc-msg-time span {
   display: inline-block;
@@ -488,6 +505,8 @@ img { display: block; }
   align-items: flex-start;
   margin-top: 12px;
   flex-shrink: 0;
+  content-visibility: auto;
+  contain-intrinsic-size: 62px;
 }
 .wc-msg-row.mine { flex-direction: row-reverse; }
 .wc-msg-row:not(.mine) .wc-msg-avatar { margin-right: 8px; }
@@ -1266,6 +1285,21 @@ body.dark-mode {
   --glass-line:      rgba(255,255,255,.06);
   --glass-shadow:    0 18px 42px rgba(0,0,0,.45);
   --glass-shadow-soft: 0 8px 22px rgba(0,0,0,.30);
+
+  /* ── design-tokens.css v2 暗色覆盖 ── */
+  --bg-messages:         #0F0F0F;
+  --bg-panel-item-hover: rgba(255,255,255,.07);
+  --bg-panel-item-active: #1A3A2A;
+  --bg-overlay:          rgba(0,0,0,.70);
+  --text-title:          #E5E5EA;
+  --text-muted:          #636366;
+  --text-disabled:       #48484A;
+  --border-subtle:       rgba(255,255,255,.06);
+  --border-default:      #3A3A3C;
+  --border-medium:       #48484A;
+  --shadow-md:           0 4px 12px rgba(0,0,0,.30), 0 1px 4px rgba(0,0,0,.20);
+  --shadow-lg:           0 8px 28px rgba(0,0,0,.40), 0 2px 8px rgba(0,0,0,.25);
+
   color-scheme: dark;
 }
 body.dark-mode .wc-bottom-bar { background: #1C1C1E; }
