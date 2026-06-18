@@ -517,6 +517,11 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     socket.on('message_delivered', onDelivered);
     // socket.on('red_packet_claimed', onRedPacketClaimed); // removed
     socket.on('group_updated', onGroupUpdated);
+    const onRoleChanged = ({ conversationId, role }) => {
+      if (conversationId !== convIdRef.current) return;
+      setMyGroupRole(role);
+    };
+    socket.on('role_changed', onRoleChanged);
     socket.on('group_kicked', onGroupKicked);
     socket.on('group_dismissed', onGroupDismissed);
     socket.on('group_settings_updated', onGroupSettingsUpdated);
@@ -535,6 +540,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       socket.off('message_delivered', onDelivered);
       // socket.off('red_packet_claimed', onRedPacketClaimed); // removed
       socket.off('group_updated', onGroupUpdated);
+      socket.off('role_changed', onRoleChanged);
       socket.off('group_kicked', onGroupKicked);
       socket.off('group_dismissed', onGroupDismissed);
       socket.off('group_settings_updated', onGroupSettingsUpdated);

@@ -161,8 +161,29 @@ export default function ChatListScreen() {
       });
     };
 
+    const onNewConv = () => loadConversations(true);
+    const onGroupKicked = ({ conversationId }) => {
+      setConversations(prev => prev.filter(c => c.id !== conversationId));
+    };
+    const onGroupDismissed = ({ conversationId }) => {
+      setConversations(prev => prev.filter(c => c.id !== conversationId));
+    };
+    const onGroupUpdated = ({ id }) => {
+      if (id) loadConversations(true);
+    };
+
     socket.on('new_message', handleNewMessage);
-    return () => socket.off('new_message', handleNewMessage);
+    socket.on('new_conversation', onNewConv);
+    socket.on('group_kicked', onGroupKicked);
+    socket.on('group_dismissed', onGroupDismissed);
+    socket.on('group_updated', onGroupUpdated);
+    return () => {
+      socket.off('new_message', handleNewMessage);
+      socket.off('new_conversation', onNewConv);
+      socket.off('group_kicked', onGroupKicked);
+      socket.off('group_dismissed', onGroupDismissed);
+      socket.off('group_updated', onGroupUpdated);
+    };
   }, [socket, loadConversations, user?.id]);
 
   const onRefresh = () => {

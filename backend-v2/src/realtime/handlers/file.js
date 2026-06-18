@@ -1,7 +1,7 @@
 'use strict';
 const { v4: uuidv4 } = require('uuid');
 const { readDb } = require('../../db/connection');
-const { write, writeAsync } = require('../../db/writer');
+const { writeAsync } = require('../../db/writer');
 const { pushNewMessage } = require('../../utils/push');
 const { getPublicBase } = require('../../utils/cloudStorage');
 const presence = require('../presence');
@@ -54,7 +54,7 @@ module.exports = function registerFileHandler(io, socket) {
         WHERE m.id = ? AND m.conversation_id = ?
       `).get(reply_to_id, conversationId) || null;
     } else {
-      write(
+      await writeAsync(
         'INSERT INTO messages (id,conversation_id,sender_id,type,content,file_url,duration,reply_to_id,created_at) VALUES (?,?,?,?,?,?,?,?,?)',
         [id, conversationId, userId, type, safeContent, file_url, duration, null, created_at]
       );

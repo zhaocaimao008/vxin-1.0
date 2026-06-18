@@ -68,6 +68,8 @@ function fmtTime(ts) {
 
 export default function ChatScreen({ route, navigation }) {
   const { conversation } = route.params;
+  const scrollToId = conversation.scrollToId || null;
+  const [highlightedId, setHighlightedId] = useState(null);
   const [messages, setMessages]       = useState([]);
   const [input, setInput]             = useState('');
   const [replyTo, setReplyTo]         = useState(null);
@@ -137,6 +139,16 @@ export default function ChatScreen({ route, navigation }) {
         const arr = Array.isArray(data) ? data : [];
         setMessages(arr);
         setHasMore(arr.length >= 60);
+        if (scrollToId) {
+          const target = arr.find(m => String(m.id) === String(scrollToId));
+          if (target) {
+            setTimeout(() => {
+              flatListRef.current?.scrollToItem({ item: target, animated: true, viewPosition: 0.4 });
+              setHighlightedId(String(scrollToId));
+              setTimeout(() => setHighlightedId(null), 2000);
+            }, 300);
+          }
+        }
       })
       .catch(() => setMessages([]))
       .finally(() => setLoadingMsgs(false));
@@ -287,6 +299,26 @@ export default function ChatScreen({ route, navigation }) {
     };
     socket.on('group_settings_updated', onGroupSettings);
 
+    const onGroupKicked = ({ conversationId }) => {
+      if (conversationId !== conversation.id) return;
+      Alert.alert('已被移出群聊', '你已被管理员移出该群聊', [
+        { text: '确定', onPress: () => navigation.goBack() },
+      ]);
+    };
+    const onGroupDismissed = ({ conversationId }) => {
+      if (conversationId !== conversation.id) return;
+      Alert.alert('群聊已解散', '群主已解散该群聊', [
+        { text: '确定', onPress: () => navigation.goBack() },
+      ]);
+    };
+    const onRoleChanged = ({ conversationId, role }) => {
+      if (conversationId !== conversation.id) return;
+      setMyGroupRole(role);
+    };
+    socket.on('role_changed', onRoleChanged);
+    socket.on('group_kicked', onGroupKicked);
+    socket.on('group_dismissed', onGroupDismissed);
+
     return () => {
       socket.off('new_message', onNewMsg);
       socket.off('message_deleted', onRecalled);
@@ -298,6 +330,9 @@ export default function ChatScreen({ route, navigation }) {
       socket.off('message_unpinned', onUnpinned);
       socket.off('message_read', onRead);
       socket.off('group_settings_updated', onGroupSettings);
+      socket.off('role_changed', onRoleChanged);
+      socket.off('group_kicked', onGroupKicked);
+      socket.off('group_dismissed', onGroupDismissed);
     };
   }, [socket, conversation.id, user?.id]);
 
@@ -747,9 +782,10 @@ export default function ChatScreen({ route, navigation }) {
       grouped[r.emoji] = { count: r.count ?? ids.length, mine: ids.includes(String(user?.id)) };
     });
 
+    const isHighlighted = highlightedId && String(msg.id) === highlightedId;
     return (
       <Pressable onLongPress={() => !msg.recalled && onLongPress(msg)} delayLongPress={350}>
-        <View style={[S.msgRow, isMe ? S.msgRowMe : S.msgRowOther]}>
+        <View style={[S.msgRow, isMe ? S.msgRowMe : S.msgRowOther, isHighlighted && S.msgRowHighlight]}>
           {!isMe && <View style={S.avatarCol}><Avatar src={msg.senderAvatar || msg.sender_avatar} name={msg.senderNickname || msg.senderName || '?'} size={36} /></View>}
           <View style={[S.bubbleCol, isMe ? S.bubbleColMe : S.bubbleColOther]}>
             {!isMe && conversation.type === 'group' && (
@@ -790,7 +826,7 @@ export default function ChatScreen({ route, navigation }) {
         </View>
       </Pressable>
     );
-  }, [user, conversation.type, members]);
+  }, [user, conversation.type, members, highlightedId]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -842,6 +878,7 @@ export default function ChatScreen({ route, navigation }) {
             if (e.nativeEvent.contentOffset.y <= 40 && hasMore && !loadingMoreRef.current && messagesRef.current.length > 0) loadMore();
           }}
           scrollEventThrottle={200}
+          onScrollToIndexFailed={() => {}}
           maintainVisibleContentPosition={{ minIndexForVisible: 1 }}
           onContentSizeChange={() => {
             if (prependingRef.current) { prependingRef.current = false; return; }
@@ -1102,9 +1139,10 @@ const S = StyleSheet.create({
   systemWrap: { alignItems: 'center', marginVertical: 8 },
   systemText: { fontSize: 12, color: C.textTip, backgroundColor: 'rgba(0,0,0,.05)', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10 },
   // Message row
-  msgRow:     { flexDirection: 'row', alignItems: 'flex-end', marginVertical: 4, gap: 8 },
-  msgRowMe:   { justifyContent: 'flex-end' },
-  msgRowOther:{ justifyContent: 'flex-start' },
+  msgRow:          { flexDirection: 'row', alignItems: 'flex-end', marginVertical: 4, gap: 8 },
+  msgRowMe:        { justifyContent: 'flex-end' },
+  msgRowOther:     { justifyContent: 'flex-start' },
+  msgRowHighlight: { backgroundColor: 'rgba(7,193,96,0.12)', borderRadius: 8 },
   avatarCol:  {},
   bubbleCol:  { maxWidth: SW * 0.72 },
   bubbleColMe:{ alignItems: 'flex-end' },
