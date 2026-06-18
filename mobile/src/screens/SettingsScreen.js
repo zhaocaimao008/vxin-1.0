@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Switch, TextInput } from 'react-native';
+import { Alert, View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Switch, TextInput, Modal } from 'react-native';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { getServerUrl, saveServerUrl, mediaUrl } from '../config';
 
 export default function SettingsScreen() {
-  const { user, token, logout, changeServer } = useAuth();
+  const { user, token, logout, changeServer, updateUser } = useAuth();
   const [page, setPage] = useState('main');
+  const [editField, setEditField] = useState(null); // { key:'username'|'bio', label, value }
+  const [savingProfile, setSavingProfile] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [settings, setSettings] = useState({
     addByVxinId: true,
@@ -39,6 +41,22 @@ export default function SettingsScreen() {
       setSettings(prev => ({ ...prev, ...data }));
     } catch {
       setSettings(prev => ({ ...prev, [key]: previous }));
+    }
+  };
+
+  const saveProfileField = async () => {
+    if (!editField) return;
+    const val = (editField.value || '').trim();
+    if (editField.key === 'username' && !val) { Alert.alert('提示', '昵称不能为空'); return; }
+    setSavingProfile(true);
+    try {
+      const { data } = await axios.put('/api/users/profile', { [editField.key]: val });
+      await updateUser(data);
+      setEditField(null);
+    } catch (e) {
+      Alert.alert('保存失败', e.response?.data?.error || '请重试');
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -122,9 +140,9 @@ export default function SettingsScreen() {
                   <Text style={styles.subText}>v信ID: {user?.wechat_id || '未分配'}</Text>
                 </View>
               </View>
-              <Row label="昵称" value={user?.username || '-'} />
+              <Row label="昵称" value={user?.username || '-'} onPress={() => setEditField({ key: 'username', label: '昵称', value: user?.username || '' })} />
               <Row label="v信ID" value={user?.wechat_id || '未分配'} />
-              <Row label="签名" value={user?.bio || '未填写'} />
+              <Row label="签名" value={user?.bio || '未填写'} onPress={() => setEditField({ key: 'bio', label: '个性签名', value: user?.bio || '' })} />
               <Row label="手机号" value={user?.phone || '-'} />
             </Section>
             <View style={styles.qrCard}>
@@ -224,6 +242,28 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </>
         )}
+
+        {/* 编辑昵称/签名 */}
+        <Modal visible={!!editField} transparent animationType="fade" onRequestClose={() => setEditField(null)}>
+          <View style={styles.editOverlay}>
+            <View style={styles.editDialog}>
+              <Text style={styles.editTitle}>修改{editField?.label}</Text>
+              <TextInput
+                style={[styles.editInput, editField?.key === 'bio' && { height: 80, textAlignVertical: 'top' }]}
+                value={editField?.value}
+                onChangeText={t => setEditField(f => ({ ...f, value: t }))}
+                placeholder={`请输入${editField?.label || ''}`}
+                maxLength={editField?.key === 'bio' ? 100 : 20}
+                multiline={editField?.key === 'bio'}
+                autoFocus
+              />
+              <View style={styles.editBtns}>
+                <TouchableOpacity onPress={() => setEditField(null)} disabled={savingProfile}><Text style={styles.editCancel}>取消</Text></TouchableOpacity>
+                <TouchableOpacity onPress={saveProfileField} disabled={savingProfile}><Text style={styles.editOk}>{savingProfile ? '保存中…' : '保存'}</Text></TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     );
   }
@@ -310,4 +350,11 @@ const styles = StyleSheet.create({
   qrHint: { color: '#999', fontSize: 13, marginTop: 12 },
   logoutBtn: { backgroundColor: 'rgba(255,255,255,0.78)', margin: 8, borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.92)' },
   logoutText: { color: '#e74c3c', fontSize: 16, fontWeight: '600' },
+  editOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,.45)', alignItems: 'center', justifyContent: 'center' },
+  editDialog: { width: '82%', backgroundColor: '#fff', borderRadius: 12, padding: 18 },
+  editTitle: { fontSize: 16, fontWeight: '700', color: '#1F2D3D', marginBottom: 14 },
+  editInput: { borderWidth: 1, borderColor: '#E8ECF0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, fontSize: 15, color: '#1F2D3D', backgroundColor: '#F7F8FA' },
+  editBtns: { flexDirection: 'row', justifyContent: 'flex-end', gap: 24, marginTop: 16 },
+  editCancel: { fontSize: 15, color: '#7A8694' },
+  editOk: { fontSize: 15, color: '#07C160', fontWeight: '600' },
 });
