@@ -197,6 +197,11 @@ export default function ChatScreen({ route, navigation }) {
         if (prev.some(m => m.id === msg.id)) return prev;
         return [...prev, msg];
       });
+      // 正在该会话页时收到他人消息 → 立即标记已读（让对方看到已读、清未读数）
+      const senderId = msg.senderId || msg.sender_id;
+      if (String(senderId) !== String(user?.id)) {
+        axios.post(`/api/messages/conversation/${conversation.id}/read`).catch(() => {});
+      }
     };
 
     const onRecalled = ({ msgId, messageId, conversationId }) => {
