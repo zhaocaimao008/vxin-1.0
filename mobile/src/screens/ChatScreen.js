@@ -90,6 +90,8 @@ export default function ChatScreen({ route, navigation }) {
   const [showRedPacket, setShowRedPacket] = useState(false);
   const [recording, setRecording]     = useState(false);
   const recordingRef = useRef(null);
+  const [showCardPicker, setShowCardPicker] = useState(false);
+  const [cardContacts, setCardContacts] = useState([]);
   const [redPacketDetail, setRedPacketDetail] = useState(null); // { ...detail, justClaimed } | null
   const [claimingRP, setClaimingRP] = useState(false);
   const [forwardMsg, setForwardMsg] = useState(null);
@@ -401,6 +403,16 @@ export default function ChatScreen({ route, navigation }) {
       const asset = result.assets[0];
       await uploadAndSend({ uri: asset.uri, type: asset.mimeType || 'application/octet-stream', name: asset.name, size: asset.size }, 'file');
     } catch (err) { Alert.alert('选择文件失败', err.message); }
+  };
+
+  // ── 名片分享 ─────────────────────────────────────────────────────────────────
+  const openCardPicker = () => {
+    axios.get('/api/users/contacts').then(r => { setCardContacts(r.data || []); setShowCardPicker(true); }).catch(() => {});
+  };
+  const sendCard = (c) => {
+    setShowCardPicker(false);
+    const content = JSON.stringify({ uid: c.id, username: c.remark || c.username || '', avatar: c.avatar || '', wechat_id: c.wechat_id || '' });
+    socket?.emit('send_message', { conversationId: conversation.id, type: 'contact_card', content });
   };
 
   // ── 语音录制 ─────────────────────────────────────────────────────────────────
@@ -883,6 +895,7 @@ export default function ChatScreen({ route, navigation }) {
           Alert.alert('发送', '', [
             { text: '拍照', onPress: sendCamera },
             { text: '文件', onPress: sendFile },
+            { text: '名片', onPress: openCardPicker },
             { text: '取消', style: 'cancel' },
           ]);
         }} disabled={sending}>
@@ -930,6 +943,30 @@ export default function ChatScreen({ route, navigation }) {
 
       {/* Forward modal */}
       <ForwardModal visible={!!forwardMsg} message={forwardMsg} onClose={() => setForwardMsg(null)} />
+
+      {/* 名片选择 */}
+      <Modal visible={showCardPicker} transparent animationType="slide" onRequestClose={() => setShowCardPicker(false)}>
+        <View style={S.cardPickerOverlay}>
+          <View style={S.cardPickerSheet}>
+            <View style={S.cardPickerHeader}>
+              <Text style={S.cardPickerTitle}>选择要分享的名片</Text>
+              <TouchableOpacity onPress={() => setShowCardPicker(false)}><Text style={{ fontSize: 18, color: C.textSub }}>✕</Text></TouchableOpacity>
+            </View>
+            <FlatList
+              style={{ maxHeight: 380 }}
+              data={cardContacts}
+              keyExtractor={c => String(c.id)}
+              ListEmptyComponent={<Text style={{ textAlign: 'center', color: C.textSub, padding: 24 }}>暂无联系人</Text>}
+              renderItem={({ item: c }) => (
+                <TouchableOpacity style={S.cardPickerRow} onPress={() => sendCard(c)} activeOpacity={0.7}>
+                  <Avatar src={c.avatar} name={c.remark || c.username || '?'} size={40} radius={6} />
+                  <Text style={{ fontSize: 15, color: C.text }}>{c.remark || c.username}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
 
       {/* Red packet detail */}
       <Modal visible={!!redPacketDetail} transparent animationType="fade" onRequestClose={() => setRedPacketDetail(null)}>
@@ -1088,6 +1125,11 @@ const S = StyleSheet.create({
   recordingText: { flex: 1, color: '#fff', fontSize: 14 },
   recordingCancel: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 6, backgroundColor: 'rgba(255,255,255,.18)' },
   recordingSend: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 6, backgroundColor: C.green },
+  cardPickerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,.45)', justifyContent: 'flex-end' },
+  cardPickerSheet: { backgroundColor: '#fff', borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingBottom: 28 },
+  cardPickerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
+  cardPickerTitle: { fontSize: 16, fontWeight: '700', color: C.text },
+  cardPickerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 10 },
   textInput:  { flex: 1, backgroundColor: C.bgInput, borderRadius: C.radius, paddingHorizontal: 12, paddingVertical: 9, fontSize: 15, color: C.text, maxHeight: 120, minHeight: 38 },
   sendBtn:    { paddingHorizontal: 14, height: 36, borderRadius: 18, backgroundColor: C.green, alignItems: 'center', justifyContent: 'center', marginBottom: 1 },
   sendBtnOff: { backgroundColor: C.textTip },
