@@ -85,6 +85,8 @@ export default function ChatScreen({ route, navigation }) {
   const [lightbox, setLightbox]       = useState(null); // uri string
   const [reactionTarget, setReactionTarget] = useState(null); // msgId
   const [members, setMembers]         = useState([]);
+  const [groupMuteAll, setGroupMuteAll] = useState(false);
+  const [myGroupRole, setMyGroupRole]   = useState('member');
   const [mentionSearch, setMentionSearch] = useState(null); // null = not showing
   const [mentionResults, setMentionResults] = useState([]);
   const [showRedPacket, setShowRedPacket] = useState(false);
@@ -142,7 +144,11 @@ export default function ChatScreen({ route, navigation }) {
 
     if (conversation.type === 'group') {
       axios.get(`/api/messages/conversation/${conversation.id}/info`)
-        .then(r => setMembers(r.data?.members || []))
+        .then(r => {
+          setMembers(r.data?.members || []);
+          setGroupMuteAll(!!r.data?.mute_all);
+          setMyGroupRole(r.data?.myRole || 'member');
+        })
         .catch(() => {});
     }
 
@@ -275,6 +281,12 @@ export default function ChatScreen({ route, navigation }) {
     socket.on('message_unpinned', onUnpinned);
     socket.on('message_read', onRead);
 
+    const onGroupSettings = (data) => {
+      if (data?.id !== conversation.id && data?.conversationId !== conversation.id) return;
+      if (data.mute_all !== undefined) setGroupMuteAll(!!data.mute_all);
+    };
+    socket.on('group_settings_updated', onGroupSettings);
+
     return () => {
       socket.off('new_message', onNewMsg);
       socket.off('message_deleted', onRecalled);
@@ -283,8 +295,9 @@ export default function ChatScreen({ route, navigation }) {
       socket.off('typing', onTyping);
       socket.off('stop_typing', onStopTyping);
       socket.off('message_pinned', onPinned);
-    socket.off('message_unpinned', onUnpinned);
+      socket.off('message_unpinned', onUnpinned);
       socket.off('message_read', onRead);
+      socket.off('group_settings_updated', onGroupSettings);
     };
   }, [socket, conversation.id, user?.id]);
 
@@ -333,11 +346,12 @@ export default function ChatScreen({ route, navigation }) {
       tempId,
     }, (ack) => {
       delete pendingAcks.current[tempId];
-      setMessages(prev => prev.map(m =>
-        m._tempId === tempId
-          ? (ack?.success && ack?.message ? { ...ack.message, _status: 'sent' } : { ...m, _status: 'failed' })
-          : m
-      ));
+      if (ack?.success && ack?.message) {
+        setMessages(prev => prev.map(m => m._tempId === tempId ? { ...ack.message, _status: 'sent' } : m));
+      } else {
+        setMessages(prev => prev.filter(m => m._tempId !== tempId));
+        if (ack?.error) Alert.alert('发送失败', ack.error);
+      }
     });
   }, [input, socket, replyTo, editingId, conversation.id, user]);
 
@@ -917,6 +931,11 @@ export default function ChatScreen({ route, navigation }) {
           <TouchableOpacity style={S.recordingSend} onPress={stopAndSendRecording}><Text style={{ color: '#fff', fontWeight: '600' }}>发送</Text></TouchableOpacity>
         </View>
       )}
+      {conversation.type === 'group' && groupMuteAll && myGroupRole === 'member' ? (
+        <View style={[S.mutedBar, { paddingBottom: insets.bottom + 6 }]}>
+          <Text style={S.mutedText}>🔇 全员禁言已开启，只有群主和管理员可以发消息</Text>
+        </View>
+      ) : (
       <View style={[S.inputBar, { paddingBottom: insets.bottom + 6 }]}>
         <TouchableOpacity style={S.toolBtn} onPress={() => recording ? stopAndSendRecording() : startRecording()} disabled={sending}>
           <Text style={{ fontSize: 20 }}>{recording ? '⏺' : '🎤'}</Text>
@@ -962,6 +981,7 @@ export default function ChatScreen({ route, navigation }) {
           <Text style={S.sendBtnText}>发送</Text>
         </TouchableOpacity>
       </View>
+      )}
 
       {/* Reaction picker modal */}
       <Modal visible={!!reactionTarget} transparent animationType="fade" onRequestClose={() => setReactionTarget(null)}>
@@ -1171,6 +1191,9 @@ const S = StyleSheet.create({
   replyName:  { fontSize: 12, color: C.green, fontWeight: '600', marginBottom: 1 },
   replyContent:{ fontSize: 12, color: C.textSub },
   replyClose: { fontSize: 16, color: C.textTip, padding: 4 },
+  // Muted group banner
+  mutedBar:   { backgroundColor: C.bgCard, borderTopWidth: 0.5, borderTopColor: C.border, paddingHorizontal: 16, paddingTop: 14, alignItems: 'center' },
+  mutedText:  { fontSize: 13, color: C.textSub, textAlign: 'center' },
   // Input bar
   inputBar:   { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 8, paddingTop: 8, backgroundColor: C.bgCard, borderTopWidth: 0.5, borderTopColor: C.border, gap: 6 },
   toolBtn:    { paddingBottom: 8, paddingHorizontal: 2 },
