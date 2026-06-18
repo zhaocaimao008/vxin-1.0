@@ -26,6 +26,9 @@ module.exports = function setupRealtime(io, app) {
     if (!token) return next(new Error('未授权'));
     try {
       socket.user = jwt.verify(token, config.jwtSecret);
+      // 检查封禁状态（封禁用户即使持有有效 JWT 也不得接入 Socket）
+      const user = db.prepare('SELECT banned FROM users WHERE id=?').get(socket.user.id);
+      if (user?.banned) return next(new Error('账号已被封禁'));
       next();
     } catch {
       next(new Error('Token无效'));
