@@ -182,6 +182,7 @@ function applySchema(db) {
     "ALTER TABLE messages ADD COLUMN reply_to_id TEXT DEFAULT NULL",
     "ALTER TABLE messages ADD COLUMN deleted INTEGER DEFAULT 0",
     "ALTER TABLE messages ADD COLUMN edited INTEGER DEFAULT 0",
+    "ALTER TABLE messages ADD COLUMN duration INTEGER DEFAULT 0",
     "ALTER TABLE moments ADD COLUMN visibility TEXT DEFAULT 'all'",
     "ALTER TABLE moment_comments ADD COLUMN reply_to_user TEXT DEFAULT ''",
     "ALTER TABLE conversations ADD COLUMN owner_id TEXT DEFAULT NULL",

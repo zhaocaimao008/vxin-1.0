@@ -13,6 +13,7 @@ module.exports = function registerFileHandler(io, socket) {
 
   socket.on('send_file_message', async (data, ack) => {
     const { conversationId, type, file_url, content, reply_to_id } = data;
+    const duration = Math.max(0, Math.min(parseInt(data.duration, 10) || 0, 600)); // 语音/视频时长(秒)，上限10分钟
     const ALLOWED = new Set(['image', 'voice', 'video', 'file']);
 
     if (!conversationId || !file_url || !ALLOWED.has(type)) { ack?.({ success: false, error: '参数无效' }); return; }
@@ -37,15 +38,15 @@ module.exports = function registerFileHandler(io, socket) {
 
     const msg = {
       id, conversation_id: conversationId, sender_id: userId, type, content: safeContent, file_url,
-      reply_to_id: reply_to_id || null, deleted: 0, edited: 0, created_at,
+      duration, reply_to_id: reply_to_id || null, deleted: 0, edited: 0, created_at,
       senderName: profile.username || '', senderAvatar: profile.avatar || '',
       reactions: [], replyTo: null,
     };
 
     if (reply_to_id) {
       await writeAsync(
-        'INSERT INTO messages (id,conversation_id,sender_id,type,content,file_url,reply_to_id,created_at) VALUES (?,?,?,?,?,?,?,?)',
-        [id, conversationId, userId, type, safeContent, file_url, reply_to_id, created_at]
+        'INSERT INTO messages (id,conversation_id,sender_id,type,content,file_url,duration,reply_to_id,created_at) VALUES (?,?,?,?,?,?,?,?,?)',
+        [id, conversationId, userId, type, safeContent, file_url, duration, reply_to_id, created_at]
       );
       msg.replyTo = readDb.prepare(`
         SELECT m.id, m.type, m.content, m.file_url, u.username AS senderName
@@ -54,8 +55,8 @@ module.exports = function registerFileHandler(io, socket) {
       `).get(reply_to_id, conversationId) || null;
     } else {
       write(
-        'INSERT INTO messages (id,conversation_id,sender_id,type,content,file_url,reply_to_id,created_at) VALUES (?,?,?,?,?,?,?,?)',
-        [id, conversationId, userId, type, safeContent, file_url, null, created_at]
+        'INSERT INTO messages (id,conversation_id,sender_id,type,content,file_url,duration,reply_to_id,created_at) VALUES (?,?,?,?,?,?,?,?,?)',
+        [id, conversationId, userId, type, safeContent, file_url, duration, null, created_at]
       );
     }
 

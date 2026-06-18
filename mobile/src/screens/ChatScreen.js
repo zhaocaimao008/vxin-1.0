@@ -11,8 +11,10 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
+import { Audio } from 'expo-av';
 import { useCall } from '../contexts/CallContext';
 import ForwardModal from '../components/ForwardModal';
+import VoiceMessage from '../components/VoiceMessage';
 import { getServerUrl, mediaUrl } from '../config';
 import RedPacketModal from '../components/RedPacketModal';
 
@@ -86,6 +88,8 @@ export default function ChatScreen({ route, navigation }) {
   const [mentionSearch, setMentionSearch] = useState(null); // null = not showing
   const [mentionResults, setMentionResults] = useState([]);
   const [showRedPacket, setShowRedPacket] = useState(false);
+  const [recording, setRecording]     = useState(false);
+  const recordingRef = useRef(null);
   const [redPacketDetail, setRedPacketDetail] = useState(null); // { ...detail, justClaimed } | null
   const [claimingRP, setClaimingRP] = useState(false);
   const [forwardMsg, setForwardMsg] = useState(null);
@@ -321,7 +325,7 @@ export default function ChatScreen({ route, navigation }) {
     socket?.emit('send_message', {
       conversationId: conversation.id,
       content: text, type: 'text',
-      replyToMessageId: replyRef?.id || null,
+      reply_to_id: replyRef?.id || null,
       tempId,
     }, (ack) => {
       delete pendingAcks.current[tempId];
@@ -335,7 +339,7 @@ export default function ChatScreen({ route, navigation }) {
 
   // ── Upload helper ──────────────────────────────────────────────────────────
 
-  const uploadAndSend = async (fileObj, msgType) => {
+  const uploadAndSend = async (fileObj, msgType, duration = 0) => {
     setSending(true);
     try {
       // 优先：云存储预签名直传（与 Web 一致）
@@ -355,6 +359,7 @@ export default function ChatScreen({ route, navigation }) {
         type: msgType,
         file_url: cred.publicUrl,
         content: fileObj.name,
+        duration,
         reply_to_id: replyTo?.id || null,
       });
     } catch (e) {
@@ -396,6 +401,45 @@ export default function ChatScreen({ route, navigation }) {
       const asset = result.assets[0];
       await uploadAndSend({ uri: asset.uri, type: asset.mimeType || 'application/octet-stream', name: asset.name, size: asset.size }, 'file');
     } catch (err) { Alert.alert('选择文件失败', err.message); }
+  };
+
+  // ── 语音录制 ─────────────────────────────────────────────────────────────────
+  const startRecording = async () => {
+    try {
+      const perm = await Audio.requestPermissionsAsync();
+      if (!perm.granted) { Alert.alert('需要权限', '请允许使用麦克风'); return; }
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+      const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      recordingRef.current = recording;
+      setRecording(true);
+    } catch (e) {
+      Alert.alert('录音失败', e.message || '请重试');
+    }
+  };
+
+  const cancelRecording = async () => {
+    setRecording(false);
+    const rec = recordingRef.current;
+    recordingRef.current = null;
+    try { await rec?.stopAndUnloadAsync(); } catch (_) {}
+  };
+
+  const stopAndSendRecording = async () => {
+    const rec = recordingRef.current;
+    recordingRef.current = null;
+    setRecording(false);
+    if (!rec) return;
+    try {
+      const status = await rec.getStatusAsync();
+      const durationSec = Math.round((status.durationMillis || 0) / 1000);
+      await rec.stopAndUnloadAsync();
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+      const uri = rec.getURI();
+      if (!uri || durationSec < 1) { Alert.alert('提示', '录音太短'); return; }
+      await uploadAndSend({ uri, type: 'audio/mp4', name: `voice_${Date.now()}.m4a`, size: 0 }, 'voice', durationSec);
+    } catch (e) {
+      Alert.alert('发送失败', e.message || '请重试');
+    }
   };
 
   // ── Typing ─────────────────────────────────────────────────────────────────
@@ -592,15 +636,11 @@ export default function ChatScreen({ route, navigation }) {
           );
         case 'voice':
           return (
-            <View style={S.voiceRow}>
-              <Text style={{ fontSize: 16 }}>🎙</Text>
-              <View style={{ flexDirection: 'row', gap: 2, alignItems: 'center' }}>
-                {[8, 14, 10, 14, 8].map((h, i) => (
-                  <View key={i} style={{ width: 3, height: h, backgroundColor: isMe ? 'rgba(255,255,255,.8)' : C.green, borderRadius: 2 }} />
-                ))}
-              </View>
-              <Text style={[S.voiceDur, isMe && { color: 'rgba(255,255,255,.9)' }]}>{msg.duration || 0}"</Text>
-            </View>
+            <VoiceMessage
+              url={mediaUrl(msg.fileUrl || msg.file_url || msg.content)}
+              duration={msg.duration || 0}
+              isMe={isMe}
+            />
           );
         case 'video': {
           const vurl = mediaUrl(msg.fileUrl || msg.file_url || msg.content);
@@ -810,7 +850,18 @@ export default function ChatScreen({ route, navigation }) {
       )}
 
       {/* Input bar */}
+      {recording && (
+        <View style={S.recordingBar}>
+          <View style={S.recordingDot} />
+          <Text style={S.recordingText}>正在录音…</Text>
+          <TouchableOpacity style={S.recordingCancel} onPress={cancelRecording}><Text style={{ color: '#fff' }}>取消</Text></TouchableOpacity>
+          <TouchableOpacity style={S.recordingSend} onPress={stopAndSendRecording}><Text style={{ color: '#fff', fontWeight: '600' }}>发送</Text></TouchableOpacity>
+        </View>
+      )}
       <View style={[S.inputBar, { paddingBottom: insets.bottom + 6 }]}>
+        <TouchableOpacity style={S.toolBtn} onPress={() => recording ? stopAndSendRecording() : startRecording()} disabled={sending}>
+          <Text style={{ fontSize: 20 }}>{recording ? '⏺' : '🎤'}</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={S.toolBtn} onPress={() => setShowEmoji(v => !v)}>
           <Text style={{ fontSize: 20 }}>🙂</Text>
         </TouchableOpacity>
@@ -1032,6 +1083,11 @@ const S = StyleSheet.create({
   // Input bar
   inputBar:   { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 8, paddingTop: 8, backgroundColor: C.bgCard, borderTopWidth: 0.5, borderTopColor: C.border, gap: 6 },
   toolBtn:    { paddingBottom: 8, paddingHorizontal: 2 },
+  recordingBar:  { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#2B2F36' },
+  recordingDot:  { width: 10, height: 10, borderRadius: 5, backgroundColor: '#FA5151' },
+  recordingText: { flex: 1, color: '#fff', fontSize: 14 },
+  recordingCancel: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 6, backgroundColor: 'rgba(255,255,255,.18)' },
+  recordingSend: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 6, backgroundColor: C.green },
   textInput:  { flex: 1, backgroundColor: C.bgInput, borderRadius: C.radius, paddingHorizontal: 12, paddingVertical: 9, fontSize: 15, color: C.text, maxHeight: 120, minHeight: 38 },
   sendBtn:    { paddingHorizontal: 14, height: 36, borderRadius: 18, backgroundColor: C.green, alignItems: 'center', justifyContent: 'center', marginBottom: 1 },
   sendBtnOff: { backgroundColor: C.textTip },
