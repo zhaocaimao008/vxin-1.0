@@ -5,6 +5,7 @@ const auth   = require('../../middleware/auth');
 const m      = require('./moments.controller');
 const { makeImageUploader } = require('../../utils/upload');
 const config = require('../../config');
+const { momentImageLimiter } = require('../../middleware/rateLimiters');
 const uploadMomentImages = makeImageUploader(path.join(config.uploadsRoot, 'moments'), 'images', 9, 5 * 1024 * 1024);
 
 /**
@@ -54,7 +55,7 @@ const uploadMomentImages = makeImageUploader(path.join(config.uploadsRoot, 'mome
  */
 router.get   ('/',                auth, m.timeline);
 router.post  ('/',                auth, m.create);
-router.post  ('/images',          auth, ...uploadMomentImages, m.uploadImages);
+router.post  ('/images',          auth, momentImageLimiter, ...uploadMomentImages, m.uploadImages);
 
 /**
  * @swagger

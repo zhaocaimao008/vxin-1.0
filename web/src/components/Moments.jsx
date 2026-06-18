@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import Avatar from './Avatar';
 import { useAuth } from '../contexts/AuthContext';
+import { showToast, showConfirm } from '../utils/toast';
 
 function ago(sec) {
   const d = Date.now() / 1000 - sec;
@@ -154,7 +155,7 @@ export default function Moments() {
       const { data } = await axios.post('/api/moments', { content: text.trim(), images: imageUrls });
       setList(p => [data, ...p]);
       resetCompose();
-    } catch (e) { alert(e.response?.data?.error || '发布失败'); }
+    } catch (e) { showToast(e.response?.data?.error || '发布失败', 'error'); }
     setPosting(false);
   };
 
@@ -176,11 +177,11 @@ export default function Moments() {
       const { data } = await axios.post(`/api/moments/${m.id}/comment`, { content });
       setList(p => p.map(x => x.id === m.id ? { ...x, comments: [...(x.comments || []), data], commentCount: (x.commentCount || 0) + 1 } : x));
       clear();
-    } catch (e) { alert(e.response?.data?.error || '评论失败'); }
+    } catch (e) { showToast(e.response?.data?.error || '评论失败', 'error'); }
   };
 
   const onDelete = async (m) => {
-    if (!window.confirm('删除这条动态？')) return;
+    if (!(await showConfirm('删除这条动态？'))) return;
     try { await axios.delete(`/api/moments/${m.id}`); setList(p => p.filter(x => x.id !== m.id)); } catch {}
   };
 
@@ -246,6 +247,7 @@ export default function Moments() {
           ))
         )}
       </div>
+
     </div>
   );
 }

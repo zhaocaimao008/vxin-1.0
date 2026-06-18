@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { showToast, showConfirm } from '../utils/toast';
 import axios from 'axios';
 import Avatar from './Avatar';
 import ImagePreview from './ImagePreview';
@@ -474,7 +475,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       if (conversationId === convIdRef.current) onClose?.();
     };
     const onGroupDismissed = ({ conversationId }) => {
-      if (conversationId === convIdRef.current) { alert('群聊已解散'); onClose?.(); }
+      if (conversationId === convIdRef.current) { showToast('群聊已解散'); onClose?.(); }
     };
     // 送达回执：发送方收到，标记私聊消息为"已送达"
     const onDelivered = ({ messageId, messages: items }) => {
@@ -604,7 +605,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       }
       setRedPacketDetail({ ...detail, justClaimed });
     } catch (e) {
-      alert(e.response?.data?.error || '红包打开失败');
+      showToast(e.response?.data?.error || '红包打开失败', 'error');
     } finally {
       setClaiming(false);
     }
@@ -619,7 +620,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       try {
         await axios.put(`/api/messages/${editingMsg.id}/edit`, { content: input.trim() });
         cancelEdit();
-      } catch (e) { alert(e.response?.data?.error || '编辑失败'); }
+      } catch (e) { showToast(e.response?.data?.error || '编辑失败', 'error'); }
       return;
     }
 
@@ -926,7 +927,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     setShowStickers(false);
     axios.post('/api/stickers/send', { conversationId: conversation.id, stickerId })
       .then(() => setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 80))
-      .catch(err => alert(err.response?.data?.error || '发送失败'));
+      .catch(err => showToast(err.response?.data?.error || '发送失败', 'error'));
   }, [conversation.id, messagesEndRef]);
 
   // 拖拽上传
@@ -984,7 +985,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       }
       recorderRef.current = recorder;
       setRecording(true);
-    } catch { alert('无法访问麦克风'); }
+    } catch { showToast('无法访问麦克风', 'error'); }
   };
 
   const stopRecording = () => {
@@ -1063,8 +1064,8 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       case 'addSticker':
         try {
           await axios.post('/api/stickers/collect', { url: msg.file_url });
-          alert('已添加到我的表情');
-        } catch (e) { alert(e.response?.data?.error || '添加失败'); }
+          showToast('已添加到我的表情', 'success');
+        } catch (e) { showToast(e.response?.data?.error || '添加失败', 'error'); }
         break;
 
       case 'copy':
@@ -1075,14 +1076,14 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
             fallbackCopy(msg.content);
           }
         } else {
-          alert('只有文字消息可以复制');
+          showToast('只有文字消息可以复制');
         }
         break;
 
       case 'edit':
-        if (msg.sender_id !== user.id) { alert('只能编辑自己的消息'); return; }
-        if (msg.type !== 'text') { alert('只能编辑文字消息'); return; }
-        if ((Math.floor(Date.now() / 1000) - msg.created_at) > 120) { alert('超过2分钟，无法编辑'); return; }
+        if (msg.sender_id !== user.id) { showToast('只能编辑自己的消息'); return; }
+        if (msg.type !== 'text') { showToast('只能编辑文字消息'); return; }
+        if ((Math.floor(Date.now() / 1000) - msg.created_at) > 120) { showToast('超过2分钟，无法编辑'); return; }
         startEdit(msg);
         break;
 
@@ -1098,9 +1099,9 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       case 'pin': {
         const already = pinnedMessages.some(p => p.msgId === msg.id);
         if (already) {
-          await axios.delete(`/api/messages/conversation/${conversation.id}/pin-message/${msg.id}`).catch(e => alert(e.response?.data?.error || '操作失败'));
+          await axios.delete(`/api/messages/conversation/${conversation.id}/pin-message/${msg.id}`).catch(e => showToast(e.response?.data?.error || '操作失败', 'error'));
         } else {
-          await axios.post(`/api/messages/conversation/${conversation.id}/pin-message`, { msgId: msg.id }).catch(e => alert(e.response?.data?.error || '操作失败'));
+          await axios.post(`/api/messages/conversation/${conversation.id}/pin-message`, { msgId: msg.id }).catch(e => showToast(e.response?.data?.error || '操作失败', 'error'));
         }
         break;
       }
@@ -1111,15 +1112,15 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         const inTime = (now - msg.created_at) <= 120;
         const isAdmin = myGroupRole === 'owner' || myGroupRole === 'admin';
         if (isOwn && inTime) {
-          if (confirm('确认撤回这条消息？')) {
+          if (await showConfirm('确认撤回这条消息？')) {
             await axios.delete(`/api/messages/${msg.id}`, { data: { forEveryone: true } }).catch(() => {});
           }
         } else if (!isOwn && isAdmin && conversation.type === 'group') {
-          if (confirm('删除该消息（对全员生效）？')) {
+          if (await showConfirm('删除该消息（对全员生效）？')) {
             await axios.delete(`/api/messages/${msg.id}`, { data: { forEveryone: true } }).catch(() => {});
           }
         } else if (isOwn && !inTime) {
-          alert('超过2分钟，无法撤回');
+          showToast('超过2分钟，无法撤回');
         }
         break;
       }
@@ -1128,8 +1129,8 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         if (action === 'collect') {
           const extra = msg.file_url ? { file_url: msg.file_url } : {};
           await axios.post('/api/users/me/collections', { type: msg.type === 'text' ? 'text' : msg.type === 'image' ? 'image' : msg.type === 'video' ? 'video' : 'file', content: msg.content || msg.file_url || '', extra })
-            .then(() => alert('已收藏'))
-            .catch(e => alert(e.response?.data?.error || '收藏失败'));
+            .then(() => showToast('已收藏', 'success'))
+            .catch(e => showToast(e.response?.data?.error || '收藏失败', 'error'));
         } else if (action.startsWith('react:')) {
           await axios.post(`/api/messages/${msg.id}/react`, { emoji: action.replace('react:', '') }).catch(() => {});
         }
@@ -1143,11 +1144,11 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   const multiForward = () => {
     const msgs = messages.filter(m => selectedMsgs.has(m.id));
     if (msgs.length === 1) { setForwardMsg(msgs[0]); setMultiSelect(false); setSelectedMsgs(new Set()); }
-    else alert('请逐条转发（每次选一条）');
+    else showToast('请逐条转发（每次选一条）');
   };
   const multiDelete = async () => {
-    if (!confirm(`确认撤回/删除选中的 ${selectedMsgs.size} 条消息？`)) return;
-    await axios.post('/api/messages/batch-delete', { msgIds: [...selectedMsgs], conversationId: conversation.id }).catch(e => alert(e.response?.data?.error || '操作失败'));
+    if (!await showConfirm(`确认撤回/删除选中的 ${selectedMsgs.size} 条消息？`)) return;
+    await axios.post('/api/messages/batch-delete', { msgIds: [...selectedMsgs], conversationId: conversation.id }).catch(e => showToast(e.response?.data?.error || '操作失败', 'error'));
     setMultiSelect(false); setSelectedMsgs(new Set());
   };
 
@@ -1993,6 +1994,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
           </div>
         </div>
       )}
+
     </div>
   );
 }
@@ -2109,7 +2111,7 @@ function PrivateChatSettings({ conversation, onClose, onConvUpdate, onCleared })
       await axios.post(`/api/messages/conversation/${conversation.id}/mute`, { muted: val ? 1 : 0 });
       setMuted(val);
       onConvUpdate?.({ muted: val ? 1 : 0 });
-    } catch { alert('操作失败'); }
+    } catch { showToast('操作失败', 'error'); }
     setSaving(false);
   };
 
@@ -2119,20 +2121,20 @@ function PrivateChatSettings({ conversation, onClose, onConvUpdate, onCleared })
       await axios.post(`/api/messages/conversation/${conversation.id}/pin`, { pinned: val ? 1 : 0 });
       setPinned(val);
       onConvUpdate?.({ pinned: val ? 1 : 0 });
-    } catch { alert('操作失败'); }
+    } catch { showToast('操作失败', 'error'); }
     setSaving(false);
   };
 
   const clearMessages = async () => {
     const name = conversation.name || '当前聊天';
-    if (!confirm(`确认双向删除「${name}」的全部聊天记录？对方也将看不到这些记录。`)) return;
+    if (!await showConfirm(`确认双向删除「${name}」的全部聊天记录？对方也将看不到这些记录。`)) return;
     setSaving(true);
     try {
       await axios.delete(`/api/messages/conversation/${conversation.id}/messages`);
       onCleared?.();
       onClose?.();
     } catch (err) {
-      alert(err.response?.data?.error || '清理失败');
+      showToast(err.response?.data?.error || '清理失败', 'error');
     }
     setSaving(false);
   };

@@ -3,6 +3,7 @@ import axios from 'axios';
 import Avatar from './Avatar';
 import { useAuth } from '../contexts/AuthContext';
 import { mediaUrl } from '../utils/url';
+import { showConfirm } from '../utils/toast';
 
 export default function UserProfile({ userId, onClose, onStartChat, onFriendAdded, onFriendDeleted }) {
   const { user: currentUser } = useAuth();
@@ -72,7 +73,7 @@ export default function UserProfile({ userId, onClose, onStartChat, onFriendAdde
   };
 
   const deleteFriend = async () => {
-    if (!confirm(`确认删除好友「${user.remark || user.username}」？`)) return;
+    if (!(await showConfirm(`确认删除好友「${user.remark || user.username}」？`))) return;
     try {
       await axios.delete(`/api/users/contacts/${userId}`);
       onFriendAdded?.();
@@ -89,7 +90,7 @@ export default function UserProfile({ userId, onClose, onStartChat, onFriendAdde
         await axios.delete(`/api/users/block/${userId}`);
         setBlocked(false);
       } else {
-        if (!confirm(`确认将「${user.remark || user.username}」加入黑名单？`)) return;
+        if (!(await showConfirm(`确认将「${user.remark || user.username}」加入黑名单？`))) return;
         await axios.post(`/api/users/block/${userId}`);
         setBlocked(true);
       }

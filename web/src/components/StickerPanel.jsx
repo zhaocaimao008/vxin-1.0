@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { mediaUrl } from '../utils/url';
+import { showToast } from '../utils/toast';
 
 // 我的表情包：点一下直接发送；可上传新增、长按/✕ 删除。
 export default function StickerPanel({ onSend }) {
@@ -22,7 +23,7 @@ export default function StickerPanel({ onSend }) {
       await axios.post('/api/stickers/upload', form, { headers: { 'Content-Type': 'multipart/form-data' } });
       await load();
     } catch (err) {
-      alert(err.response?.data?.error || '添加失败');
+      showToast(err.response?.data?.error || '添加失败', 'error');
     } finally {
       setUploading(false);
     }

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Avatar from './Avatar';
 import { mediaUrl } from '../utils/url';
+import { showToast, showConfirm } from '../utils/toast';
 
 /* ── 群头像拼图（微信风格 N宫格，支持自定义头像） ── */
 export function GroupAvatar({ members = [], size = 46, avatar = '' }) {
@@ -140,7 +141,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
       await axios.put(`/api/messages/conversation/${conversation.id}/nickname`, { nickname: nicknameVal.trim() || null });
       setMyNickname(nicknameVal.trim() || null);
       setEditNickname(false);
-    } catch (e) { alert(e.response?.data?.error || '修改失败'); }
+    } catch (e) { showToast(e.response?.data?.error || '修改失败', 'error'); }
   };
 
   /* 加载群二维码 */
@@ -176,7 +177,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
       const { data } = await axios.put(`/api/messages/conversation/${conversation.id}/manage`, { mute_all: val });
       setInfo(i => ({ ...i, mute_all: data.mute_all }));
       onConvUpdate?.({ mute_all: data.mute_all });
-    } catch (e) { alert(e.response?.data?.error || '操作失败'); }
+    } catch (e) { showToast(e.response?.data?.error || '操作失败', 'error'); }
     setTogglingMute(false);
   };
 
@@ -187,7 +188,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
       const { data } = await axios.put(`/api/messages/conversation/${conversation.id}/manage`, { no_private_chat: val });
       setInfo(i => ({ ...i, no_private_chat: data.no_private_chat }));
       onConvUpdate?.({ no_private_chat: data.no_private_chat });
-    } catch (e) { alert(e.response?.data?.error || '操作失败'); }
+    } catch (e) { showToast(e.response?.data?.error || '操作失败', 'error'); }
     setTogglingNoPrivate(false);
   };
 
@@ -198,7 +199,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
       const { data } = await axios.put(`/api/messages/conversation/${conversation.id}/manage`, { no_add_friend: val });
       setInfo(i => ({ ...i, no_add_friend: data.no_add_friend }));
       onConvUpdate?.({ no_add_friend: data.no_add_friend });
-    } catch (e) { alert(e.response?.data?.error || '操作失败'); }
+    } catch (e) { showToast(e.response?.data?.error || '操作失败', 'error'); }
     setTogglingNoAddFriend(false);
   };
 
@@ -207,7 +208,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
     const newRole = currentRole === 'admin' ? 'member' : 'admin';
     const name = info.members.find(m => m.id === uid)?.username || '未知用户';
     const action = newRole === 'admin' ? `设置「${name}」为管理员` : `撤销「${name}」的管理员`;
-    if (!confirm(action + '？')) return;
+    if (!(await showConfirm(action + '？'))) return;
     await axios.put(`/api/messages/conversation/${conversation.id}/members/${uid}/role`, { role: newRole });
     setInfo(i => ({ ...i, members: i.members.map(m => m.id === uid ? { ...m, role: newRole } : m) }));
   };
@@ -215,7 +216,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
   /* 移出成员 */
   const kickMember = async (uid) => {
     const name = info.members.find(m => m.id === uid)?.username || '未知用户';
-    if (!confirm(`确认移出成员「${name}」？`)) return;
+    if (!(await showConfirm(`确认移出成员「${name}」？`))) return;
     await axios.delete(`/api/messages/conversation/${conversation.id}/members/${uid}`);
     setInfo(i => ({ ...i, members: i.members.filter(m => m.id !== uid) }));
   };
@@ -238,13 +239,13 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
   /* 退出/解散 */
   const leaveGroup = async () => {
     const msg = isOwner ? '解散群聊后所有成员将无法继续聊天，确认解散？' : '确认退出群聊？';
-    if (!confirm(msg)) return;
+    if (!(await showConfirm(msg))) return;
     await axios.post(`/api/messages/conversation/${conversation.id}/leave`);
     onLeave?.();
   };
 
   const clearMessages = async () => {
-    if (!confirm(`确认双向删除「${info?.name || conversation.name || '该群聊'}」的全部聊天记录？所有群成员都将看不到这些记录。`)) return;
+    if (!(await showConfirm(`确认双向删除「${info?.name || conversation.name || '该群聊'}」的全部聊天记录？所有群成员都将看不到这些记录。`))) return;
     await axios.delete(`/api/messages/conversation/${conversation.id}/messages`);
     onCleared?.();
   };
@@ -265,7 +266,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
       setInfo(i => ({ ...i, avatar: data.avatar }));
       onConvUpdate?.({ avatar: data.avatar });
     } catch (err) {
-      alert(err.response?.data?.error || '上传失败');
+      showToast(err.response?.data?.error || '上传失败', 'error');
     }
     setUploadingAvatar(false);
     e.target.value = '';
@@ -550,7 +551,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
                   await axios.post(`/api/messages/conversation/${conversation.id}/mute`, { muted: val ? 1 : 0 });
                   setMyMuted(val);
                   onConvUpdate?.({ muted: val ? 1 : 0 });
-                } catch { alert('操作失败'); }
+                } catch { showToast('操作失败', 'error'); }
                 setTogglingMyMute(false);
               }}
             />
@@ -566,7 +567,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
                   await axios.post(`/api/messages/conversation/${conversation.id}/pin`, { pinned: val ? 1 : 0 });
                   setMyPinned(val);
                   onConvUpdate?.({ pinned: val ? 1 : 0 });
-                } catch { alert('操作失败'); }
+                } catch { showToast('操作失败', 'error'); }
                 setTogglingMyPin(false);
               }}
             />

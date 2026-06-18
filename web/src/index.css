@@ -3331,3 +3331,71 @@ body {
 /* ── Chat 聊天区空状态 — 覆盖 .wc-empty — ── */
 .wc-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; }
 
+/* ── 全局 Toast / Snackbar ── */
+.wc-toast {
+  position: fixed;
+  bottom: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,.72);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  z-index: var(--z-toast, 1200);
+  pointer-events: none;
+  white-space: nowrap;
+  max-width: 80vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  animation: wcToastIn .18s ease;
+}
+.wc-toast.error   { background: rgba(250,81,81,.92); }
+.wc-toast.success { background: rgba(7,193,96,.92); }
+@keyframes wcToastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ── 全局 Confirm dialog ── */
+.wc-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: calc(var(--z-toast, 1200) + 10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wc-confirm-box {
+  background: #fff;
+  border-radius: 12px;
+  padding: 22px 24px 18px;
+  min-width: 240px;
+  max-width: 320px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+}
+.wc-confirm-msg {
+  font-size: 15px;
+  color: #1F2D3D;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+.wc-confirm-btns { display: flex; gap: 12px; }
+.wc-confirm-cancel,
+.wc-confirm-ok {
+  flex: 1;
+  padding: 9px 0;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: opacity .15s;
+}
+.wc-confirm-cancel:hover { opacity: .8; }
+.wc-confirm-ok:hover     { opacity: .88; }
+.wc-confirm-cancel { background: #F7F8FA; color: #7A8694; border: 1px solid #E8ECF0; }
+.wc-confirm-ok     { background: #FA5151; color: #fff; }
+

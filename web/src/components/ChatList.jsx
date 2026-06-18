@@ -5,6 +5,7 @@ import { GroupAvatar } from './GroupInfo';
 import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
 import { format } from '../utils/time';
+import { showConfirm } from '../utils/toast';
 
 export default function ChatList({ onSelectConv, activeConvId, unread = {}, searchQuery = '' }) {
   const [conversations, setConversations] = useState([]);
@@ -100,7 +101,7 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
   const deleteConv = async (conv) => {
     setCtxMenu(null);
     if (conv.type === 'group') {
-      if (!window.confirm(`确认退出群聊「${conv.name}」？`)) return;
+      if (!(await showConfirm(`确认退出群聊「${conv.name}」？`))) return;
       await axios.post(`/api/messages/conversation/${conv.id}/leave`).catch(() => {});
     } else {
       await axios.delete(`/api/messages/conversation/${conv.id}/messages`).catch(() => {});

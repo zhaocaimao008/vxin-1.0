@@ -52,4 +52,12 @@ const forgetLimiter = rateLimit({
   message: json('操作过于频繁，请稍后再试'),
 });
 
-module.exports = { loginLimiter, registerLimiter, sendMsgLimiter, uploadCredentialLimiter, switchLimiter, forgetLimiter };
+// 朋友圈图片上传：单用户 10 分钟 30 次（每次最多9张，相当于270张/10min）
+const momentImageLimiter = rateLimit({
+  ...base, windowMs: 10 * 60 * 1000, max: 30,
+  keyGenerator: req => req.user?.id || ipKeyGenerator(req.ip),
+  handler: (req, res) => res.status(429).json(json('图片上传过于频繁，请稍后再试')),
+  validate: { xForwardedForHeader: false },
+});
+
+module.exports = { loginLimiter, registerLimiter, sendMsgLimiter, uploadCredentialLimiter, switchLimiter, forgetLimiter, momentImageLimiter };

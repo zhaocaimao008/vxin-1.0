@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import Avatar from './Avatar';
 import { GroupAvatar } from './GroupInfo';
+import { showToast } from '../utils/toast';
 
 export default function ForwardModal({ message, onClose }) {
   const [tab, setTab] = useState('friends');
@@ -92,7 +93,7 @@ export default function ForwardModal({ message, onClose }) {
       setDone(true);
       setTimeout(onClose, 3000);
     } catch (e) {
-      alert(e.response?.data?.error || '转发失败');
+      showToast(e.response?.data?.error || '转发失败', 'error');
     }
     setSending(false);
   };

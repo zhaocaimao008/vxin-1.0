@@ -103,6 +103,7 @@ export default function ChatScreen({ route, navigation }) {
   const [redPacketDetail, setRedPacketDetail] = useState(null); // { ...detail, justClaimed } | null
   const [claimingRP, setClaimingRP] = useState(false);
   const [forwardMsg, setForwardMsg] = useState(null);
+  const [snack, setSnack] = useState(null); // brief banner msg | null
   const flatListRef = useRef(null);
   const inputRef    = useRef(null);
   const pendingAcks = useRef({});
@@ -112,6 +113,13 @@ export default function ChatScreen({ route, navigation }) {
   const { socket } = useSocket();
   const { startCall: startGlobalCall } = useCall();
   const insets = useSafeAreaInsets();
+  const snackTimer = useRef(null);
+
+  const showSnack = useCallback((msg) => {
+    setSnack(msg);
+    clearTimeout(snackTimer.current);
+    snackTimer.current = setTimeout(() => setSnack(null), 2500);
+  }, []);
 
   // Header
   useLayoutEffect(() => {
@@ -157,6 +165,8 @@ export default function ChatScreen({ route, navigation }) {
               setHighlightedId(String(scrollToId));
               setTimeout(() => setHighlightedId(null), 2000);
             }, 300);
+          } else {
+            showSnack('消息不在当前记录中，请上滑加载更多历史');
           }
         }
       })
@@ -853,6 +863,8 @@ export default function ChatScreen({ route, navigation }) {
                     flatListRef.current?.scrollToItem({ item: target, animated: true, viewPosition: 0.4 });
                     setHighlightedId(String(msg.replyTo.id));
                     setTimeout(() => setHighlightedId(null), 2000);
+                  } else {
+                    showSnack('原消息不在当前记录中，请上滑加载更多历史');
                   }
                 }}>
                 <Text style={S.quoteName} numberOfLines={1}>{msg.replyTo.senderNickname || msg.replyTo.senderName}</Text>
@@ -888,7 +900,7 @@ export default function ChatScreen({ route, navigation }) {
         </View>
       </Pressable>
     );
-  }, [user, conversation.type, members, highlightedId, multiSelect, selectedMsgs, toggleMsgSelect, messages, onLongPress]);
+  }, [user, conversation.type, members, highlightedId, multiSelect, selectedMsgs, toggleMsgSelect, messages, onLongPress, showSnack]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -918,6 +930,8 @@ export default function ChatScreen({ route, navigation }) {
             flatListRef.current?.scrollToItem({ item: target, animated: true, viewPosition: 0.4 });
             setHighlightedId(String(pinnedMsg.id));
             setTimeout(() => setHighlightedId(null), 2000);
+          } else {
+            showSnack('置顶消息不在当前记录中，请上滑加载更多历史');
           }
         }}>
           <Text style={S.pinnedIcon}>📌</Text>
@@ -1196,11 +1210,19 @@ export default function ChatScreen({ route, navigation }) {
           </View>
         </TouchableOpacity>
       </Modal>
+      {/* Snack bar */}
+      {!!snack && (
+        <View style={S.snackBar} pointerEvents="none">
+          <Text style={S.snackText}>{snack}</Text>
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 }
 
 const S = StyleSheet.create({
+  snackBar:   { position: 'absolute', bottom: 80, alignSelf: 'center', backgroundColor: 'rgba(0,0,0,.72)', borderRadius: 20, paddingHorizontal: 18, paddingVertical: 8, maxWidth: '85%' },
+  snackText:  { color: '#fff', fontSize: 13, textAlign: 'center' },
   container:  { flex: 1, backgroundColor: C.bg },
   loadingWrap:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
   listContent:{ paddingHorizontal: 12, paddingVertical: 12, gap: 2 },

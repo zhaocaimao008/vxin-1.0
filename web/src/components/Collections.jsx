@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { mediaUrl } from '../utils/url';
+import { showConfirm } from '../utils/toast';
 
 function ago(sec) {
   const dt = new Date(sec * 1000);
@@ -16,7 +17,7 @@ export default function Collections() {
   }, []);
 
   const remove = async (id) => {
-    if (!window.confirm('取消收藏这条内容？')) return;
+    if (!(await showConfirm('取消收藏这条内容？'))) return;
     try { await axios.delete(`/api/users/me/collections/${id}`); setList(p => p.filter(c => c.id !== id)); } catch {}
   };
 

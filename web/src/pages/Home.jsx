@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { showConfirm } from '../utils/toast';
 import axios from 'axios';
 import ChatList from '../components/ChatList';
 import ChatWindow from '../components/ChatWindow';
@@ -138,11 +139,11 @@ function AccountSwitcher() {
     const acct = accounts.find(a => a.id === id);
     const name = acct?.user?.username || '该账号';
     if (id === user?.id) {
-      if (!window.confirm(`退出当前账号「${name}」？`)) return;
+      if (!(await showConfirm(`退出当前账号「${name}」？`))) return;
       await logout();                 // 清会话+CSRF+从钱包移除当前账号
       goLogin();
     } else {
-      if (!window.confirm(`从本设备删除账号「${name}」？删除后切换需重新输密码。`)) return;
+      if (!(await showConfirm(`从本设备删除账号「${name}」？删除后切换需重新输密码。`))) return;
       removeAccount(id);              // 移除最近登录记录 + 钱包凭证
     }
   };
