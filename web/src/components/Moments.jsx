@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import Avatar from './Avatar';
 import { useAuth } from '../contexts/AuthContext';
@@ -105,8 +105,10 @@ export default function Moments() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState('');
+  const [images, setImages] = useState([]); // [{previewUrl, file}]
   const [posting, setPosting] = useState(false);
   const [composing, setComposing] = useState(false);
+  const imgInputRef = useRef(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -114,13 +116,44 @@ export default function Moments() {
   }, []);
   useEffect(() => { load(); }, [load]);
 
+  const handleImagePick = (e) => {
+    const files = Array.from(e.target.files || []);
+    const remaining = 9 - images.length;
+    files.slice(0, remaining).forEach(file => {
+      const previewUrl = URL.createObjectURL(file);
+      setImages(prev => [...prev, { previewUrl, file }]);
+    });
+    e.target.value = '';
+  };
+
+  const removeImage = (idx) => {
+    setImages(prev => {
+      URL.revokeObjectURL(prev[idx].previewUrl);
+      return prev.filter((_, i) => i !== idx);
+    });
+  };
+
+  const resetCompose = () => {
+    images.forEach(img => URL.revokeObjectURL(img.previewUrl));
+    setImages([]);
+    setText('');
+    setComposing(false);
+  };
+
   const publish = async () => {
-    if (!text.trim()) return;
+    if (!text.trim() && images.length === 0) return;
     setPosting(true);
     try {
-      const { data } = await axios.post('/api/moments', { content: text.trim() });
+      let imageUrls = [];
+      if (images.length > 0) {
+        const fd = new FormData();
+        images.forEach(img => fd.append('images', img.file));
+        const { data } = await axios.post('/api/moments/images', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        imageUrls = data.urls || [];
+      }
+      const { data } = await axios.post('/api/moments', { content: text.trim(), images: imageUrls });
       setList(p => [data, ...p]);
-      setText(''); setComposing(false);
+      resetCompose();
     } catch (e) { alert(e.response?.data?.error || '发布失败'); }
     setPosting(false);
   };
@@ -170,11 +203,29 @@ export default function Moments() {
           <div className="wc-moment-editor">
             <textarea autoFocus value={text} onChange={e => setText(e.target.value)} rows={3}
               placeholder="这一刻的想法…" maxLength={5000} />
+            {/* 图片预览区 */}
+            {images.length > 0 && (
+              <div className="wc-moment-img-preview">
+                {images.map((img, i) => (
+                  <div key={i} className="wc-moment-img-thumb">
+                    <img src={img.previewUrl} alt="" />
+                    <button className="wc-moment-img-remove" onClick={() => removeImage(i)}>×</button>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="wc-moment-editor-actions">
+              <button className="wc-moment-img-btn" onClick={() => imgInputRef.current?.click()}
+                disabled={images.length >= 9} title="添加图片">
+                🖼 图片{images.length > 0 ? ` (${images.length}/9)` : ''}
+              </button>
+              <input ref={imgInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }}
+                onChange={handleImagePick} />
+              <div style={{ flex: 1 }} />
               <button className="wc-moment-editor-cancel"
-                onClick={() => { setComposing(false); setText(''); }}>取消</button>
+                onClick={resetCompose}>取消</button>
               <button className="wc-moment-editor-publish"
-                disabled={posting || !text.trim()} onClick={publish}>
+                disabled={posting || (!text.trim() && images.length === 0)} onClick={publish}>
                 {posting ? '发布中…' : '发布'}
               </button>
             </div>

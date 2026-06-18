@@ -792,12 +792,20 @@ export default function ChatScreen({ route, navigation }) {
               <Text style={S.senderName}>{msg.senderNickname || msg.senderName}</Text>
             )}
             {msg.replyTo && (
-              <View style={[S.quoteBox, isMe ? S.quoteBoxMe : S.quoteBoxOther]}>
+              <TouchableOpacity activeOpacity={0.7} style={[S.quoteBox, isMe ? S.quoteBoxMe : S.quoteBoxOther]}
+                onPress={() => {
+                  const target = messages.find(m => String(m.id) === String(msg.replyTo.id));
+                  if (target) {
+                    flatListRef.current?.scrollToItem({ item: target, animated: true, viewPosition: 0.4 });
+                    setHighlightedId(String(msg.replyTo.id));
+                    setTimeout(() => setHighlightedId(null), 2000);
+                  }
+                }}>
                 <Text style={S.quoteName} numberOfLines={1}>{msg.replyTo.senderNickname || msg.replyTo.senderName}</Text>
                 <Text style={S.quoteText} numberOfLines={1}>
                   {msg.replyTo.type === 'image' ? '[图片]' : msg.replyTo.type === 'voice' ? '[语音]' : msg.replyTo.type === 'video' ? '[视频]' : msg.replyTo.type === 'red_packet' ? '[红包]' : (msg.replyTo.content || '')}
                 </Text>
-              </View>
+              </TouchableOpacity>
             )}
             <View style={[S.bubble, msg.recalled ? S.bubbleRecalled : (isMe ? S.bubbleMe : S.bubbleOther)]}>
               {bubbleContent()}

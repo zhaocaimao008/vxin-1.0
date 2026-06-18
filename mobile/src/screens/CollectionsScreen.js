@@ -42,6 +42,11 @@ export default function CollectionsScreen({ navigation }) {
       <View style={{ flex: 1 }}>
         {c.type === 'image' ? (
           <Image source={{ uri: mediaUrl(c.extra?.file_url || c.content) }} style={s.img} resizeMode="cover" />
+        ) : c.type === 'video' ? (
+          <View style={s.videoThumb}>
+            <Text style={s.videoIcon}>▶</Text>
+            <Text style={s.fileTxt} numberOfLines={1}>🎬 {c.content || '视频'}</Text>
+          </View>
         ) : c.type === 'file' ? (
           <Text style={s.fileTxt}>📎 {c.content || '文件'}</Text>
         ) : (
@@ -85,6 +90,8 @@ const s = StyleSheet.create({
   title: { fontSize: 17, fontWeight: '600', color: C.text },
   card: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: C.bgCard, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 0.5, borderColor: C.border },
   img: { width: 160, height: 160, borderRadius: 8, backgroundColor: C.bgInput },
+  videoThumb: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8, backgroundColor: C.bgInput, borderRadius: 8 },
+  videoIcon: { fontSize: 24, color: C.green },
   fileTxt: { fontSize: 15, color: C.text },
   textTxt: { fontSize: 15, color: C.text, lineHeight: 21 },
   date: { fontSize: 12, color: C.textTip, marginTop: 8 },

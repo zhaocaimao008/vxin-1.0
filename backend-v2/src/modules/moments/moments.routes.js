@@ -1,7 +1,11 @@
 'use strict';
+const path   = require('path');
 const router = require('express').Router();
-const auth = require('../../middleware/auth');
-const m = require('./moments.controller');
+const auth   = require('../../middleware/auth');
+const m      = require('./moments.controller');
+const { makeImageUploader } = require('../../utils/upload');
+const config = require('../../config');
+const uploadMomentImages = makeImageUploader(path.join(config.uploadsRoot, 'moments'), 'images', 9, 5 * 1024 * 1024);
 
 /**
  * @swagger
@@ -50,6 +54,7 @@ const m = require('./moments.controller');
  */
 router.get   ('/',                auth, m.timeline);
 router.post  ('/',                auth, m.create);
+router.post  ('/images',          auth, ...uploadMomentImages, m.uploadImages);
 
 /**
  * @swagger

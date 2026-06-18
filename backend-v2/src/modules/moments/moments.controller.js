@@ -1,5 +1,5 @@
 'use strict';
-const { asyncHandler } = require('../../utils/http');
+const { asyncHandler, badRequest } = require('../../utils/http');
 const svc = require('./moments.service');
 
 const io = req => req.app.get('io');
@@ -11,3 +11,10 @@ exports.remove        = asyncHandler(async (req, res) => res.json(svc.deleteMome
 exports.like          = asyncHandler(async (req, res) => res.json(svc.toggleLike(io(req), req.user.id, req.params.id)));
 exports.comment       = asyncHandler(async (req, res) => res.json(svc.addComment(io(req), req.user.id, req.params.id, req.body)));
 exports.deleteComment = asyncHandler(async (req, res) => res.json(svc.deleteComment(req.user.id, req.params.commentId)));
+
+exports.uploadImages = asyncHandler(async (req, res) => {
+  const files = req.files || [];
+  if (!files.length) throw badRequest('请选择图片');
+  const urls = files.map(f => `/uploads/moments/${f.filename}`);
+  res.json({ urls });
+});

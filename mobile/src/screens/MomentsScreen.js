@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Image,
-  FlatList, Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
+  FlatList, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { mediaUrl } from '../config';
@@ -123,6 +124,7 @@ export default function MomentsScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [composing, setComposing] = useState(false);
   const [text, setText] = useState('');
+  const [images, setImages] = useState([]); // [{uri, type, fileName}]
   const [posting, setPosting] = useState(false);
 
   const load = useCallback(() => {
@@ -131,13 +133,41 @@ export default function MomentsScreen({ navigation }) {
   }, []);
   useEffect(() => { load(); }, [load]);
 
+  const pickImages = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') { Alert.alert('需要相册权限'); return; }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 0.85,
+      selectionLimit: 9 - images.length,
+    });
+    if (!result.canceled) {
+      setImages(prev => [...prev, ...result.assets.slice(0, 9 - prev.length)]);
+    }
+  };
+
+  const removeImage = (idx) => setImages(prev => prev.filter((_, i) => i !== idx));
+
+  const resetCompose = () => { setImages([]); setText(''); setComposing(false); };
+
   const publish = async () => {
-    if (!text.trim()) return;
+    if (!text.trim() && images.length === 0) return;
     setPosting(true);
     try {
-      const { data } = await axios.post('/api/moments', { content: text.trim() });
+      let imageUrls = [];
+      if (images.length > 0) {
+        const fd = new FormData();
+        images.forEach(img => {
+          const ext = img.uri.split('.').pop() || 'jpg';
+          fd.append('images', { uri: img.uri, type: img.mimeType || `image/${ext}`, name: img.fileName || `photo.${ext}` });
+        });
+        const { data } = await axios.post('/api/moments/images', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        imageUrls = data.urls || [];
+      }
+      const { data } = await axios.post('/api/moments', { content: text.trim(), images: imageUrls });
       setList(p => [data, ...p]);
-      setText(''); setComposing(false);
+      resetCompose();
     } catch (e) { Alert.alert('发布失败', e.response?.data?.error || '请重试'); }
     setPosting(false);
   };
@@ -195,9 +225,32 @@ export default function MomentsScreen({ navigation }) {
       {composing && (
         <View style={s.compose}>
           <TextInput autoFocus value={text} onChangeText={setText} multiline placeholder="这一刻的想法…" maxLength={5000} style={s.composeInput} />
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
-            <TouchableOpacity onPress={() => { setComposing(false); setText(''); }} style={s.cancelBtn}><Text style={s.cancelTxt}>取消</Text></TouchableOpacity>
-            <TouchableOpacity onPress={publish} disabled={posting || !text.trim()} style={[s.publishBtn, (posting || !text.trim()) && { opacity: 0.5 }]}>
+
+          {/* 已选图片预览 */}
+          {images.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                {images.map((img, i) => (
+                  <View key={i} style={s.imgThumb}>
+                    <Image source={{ uri: img.uri }} style={s.imgThumbImg} />
+                    <TouchableOpacity onPress={() => removeImage(i)} style={s.imgRemove}>
+                      <Text style={{ color: '#fff', fontSize: 12, lineHeight: 16 }}>×</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          )}
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 }}>
+            <TouchableOpacity onPress={pickImages} disabled={images.length >= 9}
+              style={[s.imgPickBtn, images.length >= 9 && { opacity: 0.4 }]}>
+              <Text style={s.imgPickTxt}>🖼 图片{images.length > 0 ? ` ${images.length}/9` : ''}</Text>
+            </TouchableOpacity>
+            <View style={{ flex: 1 }} />
+            <TouchableOpacity onPress={resetCompose} style={s.cancelBtn}><Text style={s.cancelTxt}>取消</Text></TouchableOpacity>
+            <TouchableOpacity onPress={publish} disabled={posting || (!text.trim() && images.length === 0)}
+              style={[s.publishBtn, (posting || (!text.trim() && images.length === 0)) && { opacity: 0.5 }]}>
               <Text style={s.publishTxt}>{posting ? '发布中…' : '发布'}</Text>
             </TouchableOpacity>
           </View>
@@ -228,6 +281,11 @@ const s = StyleSheet.create({
   headerPost: { fontSize: 26, color: C.green, width: 40, textAlign: 'right', lineHeight: 30 },
   compose: { backgroundColor: C.bgCard, padding: 14, borderBottomWidth: 0.5, borderBottomColor: C.border },
   composeInput: { fontSize: 15, color: C.text, minHeight: 70, textAlignVertical: 'top', backgroundColor: C.bg, borderRadius: 10, padding: 12 },
+  imgThumb: { width: 72, height: 72, borderRadius: 8, overflow: 'hidden', backgroundColor: C.bgInput },
+  imgThumbImg: { width: 72, height: 72 },
+  imgRemove: { position: 'absolute', top: 2, right: 2, width: 18, height: 18, borderRadius: 9, backgroundColor: 'rgba(0,0,0,.55)', alignItems: 'center', justifyContent: 'center' },
+  imgPickBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: C.border },
+  imgPickTxt: { fontSize: 12, color: C.textSub },
   cancelBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: C.bg },
   cancelTxt: { color: C.textSub, fontSize: 13 },
   publishBtn: { paddingHorizontal: 18, paddingVertical: 8, borderRadius: 8, backgroundColor: C.green },

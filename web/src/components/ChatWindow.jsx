@@ -78,6 +78,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   // 搜索消息
   const [showMsgSearch, setShowMsgSearch] = useState(false);
   const [msgSearchQ, setMsgSearchQ] = useState('');
+  const [highlightedMsgId, setHighlightedMsgId] = useState(null);
   const [msgSearchResults, setMsgSearchResults] = useState([]);
   const [msgSearching, setMsgSearching] = useState(false);
   // 红包：详情弹窗 { packet, claims, myClaim, justClaimed } | null
@@ -1225,7 +1226,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       <div
         key={msg.id}
         id={`msg-${msg.id}`}
-        className={`wc-msg-row${isMine ? ' mine' : ''}${multiSelect ? ' multiselect-row' : ''}`}
+        className={`wc-msg-row${isMine ? ' mine' : ''}${multiSelect ? ' multiselect-row' : ''}${highlightedMsgId === String(msg.id) ? ' wc-msg-hl' : ''}`}
         onClick={multiSelect ? () => toggleMsgSelect(msg.id) : undefined}
         style={multiSelect ? { cursor: 'pointer' } : {}}
       >
@@ -1267,7 +1268,12 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
               onContextMenu={e => handleContextMenu(e, msg)}
             >
               {msg.replyTo && (
-                <div className="wc-msg-reply">
+                <div className="wc-msg-reply" style={{ cursor: 'pointer' }} onClick={() => {
+                  const el = document.getElementById(`msg-${msg.replyTo.id}`);
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  setHighlightedMsgId(String(msg.replyTo.id));
+                  setTimeout(() => setHighlightedMsgId(null), 2000);
+                }}>
                   <div className="wc-msg-reply-name">{msg.replyTo.senderName}</div>
                   <div className="wc-msg-reply-text">
                     {msg.replyTo.type === 'image' ? '[图片]' : msg.replyTo.type === 'voice' ? '[语音]' : msg.replyTo.type === 'video' ? '[视频]' : msg.replyTo.type === 'red_packet' ? '[红包]' : msg.replyTo.type === 'file' ? '[文件]' : msg.replyTo.content}
