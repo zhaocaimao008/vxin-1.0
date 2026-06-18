@@ -191,8 +191,8 @@ function forward(io, userId, { msgId, conversationIds }) {
   conversationIds.forEach(convId => {
     if (!isMember(convId, userId)) return;
     const id = uuidv4();
-    db.prepare('INSERT INTO messages (id,conversation_id,sender_id,type,content,file_url) VALUES (?,?,?,?,?,?)')
-      .run(id, convId, userId, msg.type, msg.content, msg.file_url || '');
+    db.prepare('INSERT INTO messages (id,conversation_id,sender_id,type,content,file_url,duration) VALUES (?,?,?,?,?,?,?)')
+      .run(id, convId, userId, msg.type, msg.content, msg.file_url || '', msg.duration || 0);
     const newMsg = db.prepare('SELECT m.*, u.username as senderName, u.avatar as senderAvatar FROM messages m JOIN users u ON u.id=m.sender_id WHERE m.id=?').get(id);
     newMsg.reactions = [];
     if (io) io.to(convId).emit('new_message', newMsg);

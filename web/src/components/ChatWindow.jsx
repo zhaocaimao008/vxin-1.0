@@ -35,6 +35,7 @@ import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
 import { format, formatFull } from '../utils/time';
 import { mediaUrl } from '../utils/url';
+import './ChatWindow.css';
 
 const REACTIONS = ['👍','❤️','😄','😮','😢','🙏'];
 
@@ -428,7 +429,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         });
       } else {
         setMessages(prev => prev.map(m =>
-          m.sender_id !== uid && m.created_at <= readAt
+          m.sender_id === user.id && m.created_at <= readAt
             ? { ...m, readCount: (m.readCount || 0) + 1 }
             : m
         ));
@@ -1164,13 +1165,13 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     if (msg.deleted) {
       const recalled = recalledContentRef.current[msg.id];
       return (
-        <div key={msg.id} style={{ textAlign: 'center', margin: '4px 0' }}>
-          <span style={{ fontSize: 12, color: '#B2B2B2' }}>
+        <div key={msg.id} className="wc-deleted-msg">
+          <span className="wc-deleted-msg-text">
             {msg.sender_id === user.id ? '你撤回了一条消息' : `"${msg.senderName}"撤回了一条消息`}
           </span>
           {recalled && (
             <span
-              style={{ fontSize: 12, color: '#07C160', marginLeft: 8, cursor: 'pointer', textDecoration: 'underline' }}
+              className="wc-reedit-link"
               onClick={() => { setInput(recalled); textareaRef.current?.focus(); delete recalledContentRef.current[msg.id]; }}
             >重新编辑</span>
           )}
@@ -1236,17 +1237,16 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                 <div className="wc-msg-read"><span className="wc-msg-spinner" /></div>
               ) : msg._status === 'error' ? (
                 <div
-                  className="wc-msg-read"
+                  className="wc-msg-read wc-msg-status-error-icon"
                   title="发送失败，点击重发"
-                  style={{ color: '#FA5151', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}
                   onClick={() => retryMessage(msg)}
                 >❗</div>
               ) : isLastMine && conversation.type === 'private' ? (
                 showRead
-                  ? <div className="wc-msg-read" style={{ color: '#07C160' }}>✓✓ 已读</div>
+                  ? <div className="wc-msg-read wc-msg-status-read">✓✓ 已读</div>
                   : showDelivered
-                    ? <div className="wc-msg-read" style={{ color: '#B2B2B2' }}>✓✓ 已送达</div>
-                    : <div className="wc-msg-read" style={{ color: '#C8C8C8' }}>✓ 已发送</div>
+                    ? <div className="wc-msg-read wc-msg-status-delivered">✓✓ 已送达</div>
+                    : <div className="wc-msg-read wc-msg-status-sent">✓ 已发送</div>
               ) : null
             )}
             <div
@@ -1264,15 +1264,14 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
               {msg.type === 'text' && (
                 <span>
                   {msg.content}
-                  {msg.edited ? <span style={{ fontSize: 10, color: isMine ? 'rgba(0,0,0,.35)' : '#B2B2B2', marginLeft: 5 }}>已编辑</span> : null}
+                  {msg.edited ? <span className="wc-msg-edited" style={{ color: isMine ? 'rgba(0,0,0,.35)' : '#B2B2B2' }}>已编辑</span> : null}
                 </span>
               )}
               {msg.type === 'image' && (
-                <img
+                <img loading="lazy"
                   src={mediaUrl(msg.file_url)}
                   alt=""
-                  className="wc-msg-image"
-                  style={{ cursor: 'zoom-in' }}
+                  className="wc-msg-img"
                   onClick={() => setLightboxUrl(mediaUrl(msg.file_url))}
                   onLoad={() => {
                     // 图片加载完成后高度变化，若用户在底部则补一次置底
@@ -1291,11 +1290,11 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                   src={mediaUrl(msg.file_url)}
                   controls
                   preload="metadata"
-                  style={{ maxWidth: 240, maxHeight: 320, borderRadius: 8, display: 'block', background: '#000' }}
+                  className="wc-msg-video"
                 />
               )}
               {msg.type === 'file' && (
-                <a href={mediaUrl(msg.file_url)} download={msg.content} className="wc-msg-file" style={{ textDecoration: 'none', color: 'inherit' }}>
+                <a href={mediaUrl(msg.file_url)} download={msg.content} className="wc-msg-file-link">
                   <div className="wc-msg-file-icon">📄</div>
                   <div>
                     <div className="wc-msg-file-name">{msg.content}</div>
@@ -1310,16 +1309,16 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                 return (
                   <div
                     onClick={() => card.uid && setShowUserProfile(card.uid)}
-                    style={{ width: 230, background: 'var(--bg-msg-other, #fff)', border: '1px solid var(--border-color, #e5e5e5)', borderRadius: 8, overflow: 'hidden', cursor: 'pointer' }}
+                    className="wc-contact-card"
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px' }}>
+                    <div className="wc-contact-card-body">
                       <Avatar src={card.avatar} name={card.username} size={44} style={{ borderRadius: 6, flexShrink: 0 }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.username || '用户'}</div>
-                        {card.wechat_id && <div style={{ fontSize: 12, color: 'var(--text-tertiary, #999)', marginTop: 2 }}>v信号：{card.wechat_id}</div>}
+                      <div className="wc-contact-card-info">
+                        <div className="wc-contact-card-name">{card.username || '用户'}</div>
+                        {card.wechat_id && <div className="wc-contact-card-wechat">v信号：{card.wechat_id}</div>}
                       </div>
                     </div>
-                    <div style={{ borderTop: '1px solid var(--border-color, #eee)', padding: '5px 12px', fontSize: 11, color: 'var(--text-tertiary, #999)' }}>个人名片</div>
+                    <div className="wc-contact-card-footer">个人名片</div>
                   </div>
                 );
               })()}
@@ -1329,22 +1328,18 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                 return (
                   <div
                     onClick={() => openRedPacket(rp.packetId)}
-                    style={{
-                      width: 220, cursor: 'pointer', borderRadius: 8, overflow: 'hidden',
-                      background: 'linear-gradient(135deg,#F9A825,#F4511E)', color: '#fff',
-                      boxShadow: '0 1px 4px rgba(0,0,0,.15)',
-                    }}
+                    className="wc-redpacket-card"
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px' }}>
-                      <div style={{ fontSize: 30, lineHeight: 1 }}>🧧</div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div className="wc-redpacket-body">
+                      <div className="wc-redpacket-icon">🧧</div>
+                      <div className="wc-redpacket-info">
+                        <div className="wc-redpacket-greeting">
                           {rp.greeting || '恭喜发财，大吉大利'}
                         </div>
-                        <div style={{ fontSize: 11, opacity: .85, marginTop: 2 }}>点击领取红包</div>
+                        <div className="wc-redpacket-hint">点击领取红包</div>
                       </div>
                     </div>
-                    <div style={{ borderTop: '1px solid rgba(255,255,255,.25)', padding: '4px 14px', fontSize: 11, opacity: .9 }}>
+                    <div className="wc-redpacket-footer">
                       v信红包
                     </div>
                   </div>
@@ -1354,14 +1349,14 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
           </div>
           {/* 群消息已读数 */}
           {conversation.type === 'group' && isMine && msg.readCount > 0 && (
-            <div style={{ fontSize: 11, color: '#B2B2B2', textAlign: 'right', marginTop: 2, paddingRight: 4 }}>{msg.readCount}人已读</div>
+            <div className="wc-group-read-count">{msg.readCount}人已读</div>
           )}
           {msg.reactions?.length > 0 && (
             <div className="wc-reactions">
               {msg.reactions.map(r => (
                 <div
                   key={r.emoji}
-                  className={`wc-reaction-pill${r.userIds.includes(user.id) ? ' mine' : ''}`}
+                  className={`wc-reaction-pill${r.userIds.map(String).includes(String(user.id)) ? ' mine' : ''}`}
                   onClick={() => axios.post(`/api/messages/${msg.id}/react`, { emoji: r.emoji })}
                 >
                   <span>{r.emoji}</span>
@@ -1398,9 +1393,9 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     >
       {/* ── 拖拽上传遮罩 ── */}
       {isDragOver && (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(7,193,96,.12)', border: '2px dashed #07C160', borderRadius: 4, zIndex: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, pointerEvents: 'none' }}>
-          <svg viewBox="0 0 24 24" style={{ width: 48, height: 48, fill: '#07C160' }}><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
-          <span style={{ fontSize: 16, color: '#07C160', fontWeight: 600 }}>拖放文件到此处上传</span>
+        <div className="wc-drag-overlay">
+          <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+          <span>拖放文件到此处上传</span>
         </div>
       )}
       {/* ── 图片灯箱 ── */}
@@ -1418,14 +1413,14 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       )}
       {/* ── Header ── */}
       <div className="wc-chat-header">
-        <button className="wc-chat-header-back" onClick={onClose} title="返回" style={{ display: 'none' }}>
-          <svg viewBox="0 0 24 24" style={{ width: 22, height: 22, fill: '#191919' }}><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        <button className="wc-chat-header-back wc-back-btn" onClick={onClose} title="返回">
+          <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
         </button>
-        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <div className="wc-header-name-container">
           <div className="wc-chat-header-name">
             {conversation.name || '聊天'}
             {memberCount
-              ? <span style={{ fontSize: 13, color: 'var(--text-tertiary)', fontWeight: 400, marginLeft: 5 }}>({memberCount})</span>
+              ? <span className="wc-header-member-count">({memberCount})</span>
               : null
             }
           </div>
@@ -1457,28 +1452,28 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
 
       {/* ── 搜索消息面板 ── */}
       {showMsgSearch && (
-        <div style={{ background: 'var(--bg-chat-header)', borderBottom: '1px solid rgba(0,0,0,.09)', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', padding: '8px 14px', gap: 8 }}>
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-search)', borderRadius: 5, padding: '5px 10px', height: 28 }}>
-              <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, fill: 'var(--text-tertiary)', flexShrink: 0 }}><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <div className="wc-search-panel">
+          <div className="wc-search-bar">
+            <div className="wc-search-input-wrap">
+              <svg viewBox="0 0 24 24" className="wc-search-icon"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
               <input
                 autoFocus
                 value={msgSearchQ}
                 onChange={e => { setMsgSearchQ(e.target.value); searchMessages(e.target.value); }}
                 placeholder="搜索聊天记录..."
-                style={{ flex: 1, fontSize: 13, color: 'var(--text-primary)', background: 'transparent' }}
+                className="wc-search-input"
                 onKeyDown={e => e.key === 'Escape' && setShowMsgSearch(false)}
               />
-              {msgSearchQ && <button style={{ color: 'var(--text-tertiary)', fontSize: 14 }} onClick={() => { setMsgSearchQ(''); setMsgSearchResults([]); }}>✕</button>}
+              {msgSearchQ && <button className="wc-search-close-btn" onClick={() => { setMsgSearchQ(''); setMsgSearchResults([]); }} aria-label="清空搜索">✕</button>}
             </div>
-            <button style={{ color: '#07C160', fontSize: 13 }} onClick={() => setShowMsgSearch(false)}>关闭</button>
+            <button className="wc-search-cancel-btn" onClick={() => setShowMsgSearch(false)}>关闭</button>
           </div>
           {/* 搜索结果 */}
           {msgSearchQ && (
-            <div style={{ maxHeight: 220, overflowY: 'auto', borderTop: '1px solid rgba(0,0,0,.05)' }}>
-              {msgSearching && <div style={{ textAlign: 'center', padding: '12px 0', fontSize: 13, color: 'var(--text-tertiary)' }}>搜索中…</div>}
+            <div className="wc-search-results">
+              {msgSearching && <div className="wc-search-status">搜索中…</div>}
               {!msgSearching && msgSearchResults.length === 0 && msgSearchQ && (
-                <div style={{ textAlign: 'center', padding: '12px 0', fontSize: 13, color: 'var(--text-tertiary)' }}>未找到相关记录</div>
+                <div className="wc-search-status">未找到相关记录</div>
               )}
               {msgSearchResults.map(msg => {
                 const q = msgSearchQ.toLowerCase();
@@ -1486,9 +1481,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                 return (
                   <div
                     key={msg.id}
-                    style={{ display: 'flex', gap: 8, padding: '8px 14px', cursor: 'pointer', borderBottom: '1px solid rgba(0,0,0,.04)' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,.04)'}
-                    onMouseLeave={e => e.currentTarget.style.background = ''}
+                    className="wc-search-result-item"
                     onClick={() => {
                       // 跳转到该消息（添加到消息列表并高亮）
                       const exists = messages.find(m => m.id === msg.id);
@@ -1499,18 +1492,18 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                       }, 100);
                     }}
                   >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--link-color)' }}>{msg.senderName}</span>
-                        <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                    <div className="wc-search-result-body">
+                      <div className="wc-search-result-meta">
+                        <span className="wc-search-result-sender">{msg.senderName}</span>
+                        <span className="wc-search-result-time">
                           {new Date(msg.created_at * 1000).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
                         </span>
                       </div>
-                      <div style={{ fontSize: 13, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div className="wc-search-result-preview">
                         {idx >= 0 ? (
                           <>
                             {msg.content.slice(0, idx)}
-                            <span style={{ color: '#07C160', fontWeight: 600 }}>{msg.content.slice(idx, idx + msgSearchQ.length)}</span>
+                            <span className="wc-search-result-highlight">{msg.content.slice(idx, idx + msgSearchQ.length)}</span>
                             {msg.content.slice(idx + msgSearchQ.length)}
                           </>
                         ) : msg.content}
@@ -1526,26 +1519,26 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
 
       {/* ── 置顶消息 Banner ── */}
       {pinnedMessages.length > 0 && (
-        <div style={{ background: '#FFFDE7', borderBottom: '1px solid #FFE082', padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, cursor: 'pointer' }}
+        <div className="wc-pinned-banner"
           onClick={() => setShowPinnedDetail(v => !v)}>
-          <span style={{ fontSize: 11, color: '#FF8F00', fontWeight: 600, flexShrink: 0 }}>📌 置顶</span>
-          <span style={{ fontSize: 13, color: '#555', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span className="wc-pinned-badge">📌 置顶</span>
+          <span className="wc-pinned-text">
             {pinnedMessages[0]?.type === 'image' ? '[图片]' : pinnedMessages[0]?.content}
           </span>
-          {pinnedMessages.length > 1 && <span style={{ fontSize: 11, color: '#888', flexShrink: 0 }}>+{pinnedMessages.length - 1}</span>}
-          <span style={{ fontSize: 12, color: '#B2B2B2', flexShrink: 0 }}>{showPinnedDetail ? '▲' : '▼'}</span>
+          {pinnedMessages.length > 1 && <span className="wc-pinned-count">+{pinnedMessages.length - 1}</span>}
+          <span className="wc-pinned-toggle">{showPinnedDetail ? '▲' : '▼'}</span>
         </div>
       )}
       {showPinnedDetail && pinnedMessages.length > 0 && (
-        <div style={{ background: '#FFFDE7', borderBottom: '1px solid #FFE082', maxHeight: 180, overflowY: 'auto', flexShrink: 0 }}>
+        <div className="wc-pinned-detail">
           {pinnedMessages.map(p => (
-            <div key={p.msgId} style={{ display: 'flex', alignItems: 'center', padding: '7px 14px', gap: 8, borderTop: '1px solid rgba(0,0,0,.04)' }}>
-              <span style={{ fontSize: 20 }}>📌</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, color: '#888', marginBottom: 2 }}>{p.senderName} · 由{p.pinnedByName}置顶</div>
-                <div style={{ fontSize: 13, color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.type === 'image' ? '[图片]' : p.content}</div>
+            <div key={p.msgId} className="wc-pinned-item">
+              <span className="wc-pinned-item-icon">📌</span>
+              <div className="wc-pinned-item-body">
+                <div className="wc-pinned-item-meta">{p.senderName} · 由{p.pinnedByName}置顶</div>
+                <div className="wc-pinned-item-text">{p.type === 'image' ? '[图片]' : p.content}</div>
               </div>
-              <button style={{ fontSize: 12, color: '#FA5151', padding: '2px 8px', border: '1px solid #FFCDD2', borderRadius: 4, cursor: 'pointer', flexShrink: 0 }}
+              <button className="wc-unpin-btn"
                 onClick={e => { e.stopPropagation(); axios.delete(`/api/messages/conversation/${conversation.id}/pin-message/${p.msgId}`); }}>
                 取消置顶
               </button>
@@ -1555,10 +1548,10 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       )}
 
       {/* ── Body ── */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      <div className="wc-messages-wrap">
         <div className="wc-messages" ref={messagesContainerRef} onScroll={handleScroll}>
           {loadingMore && (
-            <div style={{ textAlign: 'center', padding: '6px 0', fontSize: 11, color: 'var(--text-tertiary)' }}>加载中...</div>
+            <div className="wc-search-status">加载中...</div>
           )}
           {renderMessages()}
           {typingName && (
@@ -1607,27 +1600,25 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       {/* ── 分享名片：联系人选择器 ── */}
       {showCardPicker && (
         <div
-          style={{ position: 'fixed', inset: 0, zIndex: 650, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          className="wc-card-picker-overlay"
           onClick={e => e.target === e.currentTarget && setShowCardPicker(false)}
         >
-          <div style={{ width: 380, maxWidth: '92vw', maxHeight: '74vh', background: 'var(--bg-msg-other, #fff)', borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border-color)' }}>
-              <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>选择要分享的名片</span>
-              <button onClick={() => setShowCardPicker(false)} style={{ fontSize: 18, color: 'var(--text-secondary)', background: 'none', cursor: 'pointer' }}>✕</button>
+          <div className="wc-card-picker">
+            <div className="wc-card-picker-header">
+              <span className="wc-card-picker-title">选择要分享的名片</span>
+              <button className="wc-card-picker-close" onClick={() => setShowCardPicker(false)} aria-label="关闭名片选择">✕</button>
             </div>
-            <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div className="wc-card-picker-list">
               {cardContacts.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '28px', color: 'var(--text-tertiary)', fontSize: 13 }}>暂无联系人</div>
+                <div className="wc-card-picker-empty">暂无联系人</div>
               )}
               {cardContacts.map(c => (
                 <div key={c.id} onClick={() => sendContactCard(c)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 18px', cursor: 'pointer' }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                  className="wc-card-picker-item">
                   <Avatar src={c.avatar} name={c.remark || c.username} size={42} style={{ borderRadius: 6 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14.5, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.remark || c.username}</div>
-                    {c.wechat_id && <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 1 }}>v信号：{c.wechat_id}</div>}
+                  <div className="wc-card-picker-item-info">
+                    <div className="wc-card-picker-item-name">{c.remark || c.username}</div>
+                    {c.wechat_id && <div className="wc-card-picker-item-wechat">v信号：{c.wechat_id}</div>}
                   </div>
                 </div>
               ))}
@@ -1638,41 +1629,37 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
 
       {/* ── 文件上传进度条 ── */}
       {uploadState && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          padding: '7px 14px', flexShrink: 0,
-          background: uploadState.status === 'error' ? '#FFF0F0' : '#F0FFF6',
-          borderTop: `1px solid ${uploadState.status === 'error' ? '#FFCDD2' : '#B7EBC7'}`,
-        }}>
+        <div className={`wc-upload-bar ${uploadState.status === 'error' ? 'wc-upload-bar-error' : 'wc-upload-bar-progress'}`}>
           {uploadState.status === 'uploading' ? (
             <>
-              <span style={{ fontSize: 13, color: '#07C160', flexShrink: 0 }}>📤</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, color: '#333', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span className="wc-upload-icon wc-upload-icon-ok">📤</span>
+              <div className="wc-upload-body">
+                <div className="wc-upload-name">
                   {uploadState.name} · {uploadState.progress}%
                 </div>
-                <div style={{ height: 4, background: '#D9F7E2', borderRadius: 2, overflow: 'hidden' }}>
-                  <div style={{ width: `${uploadState.progress}%`, height: '100%', background: '#07C160', borderRadius: 2, transition: 'width .15s' }} />
+                <div className="wc-upload-track">
+                  <div className="wc-upload-fill" style={{ width: `${uploadState.progress}%` }} />
                 </div>
               </div>
             </>
           ) : (
             <>
-              <span style={{ fontSize: 13, color: '#FA5151', flexShrink: 0 }}>❌</span>
-              <div style={{ flex: 1, fontSize: 12, color: '#FA5151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span className="wc-upload-icon wc-upload-icon-fail">❌</span>
+              <div className="wc-upload-error-text">
                 {uploadState.errorMsg || '上传失败'}
               </div>
               {uploadState.retryFn && (
                 <button
-                  style={{ fontSize: 12, color: '#07C160', padding: '3px 10px', border: '1px solid #07C160', borderRadius: 4, flexShrink: 0, cursor: 'pointer' }}
+                  className="wc-retry-btn"
                   onClick={uploadState.retryFn}
                 >
                   重试
                 </button>
               )}
               <button
-                style={{ fontSize: 14, color: '#B2B2B2', flexShrink: 0, cursor: 'pointer' }}
+                className="wc-cancel-upload-btn"
                 onClick={() => setUploadState(null)}
+                aria-label="取消上传"
               >✕</button>
             </>
           )}
@@ -1681,25 +1668,25 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
 
       {/* ── 编辑模式指示条 ── */}
       {editingMsg && (
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:'#FFF8E1', padding:'6px 14px', borderTop:'1px solid #FFE082', gap:8 }}>
-          <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontSize:11, color:'#E65100', fontWeight:600, marginBottom:2 }}>编辑消息</div>
-            <div style={{ fontSize:12, color:'#888', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{editingMsg.content}</div>
+        <div className="wc-edit-bar">
+          <div className="wc-edit-bar-body">
+            <div className="wc-edit-bar-label">编辑消息</div>
+            <div className="wc-edit-bar-text">{editingMsg.content}</div>
           </div>
-          <button style={{ color:'#888', fontSize:14, cursor:'pointer', padding:2 }} onClick={cancelEdit}>✕</button>
+          <button className="wc-edit-cancel-btn" onClick={cancelEdit} aria-label="取消编辑">✕</button>
         </div>
       )}
 
       {/* ── Reply preview bar ── */}
       {replyTo && !editingMsg && (
         <div className="wc-reply-bar">
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="wc-reply-bar-body">
             <div className="wc-reply-bar-name">回复 {replyTo.senderName}</div>
             <div className="wc-reply-bar-text">
               {replyTo.type === 'image' ? '[图片]' : replyTo.type === 'voice' ? '[语音]' : replyTo.type === 'video' ? '[视频]' : replyTo.type === 'red_packet' ? '[红包]' : replyTo.type === 'file' ? '[文件]' : replyTo.content}
             </div>
           </div>
-          <button className="wc-reply-bar-close" onClick={() => setReplyTo(null)}>✕</button>
+          <button className="wc-reply-bar-close" onClick={() => setReplyTo(null)} aria-label="取消回复">✕</button>
         </div>
       )}
 
@@ -1710,20 +1697,20 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
 
       {/* ── 多选模式底部工具栏 ── */}
       {multiSelect && (
-        <div style={{ background: '#F5F5F5', borderTop: '1px solid rgba(0,0,0,.07)', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-          <button style={{ fontSize: 14, color: '#07C160', padding: '6px 14px', border: '1px solid #07C160', borderRadius: 4, cursor: 'pointer' }} onClick={() => { setMultiSelect(false); setSelectedMsgs(new Set()); }}>取消</button>
-          <span style={{ fontSize: 13, color: '#888' }}>已选 {selectedMsgs.size} 条</span>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button style={{ fontSize: 14, color: '#fff', background: '#07C160', padding: '6px 16px', borderRadius: 4, cursor: 'pointer', opacity: selectedMsgs.size === 0 ? 0.5 : 1 }} onClick={multiForward} disabled={selectedMsgs.size === 0}>转发</button>
-            <button style={{ fontSize: 14, color: '#fff', background: '#FA5151', padding: '6px 16px', borderRadius: 4, cursor: 'pointer', opacity: selectedMsgs.size === 0 ? 0.5 : 1 }} onClick={multiDelete} disabled={selectedMsgs.size === 0}>撤回</button>
+        <div className="wc-multiselect-bar">
+          <button className="wc-ms-cancel-btn" onClick={() => { setMultiSelect(false); setSelectedMsgs(new Set()); }}>取消</button>
+          <span className="wc-ms-count">已选 {selectedMsgs.size} 条</span>
+          <div className="wc-ms-btn-group">
+            <button className="wc-ms-btn-primary wc-ms-btn-forward" onClick={multiForward} disabled={selectedMsgs.size === 0}>转发</button>
+            <button className="wc-ms-btn-primary wc-ms-btn-delete" onClick={multiDelete} disabled={selectedMsgs.size === 0}>撤回</button>
           </div>
         </div>
       )}
 
       {/* ── 全群禁言提示（普通成员被禁言时替换输入区） ── */}
       {!multiSelect && conversation.type === 'group' && groupSettings.mute_all && myGroupRole === 'member' ? (
-        <div style={{ background: '#F5F5F5', borderTop: '1px solid rgba(0,0,0,.07)', padding: '14px 20px', textAlign: 'center' }}>
-          <span style={{ fontSize: 13, color: '#B2B2B2' }}>🔇 全员禁言已开启，只有群主和管理员可以发送消息</span>
+        <div className="wc-mute-notice">
+          <span>🔇 全员禁言已开启，只有群主和管理员可以发送消息</span>
         </div>
       ) : (
       /* ── Input area ── */
@@ -1748,17 +1735,17 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
             onClick={() => setVoiceMode(v => !v)}
           ><IcoMic /></button>
 
-          <label className="wc-tool-btn" title="图片" style={{ cursor: 'pointer' }}>
+          <label className="wc-tool-btn wc-tool-label" title="图片">
             <IcoImage />
-            <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" style={{ display: 'none' }} onChange={handleFileUpload} />
+            <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="wc-hidden-input" onChange={handleFileUpload} />
           </label>
 
-          <label className="wc-tool-btn" title="文件" style={{ cursor: 'pointer' }}>
+          <label className="wc-tool-btn wc-tool-label" title="文件">
             <IcoFile />
             <input
               type="file"
               ref={fileInputRef}
-              style={{ display: 'none' }}
+              className="wc-hidden-input"
               accept="image/*,audio/*,video/mp4,video/quicktime,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip,application/x-rar-compressed,text/plain"
               onChange={handleFileUpload}
             />
@@ -1803,7 +1790,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         {!showMore && (
           <>
             {voiceMode ? (
-              <div style={{ padding: '4px 14px 8px' }}>
+              <div className="wc-voice-container">
                 <button
                   className={`wc-voice-btn${recording ? ' recording' : ''}`}
                   onMouseDown={startRecording}
@@ -1815,20 +1802,13 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                 </button>
               </div>
             ) : (
-              <div className="wc-input-box" style={{ position: 'relative' }}>
+              <div className="wc-input-box wc-input-box-relative">
                 {atList && (
-                  <div style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, background: '#fff', border: '1px solid var(--border-color)', borderRadius: 4, boxShadow: '0 2px 12px rgba(0,0,0,.1)', zIndex: 100, maxHeight: 180, overflowY: 'auto' }}>
+                  <div className="wc-at-list">
                     {atList.filter(m => m.id !== user.id).map((m, i) => (
                       <div
                         key={m.id}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 8,
-                          padding: '7px 12px', cursor: 'pointer', fontSize: 14,
-                          background: i === atIndex ? 'rgba(7,193,96,.12)' : '',
-                          transition: 'background .08s'
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,.04)'}
-                        onMouseLeave={e => e.currentTarget.style.background = i === atIndex ? 'rgba(7,193,96,.12)' : ''}
+                        className={`wc-at-list-item${i === atIndex ? ' active' : ''}`}
                         onClick={() => insertAtMention(m)}>
                         <Avatar src={m.avatar} name={m.username} size={22} />
                         <span>{m.username}</span>
@@ -1881,24 +1861,14 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       {ctxMenu && createPortal(
         <>
           <div
-            className="wc-ctx-overlay"
+            className="wc-ctx-overlay wc-ctx-overlay-fixed"
             onClick={closeCtx}
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              zIndex: 999,
-            }}
           />
           <div
-            className="wc-ctx-menu"
+            className="wc-ctx-menu wc-ctx-menu-fixed"
             style={{
-              position: 'fixed',
               left: ctxMenu.x + 'px',
               top: ctxMenu.y + 'px',
-              zIndex: 1000,
             }}>
             <div className="wc-ctx-emoji-row">
               {REACTIONS.map(e => (
@@ -1950,50 +1920,50 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       {redPacketDetail && (
         <div
           onClick={() => setRedPacketDetail(null)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000 }}
+          className="wc-rp-detail-overlay"
         >
           <div
             onClick={e => e.stopPropagation()}
-            style={{ width: 320, background: 'linear-gradient(180deg,#F4511E 0%,#F4511E 140px,#fff 140px,#fff 100%)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,.3)' }}
+            className="wc-rp-detail-card"
           >
-            <div style={{ padding: '26px 20px 18px', textAlign: 'center', color: '#fff' }}>
-              <div style={{ fontSize: 36 }}>🧧</div>
-              <div style={{ fontSize: 15, marginTop: 8, fontWeight: 600 }}>{redPacketDetail.senderName} 的红包</div>
-              <div style={{ fontSize: 13, opacity: .9, marginTop: 4 }}>{redPacketDetail.greeting}</div>
+            <div className="wc-rp-detail-header">
+              <div className="wc-rp-detail-icon">🧧</div>
+              <div className="wc-rp-detail-sender">{redPacketDetail.senderName} 的红包</div>
+              <div className="wc-rp-detail-greeting">{redPacketDetail.greeting}</div>
             </div>
-            <div style={{ background: '#fff', padding: '0 20px 20px' }}>
+            <div className="wc-rp-detail-body">
               {redPacketDetail.myClaim ? (
-                <div style={{ textAlign: 'center', padding: '14px 0 10px' }}>
-                  {redPacketDetail.justClaimed && <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>领取成功</div>}
-                  <span style={{ fontSize: 30, fontWeight: 700, color: '#F4511E' }}>{redPacketDetail.myClaim.amount}</span>
-                  <span style={{ fontSize: 14, color: '#F4511E', marginLeft: 4 }}>金币</span>
+                <div className="wc-rp-center">
+                  {redPacketDetail.justClaimed && <div className="wc-rp-claimed-label">领取成功</div>}
+                  <span className="wc-rp-amount">{redPacketDetail.myClaim.amount}</span>
+                  <span className="wc-rp-unit">金币</span>
                 </div>
               ) : String(redPacketDetail.sender_id) === String(user.id) ? (
-                <div style={{ textAlign: 'center', padding: '14px 0 10px' }}>
-                  <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>你发出的红包</div>
-                  <span style={{ fontSize: 30, fontWeight: 700, color: '#F4511E' }}>{redPacketDetail.total_amount}</span>
-                  <span style={{ fontSize: 14, color: '#F4511E', marginLeft: 4 }}>金币</span>
+                <div className="wc-rp-center">
+                  <div className="wc-rp-claimed-label">你发出的红包</div>
+                  <span className="wc-rp-amount">{redPacketDetail.total_amount}</span>
+                  <span className="wc-rp-unit">金币</span>
                 </div>
               ) : (
-                <div style={{ textAlign: 'center', padding: '14px 0 10px', fontSize: 14, color: '#999' }}>
+                <div className="wc-rp-expired">
                   {redPacketDetail.claimed_count >= redPacketDetail.total_count ? '手慢了，红包派完了' : '红包已过期'}
                 </div>
               )}
-              <div style={{ fontSize: 12, color: '#999', textAlign: 'center', marginBottom: 8 }}>
+              <div className="wc-rp-stats">
                 已领取 {redPacketDetail.claimed_count}/{redPacketDetail.total_count} 个
               </div>
-              <div style={{ maxHeight: 200, overflowY: 'auto', borderTop: '1px solid #eee' }}>
+              <div className="wc-rp-claims-list">
                 {(redPacketDetail.claims || []).map(c => (
-                  <div key={c.id || c.user_id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 2px', fontSize: 14, borderBottom: '1px solid #f5f5f5' }}>
-                    <span style={{ color: '#333' }}>{c.username}{c.user_id === user.id ? '（我）' : ''}</span>
-                    <span style={{ color: '#F4511E', fontWeight: 600 }}>{c.amount} 金币</span>
+                  <div key={c.id || c.user_id} className="wc-rp-claim-item">
+                    <span className="wc-rp-claim-name">{c.username}{c.user_id === user.id ? '（我）' : ''}</span>
+                    <span className="wc-rp-claim-amount">{c.amount} 金币</span>
                   </div>
                 ))}
               </div>
             </div>
             <div
               onClick={() => setRedPacketDetail(null)}
-              style={{ textAlign: 'center', padding: '12px', fontSize: 14, color: '#888', cursor: 'pointer', background: '#fff', borderTop: '1px solid #f0f0f0' }}
+              className="wc-rp-close-btn"
             >关闭</div>
           </div>
         </div>
@@ -2025,24 +1995,6 @@ function VoicePlayer({ url }) {
     }
   };
 
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-    }
-  };
-
-  const handleLoadedMetadata = () => {
-    if (audioRef.current) {
-      setDuration(audioRef.current.duration || 0);
-      setLoaded(true);
-    }
-  };
-
-  const handleEnded = () => {
-    setPlaying(false);
-    setCurrentTime(0);
-  };
-
   const handleSeek = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -2056,57 +2008,47 @@ function VoicePlayer({ url }) {
   useEffect(() => {
     const audio = new Audio(url);
     audio.preload = 'metadata';
-    const handlePlay = () => setPlaying(true);
-    const handlePause = () => setPlaying(false);
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('play', handlePlay);
-    audio.addEventListener('pause', handlePause);
+    const onLoadedMetadata = () => { setDuration(audio.duration || 0); setLoaded(true); };
+    const onTimeUpdate    = () => { setCurrentTime(audio.currentTime); };
+    const onEnded         = () => { setPlaying(false); setCurrentTime(0); };
+    const onPlay          = () => setPlaying(true);
+    const onPause         = () => setPlaying(false);
+    audio.addEventListener('loadedmetadata', onLoadedMetadata);
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('ended', onEnded);
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
     audioRef.current = audio;
     return () => {
       audio.pause();
       audio.src = '';
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('ended', handleEnded);
-      audio.removeEventListener('play', handlePlay);
-      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
     };
-  }, [url, handleLoadedMetadata, handleTimeUpdate, handleEnded]);
+  }, [url]);
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
     <div
-      className="wc-msg-voice-player"
+      className="wc-msg-voice-player wc-voice-player"
       onClick={(e) => e.stopPropagation()}
-      style={{
-        display: 'inline-flex', alignItems: 'center', gap: 8,
-        minWidth: 180, padding: '4px 8px',
-        cursor: 'default', userSelect: 'none',
-      }}
     >
       {/* Play/Pause button */}
       <button
         onClick={togglePlay}
-        style={{
-          width: 28, height: 28, borderRadius: 14,
-          background: '#07C160', border: 'none', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0, transition: 'transform .1s',
-        }}
-        onMouseDown={(e) => e.currentTarget.style.transform = 'scale(.9)'}
-        onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        className="wc-voice-play-btn"
       >
         {playing ? (
-          <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, fill: '#fff' }}>
+          <svg viewBox="0 0 24 24" className="wc-voice-play-icon">
             <rect x="6" y="4" width="4" height="16" rx="1"/>
             <rect x="14" y="4" width="4" height="16" rx="1"/>
           </svg>
         ) : (
-          <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, fill: '#fff', marginLeft: 1 }}>
+          <svg viewBox="0 0 24 24" className="wc-voice-play-icon-offset">
             <path d="M8 5v14l11-7z"/>
           </svg>
         )}
@@ -2115,27 +2057,16 @@ function VoicePlayer({ url }) {
       {/* Progress bar */}
       <div
         onClick={handleSeek}
-        style={{
-          flex: 1, height: 4, borderRadius: 2,
-          background: 'rgba(0,0,0,.12)', cursor: 'pointer',
-          position: 'relative', overflow: 'hidden',
-        }}
+        className="wc-voice-progress-track"
       >
         <div
-          style={{
-            width: `${progress}%`, height: '100%',
-            background: '#07C160', borderRadius: 2,
-            transition: 'width .15s linear',
-          }}
+          className="wc-voice-progress-fill"
+          style={{ width: `${progress}%` }}
         />
       </div>
 
       {/* Duration */}
-      <span style={{
-        fontSize: 11, color: '#999', flexShrink: 0,
-        fontVariantNumeric: 'tabular-nums',
-        minWidth: 32, textAlign: 'right',
-      }}>
+      <span className="wc-voice-duration">
         {loaded ? formatTime_(currentTime) + ' / ' + formatTime_(duration) : formatTime_(0)}
       </span>
     </div>
@@ -2181,39 +2112,33 @@ function PrivateChatSettings({ conversation, onClose, onConvUpdate, onCleared })
     setSaving(false);
   };
 
-  const S = {
-    panel: { width: 240, borderLeft: '1px solid var(--border-color)', background: 'var(--bg-panel)', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 },
-    header: { padding: '0 14px', height: 52, background: 'var(--bg-panel)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 },
-    section: { background: 'var(--bg-msg-other)', marginBottom: 8 },
-    row: { display: 'flex', alignItems: 'center', padding: '12px 14px', borderBottom: '1px solid var(--border-color)', gap: 10 },
-    rowLabel: { flex: 1, fontSize: 14, color: 'var(--text-primary)' },
-  };
-
   return (
-    <div style={S.panel}>
-      <div style={S.header}>
-        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>聊天设置</span>
-        <button style={{ color: 'var(--text-tertiary)', fontSize: 16, cursor: 'pointer', lineHeight: 1, padding: 2 }} onClick={onClose}>✕</button>
+    <div className="wc-settings-panel">
+      <div className="wc-settings-header">
+        <span className="wc-settings-header-title">聊天设置</span>
+        <button className="wc-settings-close-btn" onClick={onClose} aria-label="关闭窗口">✕</button>
       </div>
-      <div style={{ flex: 1, overflowY: 'auto' }}>
-        <div style={{ ...S.section, marginTop: 8 }}>
-          <div style={{ ...S.row, borderBottom: '1px solid var(--border-color)' }}>
-            <span style={S.rowLabel}>消息免打扰</span>
-            <div onClick={() => !saving && toggleMute(!muted)} style={{ width: 44, height: 26, borderRadius: 13, background: muted ? '#07C160' : '#D8D8D8', position: 'relative', cursor: saving ? 'not-allowed' : 'pointer', transition: 'background 0.2s', opacity: saving ? 0.5 : 1, flexShrink: 0 }}>
-              <div style={{ position: 'absolute', top: 3, left: muted ? 21 : 3, width: 20, height: 20, borderRadius: 10, background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.25)', transition: 'left 0.18s' }} />
+      <div className="wc-settings-body">
+        <div className="wc-settings-section-mt">
+          <div className="wc-settings-row">
+            <span className="wc-settings-row-label">消息免打扰</span>
+            <div onClick={() => !saving && toggleMute(!muted)}
+              className={`wc-settings-toggle${muted ? ' on' : ' off'}${saving ? ' saving' : ''}`}>
+              <div className={`wc-settings-toggle-thumb${muted ? ' on' : ' off'}`} />
             </div>
           </div>
-          <div style={S.row}>
-            <span style={S.rowLabel}>置顶聊天</span>
-            <div onClick={() => !saving && togglePin(!pinned)} style={{ width: 44, height: 26, borderRadius: 13, background: pinned ? '#07C160' : '#D8D8D8', position: 'relative', cursor: saving ? 'not-allowed' : 'pointer', transition: 'background 0.2s', opacity: saving ? 0.5 : 1, flexShrink: 0 }}>
-              <div style={{ position: 'absolute', top: 3, left: pinned ? 21 : 3, width: 20, height: 20, borderRadius: 10, background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.25)', transition: 'left 0.18s' }} />
+          <div className="wc-settings-row">
+            <span className="wc-settings-row-label">置顶聊天</span>
+            <div onClick={() => !saving && togglePin(!pinned)}
+              className={`wc-settings-toggle${pinned ? ' on' : ' off'}${saving ? ' saving' : ''}`}>
+              <div className={`wc-settings-toggle-thumb${pinned ? ' on' : ' off'}`} />
             </div>
           </div>
         </div>
         <button
           onClick={clearMessages}
           disabled={saving}
-          style={{ display: 'block', width: 'calc(100% - 24px)', margin: '0 12px 20px', padding: '11px', background: 'var(--bg-msg-other)', color: '#FA5151', borderRadius: 6, fontSize: 14, fontWeight: 500, border: '1px solid rgba(250,81,81,.25)', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}
+          className="wc-settings-clear-btn"
         >
           双向删除聊天记录
         </button>
