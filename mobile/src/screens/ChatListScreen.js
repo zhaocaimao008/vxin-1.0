@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, TextInput,
   StyleSheet, Image, RefreshControl, ActivityIndicator,
-  Platform,
+  Platform, Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -251,7 +251,11 @@ export default function ChatListScreen() {
         <TouchableOpacity
           style={styles.headerBtn}
           activeOpacity={0.72}
-          onPress={() => navigation.navigate('Contacts')}
+          onPress={() => Alert.alert('发起会话', '', [
+            { text: '发起群聊', onPress: () => navigation.navigate('NewGroup') },
+            { text: '添加朋友', onPress: () => navigation.navigate('Contacts') },
+            { text: '取消', style: 'cancel' },
+          ])}
         >
           <ComposeIcon />
         </TouchableOpacity>

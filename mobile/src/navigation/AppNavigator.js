@@ -15,6 +15,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import MomentsScreen from '../screens/MomentsScreen';
 import CollectionsScreen from '../screens/CollectionsScreen';
 import GroupInfoScreen from '../screens/GroupInfoScreen';
+import NewGroupScreen from '../screens/NewGroupScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -254,6 +255,11 @@ export default function AppNavigator() {
             <Stack.Screen
               name="GroupInfo"
               component={GroupInfoScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="NewGroup"
+              component={NewGroupScreen}
               options={{ headerShown: false }}
             />
           </>
