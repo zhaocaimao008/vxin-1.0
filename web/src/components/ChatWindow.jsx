@@ -1892,6 +1892,11 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
             {/* 转发：所有类型消息都可转发 */}
             <div className="wc-ctx-item" onClick={() => ctxAction('forward')}>转发</div>
             <div className="wc-ctx-item" onClick={() => ctxAction('collect')}>收藏</div>
+            {conversation.type === 'group' && (
+              <div className="wc-ctx-item" onClick={() => ctxAction('pin')}>
+                {pinnedMessages.some(p => p.msgId === ctxMenu.msg.id) ? '取消置顶' : '置顶消息'}
+              </div>
+            )}
             {ctxMenu.msg.type === 'image' && (
               <div className="wc-ctx-item" onClick={() => ctxAction('addSticker')}>添加到表情</div>
             )}

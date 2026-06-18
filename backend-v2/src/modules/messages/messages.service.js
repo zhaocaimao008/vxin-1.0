@@ -156,7 +156,10 @@ function missed(io, userId, after) {
 async function send(io, convId, userId, { content, type = 'text', reply_to_id }) {
   if (!content) throw badRequest('消息不能为空');
   if (typeof content === 'string' && content.length > MAX) throw badRequest(`消息内容不能超过 ${MAX} 个字符`);
-  requireMember(convId, userId, '无权发送');
+  const member = db.prepare('SELECT role FROM conversation_members WHERE conversation_id=? AND user_id=?').get(convId, userId);
+  if (!member) throw forbidden('无权发送');
+  const conv = db.prepare('SELECT mute_all FROM conversations WHERE id=?').get(convId);
+  if (conv?.mute_all && member.role === 'member') throw forbidden('全员禁言中，您没有发言权限');
   const id = uuidv4();
   db.prepare('INSERT INTO messages (id,conversation_id,sender_id,type,content,reply_to_id) VALUES (?,?,?,?,?,?)')
     .run(id, convId, userId, type, content, reply_to_id || null);
