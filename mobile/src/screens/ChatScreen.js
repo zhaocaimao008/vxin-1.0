@@ -755,7 +755,9 @@ export default function ChatScreen({ route, navigation }) {
             )}
             <View style={[S.timeRow, isMe && { justifyContent: 'flex-end' }]}>
               <Text style={S.timeText}>{fmtTime(msg.createdAt || msg.created_at)}</Text>
-              {isMe && msg.readBy?.length > 0 && <Text style={S.readLabel}> 已读</Text>}
+              {isMe && conversation.type === 'group'
+                ? (Math.max(msg.readCount || 0, msg.readBy?.length || 0) > 0 && <Text style={S.readLabel}> {Math.max(msg.readCount || 0, msg.readBy?.length || 0)}人已读</Text>)
+                : (isMe && (msg.readBy?.length > 0 || msg.readCount > 0) && <Text style={S.readLabel}> 已读</Text>)}
               {isMe && msg._status === 'sending' && <ActivityIndicator size={9} color={C.textTip} style={{ marginLeft: 4 }} />}
               {isMe && msg._status === 'failed' && <Text style={S.failedLabel}> !</Text>}
             </View>
