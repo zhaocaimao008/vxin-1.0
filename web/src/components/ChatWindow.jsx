@@ -90,6 +90,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   const isUploadingRef    = useRef(false); // 防止并发上传
   const pendingMsgsRef    = useRef(new Map()); // tempId → timeoutHandle
   const confirmedMsgIds   = useRef(new Set()); // ack 已确认的真实 msg.id，onMsg 跳过
+  const readerReadAtRef   = useRef({}); // uid → last known readAt (prevents duplicate readCount increments)
   const messagesEndRef    = useRef(null);
   const messagesContainerRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -307,6 +308,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       pendingMsgsRef.current.forEach(timer => clearTimeout(timer));
       pendingMsgsRef.current.clear();
       confirmedMsgIds.current.clear();
+      readerReadAtRef.current = {};
     };
   }, [conversation.id, fetchMessages, socket, conversation.type]);
 
@@ -428,8 +430,11 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
           return copy;
         });
       } else {
+        const prevReadAt = readerReadAtRef.current[uid] || 0;
+        if (readAt <= prevReadAt) return; // same or older read position — nothing new
+        readerReadAtRef.current[uid] = readAt;
         setMessages(prev => prev.map(m =>
-          m.sender_id === user.id && m.created_at <= readAt
+          m.sender_id === user.id && m.created_at > prevReadAt && m.created_at <= readAt
             ? { ...m, readCount: (m.readCount || 0) + 1 }
             : m
         ));
