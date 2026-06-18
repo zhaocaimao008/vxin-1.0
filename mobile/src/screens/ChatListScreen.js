@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import { useSocket } from '../contexts/SocketContext';
+import { useAuth } from '../contexts/AuthContext';
 import { mediaUrl } from '../config';
 
 const C = {
@@ -96,6 +97,7 @@ export default function ChatListScreen() {
   const [searchingMsg, setSearchingMsg] = useState(false);
   const navigation = useNavigation();
   const { socket } = useSocket();
+  const { user } = useAuth();
   const convMapRef = useRef({});
   const insets = useSafeAreaInsets();
 
@@ -131,7 +133,13 @@ export default function ChatListScreen() {
   useEffect(() => {
     if (!socket) return;
 
+    const previewOf = (m) => ({
+      image: '[图片]', file: '[文件]', voice: '[语音]', video: '[视频]',
+      red_packet: '[红包]', contact_card: '[名片]', contact: '[名片]',
+    }[m.type] || m.content);
+
     const handleNewMessage = (msg) => {
+      const isMine = String(msg.senderId || msg.sender_id) === String(user?.id);
       setConversations(prev => {
         const idx = prev.findIndex(c => c.id === msg.conversation_id);
         if (idx === -1) {
@@ -141,10 +149,11 @@ export default function ChatListScreen() {
         }
         const updated = {
           ...prev[idx],
-          lastMessage: msg.type === 'image' ? '[图片]' : msg.type === 'file' ? '[文件]' : msg.type === 'red_packet' ? '[红包]' : msg.content,
+          lastMessage: previewOf(msg),
           lastMessageType: msg.type,
           lastTime: msg.created_at || Math.floor(Date.now() / 1000),
-          unreadCount: (prev[idx].unreadCount || 0) + 1,
+          // 自己发的消息不计未读
+          unreadCount: isMine ? (prev[idx].unreadCount || 0) : (prev[idx].unreadCount || 0) + 1,
         };
         const next = [updated, ...prev.filter((_, i) => i !== idx)];
         return next;
@@ -153,7 +162,7 @@ export default function ChatListScreen() {
 
     socket.on('new_message', handleNewMessage);
     return () => socket.off('new_message', handleNewMessage);
-  }, [socket, loadConversations]);
+  }, [socket, loadConversations, user?.id]);
 
   const onRefresh = () => {
     setRefreshing(true);
