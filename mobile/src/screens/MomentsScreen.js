@@ -197,7 +197,8 @@ export default function MomentsScreen({ navigation }) {
     Alert.alert('删除动态', '确认删除这条动态？', [
       { text: '取消', style: 'cancel' },
       { text: '删除', style: 'destructive', onPress: async () => {
-        try { await axios.delete(`/api/moments/${m.id}`); setList(p => p.filter(x => x.id !== m.id)); } catch {}
+        try { await axios.delete(`/api/moments/${m.id}`); setList(p => p.filter(x => x.id !== m.id)); }
+        catch (e) { Alert.alert('删除失败', e.response?.data?.error || '请重试'); }
       } },
     ]);
   };
@@ -206,7 +207,7 @@ export default function MomentsScreen({ navigation }) {
     try {
       await axios.delete(`/api/moments/comments/${c.id}`);
       setList(p => p.map(x => x.id === m.id ? { ...x, comments: x.comments.filter(cc => cc.id !== c.id), commentCount: x.commentCount - 1 } : x));
-    } catch {}
+    } catch (e) { Alert.alert('删除失败', e.response?.data?.error || '请重试'); }
   };
 
   return (

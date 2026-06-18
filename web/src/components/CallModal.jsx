@@ -46,19 +46,21 @@ export default function CallModal({ socket, user, call, onClose }) {
   const [cameraOff, setCameraOff] = useState(false);
   const [endReason, setEndReason] = useState('');
 
-  const pcRef            = useRef(null);
-  const localStreamRef   = useRef(null);
-  const localVideoRef    = useRef(null);
-  const remoteVideoRef   = useRef(null);
-  const remoteAudioRef   = useRef(null);
-  const pendingOfferRef  = useRef(null); // 缓冲提前到达的 offer
-  const timeoutRef       = useRef(null);
-  const statusRef        = useRef(status);
+  const pcRef              = useRef(null);
+  const localStreamRef     = useRef(null);
+  const localVideoRef      = useRef(null);
+  const remoteVideoRef     = useRef(null);
+  const remoteAudioRef     = useRef(null);
+  const pendingOfferRef    = useRef(null); // 缓冲提前到达的 offer
+  const timeoutRef         = useRef(null);
+  const disconnectTimerRef = useRef(null); // 网络抖动恢复等待 timer
+  const statusRef          = useRef(status);
   useEffect(() => { statusRef.current = status; }, [status]);
 
   // ── 清理所有资源 ──────────────────────────────────────────────
   const cleanup = useCallback(() => {
     clearTimeout(timeoutRef.current);
+    clearTimeout(disconnectTimerRef.current);
     localStreamRef.current?.getTracks().forEach(t => t.stop());
     if (pcRef.current) {
       pcRef.current.onicecandidate       = null;
@@ -103,8 +105,19 @@ export default function CallModal({ socket, user, call, onClose }) {
       if (remoteAudioRef.current) remoteAudioRef.current.srcObject = s;
     };
     pc.onconnectionstatechange = () => {
-      if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) {
-        if (statusRef.current === 'connected') endCall(false, 'network');
+      const state = pc.connectionState;
+      if (state === 'disconnected') {
+        // 网络短暂抖动（Wi-Fi 切换等），等 5s 自恢复再挂断
+        disconnectTimerRef.current = setTimeout(() => {
+          if (pcRef.current?.connectionState === 'disconnected' && statusRef.current === 'connected') {
+            endCall(false, 'network');
+          }
+        }, 5000);
+      } else {
+        clearTimeout(disconnectTimerRef.current);
+        if (['failed', 'closed'].includes(state) && statusRef.current === 'connected') {
+          endCall(false, 'network');
+        }
       }
     };
     return pc;
@@ -217,9 +230,19 @@ export default function CallModal({ socket, user, call, onClose }) {
   }, [socket, remoteId, cleanup, onClose, processOffer]);
 
   // 发起方：挂载时准备媒体，组件卸载时清理
+  // beforeunload：页面刷新/关闭时通知对端结束通话，避免对端卡死 5-30s
   useEffect(() => {
     if (direction === 'outgoing') startOutgoing();
-    return cleanup;
+    const onBeforeUnload = () => {
+      if (['calling', 'connecting', 'connected'].includes(statusRef.current)) {
+        socket?.emit('call:end', { to: remoteId });
+      }
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      cleanup();
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 控制按钮 ──────────────────────────────────────────────────

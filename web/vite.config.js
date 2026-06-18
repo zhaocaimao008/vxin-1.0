@@ -6,7 +6,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 // web 模式（默认）：vite build
 const isDesktop = (mode) => mode === 'desktop';
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode, command }) => ({
   plugins: [react(), viteSingleFile()],
   publicDir: 'public',
 
@@ -14,8 +14,9 @@ export default defineConfig(({ mode }) => ({
   // viteSingleFile 将所有 JS/CSS 内联进 index.html，base 主要影响非内联资源
   base: isDesktop(mode) ? './' : '/',
 
-  // ── oxc (Vite 8+)：生产/desktop 环境剥离所有 console.* / debugger ──
-  oxc: (mode === 'production' || isDesktop(mode)) ? {
+  // ── oxc (Vite 8+)：所有 build 命令均剥离 console.* / debugger
+  // 用 command==='build' 而非检查 mode 名，防止 --mode staging 等非标准 mode 漏掉
+  oxc: command === 'build' ? {
     drop: ['console', 'debugger'],
     legalComments: 'none',
   } : undefined,
