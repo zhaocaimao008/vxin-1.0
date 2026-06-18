@@ -500,12 +500,14 @@ export default function ChatScreen({ route, navigation }) {
     const canRecall = isMe && ageMs < 120000 && !msg.recalled;
     const canEdit   = isMe && msg.type === 'text' && ageMs < 120000 && !msg.recalled;
 
+    const canCollect = ['text', 'image', 'file', 'video'].includes(msg.type);
     const options = [
       ...(msg.type === 'text' ? ['复制'] : []),
       '回复',
       '表情回应',
       '转发',
       '置顶',
+      ...(canCollect ? ['收藏'] : []),
       ...(canEdit   ? ['编辑'] : []),
       ...(canRecall ? ['撤回'] : []),
       '取消',
@@ -550,6 +552,14 @@ export default function ChatScreen({ route, navigation }) {
           .then(() => setPinnedMsg({ id: msg.id, content: msg.content, type: msg.type }))
           .catch(e => Alert.alert('置顶失败', e.response?.data?.error || e.message));
         break;
+      case '收藏': {
+        const colType = msg.type === 'image' ? 'image' : msg.type === 'video' ? 'video' : msg.type === 'file' ? 'file' : 'text';
+        const extra = (msg.fileUrl || msg.file_url) ? { file_url: msg.fileUrl || msg.file_url } : {};
+        axios.post('/api/users/me/collections', { type: colType, content: msg.content || msg.fileUrl || msg.file_url || '', extra })
+          .then(() => Alert.alert('已收藏'))
+          .catch(e => Alert.alert('收藏失败', e.response?.data?.error || '请重试'));
+        break;
+      }
       case '编辑':
         setEditingId(msg.id);
         setInput(msg.content || '');
