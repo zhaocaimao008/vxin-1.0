@@ -83,6 +83,8 @@ export default function ChatScreen({ route, navigation }) {
   const [sending, setSending]         = useState(false);
   const [typingUsers, setTypingUsers] = useState([]);
   const [pinnedMsg, setPinnedMsg]     = useState(null);
+  const [multiSelect, setMultiSelect] = useState(false);
+  const [selectedMsgs, setSelectedMsgs] = useState(new Set());
   const [showEmoji, setShowEmoji]     = useState(false);
   const [lightbox, setLightbox]       = useState(null); // uri string
   const [reactionTarget, setReactionTarget] = useState(null); // msgId
@@ -559,6 +561,7 @@ export default function ChatScreen({ route, navigation }) {
       ...(canCollect ? ['收藏'] : []),
       ...(canEdit   ? ['编辑'] : []),
       ...(canRecall ? ['撤回'] : []),
+      '多选',
       '取消',
     ];
     const cancel = options.length - 1;
@@ -626,7 +629,33 @@ export default function ChatScreen({ route, navigation }) {
           }},
         ]);
         break;
+      case '多选':
+        setMultiSelect(true);
+        setSelectedMsgs(new Set([String(msg.id)]));
+        break;
     }
+  };
+
+  const toggleMsgSelect = (id) => {
+    setSelectedMsgs(prev => {
+      const s = new Set(prev);
+      s.has(id) ? s.delete(id) : s.add(id);
+      return s;
+    });
+  };
+
+  const multiDelete = async () => {
+    if (selectedMsgs.size === 0) return;
+    Alert.alert('批量删除', `确认删除选中的 ${selectedMsgs.size} 条消息？`, [
+      { text: '取消', style: 'cancel' },
+      { text: '删除', style: 'destructive', onPress: async () => {
+        try {
+          await axios.post('/api/messages/batch-delete', { msgIds: [...selectedMsgs], conversationId: conversation.id });
+        } catch (e) { Alert.alert('操作失败', e.response?.data?.error || '请重试'); }
+        setMultiSelect(false);
+        setSelectedMsgs(new Set());
+      }},
+    ]);
   };
 
   const sendReaction = (emoji) => {
@@ -771,7 +800,12 @@ export default function ChatScreen({ route, navigation }) {
           );
         }
         default:
-          return <Text style={[S.msgText, isMe && S.msgTextMe]}>{msg.content}</Text>;
+          return (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <Text style={[S.msgText, isMe && S.msgTextMe]}>{msg.content}</Text>
+              {msg.edited && <Text style={[S.editedLabel, isMe && { color: 'rgba(255,255,255,.6)' }]}> 已编辑</Text>}
+            </View>
+          );
       }
     };
 
@@ -783,9 +817,21 @@ export default function ChatScreen({ route, navigation }) {
     });
 
     const isHighlighted = highlightedId && String(msg.id) === highlightedId;
+    const isSelected = multiSelect && selectedMsgs.has(String(msg.id));
     return (
-      <Pressable onLongPress={() => !msg.recalled && onLongPress(msg)} delayLongPress={350}>
-        <View style={[S.msgRow, isMe ? S.msgRowMe : S.msgRowOther, isHighlighted && S.msgRowHighlight]}>
+      <Pressable
+        onLongPress={() => !msg.recalled && !multiSelect && onLongPress(msg)}
+        onPress={multiSelect ? () => toggleMsgSelect(String(msg.id)) : undefined}
+        delayLongPress={350}
+      >
+        <View style={[S.msgRow, isMe ? S.msgRowMe : S.msgRowOther, isHighlighted && S.msgRowHighlight, isSelected && S.msgRowSelected]}>
+          {multiSelect && (
+            <View style={S.selectCheck}>
+              <View style={[S.checkCircle, isSelected && S.checkCircleOn]}>
+                {isSelected && <Text style={S.checkMark}>✓</Text>}
+              </View>
+            </View>
+          )}
           {!isMe && <View style={S.avatarCol}><Avatar src={msg.senderAvatar || msg.sender_avatar} name={msg.senderNickname || msg.senderName || '?'} size={36} /></View>}
           <View style={[S.bubbleCol, isMe ? S.bubbleColMe : S.bubbleColOther]}>
             {!isMe && conversation.type === 'group' && (
@@ -858,7 +904,14 @@ export default function ChatScreen({ route, navigation }) {
 
       {/* Pinned message */}
       {pinnedMsg && (
-        <TouchableOpacity style={S.pinnedBar} activeOpacity={0.8} onPress={() => {}}>
+        <TouchableOpacity style={S.pinnedBar} activeOpacity={0.8} onPress={() => {
+          const target = messages.find(m => String(m.id) === String(pinnedMsg.id));
+          if (target) {
+            flatListRef.current?.scrollToItem({ item: target, animated: true, viewPosition: 0.4 });
+            setHighlightedId(String(pinnedMsg.id));
+            setTimeout(() => setHighlightedId(null), 2000);
+          }
+        }}>
           <Text style={S.pinnedIcon}>📌</Text>
           <Text style={S.pinnedText} numberOfLines={1}>{pinnedMsg.content || '[图片]'}</Text>
           <TouchableOpacity onPress={() => {
@@ -976,7 +1029,18 @@ export default function ChatScreen({ route, navigation }) {
           <TouchableOpacity style={S.recordingSend} onPress={stopAndSendRecording}><Text style={{ color: '#fff', fontWeight: '600' }}>发送</Text></TouchableOpacity>
         </View>
       )}
-      {conversation.type === 'group' && groupMuteAll && myGroupRole === 'member' ? (
+      {multiSelect ? (
+        <View style={[S.multiBar, { paddingBottom: insets.bottom + 6 }]}>
+          <TouchableOpacity onPress={() => { setMultiSelect(false); setSelectedMsgs(new Set()); }} style={S.multiBtn}>
+            <Text style={S.multiBtnTxt}>取消</Text>
+          </TouchableOpacity>
+          <Text style={S.multiCount}>{selectedMsgs.size} 条已选</Text>
+          <TouchableOpacity onPress={multiDelete} disabled={selectedMsgs.size === 0}
+            style={[S.multiBtn, S.multiBtnDanger, selectedMsgs.size === 0 && { opacity: 0.4 }]}>
+            <Text style={[S.multiBtnTxt, { color: '#fff' }]}>批量删除</Text>
+          </TouchableOpacity>
+        </View>
+      ) : conversation.type === 'group' && groupMuteAll && myGroupRole === 'member' ? (
         <View style={[S.mutedBar, { paddingBottom: insets.bottom + 6 }]}>
           <Text style={S.mutedText}>🔇 全员禁言已开启，只有群主和管理员可以发消息</Text>
         </View>
@@ -1170,6 +1234,18 @@ const S = StyleSheet.create({
   recalledText: { fontSize: 13, color: C.textTip, fontStyle: 'italic' },
   msgText:    { fontSize: 15, color: C.text, lineHeight: 21 },
   msgTextMe:  { color: '#fff' },
+  editedLabel:{ fontSize: 11, color: C.textTip, alignSelf: 'flex-end', marginLeft: 2 },
+  // Multi-select
+  msgRowSelected: { backgroundColor: 'rgba(7,193,96,.1)' },
+  selectCheck:{ justifyContent: 'center', paddingRight: 6 },
+  checkCircle:{ width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: '#CBD2DA', alignItems: 'center', justifyContent: 'center' },
+  checkCircleOn: { backgroundColor: C.green, borderColor: C.green },
+  checkMark:  { color: '#fff', fontSize: 13, fontWeight: '700' },
+  multiBar:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 12, backgroundColor: C.bgCard, borderTopWidth: 0.5, borderTopColor: C.border },
+  multiBtn:   { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: C.bg },
+  multiBtnDanger: { backgroundColor: C.red },
+  multiBtnTxt:{ fontSize: 14, color: C.text, fontWeight: '500' },
+  multiCount: { fontSize: 14, color: C.textSub },
   msgImage:   { width: 180, height: 180, borderRadius: 8 },
   // File
   fileRow:    { flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 120, maxWidth: 200 },

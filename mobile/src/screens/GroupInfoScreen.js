@@ -94,13 +94,23 @@ export default function GroupInfoScreen({ route, navigation }) {
   };
 
   const leave = () => {
-    Alert.alert('退出群聊', '确认退出该群聊？', [
-      { text: '取消', style: 'cancel' },
-      { text: '退出', style: 'destructive', onPress: async () => {
-        try { await axios.post(`/api/messages/conversation/${conversationId}/leave`); navigation.navigate('Main'); }
-        catch (e) { Alert.alert('退出失败', e.response?.data?.error || '请重试'); }
-      } },
-    ]);
+    if (isOwner) {
+      Alert.alert('解散群聊', '解散后所有成员将无法继续聊天，确认解散？', [
+        { text: '取消', style: 'cancel' },
+        { text: '解散', style: 'destructive', onPress: async () => {
+          try { await axios.post(`/api/messages/conversation/${conversationId}/leave`); navigation.navigate('Main'); }
+          catch (e) { Alert.alert('解散失败', e.response?.data?.error || '请重试'); }
+        } },
+      ]);
+    } else {
+      Alert.alert('退出群聊', '确认退出该群聊？', [
+        { text: '取消', style: 'cancel' },
+        { text: '退出', style: 'destructive', onPress: async () => {
+          try { await axios.post(`/api/messages/conversation/${conversationId}/leave`); navigation.navigate('Main'); }
+          catch (e) { Alert.alert('退出失败', e.response?.data?.error || '请重试'); }
+        } },
+      ]);
+    }
   };
 
   if (loading) return <View style={[s.container, s.center]}><ActivityIndicator color={C.green} size="large" /></View>;
@@ -150,7 +160,7 @@ export default function GroupInfoScreen({ route, navigation }) {
         </TouchableOpacity>
 
         <TouchableOpacity style={s.leaveBtn} onPress={leave}>
-          <Text style={s.leaveText}>退出群聊</Text>
+          <Text style={s.leaveText}>{isOwner ? '解散群聊' : '退出群聊'}</Text>
         </TouchableOpacity>
       </ScrollView>
 
