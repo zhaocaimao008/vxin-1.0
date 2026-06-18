@@ -12,6 +12,7 @@ module.exports = function registerFileHandler(io, socket) {
   const userId = socket.user.id;
 
   socket.on('send_file_message', async (data, ack) => {
+    try {
     const { conversationId, type, file_url, content, reply_to_id } = data;
     const duration = Math.max(0, Math.min(parseInt(data.duration, 10) || 0, 600)); // 语音/视频时长(秒)，上限10分钟
     const ALLOWED = new Set(['image', 'voice', 'video', 'file']);
@@ -78,5 +79,8 @@ module.exports = function registerFileHandler(io, socket) {
         timestamp: created_at, onlineUserIds: presence.onlineUserIdSet(), members,
       }).catch(() => {});
     });
+    } catch (err) {
+      ack?.({ success: false, error: '服务器内部错误，请重试' });
+    }
   });
 };

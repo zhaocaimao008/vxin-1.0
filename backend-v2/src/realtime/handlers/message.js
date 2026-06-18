@@ -46,6 +46,7 @@ module.exports = function registerMessageHandler(io, socket) {
   const userId = socket.user.id;
 
   socket.on('send_message', async (data, ack) => {
+    try {
     const { conversationId, content, reply_to_id } = data;
     // 允许文本与名片(contact_card)；名片的 content 是被分享用户的 JSON 快照
     const type = ['text', 'contact_card'].includes(data.type) ? data.type : 'text';
@@ -110,5 +111,8 @@ module.exports = function registerMessageHandler(io, socket) {
         timestamp: created_at, onlineUserIds: presence.onlineUserIdSet(), members,
       }).catch(() => {});
     });
+    } catch (err) {
+      ack?.({ success: false, error: '服务器内部错误，请重试' });
+    }
   });
 };

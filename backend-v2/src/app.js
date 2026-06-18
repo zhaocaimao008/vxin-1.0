@@ -57,8 +57,9 @@ app.use(metricsMiddleware);
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// H9: /uploads 静态文件鉴权 — 用户JWT或Admin JWT均可访问
+// H9: /uploads 静态文件鉴权 — 用户JWT或Admin JWT均可访问，同时校验黑名单
 const jwt = require('jsonwebtoken');
+const { isBlacklisted } = require('./utils/tokenBlacklist');
 app.use('/uploads', (req, res, next) => {
   const token = req.cookies?.[config.cookieName] || req.cookies?.[config.admin.cookieName];
   if (!token) return res.status(401).json({ error: '未授权' });
@@ -71,7 +72,10 @@ app.use('/uploads', (req, res, next) => {
       return res.status(401).json({ error: '未授权' });
     }
   }
-  next();
+  isBlacklisted(token).then(blacklisted => {
+    if (blacklisted) return res.status(401).json({ error: '登录已失效，请重新登录' });
+    next();
+  }).catch(() => next());
 }, express.static(config.uploadsRoot));
 app.use('/downloads', express.static(path.join(__dirname, '../../downloads'), {
   setHeaders: (res, filePath) => {

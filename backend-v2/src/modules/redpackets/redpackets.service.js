@@ -10,10 +10,12 @@ function send(io, userId, { conversationId, totalAmount, totalCount, greeting })
   if (totalAmount < 1 || totalAmount > 20000) throw badRequest('金额范围 1-20000 金币');
   if (totalCount < 1 || totalCount > 100) throw badRequest('红包个数 1-100');
   if (totalAmount < totalCount) throw badRequest('总金额不能小于红包个数（每个至少 1 金币）');
+  if (greeting && (typeof greeting !== 'string' || greeting.length > 100))
+    throw badRequest('祝福语最多 100 字');
   requireMember(conversationId, userId, '无权操作');
 
   const packetId = uuidv4();
-  const greet = greeting || '恭喜发财，大吉大利';
+  const greet = (typeof greeting === 'string' && greeting.trim()) ? greeting.trim() : '恭喜发财，大吉大利';
   db.prepare('INSERT INTO red_packets (id,sender_id,conversation_id,total_amount,total_count,greeting) VALUES (?,?,?,?,?,?)')
     .run(packetId, userId, conversationId, totalAmount, totalCount, greet);
 

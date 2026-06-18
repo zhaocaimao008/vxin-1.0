@@ -84,11 +84,16 @@ function search(userId, q) {
 // ── 资料 ────────────────────────────────────────────────────────
 async function updateProfile(userId, { username, bio }) {
   if (username) {
-    if (db.prepare('SELECT id FROM users WHERE username=? AND id!=?').get(username, userId))
+    if (typeof username !== 'string' || username.trim().length < 1 || username.trim().length > 30)
+      throw badRequest('用户名长度为 1-30 字符');
+    if (db.prepare('SELECT id FROM users WHERE username=? AND id!=?').get(username.trim(), userId))
       throw badRequest('用户名已被占用');
-    db.prepare('UPDATE users SET username=? WHERE id=?').run(username, userId);
+    db.prepare('UPDATE users SET username=? WHERE id=?').run(username.trim(), userId);
   }
-  if (bio !== undefined) db.prepare('UPDATE users SET bio=? WHERE id=?').run(bio, userId);
+  if (bio !== undefined) {
+    const safeBio = typeof bio === 'string' ? bio.slice(0, 500) : '';
+    db.prepare('UPDATE users SET bio=? WHERE id=?').run(safeBio, userId);
+  }
   // P2 优化：删除用户缓存，下次查询重新加载
   await cache.del(cache.keys.user(userId));
   return db.prepare('SELECT id,username,phone,avatar,bio,wechat_id,cover_photo FROM users WHERE id=?').get(userId);

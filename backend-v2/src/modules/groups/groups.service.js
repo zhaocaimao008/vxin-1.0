@@ -62,13 +62,18 @@ function joinByToken(io, userId, token) {
 
 // ── 群信息修改（群主/管理员）────────────────────────────────────
 function updateInfo(io, convId, userId, { name, announcement }) {
+  if (name !== undefined && (typeof name !== 'string' || name.trim().length < 1 || name.trim().length > 50))
+    throw badRequest('群名称长度为 1-50 字符');
+  if (announcement !== undefined && typeof announcement === 'string' && announcement.length > 1000)
+    throw badRequest('群公告最多 1000 字');
+
   const conv = db.prepare('SELECT * FROM conversations WHERE id=? AND type=?').get(convId, 'group');
   if (!conv) throw notFound('群不存在');
   const role = memberRole(convId, userId);
   if (!role) throw forbidden('不在群内');
   if (role === 'member') throw forbidden('仅群主和管理员可修改群信息');
 
-  if (name !== undefined) db.prepare('UPDATE conversations SET name=? WHERE id=?').run(name, convId);
+  if (name !== undefined) db.prepare('UPDATE conversations SET name=? WHERE id=?').run(name.trim(), convId);
   if (announcement !== undefined) db.prepare('UPDATE conversations SET announcement=? WHERE id=?').run(announcement, convId);
   const updated = db.prepare('SELECT id, name, announcement, owner_id FROM conversations WHERE id=?').get(convId);
   if (io) io.to(convId).emit('group_updated', updated);

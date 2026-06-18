@@ -153,7 +153,9 @@ function missed(io, userId, after) {
 }
 
 // ── HTTP 发送（fallback）────────────────────────────────────────
-async function send(io, convId, userId, { content, type = 'text', reply_to_id }) {
+async function send(io, convId, userId, { content, type, reply_to_id }) {
+  const ALLOWED_HTTP_TYPES = new Set(['text', 'contact_card']);
+  const safeType = ALLOWED_HTTP_TYPES.has(type) ? type : 'text';
   if (!content) throw badRequest('消息不能为空');
   if (typeof content === 'string' && content.length > MAX) throw badRequest(`消息内容不能超过 ${MAX} 个字符`);
   const member = db.prepare('SELECT role FROM conversation_members WHERE conversation_id=? AND user_id=?').get(convId, userId);
@@ -162,7 +164,7 @@ async function send(io, convId, userId, { content, type = 'text', reply_to_id })
   if (conv?.mute_all && member.role === 'member') throw forbidden('全员禁言中，您没有发言权限');
   const id = uuidv4();
   db.prepare('INSERT INTO messages (id,conversation_id,sender_id,type,content,reply_to_id) VALUES (?,?,?,?,?,?)')
-    .run(id, convId, userId, type, content, reply_to_id || null);
+    .run(id, convId, userId, safeType, content, reply_to_id || null);
 
   // P2 优化：清除搜索和会话列表缓存（新消息发送时）
   await cache.delPattern(`search:*${userId}*`);  // 清除该用户的搜索缓存
@@ -308,13 +310,14 @@ async function searchGlobal(userId, { q, limit = 20, offset = 0 }) {
     return cachedResult;
   }
 
-  const searchTerm = `%${q}%`;  // LIKE 搜索
+  const escaped = q.replace(/[%_\\]/g, '\\$&');
+  const searchTerm = `%${escaped}%`;
 
   const total = db.prepare(`
     SELECT COUNT(*) AS cnt
     FROM messages m
     JOIN conversation_members cm ON cm.conversation_id = m.conversation_id AND cm.user_id = ?
-    WHERE m.deleted = 0 AND m.content LIKE ?
+    WHERE m.deleted = 0 AND m.content LIKE ? ESCAPE '\\'
   `).get(userId, searchTerm)?.cnt || 0;
 
   const rows = db.prepare(`
@@ -329,7 +332,7 @@ async function searchGlobal(userId, { q, limit = 20, offset = 0 }) {
     LEFT JOIN conversation_members cm_o
            ON cm_o.conversation_id = m.conversation_id AND cm_o.user_id != ? AND c.type = 'private'
     LEFT JOIN users ou ON ou.id = cm_o.user_id
-    WHERE m.deleted = 0 AND m.content LIKE ?
+    WHERE m.deleted = 0 AND m.content LIKE ? ESCAPE '\\'
     ORDER BY m.created_at DESC LIMIT ? OFFSET ?
   `).all(userId, userId, searchTerm, safeLimit, safeOffset);
 
@@ -362,12 +365,13 @@ async function searchInConversation(convId, userId, q) {
     return cachedResult;
   }
 
-  const searchTerm = `%${q}%`;
+  const escapedQ = q.replace(/[%_\\]/g, '\\$&');
+  const searchTerm = `%${escapedQ}%`;
   const result = db.prepare(`
     SELECT m.*, u.username AS senderName, u.avatar AS senderAvatar
     FROM messages m
     JOIN users u ON u.id = m.sender_id
-    WHERE m.conversation_id = ? AND m.deleted = 0 AND m.content LIKE ?
+    WHERE m.conversation_id = ? AND m.deleted = 0 AND m.content LIKE ? ESCAPE '\\'
     ORDER BY m.created_at DESC LIMIT 30
   `).all(convId, searchTerm);
 

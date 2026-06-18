@@ -65,6 +65,10 @@ function upsertSession(userId, req) {
 // ── 业务 ────────────────────────────────────────────────────────
 async function register({ username, phone, password, inviteCode }) {
   if (!username || !phone || !password) throw badRequest('请填写所有字段');
+  if (typeof username !== 'string' || username.length < 1 || username.length > 30)
+    throw badRequest('用户名长度为 1-30 字符');
+  if (typeof phone !== 'string' || phone.length < 5 || phone.length > 20 || !/^\+?[\d\s\-]{5,20}$/.test(phone))
+    throw badRequest('手机号格式不正确');
   if (!inviteCode || !/^\d{6}$/.test(inviteCode)) throw badRequest('邀请码必须是6位数字');
   if (!isValidInviteCode(inviteCode)) throw badRequest('邀请码不正确');
   if (!/^(?=.*[a-zA-Z])(?=.*\d).{8,}$/.test(password))
