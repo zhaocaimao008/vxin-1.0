@@ -61,9 +61,9 @@ module.exports = function registerCallHandler(io, socket) {
     io.to(`user_${to}`).emit('call:response', { from: userId, accepted });
   });
 
-  socket.on('call:offer',  ({ to, offer })     => io.to(`user_${to}`).emit('call:offer',  { from: userId, offer }));
-  socket.on('call:answer', ({ to, answer })    => io.to(`user_${to}`).emit('call:answer', { from: userId, answer }));
-  socket.on('call:ice',    ({ to, candidate }) => io.to(`user_${to}`).emit('call:ice',    { from: userId, candidate }));
+  socket.on('call:offer',  ({ to, offer })     => { if (!to) return; io.to(`user_${to}`).emit('call:offer',  { from: userId, offer }); });
+  socket.on('call:answer', ({ to, answer })    => { if (!to) return; io.to(`user_${to}`).emit('call:answer', { from: userId, answer }); });
+  socket.on('call:ice',    ({ to, candidate }) => { if (!to) return; io.to(`user_${to}`).emit('call:ice',    { from: userId, candidate }); });
 
   socket.on('call:end', ({ to }) => {
     // 挂断可能来自任一方，两个方向都查

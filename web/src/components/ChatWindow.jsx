@@ -1295,12 +1295,12 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                   className="wc-msg-img"
                   onClick={() => setLightboxUrl(mediaUrl(msg.file_url))}
                   onLoad={() => {
-                    // 图片加载完成后高度变化，若用户在底部则补一次置底
                     const c = messagesContainerRef.current;
                     if (!c) return;
                     if (c.scrollHeight - c.scrollTop - c.clientHeight < 200)
                       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
                   }}
+                  onError={e => { e.currentTarget.onerror = null; e.currentTarget.style.cssText = 'width:80px;height:80px;background:#f0f0f0;border-radius:4px;display:flex;align-items:center;justify-content:center'; e.currentTarget.alt = '图片加载失败'; }}
                 />
               )}
               {msg.type === 'voice' && (

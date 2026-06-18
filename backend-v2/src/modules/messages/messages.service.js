@@ -190,19 +190,23 @@ function forward(io, userId, { msgId, conversationIds }) {
   if (!msgId || !conversationIds?.length) throw badRequest('参数缺失');
   const msg = db.prepare('SELECT * FROM messages WHERE id=? AND deleted=0').get(msgId);
   if (!msg) throw notFound('消息不存在');
-  requireMember(msg.conversation_id, userId, '无权转发该消息');  // 防越权：必须能读源消息才能转发
+  requireMember(msg.conversation_id, userId, '无权转发该消息');
 
+  const insertStmt = db.prepare('INSERT INTO messages (id,conversation_id,sender_id,type,content,file_url,duration) VALUES (?,?,?,?,?,?,?)');
+  const selectStmt = db.prepare('SELECT m.*, u.username as senderName, u.avatar as senderAvatar FROM messages m JOIN users u ON u.id=m.sender_id WHERE m.id=?');
   const sent = [];
-  conversationIds.forEach(convId => {
-    if (!isMember(convId, userId)) return;
-    const id = uuidv4();
-    db.prepare('INSERT INTO messages (id,conversation_id,sender_id,type,content,file_url,duration) VALUES (?,?,?,?,?,?,?)')
-      .run(id, convId, userId, msg.type, msg.content, msg.file_url || '', msg.duration || 0);
-    const newMsg = db.prepare('SELECT m.*, u.username as senderName, u.avatar as senderAvatar FROM messages m JOIN users u ON u.id=m.sender_id WHERE m.id=?').get(id);
-    newMsg.reactions = [];
-    if (io) io.to(convId).emit('new_message', newMsg);
-    sent.push(convId);
-  });
+
+  db.transaction(() => {
+    conversationIds.forEach(convId => {
+      if (!isMember(convId, userId)) return;
+      const id = uuidv4();
+      insertStmt.run(id, convId, userId, msg.type, msg.content, msg.file_url || '', msg.duration || 0);
+      const newMsg = selectStmt.get(id);
+      newMsg.reactions = [];
+      if (io) io.to(convId).emit('new_message', newMsg);
+      sent.push(convId);
+    });
+  })();
   return sent.length;
 }
 

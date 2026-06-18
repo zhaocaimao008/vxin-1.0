@@ -146,6 +146,12 @@ export default function ChatScreen({ route, navigation }) {
     return unsub;
   }, [navigation]);
 
+  // 卸载清理：挂起的定时器
+  useEffect(() => () => {
+    clearTimeout(typingTimer.current);
+    clearTimeout(snackTimer.current);
+  }, []);
+
   // Load messages + members
   useEffect(() => {
     setLoadingMsgs(true);
@@ -358,7 +364,8 @@ export default function ChatScreen({ route, navigation }) {
 
   useEffect(() => {
     if (messages.length > 0) {
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 80);
+      const t = setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 80);
+      return () => clearTimeout(t);
     }
   }, [messages.length]);
 
