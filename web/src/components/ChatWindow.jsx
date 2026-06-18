@@ -1268,7 +1268,8 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
               onContextMenu={e => handleContextMenu(e, msg)}
             >
               {msg.replyTo && (
-                <div className="wc-msg-reply" style={{ cursor: 'pointer' }} onClick={() => {
+                <div className="wc-msg-reply" style={{ cursor: 'pointer' }} onClick={(e) => {
+                  e.stopPropagation();
                   const el = document.getElementById(`msg-${msg.replyTo.id}`);
                   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   setHighlightedMsgId(String(msg.replyTo.id));

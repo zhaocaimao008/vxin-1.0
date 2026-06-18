@@ -130,6 +130,14 @@ export default function ChatScreen({ route, navigation }) {
     });
   }, [navigation, conversation]);
 
+  useEffect(() => {
+    const unsub = navigation.addListener('blur', () => {
+      setMultiSelect(false);
+      setSelectedMsgs(new Set());
+    });
+    return unsub;
+  }, [navigation]);
+
   // Load messages + members
   useEffect(() => {
     setLoadingMsgs(true);
@@ -651,9 +659,9 @@ export default function ChatScreen({ route, navigation }) {
       { text: '删除', style: 'destructive', onPress: async () => {
         try {
           await axios.post('/api/messages/batch-delete', { msgIds: [...selectedMsgs], conversationId: conversation.id });
+          setMultiSelect(false);
+          setSelectedMsgs(new Set());
         } catch (e) { Alert.alert('操作失败', e.response?.data?.error || '请重试'); }
-        setMultiSelect(false);
-        setSelectedMsgs(new Set());
       }},
     ]);
   };
@@ -880,7 +888,7 @@ export default function ChatScreen({ route, navigation }) {
         </View>
       </Pressable>
     );
-  }, [user, conversation.type, members, highlightedId]);
+  }, [user, conversation.type, members, highlightedId, multiSelect, selectedMsgs, toggleMsgSelect, messages, onLongPress]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 

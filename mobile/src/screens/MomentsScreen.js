@@ -159,7 +159,7 @@ export default function MomentsScreen({ navigation }) {
       if (images.length > 0) {
         const fd = new FormData();
         images.forEach(img => {
-          const ext = img.uri.split('.').pop() || 'jpg';
+          const ext = (img.uri.split('.').pop() || 'jpg').split('?')[0].split('#')[0];
           fd.append('images', { uri: img.uri, type: img.mimeType || `image/${ext}`, name: img.fileName || `photo.${ext}` });
         });
         const { data } = await axios.post('/api/moments/images', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
