@@ -2,6 +2,7 @@
 const { db } = require('../../db/connection');
 const { notFound, badRequest } = require('../../utils/http');
 const cache = require('../../utils/cache');
+const { v4: uuidv4 } = require('uuid');
 
 // ── 设置序列化 ──────────────────────────────────────────────────
 const settingDefaults = {
@@ -142,6 +143,18 @@ function getCollections(userId) {
     .map(i => ({ ...i, extra: JSON.parse(i.extra || '{}') }));
 }
 
+// 添加收藏（幂等：同一消息内容+类型不重复收藏）
+function addCollection(userId, { type, content, extra }) {
+  const id = uuidv4();
+  const safeType    = ['text', 'image', 'file', 'video'].includes(type) ? type : 'text';
+  const safeContent = (typeof content === 'string' ? content : JSON.stringify(content)).slice(0, 2000);
+  const safeExtra   = JSON.stringify(extra || {});
+  try {
+    db.prepare('INSERT INTO collections (id,user_id,type,content,extra) VALUES (?,?,?,?,?)').run(id, userId, safeType, safeContent, safeExtra);
+  } catch { /* unique constraint — already collected */ }
+  return { success: true, id };
+}
+
 // 取消收藏（仅能删自己的，幂等：不存在则报 404）
 function removeCollection(userId, collectionId) {
   const r = db.prepare('DELETE FROM collections WHERE id=? AND user_id=?').run(collectionId, userId);
@@ -168,5 +181,5 @@ function getCallLogs(userId, limit = 50) {
 module.exports = {
   ensureSettings, serializeSettings, getSettings, updateSettings,
   qrPayload, search, updateProfile, setAvatar, setCover,
-  getUserDetail, getCollections, removeCollection, getCallLogs,
+  getUserDetail, getCollections, addCollection, removeCollection, getCallLogs,
 };

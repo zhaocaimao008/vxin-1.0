@@ -1093,9 +1093,6 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         break;
       }
 
-      // 'collect' removed
-        return;
-
       case 'delete': {
         const now = Math.floor(Date.now() / 1000);
         const isOwn = msg.sender_id === user.id;
@@ -1116,7 +1113,12 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       }
 
       default:
-        if (action.startsWith('react:')) {
+        if (action === 'collect') {
+          const extra = msg.file_url ? { file_url: msg.file_url } : {};
+          await axios.post('/api/users/me/collections', { type: msg.type === 'text' ? 'text' : msg.type === 'image' ? 'image' : msg.type === 'video' ? 'video' : 'file', content: msg.content || msg.file_url || '', extra })
+            .then(() => alert('已收藏'))
+            .catch(e => alert(e.response?.data?.error || '收藏失败'));
+        } else if (action.startsWith('react:')) {
           await axios.post(`/api/messages/${msg.id}/react`, { emoji: action.replace('react:', '') }).catch(() => {});
         }
     }

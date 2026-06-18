@@ -410,7 +410,8 @@ router.get ('/:id', auth, u.getUserDetail);
  *       200:
  *         description: Item removed
  */
-router.get   ('/me/collections', auth, u.getCollections);
+router.get   ('/me/collections',     auth, u.getCollections);
+router.post  ('/me/collections',     auth, u.addCollection);
 router.delete('/me/collections/:id', auth, u.removeCollection);
 
 /**
