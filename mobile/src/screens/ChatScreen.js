@@ -71,6 +71,11 @@ export default function ChatScreen({ route, navigation }) {
   const [replyTo, setReplyTo]         = useState(null);
   const [editingId, setEditingId]     = useState(null);
   const [loadingMsgs, setLoadingMsgs] = useState(true);
+  const [hasMore, setHasMore]         = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const loadingMoreRef = useRef(false);
+  const messagesRef = useRef([]);
+  const prependingRef = useRef(false);
   const [sending, setSending]         = useState(false);
   const [typingUsers, setTypingUsers] = useState([]);
   const [pinnedMsg, setPinnedMsg]     = useState(null);
@@ -119,7 +124,9 @@ export default function ChatScreen({ route, navigation }) {
     axios.get(`/api/messages/${conversation.id}?limit=60`)
       .then(r => {
         const data = r.data?.messages || r.data?.data || r.data || [];
-        setMessages(Array.isArray(data) ? data : []);
+        const arr = Array.isArray(data) ? data : [];
+        setMessages(arr);
+        setHasMore(arr.length >= 60);
       })
       .catch(() => setMessages([]))
       .finally(() => setLoadingMsgs(false));
@@ -140,6 +147,39 @@ export default function ChatScreen({ route, navigation }) {
       })
       .catch(() => {});
   }, [conversation.id]);
+
+  // 同步 messages 到 ref，供 loadMore 读取最早一条而不产生 stale 闭包
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+
+  // 上滑加载更早的历史消息（before 游标分页）
+  const loadMore = useCallback(async () => {
+    if (loadingMoreRef.current || !hasMore) return;
+    const oldest = messagesRef.current[0];
+    if (!oldest) return;
+    const before = oldest.created_at ?? oldest.createdAt;
+    if (!before) return;
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    try {
+      const r = await axios.get(`/api/messages/${conversation.id}?limit=40&before=${before}`);
+      const data = r.data?.messages || r.data?.data || r.data || [];
+      const older = Array.isArray(data) ? data : [];
+      if (older.length > 0) {
+        prependingRef.current = true; // 通知 onContentSizeChange 不要滚到底部
+        setMessages(prev => {
+          const existing = new Set(prev.map(m => m.id));
+          const merged = older.filter(m => !existing.has(m.id));
+          if (merged.length === 0) { prependingRef.current = false; return prev; }
+          return [...merged, ...prev];
+        });
+      }
+      setHasMore(older.length >= 40);
+    } catch (_) {
+    } finally {
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
+    }
+  }, [conversation.id, hasMore]);
 
   // Socket events
   useEffect(() => {
@@ -695,7 +735,16 @@ export default function ChatScreen({ route, navigation }) {
           renderItem={renderItem}
           contentContainerStyle={S.listContent}
           ListEmptyComponent={<View style={S.emptyWrap}><Text style={S.emptyText}>开始聊天吧</Text></View>}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+          ListHeaderComponent={loadingMore ? <View style={{ paddingVertical: 10 }}><ActivityIndicator color={C.green} size="small" /></View> : null}
+          onScroll={(e) => {
+            if (e.nativeEvent.contentOffset.y <= 40 && hasMore && !loadingMoreRef.current && messagesRef.current.length > 0) loadMore();
+          }}
+          scrollEventThrottle={200}
+          maintainVisibleContentPosition={{ minIndexForVisible: 1 }}
+          onContentSizeChange={() => {
+            if (prependingRef.current) { prependingRef.current = false; return; }
+            flatListRef.current?.scrollToEnd({ animated: false });
+          }}
           ListFooterComponent={typingUsers.length > 0 ? (
             <View style={S.typingRow}>
               <Text style={S.typingText}>{typingUsers.map(u => { const mm = members.find(x => String(x.id) === String(u.id)); return mm?.nickname || mm?.username || '对方'; }).join(', ')} 正在输入…</Text>
