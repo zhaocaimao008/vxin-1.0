@@ -61,7 +61,7 @@ router.post('/login',  adminLoginLimiter, c.login);
  *       200:
  *         description: Logout successful
  */
-router.post('/logout',                    c.logout);
+router.post('/logout', adminAuth,          c.logout);
 
 /**
  * @swagger

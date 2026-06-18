@@ -401,12 +401,20 @@ export default function ChatScreen({ route, navigation }) {
     setMessages(prev => [...prev, optimistic]);
     pendingAcks.current[tempId] = true;
 
+    // 5s ack 超时：ack 未到则标记失败，用户可看到错误状态并重试
+    const ackTimer = setTimeout(() => {
+      if (!pendingAcks.current[tempId]) return;
+      delete pendingAcks.current[tempId];
+      setMessages(prev => prev.map(m => m._tempId === tempId ? { ...m, _status: 'error' } : m));
+    }, 5000);
+
     socket?.emit('send_message', {
       conversationId: conversation.id,
       content: text, type: 'text',
       reply_to_id: replyRef?.id || null,
       tempId,
     }, (ack) => {
+      clearTimeout(ackTimer);
       delete pendingAcks.current[tempId];
       if (ack?.success && ack?.message) {
         setMessages(prev => prev.map(m => m._tempId === tempId ? { ...ack.message, _status: 'sent' } : m));
@@ -959,7 +967,7 @@ export default function ChatScreen({ route, navigation }) {
         <FlatList
           ref={flatListRef}
           data={messages}
-          keyExtractor={m => String(m.id || m._tempId || Math.random())}
+          keyExtractor={m => String(m.id ?? m._tempId ?? m.createdAt)}
           renderItem={renderItem}
           contentContainerStyle={S.listContent}
           ListEmptyComponent={<View style={S.emptyWrap}><Text style={S.emptyText}>开始聊天吧</Text></View>}

@@ -90,6 +90,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   const dragCounterRef = useRef(0);
   const recalledContentRef = useRef({}); // msgId -> originalContent
   const isUploadingRef    = useRef(false); // 防止并发上传
+  const lastSendRef       = useRef({ text: '', time: 0 }); // 防止 Enter 连击重复发送
   const pendingMsgsRef    = useRef(new Map()); // tempId → timeoutHandle
   const confirmedMsgIds   = useRef(new Set()); // ack 已确认的真实 msg.id，onMsg 跳过
   const readerReadAtRef   = useRef({}); // uid → last known readAt (prevents duplicate readCount increments)
@@ -266,7 +267,9 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     const savedDraft = localStorage.getItem(`draft_${conversation.id}`);
     setInput(savedDraft || '');
     // 加载置顶消息
-    axios.get(`/api/messages/conversation/${conversation.id}/pinned-messages`).then(r => setPinnedMessages(r.data)).catch(() => {});
+    axios.get(`/api/messages/conversation/${conversation.id}/pinned-messages`, { signal: ac.signal })
+      .then(r => { if (!ac.signal.aborted) setPinnedMessages(r.data); })
+      .catch(() => {});
 
     // AbortController：会话切换时取消上一个会话的未完成请求，防止数据串堂
     const ac = new AbortController();
@@ -294,7 +297,8 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
 
     if (conversation.type === 'group') {
       // 获取群详情：成员列表、我的角色、管理设置
-      axios.get(`/api/messages/conversation/${conversation.id}/info`).then(r => {
+      axios.get(`/api/messages/conversation/${conversation.id}/info`, { signal: ac.signal }).then(r => {
+        if (ac.signal.aborted) return;
         setMembers(r.data.members || []);
         setMyGroupRole(r.data.myRole || 'member');
         setGroupSettings({ mute_all: r.data.mute_all || 0, no_private_chat: r.data.no_private_chat || 0, no_add_friend: r.data.no_add_friend || 0 });
@@ -302,7 +306,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     }
 
     // 打开会话时标记已读（不带 messageId，后端自动取最新消息）
-    axios.post(`/api/messages/conversation/${conversation.id}/read`).catch(() => {});
+    axios.post(`/api/messages/conversation/${conversation.id}/read`, {}, { signal: ac.signal }).catch(() => {});
 
     return () => {
       ac.abort(); // 切换会话时取消未完成拉取
@@ -612,7 +616,12 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   };
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    const text = input.trim();
+    if (!text) return;
+    // 防 Enter 连击：500ms 内相同内容只发一次
+    const now = Date.now();
+    if (text === lastSendRef.current.text && now - lastSendRef.current.time < 500) return;
+    lastSendRef.current = { text, time: now };
 
     // ── 编辑模式 ──
     if (editingMsg) {
@@ -882,7 +891,8 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         }
         isUploadingRef.current = false;
         setUploadState(null);
-        socket?.emit('send_file_message', {
+        if (!socket) { showToast('连接已断开，请重连后重试', 'error'); return; }
+        socket.emit('send_file_message', {
           conversationId: conversation.id, type,
           file_url: publicUrl, content: file.name,
           reply_to_id: replyTo?.id || null,
