@@ -8,20 +8,33 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const { csrfCookieOptions } = require('../utils/cookies');
+const { isBlacklisted } = require('../utils/tokenBlacklist');
 
 module.exports = function adminAuth(req, res, next) {
   const token = req.cookies?.[config.admin.cookieName];
   if (!token) return res.status(401).json({ error: '未登录后台' });
-  try {
-    const payload = jwt.verify(token, config.jwtSecret);
-    if (!payload.admin) return res.status(403).json({ error: '无后台权限' });
-    req.admin = payload;
-    req.csrfToken = payload.csrf;
-    res.cookie(config.csrfCookie, payload.csrf, csrfCookieOptions(req));
-    res.setHeader('X-CSRF-Token', payload.csrf);
-    next();
-  } catch {
+  // 异步黑名单检查
+  isBlacklisted(token).then(blacklisted => {
+    if (blacklisted) {
+      res.clearCookie(config.admin.cookieName, { path: '/' });
+      return res.status(401).json({ error: '后台登录已过期' });
+    }
+    try {
+      const payload = jwt.verify(token, config.adminJwtSecret);
+      if (!payload.admin) return res.status(403).json({ error: '无后台权限' });
+      req.admin = payload;
+      req.adminToken = token;
+      req.csrfToken = payload.csrf;
+      res.cookie(config.csrfCookie, payload.csrf, csrfCookieOptions(req));
+      res.setHeader('X-CSRF-Token', payload.csrf);
+      next();
+    } catch (e) {
+      res.clearCookie(config.admin.cookieName, { path: '/' });
+      return res.status(401).json({ error: '后台登录已过期' });
+    }
+  }).catch(err => {
+    console.error('[AdminAuth] Blacklist check error:', err);
     res.clearCookie(config.admin.cookieName, { path: '/' });
-    return res.status(401).json({ error: '后台登录已过期' });
-  }
+    return res.status(503).json({ error: '认证服务暂时不可用，请稍后再试' });
+  });
 };

@@ -56,13 +56,14 @@ function formatTime(ts) {
 }
 
 function previewText(conv) {
-  if (!conv.lastMessage && conv.lastMessageType !== 'image' && conv.lastMessageType !== 'file') return '';
-  if (conv.lastMessageType === 'image') return '[图片]';
-  if (conv.lastMessageType === 'file') return '[文件]';
-  if (conv.lastMessageType === 'voice') return '[语音]';
-  if (conv.lastMessageType === 'video') return '[视频]';
-  if (conv.lastMessageType === 'red_packet') return '[红包]';
-  if (conv.lastMessageType === 'contact_card' || conv.lastMessageType === 'contact') return '[名片]';
+  const t = conv.lastMessageType;
+  if (t === 'image') return '[图片]';
+  if (t === 'file') return '[文件]';
+  if (t === 'voice') return '[语音]';
+  if (t === 'video') return '[视频]';
+  if (t === 'red_packet') return '[红包]';
+  if (t === 'contact_card' || t === 'contact') return '[名片]';
+  if (t === 'sticker') return '[表情]';
   return conv.lastMessage || '';
 }
 
@@ -135,7 +136,7 @@ export default function ChatListScreen() {
 
     const previewOf = (m) => ({
       image: '[图片]', file: '[文件]', voice: '[语音]', video: '[视频]',
-      red_packet: '[红包]', contact_card: '[名片]', contact: '[名片]',
+      red_packet: '[红包]', contact_card: '[名片]', contact: '[名片]', sticker: '[表情]',
     }[m.type] || m.content);
 
     const handleNewMessage = (msg) => {

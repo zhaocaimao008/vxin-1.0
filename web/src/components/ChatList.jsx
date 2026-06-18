@@ -111,13 +111,15 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
   const filtered = conversations.filter(c => (c.name || '').toLowerCase().includes(searchQuery.toLowerCase()));
 
   const previewMsg = (conv) => {
+    const t = conv.lastMessageType;
+    if (t === 'image') return '[图片]';
+    if (t === 'voice') return '[语音]';
+    if (t === 'video') return '[视频]';
+    if (t === 'file') return '[文件]';
+    if (t === 'contact_card' || t === 'contact') return '[名片]';
+    if (t === 'red_packet') return '[红包]';
+    if (t === 'sticker') return '[表情]';
     if (!conv.lastMessage) return '';
-    if (conv.lastMessageType === 'image') return '[图片]';
-    if (conv.lastMessageType === 'voice') return '[语音]';
-    if (conv.lastMessageType === 'video') return '[视频]';
-    if (conv.lastMessageType === 'file') return '[文件]';
-    if (conv.lastMessageType === 'contact_card') return '[名片]';
-    if (conv.lastMessageType === 'red_packet') return '[红包]';
     if (conv.type === 'group' && conv.lastSenderName && conv.lastSenderName !== user?.username)
       return `${conv.lastSenderName}: ${conv.lastMessage}`;
     return conv.lastMessage;

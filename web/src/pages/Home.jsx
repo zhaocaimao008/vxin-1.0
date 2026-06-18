@@ -18,8 +18,8 @@ import { mediaUrl, goLogin } from '../utils/url';
 
 function WcEmpty() {
   return (
-    <div className="wc-empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-      <svg viewBox="0 0 80 64" style={{ width: 80, height: 64, marginBottom: 18 }}>
+    <div className="we-empty">
+      <svg className="we-empty-svg" viewBox="0 0 80 64">
         <rect x="4" y="8" width="50" height="34" rx="8" fill="#EEF2F8"/>
         <rect x="8" y="15" width="30" height="3" rx="1.5" fill="#B8C4D4"/>
         <rect x="8" y="22" width="22" height="3" rx="1.5" fill="#B8C4D4"/>
@@ -28,8 +28,8 @@ function WcEmpty() {
         <circle cx="60" cy="46" r="16" fill="#1A2033"/>
         <path d="M53 46l5 5 9-9" stroke="#07C160" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
-      <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 6 }}>选择一个会话开始聊天</p>
-      <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>安全、高效的企业级通讯</p>
+      <p className="we-empty-title">选择一个会话开始聊天</p>
+      <p className="we-empty-desc">安全、高效的企业级通讯</p>
     </div>
   );
 }
@@ -42,17 +42,17 @@ const IcoContacts = () => (
   <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
 );
 const IcoSearch = () => (
-  <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, fill: 'currentColor' }}>
+  <svg className="ico-sm" viewBox="0 0 24 24">
     <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
   </svg>
 );
 const IcoQR = () => (
-  <svg viewBox="0 0 24 24" style={{ width: 18, height: 18, fill: 'currentColor' }}>
+  <svg className="ico-md" viewBox="0 0 24 24">
     <path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM13 13h2v2h-2zM15 15h2v2h-2zM13 17h2v2h-2zM17 13h2v2h-2zM19 15h2v2h-2zM17 17h2v2h-2zM19 19h2v2h-2zM15 19h2v2h-2z"/>
   </svg>
 );
 const IcoAdd = () => (
-  <svg viewBox="0 0 24 24" style={{ width: 18, height: 18, fill: 'currentColor' }}>
+  <svg className="ico-md" viewBox="0 0 24 24">
     <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
   </svg>
 );
@@ -171,14 +171,13 @@ function AccountSwitcher() {
   };
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
+    <div ref={containerRef} className="as-container">
       {/* 头像按钮 */}
-      <div className="wc-sidebar-avatar" onClick={() => setOpen(v => !v)} title="账号切换"
-        style={{ cursor: 'pointer', width: '100%' }}>
-        <div className="wc-sidebar-avatar-inner"
-          style={{ outline: open ? '2.5px solid rgba(255,255,255,.9)' : '2.5px solid transparent', outlineOffset: 2, transition: 'outline-color .15s', overflow: 'hidden' }}>
+      <div className="as-avatar-btn" onClick={() => setOpen(v => !v)} title="账号切换">
+        <div className="as-avatar-inner"
+          style={{ outlineColor: open ? 'rgba(255,255,255,.9)' : 'transparent' }}>
           {user?.avatar
-            ? <img src={mediaUrl(user.avatar)} alt="" style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover', display: 'block' }} />
+            ? <img src={mediaUrl(user.avatar)} alt="" className="as-avatar-img" />
             : letter
           }
         </div>
@@ -186,61 +185,37 @@ function AccountSwitcher() {
 
       {/* 下拉面板（fixed 定位，不受 sidebar overflow 影响） */}
       {open && (
-        <div style={{
-          position: 'fixed',
-          left: 'calc(var(--nav-w) + 6px)',
-          top: 8,
-          width: 260,
-          zIndex: 300,
-          borderRadius: 14,
-          background: 'var(--glass-bg-strong)',
-          backdropFilter: 'blur(28px) saturate(1.3)',
-          WebkitBackdropFilter: 'blur(28px) saturate(1.3)',
-          border: '1px solid var(--glass-border)',
-          boxShadow: '0 8px 32px rgba(0,0,0,.22)',
-          overflow: 'hidden',
-        }}>
+        <div className="as-dropdown">
 
           {/* 账号列表 */}
           {accounts.map((a) => {
             const active = a.id === user?.id;
             return (
               <div key={a.id} onClick={() => { if (!active) doSwitch(a.id); }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 11,
-                  padding: '11px 14px',
-                  cursor: active ? 'default' : 'pointer',
-                  borderBottom: '1px solid var(--border-color)',
-                  background: active ? 'rgba(7,193,96,.06)' : 'transparent',
-                  transition: 'background .12s',
-                }}
-                onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--bg-hover)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = active ? 'rgba(7,193,96,.06)' : 'transparent'; }}>
-                <div style={{ position: 'relative', flexShrink: 0 }}>
+                className={`wc-account-row${active ? ' active' : ''}`}>
+                <div className="as-avatar-wrap">
                   <Avatar src={a.user?.avatar} name={a.user?.username} size={38} />
                   {active && (
-                    <div style={{ position: 'absolute', bottom: -1, right: -1, width: 13, height: 13, borderRadius: '50%', background: '#07C160', border: '2px solid var(--glass-bg-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <svg viewBox="0 0 24 24" style={{ width: 7, height: 7, fill: '#fff' }}><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    <div className="as-active-badge">
+                      <svg className="as-check-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                     </div>
                   )}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: active ? 500 : 400, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div className="as-name-wrap">
+                  <div className={`as-name${active ? ' active' : ''}`}>
                     {a.user?.username || '未命名'}
                   </div>
-                  {a.user?.phone && <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 1 }}>{a.user.phone}</div>}
+                  {a.user?.phone && <div className="as-phone">{a.user.phone}</div>}
                 </div>
                 {active
-                  ? <span style={{ fontSize: 11, color: '#07C160', background: 'rgba(7,193,96,.12)', padding: '2px 7px', borderRadius: 99, flexShrink: 0 }}>当前</span>
-                  : <span style={{ fontSize: 11, color: 'var(--text-tertiary)', flexShrink: 0 }}>切换</span>
+                  ? <span className="as-current-badge">当前</span>
+                  : <span className="as-switch-text">切换</span>
                 }
                 {/* 删除/退出账号 */}
                 <button
                   onClick={(e) => doRemove(e, a.id)}
                   title={active ? '退出登录' : '从本设备删除'}
-                  style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)', background: 'transparent', cursor: 'pointer', marginLeft: 2 }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(250,81,81,.12)'; e.currentTarget.style.color = '#FA5151'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-tertiary)'; }}>
+                  className="as-remove-btn">
                   <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
                 </button>
               </div>
@@ -249,50 +224,40 @@ function AccountSwitcher() {
 
           {/* 添加账户行 */}
           <div onClick={toggleForm}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 11,
-              padding: '11px 14px', cursor: 'pointer',
-              borderBottom: showForm ? '1px solid var(--border-color)' : 'none',
-              transition: 'background .12s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-hover)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
-            <div style={{ width: 38, height: 38, borderRadius: '50%', border: `1.5px dashed ${showForm ? '#07C160' : 'var(--text-tertiary)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'border-color .15s' }}>
-              <svg viewBox="0 0 24 24" style={{ width: 17, height: 17, fill: showForm ? '#07C160' : 'var(--text-tertiary)', transition: 'fill .15s' }}>
+            className={`wc-add-row${showForm ? ' open' : ''}`}>
+            <div className={`wc-add-icon-wrap${showForm ? ' open' : ''}`}>
+              <svg viewBox="0 0 24 24" className={`wc-add-icon-svg${showForm ? ' open' : ''}`}>
                 <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
               </svg>
             </div>
-            <span style={{ flex: 1, fontSize: 14, color: showForm ? '#07C160' : 'var(--text-primary)', transition: 'color .15s' }}>添加账户</span>
-            <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, fill: 'var(--text-tertiary)', transform: showForm ? 'rotate(90deg)' : 'none', transition: 'transform .2s', flexShrink: 0 }}>
+            <span className={`wc-add-label${showForm ? ' open' : ''}`}>添加账户</span>
+            <svg viewBox="0 0 24 24" className={`wc-add-chevron${showForm ? ' open' : ''}`}>
               <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
             </svg>
           </div>
 
           {/* 登录表单：切换已有账号 或 添加新账号 */}
           {showForm && (
-            <div style={{ padding: '4px 14px 14px' }}>
-              <div style={{ margin: '8px 0', padding: '7px 10px', background: 'rgba(7,193,96,.08)', borderRadius: 8, border: '1px solid rgba(7,193,96,.18)' }}>
-                <span style={{ fontSize: 12, color: '#07C160', lineHeight: 1.5 }}>
+            <div className="as-form-pad">
+              <div className="wc-add-info">
+                <span className="wc-add-info-text">
                   {switchTarget
                     ? `切换到「${switchTarget.username || '该账号'}」，请输入密码`
                     : '添加后旧账号不会退出，可随时切换'}
                 </span>
               </div>
-              <form onSubmit={doAdd} style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <form onSubmit={doAdd} className="wc-add-form-inner">
                 <input ref={phoneRef} type="tel" placeholder="手机号" value={form.phone}
                   readOnly={!!switchTarget}
                   onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                  style={{ padding: '10px 12px', borderRadius: 9, border: '1px solid var(--border-color)', fontSize: 14, background: switchTarget ? 'var(--bg-panel, #f0f0f0)' : 'var(--bg-search)', color: switchTarget ? 'var(--text-secondary)' : 'var(--text-primary)', outline: 'none' }}
-                  onFocus={e => e.target.style.borderColor = '#07C160'}
-                  onBlur={e => e.target.style.borderColor = 'var(--border-color)'} />
+                  className="wc-add-form-input"
+                  style={{ background: switchTarget ? 'var(--bg-panel, #f0f0f0)' : 'var(--bg-search)', color: switchTarget ? 'var(--text-secondary)' : 'var(--text-primary)' }} />
                 <input ref={passwordRef} type="password" placeholder="密码" value={form.password}
                   onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                  style={{ padding: '10px 12px', borderRadius: 9, border: '1px solid var(--border-color)', fontSize: 14, background: 'var(--bg-search)', color: 'var(--text-primary)', outline: 'none' }}
-                  onFocus={e => e.target.style.borderColor = '#07C160'}
-                  onBlur={e => e.target.style.borderColor = 'var(--border-color)'} />
-                {err && <div style={{ padding: '5px 9px', background: 'rgba(250,81,81,.08)', borderRadius: 7, border: '1px solid rgba(250,81,81,.2)', color: '#FA5151', fontSize: 12 }}>{err}</div>}
+                  className="wc-add-form-input" />
+                {err && <div className="wc-add-form-error">{err}</div>}
                 <button type="submit" disabled={submitting}
-                  style={{ padding: '11px 0', background: submitting ? 'rgba(7,193,96,.6)' : '#07C160', color: '#fff', borderRadius: 9, fontSize: 14, fontWeight: 600, letterSpacing: .3 }}>
+                  className="wc-add-form-submit">
                   {submitting ? '登录中...' : (switchTarget ? '登录并切换' : '登录并添加')}
                 </button>
               </form>
@@ -301,46 +266,39 @@ function AccountSwitcher() {
 
           {/* 个人资料卡片 */}
           <div onClick={() => setShowProfile(v => !v)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '11px 14px', cursor: 'pointer',
-              borderTop: '1px solid var(--border-color)',
-              transition: 'background .12s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-hover)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
-            <svg viewBox="0 0 24 24" style={{ width: 15, height: 15, fill: 'var(--text-secondary)', flexShrink: 0 }}>
+            className="as-profile-row">
+            <svg className="as-profile-icon" viewBox="0 0 24 24">
               <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
             </svg>
-            <span style={{ flex: 1, fontSize: 13, color: 'var(--text-secondary)' }}>个人资料</span>
-            <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, fill: 'var(--text-tertiary)', flexShrink: 0, transform: showProfile ? 'rotate(90deg)' : 'none', transition: 'transform .2s' }}>
+            <span className="as-profile-label">个人资料</span>
+            <svg viewBox="0 0 24 24" className={`as-profile-arrow${showProfile ? ' open' : ''}`}>
               <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
             </svg>
           </div>
 
           {/* 资料详情（展开时显示） */}
           {showProfile && (
-            <div style={{ padding: '10px 14px 14px', borderTop: '1px solid var(--border-color)', fontSize: 13 }}>
+            <div className="as-profile-detail">
               {/* v信号 */}
               {user?.wechat_id && (
-                <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>v信号</span>
-                  <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace', fontWeight: 500 }}>{user.wechat_id}</span>
+                <div className="as-profile-item">
+                  <span className="as-profile-label-text">v信号</span>
+                  <span className="as-profile-value">{user.wechat_id}</span>
                 </div>
               )}
               {/* 手机号 */}
               {user?.phone && (
-                <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>手机号</span>
-                  <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace', fontWeight: 500 }}>{user.phone}</span>
+                <div className="as-profile-item">
+                  <span className="as-profile-label-text">手机号</span>
+                  <span className="as-profile-value">{user.phone}</span>
                 </div>
               )}
               {/* 二维码 */}
               {user?.id && (
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ color: 'var(--text-secondary)', marginBottom: 6 }}>二维码</div>
-                  <div style={{ padding: 8, background: 'var(--bg-input)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 120 }}>
-                    <AuthImage src="/api/users/me/qrcode" alt="我的二维码" style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 4 }} />
+                <div className="as-qr-section">
+                  <div className="as-qr-label">二维码</div>
+                  <div className="as-qr-content">
+                    <AuthImage src="/api/users/me/qrcode" alt="我的二维码" className="as-qr-img" />
                   </div>
                 </div>
               )}
@@ -354,19 +312,16 @@ function AccountSwitcher() {
 
 /* ── 群成员行（带 hover） ── */
 function CgMemberRow({ contact: c, checked, onToggle }) {
-  const [hovered, setHovered] = useState(false);
   return (
     <div onClick={onToggle}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 18px', cursor: 'pointer', background: hovered ? 'var(--bg-hover)' : 'transparent', transition: 'background .1s' }}>
-      <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${checked ? '#07C160' : 'var(--border-color)'}`, background: checked ? '#07C160' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .12s' }}>
-        {checked && <svg viewBox="0 0 24 24" width="12" height="12" fill="#fff"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
+      className="cg-row">
+      <div className={`cg-checkbox${checked ? ' checked' : ''}`}>
+        {checked && <svg className="cg-check-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
       </div>
-      <Avatar src={c.avatar} name={c.remark || c.username} size={40} style={{ borderRadius: 8, flexShrink: 0 }} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: checked ? 500 : 400 }}>{c.remark || c.username}</div>
-        {c.remark && <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 1 }}>{c.username}</div>}
+      <Avatar src={c.avatar} name={c.remark || c.username} size={40} className="as-avatar-img" />
+      <div className="cg-info">
+        <div className={`cg-name${checked ? ' checked' : ''}`}>{c.remark || c.username}</div>
+        {c.remark && <div className="cg-username">{c.username}</div>}
       </div>
     </div>
   );
@@ -415,15 +370,15 @@ function CreateGroupModal({ onClose, onCreated }) {
   const selectedContacts = contacts.filter(c => selected.has(c.id));
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 600, background: 'rgba(0,0,0,.52)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+    <div className="cgm-overlay"
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ width: 480, maxWidth: '94vw', maxHeight: '80vh', background: 'var(--bg-msg-other)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,.28)', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color)' }}
+      <div className="cgm-content"
         onClick={e => e.stopPropagation()}>
 
         {/* 标题栏 */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 18px 14px', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
-          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>发起群聊</span>
-          <button onClick={onClose} style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, color: 'var(--text-secondary)', cursor: 'pointer', background: 'transparent' }}>
+        <div className="cgm-header">
+          <span className="cgm-title">发起群聊</span>
+          <button onClick={onClose} className="cgm-close">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
               <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
             </svg>
@@ -431,28 +386,26 @@ function CreateGroupModal({ onClose, onCreated }) {
         </div>
 
         {/* 群名称输入 */}
-        <div style={{ padding: '14px 18px 10px', flexShrink: 0, borderBottom: '1px solid var(--border-color)' }}>
-          <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 7, fontWeight: 500 }}>群名称</div>
+        <div className="cgm-name-section">
+          <div className="cgm-name-label">群名称</div>
           <input
             ref={nameRef}
             value={name}
             onChange={e => { setName(e.target.value); setError(''); }}
             placeholder="请输入群名称"
             maxLength={30}
-            style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--border-color)', fontSize: 14, color: 'var(--text-primary)', background: 'var(--bg-search)', outline: 'none', boxSizing: 'border-box' }}
-            onFocus={e => e.target.style.borderColor = '#07C160'}
-            onBlur={e => e.target.style.borderColor = 'var(--border-color)'}
+            className="cgm-name-input"
           />
         </div>
 
         {/* 已选成员 chips */}
         {selectedContacts.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '10px 18px', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
+          <div className="cgm-chips">
             {selectedContacts.map(c => (
               <div key={c.id} onClick={() => toggle(c.id)}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '3px 8px 3px 4px', background: 'rgba(7,193,96,.12)', borderRadius: 99, cursor: 'pointer', border: '1px solid rgba(7,193,96,.25)' }}>
-                <Avatar src={c.avatar} name={c.remark || c.username} size={20} style={{ borderRadius: 4 }} />
-                <span style={{ fontSize: 12, color: '#07C160', maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.remark || c.username}</span>
+                className="cgm-chip">
+                <Avatar src={c.avatar} name={c.remark || c.username} size={20} className="as-avatar-img" />
+                <span className="cgm-chip-text">{c.remark || c.username}</span>
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="#07C160"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
               </div>
             ))}
@@ -460,25 +413,25 @@ function CreateGroupModal({ onClose, onCreated }) {
         )}
 
         {/* 联系人搜索 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '10px 18px 6px', padding: '7px 10px', background: 'var(--bg-search)', borderRadius: 8, border: '1px solid var(--border-color)', flexShrink: 0 }}>
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}>
+        <div className="cgm-search-bar">
+          <svg className="cgm-search-icon" viewBox="0 0 24 24">
             <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
           </svg>
           <input
             value={contactSearch}
             onChange={e => setContactSearch(e.target.value)}
             placeholder="搜索联系人"
-            style={{ flex: 1, fontSize: 13, color: 'var(--text-primary)', background: 'none', border: 'none', outline: 'none' }}
+            className="cgm-search-input"
           />
         </div>
 
         {/* 联系人列表 */}
-        <div style={{ fontSize: 12, color: 'var(--text-tertiary)', padding: '2px 18px 6px', flexShrink: 0 }}>
+        <div className="cgm-member-count">
           选择成员（已选 {selected.size} 人）
         </div>
-        <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div className="cgm-contact-list">
           {filtered.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '24px 20px', color: 'var(--text-tertiary)', fontSize: 13 }}>
+            <div className="cgm-empty">
               {contacts.length === 0 ? '暂无联系人' : '未找到相关联系人'}
             </div>
           )}
@@ -491,19 +444,19 @@ function CreateGroupModal({ onClose, onCreated }) {
         </div>
 
         {/* 底部操作 */}
-        <div style={{ padding: '12px 18px', borderTop: '1px solid var(--border-color)', flexShrink: 0 }}>
+        <div className="cgm-footer">
           {error && (
-            <div style={{ padding: '6px 10px', background: 'rgba(250,81,81,.08)', border: '1px solid rgba(250,81,81,.2)', borderRadius: 8, color: '#FA5151', fontSize: 12, marginBottom: 10 }}>
+            <div className="cgm-error">
               {error}
             </div>
           )}
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div className="cgm-btn-row">
             <button onClick={onClose}
-              style={{ flex: 1, padding: '11px 0', borderRadius: 10, border: '1px solid var(--border-color)', fontSize: 14, color: 'var(--text-secondary)', background: 'var(--bg-search)', cursor: 'pointer', fontWeight: 500 }}>
+              className="cgm-cancel">
               取消
             </button>
             <button onClick={create} disabled={loading || selected.size === 0}
-              style={{ flex: 2, padding: '11px 0', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: loading || selected.size === 0 ? 'not-allowed' : 'pointer', background: loading || selected.size === 0 ? 'rgba(7,193,96,.4)' : '#07C160', color: '#fff' }}>
+              className="cgm-create">
               {loading ? '创建中…' : `创建群聊${selected.size > 0 ? `（${selected.size}人）` : ''}`}
             </button>
           </div>
@@ -764,7 +717,7 @@ export default function Home() {
                   onKeyDown={e => e.key === 'Enter' && tab === 'contacts' && setAddFriendRequest(n => n + 1)}
                 />
                 {search && (
-                  <button style={{ color: 'var(--text-tertiary)', fontSize: 14, lineHeight: 1, padding: '0 2px' }}
+                  <button className="home-search-clear"
                     onClick={() => setSearch('')}>✕</button>
                 )}
               </div>
@@ -794,7 +747,7 @@ export default function Home() {
 
         {/* 聊天区 */}
         {(!isMobile || showChat) && (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div className="home-chat-area">
             {activeConv
               ? <ChatWindow conversation={activeConv} onClose={isMobile ? handleMobileBack : () => setActiveConv(null)} />
               : <WcEmpty />
@@ -806,15 +759,15 @@ export default function Home() {
       {/* 二维码弹窗 */}
       {showQR && (
         <div className="wc-modal-overlay" onClick={() => setShowQR(false)}>
-          <div className="wc-modal" style={{ maxWidth: 280, textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+          <div className="wc-modal home-qr-modal" onClick={e => e.stopPropagation()}>
             <div className="wc-modal-header">
               <span className="wc-modal-title">我的二维码</span>
               <button className="wc-modal-close" onClick={() => setShowQR(false)}>✕</button>
             </div>
-            <div className="wc-modal-body" style={{ padding: '20px 20px 24px' }}>
+            <div className="wc-modal-body home-qr-body">
               <AuthImage src="/api/users/me/qrcode" alt="我的二维码"
-                style={{ width: 200, height: 200, borderRadius: 8, display: 'block', margin: '0 auto' }} />
-              <p style={{ marginTop: 14, color: 'var(--text-tertiary)', fontSize: 13 }}>扫描二维码添加我为好友</p>
+                className="home-qr-img" />
+              <p className="home-qr-text">扫描二维码添加我为好友</p>
             </div>
           </div>
         </div>
@@ -823,25 +776,15 @@ export default function Home() {
       {/* + 号下拉菜单（position:fixed 避免 backdrop-filter 堆叠层问题） */}
       {showAddMenu && addMenuPos && (
         <>
-          <div style={{ position: 'fixed', inset: 0, zIndex: 800 }} onClick={closeAddMenu} />
-          <div style={{
-            position: 'fixed',
-            top: addMenuPos.top,
-            right: addMenuPos.right,
-            zIndex: 801,
-            background: 'var(--bg-msg-other)',
-            border: '1px solid var(--border-color)',
-            borderRadius: 12,
-            boxShadow: '0 8px 32px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.1)',
-            overflow: 'hidden',
-            minWidth: 168,
-          }}>
+          <div className="home-add-overlay" onClick={closeAddMenu} />
+          <div className="home-add-dropdown"
+            style={{ top: addMenuPos.top, right: addMenuPos.right }}>
             <AddDropItem
               icon={<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>}
               label="发起群聊"
               onClick={handleCreateGroup}
             />
-            <div style={{ height: 1, background: 'var(--border-color)' }} />
+            <div className="home-add-divider" />
             <AddDropItem
               icon={<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>}
               label="添加朋友"
@@ -868,14 +811,11 @@ export default function Home() {
 }
 
 function AddDropItem({ icon, label, onClick }) {
-  const [hovered, setHovered] = useState(false);
   return (
     <div onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', cursor: 'pointer', background: hovered ? 'var(--bg-hover)' : 'transparent', transition: 'background .1s' }}>
-      <span style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>{icon}</span>
-      <span style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 500 }}>{label}</span>
+      className="adi-row">
+      <span className="adi-icon">{icon}</span>
+      <span className="adi-label">{label}</span>
     </div>
   );
 }

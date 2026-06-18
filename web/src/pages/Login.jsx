@@ -156,7 +156,7 @@ export default function Login() {
           </div>
 
           {error && (
-            <div className="auth-error">
+            <div className="auth-error" role="alert">
               <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
                 <path d="M8 1a7 7 0 100 14A7 7 0 008 1zM7 5h2v4H7V5zm0 5h2v2H7v-2z"/>
               </svg>

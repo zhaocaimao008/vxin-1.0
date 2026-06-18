@@ -99,7 +99,7 @@ exports.deleteSession = asyncHandler(async (req, res) => {
 });
 
 exports.changePassword = asyncHandler(async (req, res) => {
-  const token = await svc.changePassword(req.user.id, req.body);
+  const token = await svc.changePassword(req.user.id, { ...req.body, currentToken: req.token });
   setAuthCookie(req, res, token);
   res.json({ success: true });
 });

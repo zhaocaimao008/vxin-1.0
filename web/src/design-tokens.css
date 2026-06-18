@@ -316,6 +316,16 @@
   --z-tooltip:  1300;    /* Tooltip */
   --z-top:      9999;    /* 绝对最顶层 */
 
+/* ── 毛玻璃效果 CSS 变量（无 !important 方案）── */
+  --glass-bg:         rgba(255,255,255,.65);
+  --glass-bg-strong:  rgba(28,28,30,.75);
+  --glass-bg-input:   rgba(255,255,255,.8);
+  --glass-panel-bg:   rgba(245,245,247,.7);
+  --glass-panel-bg-strong: rgba(28,28,30,.82);
+  --glass-blur:       blur(24px) saturate(1.4);
+  --glass-panel-blur: blur(30px) saturate(1.3);
+  --glass-input-blur: blur(20px) saturate(1.2);
+
 /* ================================================================
    § 12  COMPONENT TOKENS — 组件专属 Token
    将设计决策显式命名，组件代码不应出现裸色值
@@ -586,6 +596,14 @@ body.dark-mode {
   --admin-danger-text: #FF6B6B;
   --admin-danger-border: rgba(255, 107, 107, .22);
   --toggle-off-bg:     #48484A;
+
+  /* Glass 毛玻璃（深色模式） */
+  --glass-bg:              rgba(44,44,46,.85);
+  --glass-bg-strong:       rgba(28,28,30,.75);
+  --glass-bg-input:        rgba(44,44,46,.82);
+  --glass-panel-bg:        rgba(28,28,30,.82);
+  --glass-panel-bg-strong: rgba(28,28,30,.82);
+  --glass-panel-blur:      blur(30px) saturate(1.3);
 
   /* Legacy aliases (dark) */
   --green:          var(--bubble-mine);

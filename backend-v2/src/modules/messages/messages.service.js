@@ -230,8 +230,11 @@ function remove(io, userId, msgId, forEveryone) {
   const msg = db.prepare('SELECT * FROM messages WHERE id=?').get(msgId);
   if (!msg) throw notFound('消息不存在');
   if (forEveryone) {
-    if (msg.sender_id !== userId) throw forbidden('只能撤回自己的消息');
-    if (Math.floor(Date.now() / 1000) - msg.created_at > RECALL) throw badRequest('超过2分钟无法撤回');
+    const isOwn = msg.sender_id === userId;
+    const callerRole = memberRole(msg.conversation_id, userId);
+    const isAdmin = callerRole === 'owner' || callerRole === 'admin';
+    if (!isOwn && !isAdmin) throw forbidden('无权删除该消息');
+    if (isOwn && Math.floor(Date.now() / 1000) - msg.created_at > RECALL) throw badRequest('超过2分钟无法撤回');
     db.prepare('UPDATE messages SET deleted=1 WHERE id=?').run(msgId);
     if (io) io.to(msg.conversation_id).emit('message_deleted', { msgId, conversationId: msg.conversation_id });
   }

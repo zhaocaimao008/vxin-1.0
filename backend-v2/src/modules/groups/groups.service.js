@@ -105,12 +105,16 @@ function invite(io, convId, userId, userIds) {
   return added.length;
 }
 
-// ── 移除成员（仅群主）—— R2 修复：强制被踢者全端离开房间 ──────────
-function kick(io, convId, ownerId, uid) {
+// ── 移除成员（群主可踢任何人，管理员可踢普通成员）── R2 修复：强制被踢者全端离开房间
+function kick(io, convId, callerId, uid) {
   const conv = db.prepare('SELECT owner_id FROM conversations WHERE id=?').get(convId);
   if (!conv) throw notFound('群不存在');
-  if (conv.owner_id !== ownerId) throw forbidden('仅群主可操作');
-  if (uid === ownerId) throw badRequest('不能移除自己');
+  const callerRole = memberRole(convId, callerId);
+  if (!callerRole || callerRole === 'member') throw forbidden('无权操作，仅群主或管理员可移除成员');
+  if (uid === callerId) throw badRequest('不能移除自己');
+  const targetRole = memberRole(convId, uid);
+  if (!targetRole) throw notFound('成员不存在');
+  if (callerRole === 'admin' && targetRole !== 'member') throw forbidden('管理员只能移除普通成员');
 
   db.prepare('DELETE FROM conversation_members WHERE conversation_id=? AND user_id=?').run(convId, uid);
   if (io) {

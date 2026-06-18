@@ -36,17 +36,8 @@ module.exports = function auth(req, res, next) {
     }
   }).catch(err => {
     console.error('[Auth] Blacklist check error:', err);
-    // 降级：允许通过，但记录错误
-    try {
-      req.user = jwt.verify(token, config.jwtSecret);
-      req.token = token;
-      req.csrfToken = req.user.csrf;
-      res.cookie(config.csrfCookie, req.csrfToken, csrfCookieOptions(req));
-      res.setHeader('X-CSRF-Token', req.csrfToken);
-      next();
-    } catch {
-      res.clearCookie(config.cookieName, { path: '/' });
-      return res.status(401).json({ error: 'Token无效或已过期' });
-    }
+    // ⚠ 不降级放行，拒绝请求（H2）
+    res.clearCookie(config.cookieName, { path: '/' });
+    return res.status(503).json({ error: '认证服务暂时不可用，请稍后再试' });
   });
 };

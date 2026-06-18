@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 const config = require('../../config');
 const { db, generateVxinId } = require('../../db/connection');
 const { badRequest, notFound, forbidden } = require('../../utils/http');
+const { addToBlacklist } = require('../../utils/tokenBlacklist');
 
 // 运行时邀请码：支持多个逗号分隔（后台可改）
 function currentInviteCode() {
@@ -85,8 +86,7 @@ async function register({ username, phone, password, inviteCode }) {
 async function login({ phone, password }) {
   if (!phone || !password) throw badRequest('请填写手机号和密码');
   const user = db.prepare('SELECT * FROM users WHERE phone=?').get(phone);
-  if (!user) throw badRequest('用户不存在');
-  if (!await bcrypt.compare(password, user.password)) throw badRequest('密码错误');
+  if (!user || !await bcrypt.compare(password, user?.password || '')) throw badRequest('手机号或密码错误');
   if (user.banned) throw forbidden('账号已被封禁，请联系管理员');
   return { token: signToken(user), user: serializeUser(user) };
 }
@@ -112,7 +112,7 @@ function deleteSession(userId, sessionId) {
   db.prepare('DELETE FROM user_sessions WHERE id=? AND user_id=?').run(sessionId, userId);
 }
 
-async function changePassword(userId, { oldPassword, newPassword }) {
+async function changePassword(userId, { oldPassword, newPassword, currentToken }) {
   if (!oldPassword || !newPassword) throw badRequest('请填写完整');
   if (newPassword.length < 6) throw badRequest('新密码至少6位');
   const user = db.prepare('SELECT * FROM users WHERE id=?').get(userId);
@@ -120,6 +120,17 @@ async function changePassword(userId, { oldPassword, newPassword }) {
   if (!await bcrypt.compare(oldPassword, user.password)) throw badRequest('当前密码错误');
   const hash = await bcrypt.hash(newPassword, 10);
   db.prepare('UPDATE users SET password=? WHERE id=?').run(hash, userId);
+  // 改密码后吊销所有旧会话（H6）
+  const sessions = db.prepare('SELECT id, token_hash FROM user_sessions WHERE user_id=?').all(userId);
+  for (const s of sessions) {
+    if (s.token_hash && s.token_hash.startsWith('ey')) {
+      try {
+        const payload = jwt.decode(s.token_hash);
+        if (payload?.exp) await addToBlacklist(s.token_hash, payload.exp);
+      } catch { /* ignore decode errors */ }
+    }
+  }
+  db.prepare('DELETE FROM user_sessions WHERE user_id=?').run(userId);
   return signToken(user);
 }
 

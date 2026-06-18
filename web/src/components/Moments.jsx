@@ -22,57 +22,62 @@ function MomentCard({ m, meId, onLike, onComment, onDelete, onDeleteComment }) {
     onComment(m, text.trim(), () => { setText(''); setCommenting(false); });
   };
 
+  const gridCols = m.images?.length ? Math.min(m.images.length, 3) : 1;
+
   return (
-    <div style={{ display: 'flex', gap: 12, padding: '16px 18px', borderBottom: '1px solid var(--border-color)' }}>
+    <div className="wc-moment-card">
       <Avatar src={m.author?.avatar} name={m.author?.username} size={42} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--text-primary)' }}>{m.author?.username || '用户'}</span>
+      <div className="wc-moment-body">
+        <div className="wc-moment-header">
+          <span className="wc-moment-name">{m.author?.username || '用户'}</span>
           {m.user_id === meId && (
-            <button onClick={() => onDelete(m)} style={{ fontSize: 12, color: 'var(--text-tertiary)', background: 'none', cursor: 'pointer' }}>删除</button>
+            <button className="wc-moment-delete" onClick={() => onDelete(m)}>删除</button>
           )}
         </div>
-        {m.content && <div style={{ fontSize: 14.5, color: 'var(--text-primary)', margin: '4px 0 8px', whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.55 }}>{m.content}</div>}
+        {m.content && <div className="wc-moment-text">{m.content}</div>}
 
         {/* 图片九宫格 */}
         {m.images?.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(m.images.length, 3)}, 1fr)`, gap: 4, margin: '6px 0 8px', maxWidth: 300 }}>
+          <div className="wc-moment-images" style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
             {m.images.map((src, i) => (
-              <img key={i} src={src} alt="" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 6 }} />
+              <img loading="lazy" key={i} src={src} alt="" />
             ))}
           </div>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginTop: 4 }}>
-          <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{ago(m.created_at)}</span>
-          <button onClick={() => onLike(m)} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', cursor: 'pointer', fontSize: 13, color: m.liked ? '#07C160' : 'var(--text-secondary)' }}>
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        <div className="wc-moment-actions">
+          <span className="wc-moment-time">{ago(m.created_at)}</span>
+          <button
+            className={`wc-moment-action-btn${m.liked ? ' liked' : ''}`}
+            onClick={() => onLike(m)}
+          >
+            <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
             {m.likeCount > 0 ? m.likeCount : '赞'}
           </button>
-          <button onClick={() => setCommenting(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+          <button className="wc-moment-action-btn" onClick={() => setCommenting(v => !v)}>
+            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
             {m.commentCount > 0 ? m.commentCount : '评论'}
           </button>
         </div>
 
         {/* 点赞者 */}
         {m.likes?.length > 0 && (
-          <div style={{ marginTop: 8, padding: '6px 10px', background: 'var(--bg-hover)', borderRadius: 8, fontSize: 13, color: 'var(--text-secondary)' }}>
-            <span style={{ color: '#07C160' }}>♥ </span>
+          <div className="wc-moment-likes">
+            <span className="wc-moment-heart">♥ </span>
             {m.likes.map(l => l.username).join('、')}
           </div>
         )}
 
         {/* 评论列表 */}
         {m.comments?.length > 0 && (
-          <div style={{ marginTop: 6, padding: '4px 10px', background: 'var(--bg-hover)', borderRadius: 8 }}>
+          <div className="wc-moment-comments">
             {m.comments.map(c => (
-              <div key={c.id} style={{ fontSize: 13, color: 'var(--text-primary)', padding: '3px 0', lineHeight: 1.5 }}>
-                <span style={{ color: '#576B95', fontWeight: 500 }}>{c.username}</span>
-                {c.reply_to_user ? <span style={{ color: 'var(--text-tertiary)' }}> 回复 {c.reply_to_user}</span> : null}
+              <div key={c.id} className="wc-moment-comment">
+                <span className="wc-moment-comment-user">{c.username}</span>
+                {c.reply_to_user ? <span className="wc-moment-comment-reply"> 回复 {c.reply_to_user}</span> : null}
                 <span>：{c.content}</span>
                 {(c.user_id === meId || m.user_id === meId) && (
-                  <button onClick={() => onDeleteComment(m, c)} style={{ marginLeft: 6, fontSize: 11, color: 'var(--text-tertiary)', background: 'none', cursor: 'pointer' }}>删</button>
+                  <button className="wc-moment-comment-del" onClick={() => onDeleteComment(m, c)}>删</button>
                 )}
               </div>
             ))}
@@ -81,12 +86,12 @@ function MomentCard({ m, meId, onLike, onComment, onDelete, onDeleteComment }) {
 
         {/* 评论输入 */}
         {commenting && (
-          <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-            <input autoFocus value={text} onChange={e => setText(e.target.value)}
+          <div className="wc-moment-comment-input">
+            <input className="wc-moment-comment-field" autoFocus value={text}
+              onChange={e => setText(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') setCommenting(false); }}
-              placeholder="评论…" maxLength={500}
-              style={{ flex: 1, fontSize: 13, padding: '7px 10px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-primary)', outline: 'none' }} />
-            <button onClick={submit} style={{ padding: '0 14px', borderRadius: 8, background: '#07C160', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>发送</button>
+              placeholder="评论…" maxLength={500} />
+            <button className="wc-moment-comment-submit" onClick={submit}>发送</button>
           </div>
         )}
       </div>
@@ -156,22 +161,20 @@ export default function Moments() {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* 发布区 */}
-      <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
+      <div className="wc-moment-publish-bar">
         {!composing ? (
-          <button onClick={() => setComposing(true)}
-            style={{ width: '100%', textAlign: 'left', padding: '10px 14px', borderRadius: 10, background: 'var(--bg-search)', color: 'var(--text-tertiary)', fontSize: 14, cursor: 'pointer', border: '1px solid var(--border-color)' }}>
+          <button className="wc-moment-composer" onClick={() => setComposing(true)}>
             分享新动态…
           </button>
         ) : (
-          <div>
+          <div className="wc-moment-editor">
             <textarea autoFocus value={text} onChange={e => setText(e.target.value)} rows={3}
-              placeholder="这一刻的想法…" maxLength={5000}
-              style={{ width: '100%', boxSizing: 'border-box', fontSize: 14, padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-primary)', outline: 'none', resize: 'none', lineHeight: 1.5 }} />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
-              <button onClick={() => { setComposing(false); setText(''); }}
-                style={{ padding: '7px 16px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-search)', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer' }}>取消</button>
-              <button onClick={publish} disabled={posting || !text.trim()}
-                style={{ padding: '7px 18px', borderRadius: 8, background: posting || !text.trim() ? 'rgba(7,193,96,.4)' : '#07C160', color: '#fff', fontSize: 13, fontWeight: 600, cursor: posting || !text.trim() ? 'not-allowed' : 'pointer' }}>
+              placeholder="这一刻的想法…" maxLength={5000} />
+            <div className="wc-moment-editor-actions">
+              <button className="wc-moment-editor-cancel"
+                onClick={() => { setComposing(false); setText(''); }}>取消</button>
+              <button className="wc-moment-editor-publish"
+                disabled={posting || !text.trim()} onClick={publish}>
                 {posting ? '发布中…' : '发布'}
               </button>
             </div>
@@ -180,11 +183,11 @@ export default function Moments() {
       </div>
 
       {/* 时间线 */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      <div className="wc-moment-scroll">
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-tertiary)', fontSize: 13 }}>加载中…</div>
+          <div className="wc-moment-state">加载中…</div>
         ) : list.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-tertiary)', fontSize: 13 }}>还没有动态，发布第一条吧</div>
+          <div className="wc-moment-state" style={{ padding: 60 }}>还没有动态，发布第一条吧</div>
         ) : (
           list.map(m => (
             <MomentCard key={m.id} m={m} meId={meId}

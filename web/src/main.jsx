@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import axios from 'axios';
 import App from './App';
+import './design-tokens.css';
 import './index.css';
 
 // Electron 桌面端：从 preload 同步注入的 __ELECTRON_CONFIG__ 读取服务器地址

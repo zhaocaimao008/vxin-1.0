@@ -3,8 +3,9 @@ const jwt = require('jsonwebtoken');
 const QRCode = require('qrcode');
 const { v4: uuidv4 } = require('uuid');
 const config = require('../../config');
-const { authCookieOptions } = require('../../utils/cookies');
+const { authCookieOptions, csrfCookieOptions } = require('../../utils/cookies');
 const { asyncHandler } = require('../../utils/http');
+const { addToBlacklist } = require('../../utils/tokenBlacklist');
 const svc = require('./admin.service');
 const sec = require('./security.service');
 
@@ -13,13 +14,16 @@ const DEVICE_COOKIE = 'vxin_admin_device';
 
 function setAdminCookie(req, res) {
   const csrf = uuidv4();
-  const token = jwt.sign({ admin: true, username: config.admin.username, csrf }, config.jwtSecret, {
+  const token = jwt.sign({ admin: true, username: config.admin.username, csrf }, config.adminJwtSecret, {
     expiresIn: `${config.admin.tokenMaxAge}s`,
   });
   res.cookie(config.admin.cookieName, token, {
     ...authCookieOptions(req),
     maxAge: config.admin.tokenMaxAge * 1000,
   });
+  // 登录响应即下发CSRF token，避免首次POST无CSRF头（H8）
+  res.cookie(config.csrfCookie, csrf, csrfCookieOptions(req));
+  res.setHeader('X-CSRF-Token', csrf);
   return csrf;
 }
 
@@ -84,6 +88,15 @@ exports.totpDisable = asyncHandler(async (req, res) => { sec.disableTotp(req.bod
 exports.revokeTrusted = asyncHandler(async (req, res) => { sec.revokeTrusted(req.params.id); res.json({ success: true }); });
 
 exports.logout = asyncHandler(async (req, res) => {
+  const token = req.cookies?.[config.admin.cookieName] || req.adminToken;
+  if (token) {
+    try {
+      const payload = jwt.decode(token);
+      if (payload?.exp) {
+        addToBlacklist(token, payload.exp);
+      }
+    } catch { /* ignore */ }
+  }
   res.clearCookie(config.admin.cookieName, { path: '/' });
   res.json({ success: true });
 });

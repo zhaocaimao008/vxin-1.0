@@ -16,11 +16,12 @@ const config = {
 
   // ── 鉴权 ────────────────────────────────────────────────────
   jwtSecret:    process.env.JWT_SECRET,
+  adminJwtSecret: process.env.ADMIN_JWT_SECRET || process.env.JWT_SECRET,
   cookieName:   'vxin_token',
   csrfCookie:   'csrf_token',
   walletCookie: 'vxin_wallet',     // 设备多账号钱包(丝滑切换), httpOnly 长效
   walletMaxAge: 30 * 24 * 60 * 60, // 30天（秒）
-  tokenMaxAge:  30 * 24 * 60 * 60, // 30天（秒）
+  tokenMaxAge:  7 * 24 * 60 * 60, // 7天（秒） — 原30天，缩至7天降低token泄漏风险（H3）
   inviteCode:   process.env.INVITE_CODE || '',
 
   // ── 后台管理（独立超管账号）────────────────────────────────

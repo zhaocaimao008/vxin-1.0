@@ -57,11 +57,16 @@ export default function GroupInfoScreen({ route, navigation }) {
   };
 
   const onMemberPress = (m) => {
-    if (!isOwner || m.id === user?.id) return;
+    if (!isAdmin || m.id === user?.id) return;
     const opts = [];
-    opts.push({ text: m.role === 'admin' ? '取消管理员' : '设为管理员', onPress: () => setRole(m, m.role === 'admin' ? 'member' : 'admin') });
-    opts.push({ text: '移出群聊', style: 'destructive', onPress: () => kick(m) });
+    if (isOwner) {
+      opts.push({ text: m.role === 'admin' ? '取消管理员' : '设为管理员', onPress: () => setRole(m, m.role === 'admin' ? 'member' : 'admin') });
+    }
+    if (isOwner || m.role === 'member') {
+      opts.push({ text: '移出群聊', style: 'destructive', onPress: () => kick(m) });
+    }
     opts.push({ text: '取消', style: 'cancel' });
+    if (opts.length <= 1) return; // only cancel — nothing to do
     Alert.alert(m.nickname || m.username, '群成员管理', opts);
   };
   const setRole = async (m, role) => {
@@ -117,7 +122,7 @@ export default function GroupInfoScreen({ route, navigation }) {
           <Text style={s.sectionLabel}>群成员 {info.members.length}</Text>
           <View style={s.memberGrid}>
             {info.members.map(m => (
-              <TouchableOpacity key={m.id} style={s.memberCell} onPress={() => onMemberPress(m)} activeOpacity={isOwner && m.id !== user?.id ? 0.6 : 1}>
+              <TouchableOpacity key={m.id} style={s.memberCell} onPress={() => onMemberPress(m)} activeOpacity={isAdmin && m.id !== user?.id ? 0.6 : 1}>
                 <Avatar src={m.avatar} name={m.nickname || m.username} />
                 <Text style={s.memberName} numberOfLines={1}>{m.nickname || m.username}</Text>
                 {!!roleLabel(m.role) && <Text style={s.memberRole}>{roleLabel(m.role)}</Text>}

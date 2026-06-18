@@ -57,7 +57,22 @@ app.use(metricsMiddleware);
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static(config.uploadsRoot));
+// H9: /uploads 静态文件鉴权 — 用户JWT或Admin JWT均可访问
+const jwt = require('jsonwebtoken');
+app.use('/uploads', (req, res, next) => {
+  const token = req.cookies?.[config.cookieName] || req.cookies?.[config.admin.cookieName];
+  if (!token) return res.status(401).json({ error: '未授权' });
+  try {
+    jwt.verify(token, config.jwtSecret);
+  } catch {
+    try {
+      jwt.verify(token, config.adminJwtSecret);
+    } catch {
+      return res.status(401).json({ error: '未授权' });
+    }
+  }
+  next();
+}, express.static(config.uploadsRoot));
 app.use('/downloads', express.static(path.join(__dirname, '../../downloads'), {
   setHeaders: (res, filePath) => {
     res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
