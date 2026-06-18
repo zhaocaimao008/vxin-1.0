@@ -92,6 +92,8 @@ export default function ChatScreen({ route, navigation }) {
   const recordingRef = useRef(null);
   const [showCardPicker, setShowCardPicker] = useState(false);
   const [cardContacts, setCardContacts] = useState([]);
+  const [showStickers, setShowStickers] = useState(false);
+  const [stickers, setStickers] = useState([]);
   const [redPacketDetail, setRedPacketDetail] = useState(null); // { ...detail, justClaimed } | null
   const [claimingRP, setClaimingRP] = useState(false);
   const [forwardMsg, setForwardMsg] = useState(null);
@@ -574,8 +576,25 @@ export default function ChatScreen({ route, navigation }) {
     axios.post(`/api/messages/${reactionTarget}/react`, { emoji }).catch(() => {});
   };
 
-  const sendSticker = (url) => {
-    socket?.emit('send_message', { conversationId: conversation.id, type: 'sticker', content: url, fileUrl: url });
+  const loadStickers = () => {
+    axios.get('/api/stickers').then(r => setStickers(r.data || [])).catch(() => {});
+  };
+  const sendSticker = (stickerId) => {
+    setShowStickers(false);
+    axios.post('/api/stickers/send', { conversationId: conversation.id, stickerId }).catch(e => Alert.alert('发送失败', e.response?.data?.error || '请重试'));
+  };
+  const addSticker = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) return Alert.alert('需要权限', '请允许访问相册');
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.9 });
+    if (result.canceled) return;
+    const asset = result.assets[0];
+    try {
+      const fd = new FormData();
+      fd.append('image', { uri: asset.uri, type: asset.mimeType || 'image/jpeg', name: asset.fileName || 'sticker.jpg' });
+      const { data } = await axios.post('/api/stickers/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setStickers(prev => [data, ...prev]);
+    } catch (e) { Alert.alert('添加失败', e.response?.data?.error || '请重试'); }
   };
 
   const startCall = (type) => {
@@ -840,6 +859,22 @@ export default function ChatScreen({ route, navigation }) {
         </View>
       )}
 
+      {showStickers && (
+        <View style={S.emojiPanel}>
+          <ScrollView contentContainerStyle={S.stickerGrid}>
+            <TouchableOpacity style={S.stickerAdd} onPress={addSticker}>
+              <Text style={{ fontSize: 30, color: C.textTip }}>＋</Text>
+            </TouchableOpacity>
+            {stickers.map(st => (
+              <TouchableOpacity key={st.id} style={S.stickerCell} onPress={() => sendSticker(st.id)}>
+                <Image source={{ uri: mediaUrl(st.url) }} style={S.stickerThumb} resizeMode="cover" />
+              </TouchableOpacity>
+            ))}
+            {stickers.length === 0 && <Text style={{ color: C.textTip, padding: 16 }}>还没有表情，点 ＋ 添加</Text>}
+          </ScrollView>
+        </View>
+      )}
+
       {/* Reply bar */}
       {replyTo && (
         <View style={S.replyBar}>
@@ -876,6 +911,9 @@ export default function ChatScreen({ route, navigation }) {
         </TouchableOpacity>
         <TouchableOpacity style={S.toolBtn} onPress={() => setShowEmoji(v => !v)}>
           <Text style={{ fontSize: 20 }}>🙂</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={S.toolBtn} onPress={() => { setShowStickers(v => { if (!v) loadStickers(); return !v; }); }}>
+          <Text style={{ fontSize: 20 }}>😸</Text>
         </TouchableOpacity>
         <TextInput
           ref={inputRef}
@@ -1109,6 +1147,10 @@ const S = StyleSheet.create({
   mentionName:{ fontSize: 14, color: C.text },
   // Emoji panel
   emojiPanel: { backgroundColor: C.bgCard, borderTopWidth: 0.5, borderTopColor: C.border, maxHeight: 200 },
+  stickerGrid: { flexDirection: 'row', flexWrap: 'wrap', padding: 8, gap: 8 },
+  stickerCell: { width: 64, height: 64, borderRadius: 8, overflow: 'hidden', backgroundColor: C.bg },
+  stickerThumb: { width: 64, height: 64 },
+  stickerAdd: { width: 64, height: 64, borderRadius: 8, borderWidth: 1, borderColor: C.border, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
   emojiGrid:  { flexDirection: 'row', flexWrap: 'wrap', padding: 8 },
   emojiBtn:   { width: (SW - 16) / 8, aspectRatio: 1, alignItems: 'center', justifyContent: 'center' },
   // Reply bar
