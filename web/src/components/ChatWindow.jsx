@@ -266,13 +266,14 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     // 草稿自动加载
     const savedDraft = localStorage.getItem(`draft_${conversation.id}`);
     setInput(savedDraft || '');
+
+    // AbortController：会话切换时取消上一个会话的未完成请求，防止数据串堂
+    const ac = new AbortController();
     // 加载置顶消息
     axios.get(`/api/messages/conversation/${conversation.id}/pinned-messages`, { signal: ac.signal })
       .then(r => { if (!ac.signal.aborted) setPinnedMessages(r.data); })
       .catch(() => {});
 
-    // AbortController：会话切换时取消上一个会话的未完成请求，防止数据串堂
-    const ac = new AbortController();
     fetchMessages(null, ac.signal)
       .then(data => {
         if (ac.signal.aborted) return; // 会话已切走，丢弃结果
