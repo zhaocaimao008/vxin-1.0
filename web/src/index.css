@@ -5,29 +5,29 @@
 :root {
   /* ── Brand ── 覆盖 design-tokens 蓝→微信绿 ── */
   --green:            #07C160;
-  --green-bubble:     #9BE87D;
+  --green-bubble:     #07C160;
   --green-hover:      #06AE56;
 
   /* ── Surface (覆盖 design-tokens LEGACY ALIASES) ── */
-  --bg-search:        #ECEEF2;    /* 比 v2 的 #EBEEf3 略深 */
-  --bg-msg-mine:      #9BE87D;    /* 微信经典淡绿气泡 */
+  --bg-search:        #F0F2F5;
+  --bg-msg-mine:      #07C160;
   --bg-msg-other:     #FFFFFF;
 
   /* ── Text ── */
-  --text-tertiary:    #B0BAC5;    /* 比 v2 #9AA3B0 更浅 */
+  --text-tertiary:    #B0BAC5;
   --text-placeholder: #B0BAC5;
 
   /* ── Border ── */
-  --border-strong:    rgba(0,0,0,.09);  /* 无 v2 对应 */
+  --border-strong:    rgba(0,0,0,.08);
 
   /* ── Typography 微调 ── */
   --font-preview:     12.5px;
-  --lh-msg:           1.6;         /* v2 为 1.625 */
-  --lh-base:          1.45;        /* v2 为 1.375 */
+  --lh-msg:           1.55;
+  --lh-base:          1.45;
 
   /* ── Motion ── */
-  --dur:              130ms;       /* v2 为 180ms，更快 */
-  --dur-fast:          80ms;       /* 无 v2 对应 */
+  --dur:              200ms;
+  --dur-fast:         120ms;
 }
 
 /* ── prefers-reduced-motion: 尊重用户无障碍设置 ── */
@@ -113,7 +113,7 @@ img { display: block; }
   flex-direction: row;
   height: 100vh;
   overflow: hidden;
-  background: #EDEDED;
+  background: #E8E8ED;
 }
 
 /* 主内容区（面板 + 聊天，水平排列） */
@@ -260,7 +260,7 @@ img { display: block; }
   gap: 6px;
   background: var(--bg-panel-header);
   flex-shrink: 0;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid rgba(0,0,0,.05);
 }
 
 /* 搜索栏 —— 圆角矩形，填充顶栏剩余宽度 */
@@ -452,7 +452,7 @@ img { display: block; }
   padding: 10px 20px;
   display: flex;
   flex-direction: column;
-  background: #EDEDED;  /* 消息区背景保持 WeChat 经典灰 */
+  background: #F5F5F5;  /* 比 #EDEDED 更干净 */
 }
 
 .wc-msg-time {
@@ -524,13 +524,14 @@ img { display: block; }
 }
 .wc-msg-bubble.mine {
   background: var(--bg-msg-mine);
+  color: #fff;
   border-top-right-radius: 3px;
-  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  box-shadow: 0 2px 6px rgba(7,193,96,.20);
 }
 .wc-msg-bubble.other {
   background: var(--bg-msg-other);
   border-top-left-radius: 3px;
-  box-shadow: 0 1px 3px rgba(0,0,0,.10), 0 0 0 .5px rgba(0,0,0,.04);
+  box-shadow: 0 1px 4px rgba(0,0,0,.06), 0 0 0 .5px rgba(0,0,0,.04);
 }
 
 /* 气泡尾巴 */
@@ -543,6 +544,7 @@ img { display: block; }
   border-style: solid;
   border-width: 7px 0 0 7px;
   border-color: transparent transparent transparent var(--bg-msg-mine);
+  filter: brightness(.85);
 }
 .wc-msg-bubble.other::before {
   content: '';
@@ -684,11 +686,11 @@ img { display: block; }
 .wc-input-hint { font-size: 11px; color: var(--text-tertiary); }
 .wc-send-btn {
   padding: 6px 18px;
-  background: #EAECEF;
-  color: #A8B0BC;
-  border-radius: 5px;
+  background: rgba(7,193,96,.12);
+  color: rgba(7,193,96,.45);
+  border-radius: 6px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: not-allowed;
   transition: background var(--dur), color var(--dur), box-shadow var(--dur), transform var(--dur-fast);
   letter-spacing: .3px;
@@ -698,7 +700,7 @@ img { display: block; }
   background: var(--green);
   color: #fff;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(7,193,96,.30);
+  box-shadow: 0 2px 12px rgba(7,193,96,.30);
 }
 .wc-send-btn.active:hover {
   background: var(--green-hover);

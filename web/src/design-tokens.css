@@ -100,8 +100,8 @@
   --bg-nav-item-active:   rgba(255, 255, 255, .13);
 
   /* 会话面板 */
-  --bg-panel:             #F4F6FA;
-  --bg-panel-header:      #F4F6FA;
+  --bg-panel:             #F0F1F5;
+  --bg-panel-header:      #F0F1F5;
   --bg-panel-item-hover:  rgba(0, 0, 0, .04);
   --bg-panel-item-active: #E4EDFF;       /* 蓝色选中背景 */
   --bg-panel-item-active-hover: #D6E4FF;
