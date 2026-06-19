@@ -10,6 +10,7 @@ const config = require('../../config');
 const { badRequest, forbidden, notFound } = require('../../utils/http');
 const { isMember, requireMember, memberRole, buildMessage } = require('./shared');
 const cache = require('../../utils/cache');
+const broadcaster = require('../../realtime/broadcaster');
 
 const MAX = config.limits.maxMsgLength;
 const RECALL = config.limits.recallWindow;
@@ -170,12 +171,12 @@ async function send(io, convId, userId, { content, type, reply_to_id }) {
     [id, convId, userId, safeType, content, reply_to_id || null]
   );
 
-  // P2 优化：清除搜索和会话列表缓存（新消息发送时）
-  await cache.delPattern(`search:*${userId}*`);  // 清除该用户的搜索缓存
-  await cache.del(cache.keys.conversations(userId));  // 清除对话列表缓存
+  // #4 尾延迟：缓存失效是非关键写，改后台异步执行，不阻塞响应
+  cache.delPattern(`search:*${userId}*`).catch(() => {});
+  cache.del(cache.keys.conversations(userId)).catch(() => {});
 
   const msg = buildMessage(id);
-  if (io) io.to(convId).emit('new_message', msg);
+  broadcaster.broadcastMessage(convId, msg);
   return msg;
 }
 
@@ -188,7 +189,7 @@ async function saveUploadedFile(io, convId, userId, { type, content, fileUrl, re
     [id, convId, userId, type, content, fileUrl, reply_to_id || null]
   );
   const msg = buildMessage(id);
-  if (io) io.to(convId).emit('new_message', msg);
+  broadcaster.broadcastMessage(convId, msg);
   return msg;
 }
 
@@ -217,7 +218,7 @@ async function forward(io, userId, { msgId, conversationIds }) {
     const newMsg = selectStmt.get(id);
     if (!newMsg) return;
     newMsg.reactions = [];
-    if (io) io.to(convId).emit('new_message', newMsg);
+    broadcaster.broadcastMessage(convId, newMsg);
   });
   return targets.length;
 }

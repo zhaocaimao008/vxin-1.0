@@ -38,7 +38,8 @@ function cacheProfile(userId) {
   if (p) userProfiles.set(userId, { username: p.username, avatar: p.avatar || '' });
 }
 function getProfile(userId) { return userProfiles.get(userId) || {}; }
-function dropProfile(userId) { userProfiles.delete(userId); }
+// 最后一台设备断开时清理：资料缓存 + 限流计数（防 Map 随历史用户无限增长）
+function dropProfile(userId) { userProfiles.delete(userId); msgRateLimiter.delete(userId); }
 
 // ── 逐用户消息限流：每秒 N 条 ──────────────────────────────────
 const msgRateLimiter = new Map();

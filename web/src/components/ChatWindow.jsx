@@ -40,6 +40,10 @@ import './ChatWindow.css';
 
 const REACTIONS = ['👍','❤️','😄','😮','😢','🙏'];
 
+// #5/#6：内存视图中最多保留的消息条数（超出时丢弃最旧的，向上滚动按需再拉历史）
+const MAX_MESSAGES_IN_VIEW = 300;
+const capMsgs = (arr) => (arr.length > MAX_MESSAGES_IN_VIEW ? arr.slice(-MAX_MESSAGES_IN_VIEW) : arr);
+
 export default function ChatWindow({ conversation: initialConv, onClose }) {
   const [conversation, setConversation] = useState(initialConv);
   const [messages, setMessages] = useState([]);
@@ -395,12 +399,32 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         confirmedMsgIds.current.delete(msg.id);
         return;
       }
+      window.__vxinPerf?.recv(msg, user.id, 'socket');
       setMessages(prev => {
         if (prev.find(m => m.id === msg.id)) return prev;
-        return [...prev, msg];
+        return capMsgs([...prev, msg]);
       });
       axios.post(`/api/messages/conversation/${currentConvId}/read`).catch(() => {});
       // 收到新消息后始终滚到底部（等 React 渲染完再滚）
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+    };
+    // 批量合并消息：一次性 append + 单次 read 上报 + 单次滚动（避免逐条 setState/请求/滚动）
+    const onMsgBatch = (arr) => {
+      if (!Array.isArray(arr) || !arr.length) return;
+      const cur = convIdRef.current;
+      const incoming = [];
+      for (const msg of arr) {
+        if (msg.conversation_id !== cur) continue;
+        if (confirmedMsgIds.current.has(msg.id)) { confirmedMsgIds.current.delete(msg.id); continue; }
+        incoming.push(msg);
+      }
+      if (!incoming.length) return;
+      setMessages(prev => {
+        const have = new Set(prev.map(m => m.id));
+        const add = incoming.filter(m => !have.has(m.id));
+        return add.length ? capMsgs([...prev, ...add]) : prev;
+      });
+      axios.post(`/api/messages/conversation/${cur}/read`).catch(() => {});
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     };
     const onTyping = ({ userId, conversationId }) => {
@@ -517,6 +541,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     registerDelivered(onDelivered);
 
     socket.on('new_message', onMsg);
+    socket.on('new_message_batch', onMsgBatch);
     socket.on('@mention', onAtMention);
     socket.on('typing', onTyping);
     socket.on('stop_typing', onStopTyping);
@@ -541,6 +566,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     return () => {
       socket.off('@mention', onAtMention);
       socket.off('new_message', onMsg);
+      socket.off('new_message_batch', onMsgBatch);
       socket.off('typing', onTyping);
       socket.off('stop_typing', onStopTyping);
       socket.off('message_deleted', onDeleted);
@@ -678,6 +704,8 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     pendingMsgsRef.current.set(tempId, timer);
 
     // 3. 发送并等待 socket.io ack（后端已在 send_message handler 中调用 ack()）
+    const msgClientId = `perf_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    window.__vxinPerf?.send(msgClientId, user.id, conversation.id);
     socket.emit('send_message', {
       conversationId: conversation.id,
       content,
@@ -687,6 +715,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       clearTimeout(pendingMsgsRef.current.get(tempId));
       pendingMsgsRef.current.delete(tempId);
       if (ack?.success && ack.message) {
+        window.__vxinPerf?.ack(msgClientId, user.id);
         // 把真实 id 存入 confirmed，防止 new_message 广播重复添加
         confirmedMsgIds.current.add(ack.message.id);
         setMessages(prev => prev.map(m => m._tempId === tempId ? { ...ack.message } : m));
@@ -1242,6 +1271,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       <div
         key={msg.id}
         id={`msg-${msg.id}`}
+        data-msg-id={msg.id}
         className={`wc-msg-row${isMine ? ' mine' : ''}${multiSelect ? ' multiselect-row' : ''}${highlightedMsgId === String(msg.id) ? ' wc-msg-hl' : ''}`}
         onClick={multiSelect ? () => toggleMsgSelect(msg.id) : undefined}
         style={multiSelect ? { cursor: 'pointer' } : {}}

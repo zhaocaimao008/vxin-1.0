@@ -1,98 +1,98 @@
 'use strict';
 /**
- * 房间广播调度器（削峰）。
+ * 房间广播调度器（批量合并 + 分片削峰）。
  *
- * 问题：突发消息时，每条都在 handler 内同步 io.to(room).emit(...)，上万次背靠背派发
- *       会在单个事件循环 tick 内堆满同步工作，拉高事件循环延迟（ELD）尖峰。
+ * 优化点：
+ *   1) 批量合并——同一 conversationId 在一个批窗口(BATCH_WINDOW_MS)内的多条 new_message
+ *      合并为单个 'new_message_batch'(数组)事件，把 N 次 socket.io 编码/派发降为 1 次。
+ *   2) 批窗口 + 上限——窗口 BATCH_WINDOW_MS(默认10ms)，单房间积满 MAX_BATCH(默认128)立即冲刷。
+ *   3) 分片——一次 flush 涉及多房间时，每 tick 最多冲刷 SHARD_ROOMS 个房间，tick 间让出事件循环。
+ *   4) 不再 except 发送者：客户端按 msgId 去重(confirmedMsgIds + find)，
+ *      发送者收到自己的消息会被安全忽略，从而允许跨发送者合并到同一批次。
  *
- * 方案：
- *   1) 批量派发——同一房间/事件的广播先入队，统一在排空循环里发出（FIFO，保序）。
- *   2) setImmediate 分片——每个 tick 最多派发 SHARD 条，tick 之间让出事件循环，
- *      避免单 tick 长时间占用，把 ELD 尖峰摊平。
- *   3) 每 100 条广播统计一次派发耗时（lastPer100Ms / maxPer100Ms / avgPer100Ms）。
- *
- * 语义保持：ack 仍由 handler 同步回执；广播仅延迟 1 个 setImmediate tick（亚毫秒级）。
+ * 语义保持：ack 仍由 handler 同步回执；广播延迟 ≤ BATCH_WINDOW_MS。FIFO 保序（数组内有序）。
  */
 const { info } = require('../utils/logger');
 
+const BATCH_WINDOW_MS = 10;   // 5~20：合并窗口
+const MAX_BATCH       = 128;  // 50~200：单房间一批最多合并条数，达到即提前冲刷
+const SHARD_ROOMS     = 64;   // 单 tick 最多冲刷的房间数（多房间时分片）
+
 let _io = null;
-const queue = [];
-let draining = false;
+// room → { event, msgs: [] }   仅合并 new_message；其它事件直接单发
+const pending = new Map();
+let timer = null;
 
-// 每 tick 最多派发条数。实测 64 在"削峰(压低 ELD max)"与"吞吐/p99"间最优：单 tick
-// 派发 ≤64 次 emit 即让出事件循环，把突发广播摊到多个 tick，消除秒级冻结尖峰。
-const SHARD = 64;
-const LOG_EVERY = 2000; // 每 2000 条广播打一条汇总日志，避免刷屏
-
-// ── 统计 ───────────────────────────────────────────────────────
-let _count = 0;
-let _markAt = 0n;
 const stats = {
-  totalBroadcasts: 0,
-  maxQueue: 0,
-  lastPer100Ms: 0,
-  maxPer100Ms: 0,
-  avgPer100Ms: 0,
-  _sum: 0, _windows: 0,
+  totalMessages: 0,    // 入队的消息总数
+  totalEmits: 0,       // 实际 socket.io emit 次数（合并后）
+  batchedEmits: 0,     // 其中以数组批次形式发出的次数
+  maxBatchSize: 0,
+  flushes: 0,
+  lastFlushMs: 0,
+  maxFlushMs: 0,
 };
 
 function setIo(io) { _io = io; }
 
 /**
- * 入队一条房间广播。
- * @param {string} room            目标房间（会话 id 或 user_<id>）
- * @param {string} event           事件名（如 'new_message'）
- * @param {*}      payload          负载
- * @param {string} [exceptSocketId] 排除的 socket（发送者自己），不传则发给房间全员
+ * 入队一条会话广播（会被合并）。仅用于 new_message 类按会话广播。
+ * @param {string} room  conversationId
+ * @param {object} msg   消息体
  */
-function broadcast(room, event, payload, exceptSocketId) {
-  queue.push({ room, event, payload, exceptSocketId });
-  if (queue.length > stats.maxQueue) stats.maxQueue = queue.length;
-  if (!draining) {
-    draining = true;
-    if (_markAt === 0n) _markAt = process.hrtime.bigint();
-    setImmediate(drain);
-  }
+function broadcastMessage(room, msg) {
+  stats.totalMessages++;
+  // 压测对照开关：BCAST_IMMEDIATE=1 时退回逐条立即派发（不合并），用于 A/B
+  if (process.env.BCAST_IMMEDIATE === '1') { if (_io) { _io.to(room).emit('new_message', msg); stats.totalEmits++; } return; }
+  let slot = pending.get(room);
+  if (!slot) { slot = { msgs: [] }; pending.set(room, slot); }
+  slot.msgs.push(msg);
+  if (slot.msgs.length >= MAX_BATCH) { flushRoom(room, slot); pending.delete(room); return; }
+  if (!timer) timer = setTimeout(flushAll, BATCH_WINDOW_MS);
 }
 
-function drain() {
-  let n = 0;
-  while (queue.length && n < SHARD) {
-    const b = queue.shift();
-    if (_io) {
-      const target = b.exceptSocketId
-        ? _io.to(b.room).except(b.exceptSocketId)
-        : _io.to(b.room);
-      target.emit(b.event, b.payload);
-    }
-    n++;
-
-    // 每 100 条统计一次派发耗时
-    if (++_count % 100 === 0) {
-      const now = process.hrtime.bigint();
-      const ms = Number(now - _markAt) / 1e6;
-      _markAt = now;
-      stats.lastPer100Ms = +ms.toFixed(3);
-      if (ms > stats.maxPer100Ms) stats.maxPer100Ms = +ms.toFixed(3);
-      stats._sum += ms; stats._windows++;
-      stats.avgPer100Ms = +(stats._sum / stats._windows).toFixed(3);
-      if (_count % LOG_EVERY === 0) {
-        info('[broadcast] 派发统计', {
-          total: _count, per100_last_ms: stats.lastPer100Ms,
-          per100_avg_ms: stats.avgPer100Ms, per100_max_ms: stats.maxPer100Ms,
-          queue: queue.length,
-        });
-      }
-    }
-  }
-  stats.totalBroadcasts += n;
-
-  if (queue.length) {
-    setImmediate(drain); // 还有积压：让出事件循环后继续下一片
+function flushRoom(room, slot) {
+  if (!_io) return;
+  const msgs = slot.msgs;
+  if (msgs.length === 1) {
+    _io.to(room).emit('new_message', msgs[0]);
   } else {
-    draining = false;
-    _markAt = process.hrtime.bigint(); // 空闲后重新计时，不把空闲间隔算进派发耗时
+    _io.to(room).emit('new_message_batch', msgs);
+    stats.batchedEmits++;
+    if (msgs.length > stats.maxBatchSize) stats.maxBatchSize = msgs.length;
   }
+  stats.totalEmits++;
 }
 
-module.exports = { setIo, broadcast, stats };
+function flushAll() {
+  timer = null;
+  if (!pending.size) return;
+  const t0 = process.hrtime.bigint();
+  const rooms = [...pending.keys()];
+  let n = 0;
+  for (const room of rooms) {
+    if (n >= SHARD_ROOMS) break;          // 分片：本 tick 只处理 SHARD_ROOMS 个房间
+    const slot = pending.get(room);
+    pending.delete(room);
+    flushRoom(room, slot);
+    n++;
+  }
+  const ms = Number(process.hrtime.bigint() - t0) / 1e6;
+  stats.flushes++;
+  stats.lastFlushMs = +ms.toFixed(3);
+  if (ms > stats.maxFlushMs) stats.maxFlushMs = +ms.toFixed(3);
+  if (stats.flushes % 500 === 0) {
+    info('[broadcast] 合并派发', { msgs: stats.totalMessages, emits: stats.totalEmits, batched: stats.batchedEmits, maxBatch: stats.maxBatchSize, lastFlushMs: stats.lastFlushMs });
+  }
+  // 还有积压房间：让出事件循环后继续
+  if (pending.size) setImmediate(flushAll);
+}
+
+/**
+ * 通用单发（不合并），用于非 new_message 的房间事件（如需要时）。
+ */
+function emit(room, event, payload) {
+  if (_io) { _io.to(room).emit(event, payload); stats.totalEmits++; }
+}
+
+module.exports = { setIo, broadcastMessage, emit, stats };

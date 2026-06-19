@@ -10,6 +10,7 @@ const Database = require('better-sqlite3');
 
 const FLUSH_MS  = workerData.flushMs  || 8;
 const MAX_BATCH = workerData.maxBatch || 200;
+const MAX_QUEUE = 50000; // 保护：队列积压超过此值丢弃非关键写入
 
 const db = new Database(workerData.dbPath, { timeout: 10000 });
 db.pragma('journal_mode = WAL');
@@ -75,6 +76,12 @@ parentPort.on('message', msg => {
   switch (msg.type) {
     case 'write':
     case 'writeBatch':
+      if (queue.length >= MAX_QUEUE) {
+        // 队列积压保护：丢弃非关键写入
+        if (msg.type === 'write' && msg.fireAndForget) return;
+        // 关键写入（writeAsync/writeBatch）仍然入队，但通知主线程过载
+        parentPort.postMessage({ type: 'overload', depth: queue.length });
+      }
       queue.push(msg);
       schedule();
       break;

@@ -4,6 +4,7 @@ const { db } = require('../../db/connection');
 const { writeBatch } = require('../../db/writer');
 const { badRequest, forbidden, notFound } = require('../../utils/http');
 const { isMember, requireMember } = require('../messages/shared');
+const broadcaster = require('../../realtime/broadcaster');
 
 // ── 发红包（建红包 + 发一条 red_packet 类型消息）─────────────────
 async function send(io, userId, { conversationId, totalAmount, totalCount, greeting }) {
@@ -28,7 +29,7 @@ async function send(io, userId, { conversationId, totalAmount, totalCount, greet
   ]);
   const msg = db.prepare('SELECT m.*, u.username as senderName, u.avatar as senderAvatar FROM messages m JOIN users u ON u.id=m.sender_id WHERE m.id=?').get(msgId);
   msg.reactions = [];
-  if (io) io.to(conversationId).emit('new_message', msg);
+  broadcaster.broadcastMessage(conversationId, msg);
   return { packetId, message: msg };
 }
 

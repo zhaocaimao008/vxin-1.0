@@ -73,10 +73,9 @@ module.exports = function registerFileHandler(io, socket) {
       );
     }
 
-    // 含发送者本人：文件/图片发送方没有乐观消息，需靠广播回显自己的消息，
-    // 否则发图后不刷新页面看不到。onMsg 按 id 去重，无重复。
-    // 削峰：入队分片派发，不排除发送者（发给房间全员）。
-    broadcaster.broadcast(conversationId, 'new_message', msg);
+    // 含发送者本人：文件/图片发送方没有乐观消息，需靠广播回显；onMsg 按 id 去重。
+    // 批量合并派发。
+    broadcaster.broadcastMessage(conversationId, msg);
     ack?.({ success: true, message: msg });
 
     setImmediate(() => {

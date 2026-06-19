@@ -44,6 +44,7 @@ export const SocketProvider = ({ children }) => {
     });
 
     setSocket(s);
+    if (typeof window !== 'undefined') window.__vxinSocket = s;
 
     s.on('connect', () => {
       setConnected(true);

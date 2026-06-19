@@ -16,8 +16,20 @@ const config = require('../config');
 const prodMetrics = require('../utils/prodMetrics');
 
 const WORKER_SCRIPT = path.join(__dirname, 'worker.js');
-const WORKER_DATA   = { dbPath: config.dbPath, flushMs: 8, maxBatch: 200 };
+// maxBatch 提到 500：单事务合并更多写，减少 transaction 次数，加快积压排空（#3）
+const WORKER_DATA   = { dbPath: config.dbPath, flushMs: 8, maxBatch: 500 };
 const RESTART_DELAY = 500;
+
+// ── 背压参数（#2）：禁止未决写 Promise 无限堆积 ──────────────────
+const MAX_QUEUE_SIZE   = 20000;  // 未决写超过此值：writeAsync/writeBatch 立即快速失败
+const HIGH_WATER_MARK  = 15000;  // 进入过载（拒绝 fire-and-forget write，避免雪上加霜）
+const LOW_WATER_MARK   = 5000;   // 退出过载（迟滞，避免抖动）
+let _overloaded = false;
+const backpressure = { rejected: 0, droppedWrites: 0, overloadedEnters: 0, get queueDepth() { return _pending.size; }, get overloaded() { return _overloaded; } };
+function updateOverload() {
+  if (!_overloaded && _pending.size >= HIGH_WATER_MARK) { _overloaded = true; backpressure.overloadedEnters++; }
+  else if (_overloaded && _pending.size <= LOW_WATER_MARK) { _overloaded = false; }
+}
 
 let worker        = null;
 let _reqId        = 0;
@@ -70,10 +82,18 @@ function postMsg(msg) {
 }
 
 function write(sql, params = []) {
+  // fire-and-forget：过载时丢弃（非关键写，如送达记录），避免加剧堆积
+  if (_overloaded) { backpressure.droppedWrites++; return; }
   postMsg({ type: 'write', sql, params });
 }
 
 function writeAsync(sql, params = []) {
+  updateOverload();
+  // 背压：未决写达到上限即快速失败，禁止 Promise 无限堆积
+  if (_pending.size >= MAX_QUEUE_SIZE) {
+    backpressure.rejected++;
+    return Promise.reject(new Error('WRITE_QUEUE_OVERLOAD'));
+  }
   const id = ++_reqId;
   const msg = { type: 'write', sql, params, reqId: id };
   _pendingOps.set(id, msg);
@@ -89,6 +109,11 @@ function writeAsync(sql, params = []) {
  * 全部提交后 Promise resolve。用于"多条写必须原子"的场景（转发、发红包消息+记录）。
  */
 function writeBatch(ops) {
+  updateOverload();
+  if (_pending.size >= MAX_QUEUE_SIZE) {
+    backpressure.rejected++;
+    return Promise.reject(new Error('WRITE_QUEUE_OVERLOAD'));
+  }
   const id = ++_reqId;
   const msg = { type: 'writeBatch', ops, reqId: id };
   _pendingOps.set(id, msg);
@@ -106,4 +131,4 @@ function shutdown() {
 // 监控：未决写数量（writeAsync/writeBatch 尚未收到 worker ack）作为 Worker 队列深度代理
 prodMetrics.setQueueDepthGetter(() => _pending.size);
 
-module.exports = { write, writeAsync, writeBatch, shutdown };
+module.exports = { write, writeAsync, writeBatch, shutdown, backpressure };

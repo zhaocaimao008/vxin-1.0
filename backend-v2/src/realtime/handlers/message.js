@@ -100,7 +100,7 @@ module.exports = function registerMessageHandler(io, socket) {
       );
     }
 
-    broadcaster.broadcast(conversationId, 'new_message', msg, socket.id); // 削峰：入队分片派发（排除发送者）
+    broadcaster.broadcastMessage(conversationId, msg); // 批量合并派发（客户端按 id 去重，发送者收到自身消息会被忽略）
     ack?.({ success: true, message: msg });
 
     if (type === 'text') handleMentions(io, userId, conversationId, content);

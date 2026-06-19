@@ -62,7 +62,9 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
     const onGroupDismissed = ({ conversationId }) =>
       setConversations(prev => prev.filter(c => c.id !== conversationId));
 
+    const onMsgBatch = (arr) => { if (Array.isArray(arr)) for (const m of arr) onMsg(m); };
     socket.on('new_message', onMsg);
+    socket.on('new_message_batch', onMsgBatch);
     socket.on('new_conversation', onNewConv);
     socket.on('conversation_messages_cleared', onCleared);
     socket.on('group_updated', onGroupUpdated);
@@ -70,6 +72,7 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
     socket.on('group_dismissed', onGroupDismissed);
     return () => {
       socket.off('new_message', onMsg);
+      socket.off('new_message_batch', onMsgBatch);
       socket.off('new_conversation', onNewConv);
       socket.off('conversation_messages_cleared', onCleared);
       socket.off('group_updated', onGroupUpdated);

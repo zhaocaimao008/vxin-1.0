@@ -5,7 +5,7 @@
  */
 const { v4: uuidv4 } = require('uuid');
 const { db, generateGroupNumber } = require('../../db/connection');
-const { writeAsync } = require('../../db/writer');
+const { writeAsync, write } = require('../../db/writer');
 const config = require('../../config');
 const { badRequest } = require('../../utils/http');
 const { isMember, requireMember } = require('../messages/shared');
@@ -65,8 +65,17 @@ function createGroup(io, ownerId, { name, memberIds }) {
 // ── 会话列表（私聊内联 + unread correlated+LIMIT99 + 群成员 ROW_NUMBER 批量）──
 //   私聊 N+1 消除、unread 1709ms→34ms、群成员 N+1→1 query
 //   P2 缓存：10ms → 2ms（80% 性能改进）
+//   使用内存缓存 + 2s TTL 减少重复查询
+const convCache = new Map();
+const CONV_CACHE_TTL = 2000;
+
 async function listConversations(uid) {
-  // 不缓存会话列表：它的未读数/最后一条/排序随每条消息变化，且消息走 socket 路径
+  // 检查内存缓存
+  const cached = convCache.get(uid);
+  if (cached && Date.now() - cached.ts < CONV_CACHE_TTL) {
+    return cached.data;
+  }
+  // 确保用户有 filehelper 会话（自动创建）
   // 不经此 service，无法可靠失效(大群逐成员失效又太贵)。Redis 启用后若缓存会导致
   // 刷新/重连时看到过期的未读与最后消息。此查询仅在加载/重连时触发，直查 DB(已建索引)足够快。
   // 确保用户有 filehelper 会话（自动创建）
@@ -149,6 +158,8 @@ async function listConversations(uid) {
     return { ...conv, members: memberMap.get(conv.id) || [] };
   });
 
+  // 写回内存缓存
+  convCache.set(uid, { data: conversations, ts: Date.now() });
   return conversations;
 }
 
@@ -229,16 +240,15 @@ async function markRead(io, userId, convId, messageId) {
     if (last) { readAt = last.created_at; readMsgId = last.id; }
   }
 
-  // P0-1：worker 异步写（markRead 是每收一条消息就触发的最热写路径）
-  await writeAsync(`
+  // #4 尾延迟：markRead 是最热接口。已读状态为最终一致即可，
+  // 改 fire-and-forget 写 + 后台缓存失效，立即返回，不等 worker commit。
+  write(`
     INSERT INTO conversation_settings (user_id, conversation_id, last_read_at, last_read_message_id)
     VALUES (?, ?, ?, ?)
     ON CONFLICT(user_id, conversation_id) DO UPDATE SET
       last_read_at = excluded.last_read_at, last_read_message_id = excluded.last_read_message_id
   `, [userId, convId, readAt, readMsgId]);
-
-  // P2 优化：删除缓存，下次查询重新加载
-  await cache.del(cache.keys.conversations(userId));
+  cache.del(cache.keys.conversations(userId)).catch(() => {});
 
   if (io) {
     io.to(convId).emit('message_read', { userId, conversationId: convId, readAt, lastReadMessageId: readMsgId });

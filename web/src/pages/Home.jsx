@@ -586,11 +586,14 @@ export default function Home() {
       const name = data?.accepter?.username || '对方';
       showNotification('好友申请已通过', `${name} 已通过你的好友申请`);
     };
+    const onMsgBatch = (arr) => { if (Array.isArray(arr)) for (const m of arr) onMsg(m); };
     socket.on('new_message', onMsg);
+    socket.on('new_message_batch', onMsgBatch);
     socket.on('new_friend_request', onFriendReq);
     socket.on('friend_request_accepted', onFriendAccepted);
     return () => {
       socket.off('new_message', onMsg);
+      socket.off('new_message_batch', onMsgBatch);
       socket.off('new_friend_request', onFriendReq);
       socket.off('friend_request_accepted', onFriendAccepted);
     };
