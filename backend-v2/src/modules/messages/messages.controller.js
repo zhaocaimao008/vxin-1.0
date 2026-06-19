@@ -20,24 +20,24 @@ exports.send = asyncHandler(async (req, res) =>
   res.json(await svc.send(io(req), req.params.conversationId, req.user.id, req.body)));
 
 exports.forward = asyncHandler(async (req, res) =>
-  res.json({ success: true, sent: svc.forward(io(req), req.user.id, req.body) }));
+  res.json({ success: true, sent: await svc.forward(io(req), req.user.id, req.body) }));
 
 exports.batchDelete = asyncHandler(async (req, res) =>
-  res.json({ success: true, deleted: svc.batchDelete(io(req), req.user.id, req.body) }));
+  res.json({ success: true, deleted: await svc.batchDelete(io(req), req.user.id, req.body) }));
 
 exports.remove = asyncHandler(async (req, res) => {
-  svc.remove(io(req), req.user.id, req.params.msgId, req.body.forEveryone);
+  await svc.remove(io(req), req.user.id, req.params.msgId, req.body.forEveryone);
   res.json({ success: true });
 });
 
 exports.react = asyncHandler(async (req, res) =>
-  res.json({ reactions: svc.react(io(req), req.user.id, req.params.msgId, req.body.emoji) }));
+  res.json({ reactions: await svc.react(io(req), req.user.id, req.params.msgId, req.body.emoji) }));
 
 exports.edit = asyncHandler(async (req, res) =>
-  res.json({ success: true, content: svc.edit(io(req), req.user.id, req.params.msgId, req.body.content) }));
+  res.json({ success: true, content: await svc.edit(io(req), req.user.id, req.params.msgId, req.body.content) }));
 
 exports.collect = asyncHandler(async (req, res) => {
-  svc.collect(req.user.id, req.params.msgId);
+  await svc.collect(req.user.id, req.params.msgId);
   res.json({ success: true });
 });
 
@@ -61,7 +61,7 @@ exports.uploadHandle = asyncHandler(async (req, res) => {
   const safeOriginalName = sanitizeFilename(req.file.originalname);
   const url = `/uploads/files/${req.file.filename}`;
 
-  const msg = svc.saveUploadedFile(io(req), conversationId, req.user.id, {
+  const msg = await svc.saveUploadedFile(io(req), conversationId, req.user.id, {
     type, content: safeOriginalName, fileUrl: url, reply_to_id: req.body.reply_to_id,
   });
 

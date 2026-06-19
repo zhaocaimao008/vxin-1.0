@@ -27,7 +27,7 @@ function WcEmpty() {
         <rect x="8" y="29" width="26" height="3" rx="1.5" fill="#B8C4D4"/>
         <path d="M4 42l8-8" stroke="#EEF2F8" strokeWidth="2"/>
         <circle cx="60" cy="46" r="16" fill="#1A2033"/>
-        <path d="M53 46l5 5 9-9" stroke="#07C160" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M53 46l5 5 9-9" stroke="var(--green)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
       <p className="we-empty-title">选择一个会话开始聊天</p>
       <p className="we-empty-desc">安全、高效的企业级通讯</p>
@@ -178,7 +178,7 @@ function AccountSwitcher() {
         <div className="as-avatar-inner"
           style={{ outlineColor: open ? 'rgba(255,255,255,.9)' : 'transparent' }}>
           {user?.avatar
-            ? <img src={mediaUrl(user.avatar)} alt="" className="as-avatar-img" />
+            ? <img src={mediaUrl(user.avatar)} alt="" loading="lazy" className="as-avatar-img" />
             : letter
           }
         </div>
@@ -193,7 +193,9 @@ function AccountSwitcher() {
             const active = a.id === user?.id;
             return (
               <div key={a.id} onClick={() => { if (!active) doSwitch(a.id); }}
-                className={`wc-account-row${active ? ' active' : ''}`}>
+                className={`wc-account-row${active ? ' active' : ''}`}
+                role="button" tabIndex={0}
+                onKeyDown={e => e.key === 'Enter' && !active && doSwitch(a.id)}>
                 <div className="as-avatar-wrap">
                   <Avatar src={a.user?.avatar} name={a.user?.username} size={38} />
                   {active && (
@@ -225,7 +227,9 @@ function AccountSwitcher() {
 
           {/* 添加账户行 */}
           <div onClick={toggleForm}
-            className={`wc-add-row${showForm ? ' open' : ''}`}>
+            className={`wc-add-row${showForm ? ' open' : ''}`}
+            role="button" tabIndex={0}
+            onKeyDown={e => e.key === 'Enter' && toggleForm(e)}>
             <div className={`wc-add-icon-wrap${showForm ? ' open' : ''}`}>
               <svg viewBox="0 0 24 24" className={`wc-add-icon-svg${showForm ? ' open' : ''}`}>
                 <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
@@ -252,11 +256,13 @@ function AccountSwitcher() {
                   readOnly={!!switchTarget}
                   onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                   className="wc-add-form-input"
+                  aria-label="手机号"
                   style={{ background: switchTarget ? 'var(--bg-panel, #f0f0f0)' : 'var(--bg-search)', color: switchTarget ? 'var(--text-secondary)' : 'var(--text-primary)' }} />
                 <input ref={passwordRef} type="password" placeholder="密码" value={form.password}
                   onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                  className="wc-add-form-input" />
-                {err && <div className="wc-add-form-error">{err}</div>}
+                  className="wc-add-form-input"
+                  aria-label="密码" />
+                {err && <div className="wc-add-form-error" role="alert">{err}</div>}
                 <button type="submit" disabled={submitting}
                   className="wc-add-form-submit">
                   {submitting ? '登录中...' : (switchTarget ? '登录并切换' : '登录并添加')}
@@ -267,7 +273,9 @@ function AccountSwitcher() {
 
           {/* 个人资料卡片 */}
           <div onClick={() => setShowProfile(v => !v)}
-            className="as-profile-row">
+            className="as-profile-row"
+            role="button" tabIndex={0}
+            onKeyDown={e => e.key === 'Enter' && setShowProfile(v => !v)}>
             <svg className="as-profile-icon" viewBox="0 0 24 24">
               <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
             </svg>
@@ -379,7 +387,7 @@ function CreateGroupModal({ onClose, onCreated }) {
         {/* 标题栏 */}
         <div className="cgm-header">
           <span className="cgm-title">发起群聊</span>
-          <button onClick={onClose} className="cgm-close">
+          <button onClick={onClose} className="cgm-close" aria-label="关闭">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
               <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
             </svg>
@@ -394,6 +402,7 @@ function CreateGroupModal({ onClose, onCreated }) {
             value={name}
             onChange={e => { setName(e.target.value); setError(''); }}
             placeholder="请输入群名称"
+            aria-label="群名称"
             maxLength={30}
             className="cgm-name-input"
           />
@@ -407,7 +416,7 @@ function CreateGroupModal({ onClose, onCreated }) {
                 className="cgm-chip">
                 <Avatar src={c.avatar} name={c.remark || c.username} size={20} className="as-avatar-img" />
                 <span className="cgm-chip-text">{c.remark || c.username}</span>
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="#07C160"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="var(--green)"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
               </div>
             ))}
           </div>
@@ -422,6 +431,7 @@ function CreateGroupModal({ onClose, onCreated }) {
             value={contactSearch}
             onChange={e => setContactSearch(e.target.value)}
             placeholder="搜索联系人"
+            aria-label="搜索联系人"
             className="cgm-search-input"
           />
         </div>
@@ -447,7 +457,7 @@ function CreateGroupModal({ onClose, onCreated }) {
         {/* 底部操作 */}
         <div className="cgm-footer">
           {error && (
-            <div className="cgm-error">
+            <div className="cgm-error" role="alert">
               {error}
             </div>
           )}
@@ -688,7 +698,9 @@ export default function Home() {
             return (
               <div key={key}
                 className={`wc-sidebar-btn${tab === key ? ' active' : ''}`}
-                onClick={() => handleTabChange(key)} title={label}>
+                onClick={() => handleTabChange(key)} title={label}
+                role="tab" tabIndex={0}
+                onKeyDown={e => e.key === 'Enter' && handleTabChange(key)}>
                 <div className="icon"><Icon /></div>
                 <span className="wc-sidebar-label">{label}</span>
                 {count > 0 && (
@@ -713,12 +725,13 @@ export default function Home() {
                 <span className="wc-search-icon"><IcoSearch /></span>
                 <input
                   placeholder="搜索"
+                  aria-label="搜索"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && tab === 'contacts' && setAddFriendRequest(n => n + 1)}
                 />
                 {search && (
-                  <button className="home-search-clear"
+                  <button className="home-search-clear" aria-label="清除搜索"
                     onClick={() => setSearch('')}>✕</button>
                 )}
               </div>
@@ -763,7 +776,7 @@ export default function Home() {
           <div className="wc-modal home-qr-modal" onClick={e => e.stopPropagation()}>
             <div className="wc-modal-header">
               <span className="wc-modal-title">我的二维码</span>
-              <button className="wc-modal-close" onClick={() => setShowQR(false)}>✕</button>
+              <button className="wc-modal-close" aria-label="关闭二维码" onClick={() => setShowQR(false)}>✕</button>
             </div>
             <div className="wc-modal-body home-qr-body">
               <AuthImage src="/api/users/me/qrcode" alt="我的二维码"

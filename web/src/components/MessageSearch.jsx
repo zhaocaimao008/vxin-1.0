@@ -83,6 +83,7 @@ export default function MessageSearch({ onSelectConversation }) {
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="搜索消息..."
+            aria-label="搜索消息"
             style={{
               flex: 1, fontSize: 12, color: '#191919',
               background: 'transparent', border: 'none', outline: 'none',
@@ -92,7 +93,7 @@ export default function MessageSearch({ onSelectConversation }) {
           <span style={{ fontSize: 12, color: '#999', flex: 1 }}>搜索消息</span>
         )}
         {expanded && query && (
-          <button
+          <button aria-label="清除搜索"
             style={{ color: '#999', fontSize: 13, lineHeight: 1, padding: 2, flexShrink: 0 }}
             onClick={() => { setQuery(''); setResults([]); inputRef.current?.focus(); }}
           >

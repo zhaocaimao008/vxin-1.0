@@ -121,7 +121,7 @@ export default function UserProfile({ userId, onClose, onStartChat, onFriendAdde
         {/* 顶部封面区 */}
         <div className="up-header">
           {user.cover_photo
-            ? <img src={mediaUrl(user.cover_photo)} className="up-cover" alt="" />
+            ? <img src={mediaUrl(user.cover_photo)} loading="lazy" className="up-cover" alt="" />
             : <div className="up-cover-default" />
           }
           <button className="up-close-btn" onClick={onClose}>
@@ -214,7 +214,7 @@ export default function UserProfile({ userId, onClose, onStartChat, onFriendAdde
             )}
             {addStep === 'sent' && (
               <div className="up-sent-tip">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="#07C160" style={{ flexShrink: 0 }}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--green)" style={{ flexShrink: 0 }}>
                   <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
                 </svg>
                 申请已发送，等待对方确认

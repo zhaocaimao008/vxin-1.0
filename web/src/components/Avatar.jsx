@@ -22,7 +22,7 @@ export default function Avatar({ src, name = '', size = 40, style = {}, online =
   return (
     <div style={{ position: 'relative', display: 'inline-flex', flexShrink: 0, ...style }}>
       {showImg
-        ? <img src={mediaUrl(src)} alt={name} onError={() => setErrored(true)} style={{ ...baseStyle, objectFit: 'cover' }} />
+        ? <img src={mediaUrl(src)} alt={name} loading="lazy" onError={() => setErrored(true)} style={{ ...baseStyle, objectFit: 'cover' }} />
         : <div style={{ ...baseStyle, background: getColor(name), color: '#fff', fontSize: size * 0.42, fontWeight: 600 }}>{letter}</div>
       }
       {online && <span className="wc-online-dot" />}

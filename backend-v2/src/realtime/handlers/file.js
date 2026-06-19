@@ -5,6 +5,8 @@ const { writeAsync } = require('../../db/writer');
 const { pushNewMessage } = require('../../utils/push');
 const { getPublicBase } = require('../../utils/cloudStorage');
 const presence = require('../presence');
+const broadcaster = require('../broadcaster');
+const prodMetrics = require('../../utils/prodMetrics');
 
 const TYPE_FALLBACK = { image: '[图片]', voice: '[语音]', video: '[视频]', file: '[文件]' };
 
@@ -12,6 +14,16 @@ module.exports = function registerFileHandler(io, socket) {
   const userId = socket.user.id;
 
   socket.on('send_file_message', async (data, ack) => {
+    // 监控：包装 ack，记录消息发送成功率/延迟，以及图片上传成功率（image 类型）
+    const _t0 = Date.now();
+    const _ack = ack;
+    const _isImg = data && data.type === 'image';
+    ack = (resp) => {
+      const ok = !!resp?.success;
+      prodMetrics.recordMsg(ok, ok ? Date.now() - _t0 : undefined);
+      if (_isImg) prodMetrics.recordImageUpload(ok);
+      _ack?.(resp);
+    };
     try {
     const { conversationId, type, file_url, content, reply_to_id } = data;
     const duration = Math.max(0, Math.min(parseInt(data.duration, 10) || 0, 600)); // 语音/视频时长(秒)，上限10分钟
@@ -61,9 +73,10 @@ module.exports = function registerFileHandler(io, socket) {
       );
     }
 
-    // io.to(含发送者本人)：文件/图片发送方没有乐观消息，需靠广播回显自己的消息，
-    // 否则发图后不刷新页面看不到(socket.to 会排除发送者)。onMsg 按 id 去重，无重复。
-    io.to(conversationId).emit('new_message', msg);
+    // 含发送者本人：文件/图片发送方没有乐观消息，需靠广播回显自己的消息，
+    // 否则发图后不刷新页面看不到。onMsg 按 id 去重，无重复。
+    // 削峰：入队分片派发，不排除发送者（发给房间全员）。
+    broadcaster.broadcast(conversationId, 'new_message', msg);
     ack?.({ success: true, message: msg });
 
     setImmediate(() => {

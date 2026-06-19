@@ -23,7 +23,7 @@ const STATUS = {
   missed:    { label: '未接听', color: '#FA5151' },
   canceled:  { label: '已取消', color: '#FA5151' },
   rejected:  { label: '已拒绝', color: '#FA5151' },
-  ongoing:   { label: '通话中', color: '#07C160' },
+  ongoing:   { label: '通话中', color: 'var(--green)' },
 };
 
 export default function CallHistory() {

@@ -26,5 +26,5 @@ export default function AuthImage({ src, alt = '', style, className }) {
 
   if (failed) return <div style={{ ...style, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#B0BAC5', fontSize: 12 }} className={className}>加载失败</div>;
   if (!blobUrl) return <div style={{ ...style, background: '#F0F2F5' }} className={className} />;
-  return <img src={blobUrl} alt={alt} style={style} className={className} />;
+  return <img src={blobUrl} alt={alt} loading="lazy" style={style} className={className} />;
 }

@@ -42,7 +42,7 @@ export default function Sidebar({ tab, onTabChange, badges = {} }) {
       {/* 头像 */}
       <div className="wc-sidebar-avatar" onClick={() => onTabChange('profile')} title={user?.username || ''} role="tab" aria-label="个人资料" aria-selected={tab === 'profile'}>
         {user?.avatar
-          ? <img src={mediaUrl(user.avatar)} alt={`${user?.username || ''} 头像`} className="wc-sidebar-avatar-img" />
+          ? <img src={mediaUrl(user.avatar)} alt={`${user?.username || ''} 头像`} loading="lazy" className="wc-sidebar-avatar-img" />
           : <div className="wc-sidebar-avatar-inner">{letter}</div>
         }
       </div>

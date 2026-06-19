@@ -112,6 +112,7 @@
     <div class="tabs">
       <button class="tab on" data-tab="users">用户管理</button>
       <button class="tab" data-tab="messages">消息监控</button>
+      <button class="tab" data-tab="metrics">实时监控</button>
       <button class="tab" data-tab="groups">群组管理</button>
       <button class="tab" data-tab="security">安全</button>
       <button class="tab" data-tab="settings">设置</button>
@@ -129,6 +130,17 @@
       <div class="bar"><input class="search" id="mq" placeholder="搜索消息内容" /><span id="mfilter"></span><span class="muted" id="mcount"></span></div>
       <table class="tbl"><thead><tr><th>发送者</th><th>内容</th><th>类型</th><th>会话</th><th>时间</th></tr></thead><tbody id="mbody"></tbody></table>
       <div class="page" id="mpage"></div>
+    </div>
+
+    <!-- 实时监控 -->
+    <div id="tab-metrics" class="hidden">
+      <div class="bar">
+        <span class="muted" id="mxupdated">加载中…</span>
+        <label style="margin-left:auto;font-size:13px"><input type="checkbox" id="mxauto" checked> 自动刷新(5s)</label>
+        <button class="mini" id="mxrefresh" style="padding:9px 14px;margin-left:10px">刷新</button>
+      </div>
+      <div id="mxalert"></div>
+      <div id="mxgrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px"></div>
     </div>
 
     <!-- 群组 -->
@@ -254,14 +266,52 @@ function clearMsgFilter(){mState.period='';mState.offset=0;updateMsgChip();loadM
 // ── tabs ──
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.tab===name));
-  ['users','messages','groups','security','settings'].forEach(n=>$('tab-'+n).classList.toggle('hidden',n!==name));
+  ['users','messages','metrics','groups','security','settings'].forEach(n=>$('tab-'+n).classList.toggle('hidden',n!==name));
   if(name==='users')loadUsers();
   if(name==='messages')loadMessages();
+  if(name==='metrics')startMetrics();else stopMetrics();
   if(name==='groups')loadGroups();
   if(name==='security')loadSecurity();
   if(name==='settings'){loadInvite();loadFeatures();}
 }
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchTab(t.dataset.tab));
+
+// ── 实时监控 ──
+let mxTimer=null;
+function stopMetrics(){if(mxTimer){clearInterval(mxTimer);mxTimer=null;}}
+function startMetrics(){stopMetrics();loadMetrics();mxTimer=setInterval(()=>{if($('mxauto').checked)loadMetrics();},5000);}
+$('mxrefresh')&&($('mxrefresh').onclick=loadMetrics);
+function mxCard(title,val,sub,bad){
+  return `<div class="panel" style="margin:0;padding:14px 16px">
+    <div class="muted" style="font-size:12px">${esc(title)}</div>
+    <div style="font-size:24px;font-weight:700;margin:4px 0;color:${bad?'#e5484d':'#16324f'}">${esc(val)}</div>
+    <div class="muted" style="font-size:12px">${sub||''}</div></div>`;
+}
+async function loadMetrics(){
+  try{
+    const m=await api('/metrics');
+    $('mxupdated').textContent='更新于 '+new Date(m.timestamp).toLocaleTimeString();
+    const T=m.thresholds;
+    const cards=[
+      mxCard('在线人数',m.online.users,`连接数 ${m.online.sockets}`),
+      mxCard('消息发送成功率',m.message.successRate+'%',`成功 ${m.message.success} / 失败 ${m.message.failed}`,m.message.successRate<99),
+      mxCard('消息延迟 p99',m.message.latencyMs.p99+'ms',`p50 ${m.message.latencyMs.p50} / p95 ${m.message.latencyMs.p95}ms`),
+      mxCard('图片上传成功率',m.imageUpload.successRate+'%',`成功 ${m.imageUpload.success} / 失败 ${m.imageUpload.failed}`,m.imageUpload.successRate<99),
+      mxCard('连接/重连成功率',m.connection.successRate+'%',`成功 ${m.connection.success} / 失败 ${m.connection.failed}`,m.connection.successRate<99),
+      mxCard('CPU',m.cpu.process+'%',`归一化 ${m.cpu.normalized}%`,m.cpu.normalized>80),
+      mxCard('内存(系统)',m.memory.systemUsedPercent+'%',`进程 RSS ${m.memory.rssMB}MB`,m.memory.systemUsedPercent>T.memPercent),
+      mxCard('事件循环延迟',m.eventLoopDelay.p99Ms+'ms',`mean ${m.eventLoopDelay.meanMs} / max ${m.eventLoopDelay.maxMs}ms`,m.eventLoopDelay.maxMs>T.eldMs),
+      mxCard('Worker 队列',m.worker.queueDepth,`峰值 ${m.worker.queuePeak}`,m.worker.queueDepth>T.workerQueue),
+      mxCard('SQLite 写入 p99',m.sqliteWriteMs.p99+'ms',`p50 ${m.sqliteWriteMs.p50} / p95 ${m.sqliteWriteMs.p95}ms`),
+    ];
+    $('mxgrid').innerHTML=cards.join('');
+    const al=m.alerts.recent||[];
+    $('mxalert').innerHTML=al.length
+      ? `<div class="panel" style="border-left:4px solid #e5484d"><h3 style="margin:0 0 8px">⚠ 近期告警 (${m.alerts.count})</h3>`
+        +al.slice(0,8).map(a=>`<div class="muted" style="font-size:13px;margin:3px 0">${esc(new Date(a.time).toLocaleString())} · <b style="color:#e5484d">${esc(a.type)}</b> = ${esc(a.value)}${esc(a.unit||'')} (阈值 ${esc(a.threshold)})</div>`).join('')+`</div>`
+      : `<div class="panel" style="border-left:4px solid #2ecc71;color:#16324f">✓ 当前无告警（阈值：ELD>${T.eldMs}ms / 队列>${T.workerQueue} / 内存>${T.memPercent}%）</div>`;
+  }catch(e){$('mxupdated').textContent='加载失败: '+e.message;}
+}
 
 // ── 用户 ──
 let uTimer;$('uq').addEventListener('input',e=>{clearTimeout(uTimer);uTimer=setTimeout(()=>{uState.q=e.target.value.trim();uState.offset=0;loadUsers();},300);});

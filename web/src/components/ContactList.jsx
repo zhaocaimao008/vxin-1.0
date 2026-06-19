@@ -104,7 +104,7 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', background: 'var(--bg-panel)' }}>
+    <div className="cl-panel">
       <div className="wc-list" ref={listRef}>
 
         {/* 联系人主列表 */}
@@ -113,7 +113,7 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
             {/* 功能入口 */}
             <EntryRow
               icon={<svg viewBox="0 0 24 24" width="18" height="18" fill="#fff"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>}
-              color="#07C160" label="新的朋友" badge={requests.length}
+              color="var(--green)" label="新的朋友" badge={requests.length}
               onClick={() => setTab('requests')}
             />
             <EntryRow
@@ -137,25 +137,27 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
               }}
             />
 
-            <div style={{ height: 8, background: 'var(--divider)' }} />
+            <div className="cl-divider" />
 
             {/* 字母分组联系人 */}
             {letters.map(letter => (
               <div key={letter}>
                 <div className="wc-contacts-alpha" data-letter={letter}>{letter}</div>
                 {grouped[letter].map(c => (
-                  <div key={c.id} className="wc-contact-item" onClick={() => setViewProfile(c.id)}>
-                    <div style={{ position: 'relative' }}>
+                  <div key={c.id} className="wc-contact-item" onClick={() => setViewProfile(c.id)}
+                    role="button" tabIndex={0}
+                    onKeyDown={e => e.key === 'Enter' && setViewProfile(c.id)}>
+                    <div className="cl-avatar-wrap">
                       <Avatar src={c.avatar} name={c.remark || c.username} size={44}
                         style={{ borderRadius: 8 }}
                         online={onlineIds.has(c.id)} />
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="cl-contact-info">
                       <div className="wc-contact-item-name">{c.remark || c.username}</div>
                       {c.remark && <div className="wc-contact-item-sub">{c.username}</div>}
                     </div>
                     {onlineIds.has(c.id) && (
-                      <span style={{ fontSize: 11, color: '#07C160', flexShrink: 0 }}>在线</span>
+                      <span className="cl-online-tag">在线</span>
                     )}
                   </div>
                 ))}
@@ -163,19 +165,19 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
             ))}
 
             {contacts.length === 0 && !searchQuery && (
-              <div className="cl-empty">
-                <svg viewBox="0 0 48 48" width="48" height="48" fill="none" style={{ marginBottom: 12 }}>
+              <div className="cl-empty" role="status">
+                <svg viewBox="0 0 48 48" width="48" height="48" fill="none" className="cl-empty-icon">
                   <circle cx="24" cy="20" r="10" fill="#E8ECF0"/>
                   <path d="M8 40c0-8.84 7.16-16 16-16s16 7.16 16 16" stroke="#D0D7E3" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
-                <div style={{ color: '#7A8694', fontSize: 14 }}>暂无联系人</div>
-                <div style={{ color: '#B0BAC5', fontSize: 12, marginTop: 4 }}>通过搜索添加好友</div>
+                <div className="cl-empty-text">暂无联系人</div>
+                <div className="cl-empty-sub">通过搜索添加好友</div>
                 <button className="cl-add-btn" onClick={() => setShowAddFriend(true)}>+ 添加好友</button>
               </div>
             )}
             {searchQuery && filtered.length === 0 && (
-              <div className="cl-empty">
-                <div style={{ color: '#7A8694', fontSize: 14 }}>未找到「{searchQuery}」</div>
+              <div className="cl-empty" role="status">
+                <div className="cl-empty-text">未找到「{searchQuery}」</div>
               </div>
             )}
           </>
@@ -186,16 +188,16 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
           <>
             <SectionHeader title="新的朋友" onBack={() => setTab('contacts')} />
             {requests.length === 0 && (
-              <div className="cl-empty">
-                <svg viewBox="0 0 24 24" width="40" height="40" fill="#D0D7E3" style={{ marginBottom: 10 }}>
+              <div className="cl-empty" role="status">
+                <svg viewBox="0 0 24 24" width="40" height="40" fill="#D0D7E3" className="cl-empty-icon">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
                 </svg>
-                <div style={{ color: '#7A8694', fontSize: 14 }}>暂无新申请</div>
+                <div className="cl-empty-text">暂无新申请</div>
               </div>
             )}
             {requests.map(r => (
               <div key={r.id} className="req-item">
-                <Avatar src={r.avatar || r.from?.avatar} name={r.username || r.from?.username} size={46} style={{ borderRadius: 8, flexShrink: 0 }} />
+                <Avatar src={r.avatar || r.from?.avatar} name={r.username || r.from?.username} size={46} className="cl-avatar-rounded" />
                 <div className="req-info">
                   <div className="req-name">{r.username || r.from?.username}</div>
                   <div className="req-msg">{r.message || '请求添加您为好友'}</div>
@@ -215,9 +217,11 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
             <SectionHeader title={`群聊 (${groups.length})`} onBack={() => setTab('contacts')} />
             {groups.map(g => (
               <div key={g.id} className="wc-contact-item"
-                onClick={() => onStartChat({ id: g.id, type: 'group', name: g.name, avatar: g.avatar || '', members: [] })}>
+                onClick={() => onStartChat({ id: g.id, type: 'group', name: g.name, avatar: g.avatar || '', members: [] })}
+                role="button" tabIndex={0}
+                onKeyDown={e => e.key === 'Enter' && onStartChat({ id: g.id, type: 'group', name: g.name, avatar: g.avatar || '', members: [] })}>
                 <GroupAvatar members={g.members || []} avatar={g.avatar} size={44} />
-                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="cl-contact-info">
                   <div className="wc-contact-item-name">{g.name}</div>
                   <div className="wc-contact-item-sub">{g.memberCount} 人</div>
                 </div>
@@ -227,8 +231,8 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
               </div>
             ))}
             {groups.length === 0 && (
-              <div className="cl-empty">
-                <div style={{ color: '#7A8694', fontSize: 14 }}>还没有群聊</div>
+              <div className="cl-empty" role="status">
+                <div className="cl-empty-groups">还没有群聊</div>
               </div>
             )}
           </>
@@ -240,7 +244,9 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
         <div className="wc-alpha-index">
           {letters.map(l => (
             <span key={l} className="wc-alpha-char"
-              onClick={() => { scrollToLetter(l); setActiveChar(l); setTimeout(() => setActiveChar(null), 800); }}>
+              onClick={() => { scrollToLetter(l); setActiveChar(l); setTimeout(() => setActiveChar(null), 800); }}
+              role="button" tabIndex={0}
+              onKeyDown={e => e.key === 'Enter' && (scrollToLetter(l), setActiveChar(l), setTimeout(() => setActiveChar(null), 800))}>
               {l}
             </span>
           ))}
@@ -267,19 +273,21 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
 
 function EntryRow({ icon, color, label, badge, onClick }) {
   return (
-    <div className="wc-contact-item" onClick={onClick} style={{ cursor: 'pointer' }}>
-      <div style={{ width: 44, height: 44, borderRadius: 10, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    <div className="wc-contact-item gi-cp" onClick={onClick}
+      role="button" tabIndex={0}
+      onKeyDown={e => e.key === 'Enter' && onClick?.(e)}>
+      <div className="cl-entry-icon-box" style={{ background: color }}>
         {icon}
       </div>
-      <div style={{ flex: 1 }}>
+      <div className="cl-entry-name">
         <span className="wc-contact-item-name">{label}</span>
       </div>
       {badge > 0 && (
-        <span style={{ background: '#FA5151', color: '#fff', borderRadius: 9, fontSize: 10, minWidth: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px', marginRight: 4 }}>
+        <span className="cl-entry-badge">
           {badge}
         </span>
       )}
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="#C7C7CC" style={{ flexShrink: 0 }}>
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="#C7C7CC" className="cl-entry-arrow">
         <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
       </svg>
     </div>
@@ -288,12 +296,12 @@ function EntryRow({ icon, color, label, badge, onClick }) {
 
 function SectionHeader({ title, onBack }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-panel)' }}>
-      <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--green)', fontSize: 13, cursor: 'pointer', marginRight: 8 }}>
+    <div className="cl-section-header">
+      <button onClick={onBack} className="cl-section-back">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg>
         返回
       </button>
-      <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{title}</span>
+      <span className="cl-section-title">{title}</span>
     </div>
   );
 }

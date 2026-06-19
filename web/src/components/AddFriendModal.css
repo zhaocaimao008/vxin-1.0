@@ -1,9 +1,10 @@
 /* ================================================================
-   AddFriendModal — 添加好友弹窗   v2
-   使用全局 Design Tokens，无魔法数字
+   AddFriendModal — 添加好友弹窗   v3
+   类名与 JSX 实际 className 完全匹配
    ================================================================ */
 
-.af-overlay {
+/* ── Overlay ────────────────────────────────────────────────────── */
+.afm-overlay {
   position: fixed;
   inset: 0;
   z-index: var(--z-modal);
@@ -13,7 +14,8 @@
   justify-content: center;
 }
 
-.af-panel {
+/* ── Card (modal panel) ─────────────────────────────────────────── */
+.afm-card {
   width: 440px;
   max-width: 92vw;
   max-height: 72vh;
@@ -23,15 +25,15 @@
   box-shadow: var(--shadow-xl);
   display: flex;
   flex-direction: column;
-  animation: af-panel-in var(--dur-base) var(--ease-enter) both;
+  animation: afm-panel-in var(--dur-base) var(--ease-enter) both;
 }
-@keyframes af-panel-in {
+@keyframes afm-panel-in {
   from { opacity: 0; transform: translateY(12px) scale(.97); }
   to   { opacity: 1; transform: translateY(0)    scale(1);   }
 }
 
 /* ── Header ──────────────────────────────────────────────────────── */
-.af-hd {
+.afm-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -39,13 +41,13 @@
   border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
-.af-hd-title {
+.afm-header-title {
   font-size: var(--text-lg);
   font-weight: var(--font-semibold);
   color: var(--text-title);
   letter-spacing: -.1px;
 }
-.af-hd-close {
+.afm-close-btn {
   width: 28px;
   height: 28px;
   border-radius: var(--radius-sm);
@@ -55,19 +57,22 @@
   color: var(--text-muted);
   cursor: pointer;
   background: transparent;
+  border: none;
   transition: background var(--dur-fast), color var(--dur-fast);
 }
-.af-hd-close:hover {
+.afm-close-btn:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
 }
 
-/* ── Search ──────────────────────────────────────────────────────── */
-.af-search-wrap {
+/* ── Search pad (outer padding wrapper) ──────────────────────────── */
+.afm-search-pad {
   padding: 14px 20px 10px;
   flex-shrink: 0;
 }
-.af-search {
+
+/* ── Search wrap (inner flex bar) ────────────────────────────────── */
+.afm-search-wrap {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -77,11 +82,13 @@
   border: none;
   transition: background var(--dur-fast);
 }
-.af-search:focus-within {
+.afm-search-wrap.afm-search-wrap-focused {
   background: var(--bg-chat);
 }
-.af-search-ico { color: var(--gray-400); flex-shrink: 0; }
-.af-search-inp {
+
+.afm-search-icon { color: var(--gray-400); flex-shrink: 0; }
+
+.afm-search-input {
   flex: 1;
   font-size: var(--text-base);
   color: var(--text-primary);
@@ -90,32 +97,34 @@
   outline: none;
   font-family: var(--font-sans);
 }
-.af-search-inp::placeholder { color: var(--gray-400); }
-.af-search-clr {
+.afm-search-input::placeholder { color: var(--gray-400); }
+
+.afm-clear-btn {
   display: flex;
   align-items: center;
   color: var(--gray-400);
   cursor: pointer;
   background: transparent;
+  border: none;
   transition: color var(--dur-fast);
   padding: 2px;
 }
-.af-search-clr:hover { color: var(--text-secondary); }
+.afm-clear-btn:hover { color: var(--text-secondary); }
 
-/* ── Body ────────────────────────────────────────────────────────── */
-.af-body {
+/* ── Content area (scrollable) ───────────────────────────────────── */
+.afm-content {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   padding-bottom: var(--sp-2);
 }
-.af-body::-webkit-scrollbar { width: 4px; }
-.af-body::-webkit-scrollbar-track { background: transparent; }
-.af-body::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 2px; }
-.af-body::-webkit-scrollbar-thumb:hover { background: var(--gray-300); }
+.afm-content::-webkit-scrollbar { width: 4px; }
+.afm-content::-webkit-scrollbar-track { background: transparent; }
+.afm-content::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 2px; }
+.afm-content::-webkit-scrollbar-thumb:hover { background: var(--gray-300); }
 
-/* ── Loading ─────────────────────────────────────────────────────── */
-.af-loading {
+/* ── Loading ----------------------------------------------- */
+.afm-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -123,79 +132,47 @@
   padding: 52px 24px;
   gap: 14px;
 }
-.af-spinner {
+.afm-spinner {
   width: 28px;
   height: 28px;
   border: 2.5px solid var(--gray-200);
   border-top-color: var(--color-primary);
   border-radius: var(--radius-full);
-  animation: af-spin .72s linear infinite;
+  animation: afm-spin .72s linear infinite;
 }
-@keyframes af-spin { to { transform: rotate(360deg); } }
-.af-loading-txt {
+@keyframes afm-spin { to { transform: rotate(360deg); } }
+.afm-loading-txt {
   font-size: var(--text-sm);
   color: var(--text-muted);
 }
 
-/* ── Empty state (idle) ──────────────────────────────────────────── */
-.af-empty {
+/* ── Idle state ─────────────────────────────────────────────────── */
+.afm-idle {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 44px 24px 36px;
   text-align: center;
 }
-
-/* Composed icon: avatar bg + plus badge */
-.af-empty-icon-wrap {
-  position: relative;
-  width: 72px;
-  height: 72px;
-  margin-bottom: 22px;
-}
-.af-empty-avatar-bg {
-  width: 72px;
-  height: 72px;
-  border-radius: var(--radius-xl);
-  background: var(--color-primary-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.af-empty-plus {
-  position: absolute;
-  bottom: -4px;
-  right: -4px;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-full);
-  background: var(--color-primary);
-  border: 2px solid var(--bg-modal);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.af-empty-title {
+.afm-idle-title {
   font-size: var(--text-md);
   font-weight: var(--font-semibold);
   color: var(--text-primary);
   margin-bottom: 6px;
 }
-.af-empty-sub {
+.afm-idle-desc {
   font-size: var(--text-sm);
   color: var(--text-muted);
   margin-bottom: 18px;
   line-height: var(--lh-relaxed);
 }
-
-/* Search hint tags */
-.af-tags {
+.afm-idle-tags {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   justify-content: center;
 }
-.af-tag {
+.afm-idle-tag {
   font-size: var(--text-xs);
   color: var(--text-secondary);
   background: var(--bg-input-search);
@@ -205,8 +182,33 @@
   font-weight: var(--font-medium);
 }
 
-/* ── Not found state ─────────────────────────────────────────────── */
-.af-notfound {
+/* ── Dynamic search row ──────────────────────────────────────────── */
+.afm-search-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 22px;
+  cursor: pointer;
+  background: var(--bg-input-search);
+  transition: background var(--dur-fast);
+}
+.afm-search-text {
+  flex: 1;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.afm-search-hl {
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+}
+.afm-search-hint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ── Not found state ────────────────────────────────────────────── */
+.afm-not-found {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -214,18 +216,18 @@
   text-align: center;
   gap: 6px;
 }
-.af-notfound-title {
+.afm-not-found-title {
   font-size: var(--text-base);
   color: var(--text-secondary);
   font-weight: var(--font-medium);
 }
-.af-notfound-sub {
+.afm-not-found-sub {
   font-size: var(--text-sm);
   color: var(--text-muted);
 }
 
-/* ── Result items ────────────────────────────────────────────────── */
-.af-item {
+/* ── Result items (AfResultItem component) ───────────────────────── */
+.afm-result-item {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -233,9 +235,9 @@
   cursor: pointer;
   transition: background var(--dur-fast);
 }
-.af-item:hover { background: var(--bg-hover); }
-.af-item-info { flex: 1; min-width: 0; }
-.af-item-name {
+.afm-result-item:hover { background: var(--bg-hover); }
+.afm-result-info { flex: 1; min-width: 0; }
+.afm-result-name {
   font-size: var(--text-base);
   font-weight: var(--font-medium);
   color: var(--text-primary);
@@ -244,9 +246,9 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.af-item-sub {
+.afm-result-sub {
   font-size: var(--text-sm);
   color: var(--text-muted);
   margin-top: 2px;
 }
-.af-item-chevron { color: var(--gray-300); flex-shrink: 0; }
+.afm-result-chevron { color: var(--gray-300); flex-shrink: 0; }

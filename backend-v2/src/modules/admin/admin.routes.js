@@ -95,6 +95,20 @@ router.get ('/me',     adminAuth,         c.me);
  */
 router.get ('/stats',  adminAuth, c.stats);
 
+/**
+ * @swagger
+ * /admin/metrics:
+ *   get:
+ *     tags: [Admin]
+ *     summary: 生产监控指标快照（在线/消息成功率/延迟/上传/重连/CPU/内存/ELD/Worker队列/SQLite写入 + 告警）
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Production metrics JSON
+ */
+router.get ('/metrics', adminAuth, c.metrics);
+
 // ── 安全（谷歌验证 + 可信设备/IP）──────────────────────────────
 
 /**

@@ -5,6 +5,8 @@ const { readDb } = require('../../db/connection');
 const { writeAsync } = require('../../db/writer');
 const { pushNewMessage } = require('../../utils/push');
 const presence = require('../presence');
+const broadcaster = require('../broadcaster');
+const prodMetrics = require('../../utils/prodMetrics');
 
 const MAX = config.limits.maxMsgLength;
 
@@ -46,6 +48,10 @@ module.exports = function registerMessageHandler(io, socket) {
   const userId = socket.user.id;
 
   socket.on('send_message', async (data, ack) => {
+    // 监控：包装 ack，自动记录消息发送成功率与服务端处理延迟
+    const _t0 = Date.now();
+    const _ack = ack;
+    ack = (resp) => { prodMetrics.recordMsg(!!resp?.success, resp?.success ? Date.now() - _t0 : undefined); _ack?.(resp); };
     try {
     const { conversationId, content, reply_to_id } = data;
     // 允许文本与名片(contact_card)；名片的 content 是被分享用户的 JSON 快照
@@ -94,7 +100,7 @@ module.exports = function registerMessageHandler(io, socket) {
       );
     }
 
-    socket.to(conversationId).emit('new_message', msg);
+    broadcaster.broadcast(conversationId, 'new_message', msg, socket.id); // 削峰：入队分片派发（排除发送者）
     ack?.({ success: true, message: msg });
 
     if (type === 'text') handleMentions(io, userId, conversationId, content);

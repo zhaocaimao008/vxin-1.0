@@ -1,11 +1,12 @@
 'use strict';
 const { v4: uuidv4 } = require('uuid');
 const { db } = require('../../db/connection');
+const { writeBatch } = require('../../db/writer');
 const { badRequest, forbidden, notFound } = require('../../utils/http');
 const { isMember, requireMember } = require('../messages/shared');
 
 // ── 发红包（建红包 + 发一条 red_packet 类型消息）─────────────────
-function send(io, userId, { conversationId, totalAmount, totalCount, greeting }) {
+async function send(io, userId, { conversationId, totalAmount, totalCount, greeting }) {
   if (!conversationId || !totalAmount || !totalCount) throw badRequest('参数缺失');
   if (totalAmount < 1 || totalAmount > 20000) throw badRequest('金额范围 1-20000 金币');
   if (totalCount < 1 || totalCount > 100) throw badRequest('红包个数 1-100');
@@ -16,13 +17,15 @@ function send(io, userId, { conversationId, totalAmount, totalCount, greeting })
 
   const packetId = uuidv4();
   const greet = (typeof greeting === 'string' && greeting.trim()) ? greeting.trim() : '恭喜发财，大吉大利';
-  db.prepare('INSERT INTO red_packets (id,sender_id,conversation_id,total_amount,total_count,greeting) VALUES (?,?,?,?,?,?)')
-    .run(packetId, userId, conversationId, totalAmount, totalCount, greet);
-
   const msgContent = JSON.stringify({ packetId, greeting: greet, totalCount, totalAmount });
   const msgId = uuidv4();
-  db.prepare('INSERT INTO messages (id,conversation_id,sender_id,type,content) VALUES (?,?,?,?,?)')
-    .run(msgId, conversationId, userId, 'red_packet', msgContent);
+  // P0-1：建红包 + 发红包消息原子批次走 worker（两条要么全成功要么全失败），await 落库后读回
+  await writeBatch([
+    { sql: 'INSERT INTO red_packets (id,sender_id,conversation_id,total_amount,total_count,greeting) VALUES (?,?,?,?,?,?)',
+      params: [packetId, userId, conversationId, totalAmount, totalCount, greet] },
+    { sql: 'INSERT INTO messages (id,conversation_id,sender_id,type,content) VALUES (?,?,?,?,?)',
+      params: [msgId, conversationId, userId, 'red_packet', msgContent] },
+  ]);
   const msg = db.prepare('SELECT m.*, u.username as senderName, u.avatar as senderAvatar FROM messages m JOIN users u ON u.id=m.sender_id WHERE m.id=?').get(msgId);
   msg.reactions = [];
   if (io) io.to(conversationId).emit('new_message', msg);
@@ -39,6 +42,9 @@ function detail(userId, packetId) {
 }
 
 // ── 领红包（EXCLUSIVE 事务防并发超发）────────────────────────────
+// ⚠ P0-1 例外：本函数刻意保留主连接同步 EXCLUSIVE 事务，绝不可拆到 worker。
+//   领红包是"读 claimed_count → 判断是否领完 → 计算金额 → 写入"的读-判-写闭环，
+//   必须在单连接单事务内原子完成，才能防止并发超发。拆成异步 worker 写会丢失这一原子性。
 function claim(io, userId, packetId) {
   const packet = db.prepare('SELECT * FROM red_packets WHERE id=?').get(packetId);
   if (!packet) throw notFound('红包不存在');

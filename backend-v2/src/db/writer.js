@@ -10,8 +10,10 @@
  * 保证 Promise 最终 resolve（已入库的 INSERT 由 UNIQUE 冲突静默忽略）。
  */
 const { Worker } = require('worker_threads');
+const { performance } = require('perf_hooks');
 const path = require('path');
 const config = require('../config');
+const prodMetrics = require('../utils/prodMetrics');
 
 const WORKER_SCRIPT = path.join(__dirname, 'worker.js');
 const WORKER_DATA   = { dbPath: config.dbPath, flushMs: 8, maxBatch: 200 };
@@ -20,7 +22,7 @@ const RESTART_DELAY = 500;
 let worker        = null;
 let _reqId        = 0;
 const _pending    = new Map();   // reqId → resolve
-const _pendingOps = new Map();   // reqId → { sql, params }
+const _pendingOps = new Map();   // reqId → 原始外发消息对象（write 或 writeBatch），崩溃重启时原样重放
 const retryQueue  = [];
 let isRestarting  = false;
 
@@ -43,8 +45,9 @@ function createWorker() {
     if (code === 0) return;
     console.error('[dbWriter] Worker crashed (code %d), restarting in %dms …', code, RESTART_DELAY);
     isRestarting = true;
-    for (const [id, op] of _pendingOps) {
-      retryQueue.unshift({ type: 'write', sql: op.sql, params: op.params, reqId: id });
+    // 未决操作（write / writeBatch）原样重新入队，待新 worker 起来后重放
+    for (const [, msg] of _pendingOps) {
+      retryQueue.unshift(msg);
     }
     _pendingOps.clear();
     setTimeout(() => {
@@ -72,10 +75,27 @@ function write(sql, params = []) {
 
 function writeAsync(sql, params = []) {
   const id = ++_reqId;
-  _pendingOps.set(id, { sql, params });
+  const msg = { type: 'write', sql, params, reqId: id };
+  _pendingOps.set(id, msg);
+  const t0 = performance.now();
   return new Promise(resolve => {
-    _pending.set(id, resolve);
-    postMsg({ type: 'write', sql, params, reqId: id });
+    _pending.set(id, () => { prodMetrics.recordSqliteWrite(performance.now() - t0); resolve(); });
+    postMsg(msg);
+  });
+}
+
+/**
+ * 原子批次写入：ops = [{ sql, params }, …]，worker 在同一事务内顺序执行，
+ * 全部提交后 Promise resolve。用于"多条写必须原子"的场景（转发、发红包消息+记录）。
+ */
+function writeBatch(ops) {
+  const id = ++_reqId;
+  const msg = { type: 'writeBatch', ops, reqId: id };
+  _pendingOps.set(id, msg);
+  const t0 = performance.now();
+  return new Promise(resolve => {
+    _pending.set(id, () => { prodMetrics.recordSqliteWrite(performance.now() - t0); resolve(); });
+    postMsg(msg);
   });
 }
 
@@ -83,4 +103,7 @@ function shutdown() {
   postMsg({ type: 'shutdown' });
 }
 
-module.exports = { write, writeAsync, shutdown };
+// 监控：未决写数量（writeAsync/writeBatch 尚未收到 worker ack）作为 Worker 队列深度代理
+prodMetrics.setQueueDepthGetter(() => _pending.size);
+
+module.exports = { write, writeAsync, writeBatch, shutdown };

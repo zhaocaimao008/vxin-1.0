@@ -5,6 +5,7 @@
  */
 const { v4: uuidv4 } = require('uuid');
 const { db, generateGroupNumber } = require('../../db/connection');
+const { writeAsync } = require('../../db/writer');
 const config = require('../../config');
 const { badRequest } = require('../../utils/http');
 const { isMember, requireMember } = require('../messages/shared');
@@ -196,19 +197,21 @@ function myGroups(userId) {
 
 // ── 置顶 / 免打扰 ───────────────────────────────────────────────
 async function setPinned(userId, convId, pinned) {
-  db.prepare(`
+  // P0-1：worker 异步写
+  await writeAsync(`
     INSERT INTO conversation_settings (user_id, conversation_id, pinned) VALUES (?, ?, ?)
     ON CONFLICT(user_id, conversation_id) DO UPDATE SET pinned=excluded.pinned
-  `).run(userId, convId, pinned ? 1 : 0);
+  `, [userId, convId, pinned ? 1 : 0]);
   // P2 优化：删除缓存，下次查询重新加载
   await cache.del(cache.keys.conversations(userId));
 }
 
 async function setMuted(userId, convId, muted) {
-  db.prepare(`
+  // P0-1：worker 异步写
+  await writeAsync(`
     INSERT INTO conversation_settings (user_id, conversation_id, muted) VALUES (?, ?, ?)
     ON CONFLICT(user_id, conversation_id) DO UPDATE SET muted=excluded.muted
-  `).run(userId, convId, muted ? 1 : 0);
+  `, [userId, convId, muted ? 1 : 0]);
   // P2 优化：删除缓存，下次查询重新加载
   await cache.del(cache.keys.conversations(userId));
 }
@@ -226,12 +229,13 @@ async function markRead(io, userId, convId, messageId) {
     if (last) { readAt = last.created_at; readMsgId = last.id; }
   }
 
-  db.prepare(`
+  // P0-1：worker 异步写（markRead 是每收一条消息就触发的最热写路径）
+  await writeAsync(`
     INSERT INTO conversation_settings (user_id, conversation_id, last_read_at, last_read_message_id)
     VALUES (?, ?, ?, ?)
     ON CONFLICT(user_id, conversation_id) DO UPDATE SET
       last_read_at = excluded.last_read_at, last_read_message_id = excluded.last_read_message_id
-  `).run(userId, convId, readAt, readMsgId);
+  `, [userId, convId, readAt, readMsgId]);
 
   // P2 优化：删除缓存，下次查询重新加载
   await cache.del(cache.keys.conversations(userId));

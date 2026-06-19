@@ -22,7 +22,7 @@ export default function SearchResults({ results, query, searching, onSelect, onC
         </div>
       )}
       {!searching && results.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '16px 0', fontSize: 13, color: 'var(--text-tertiary)' }}>
+        <div role="status" style={{ textAlign: 'center', padding: '16px 0', fontSize: 13, color: 'var(--text-tertiary)' }}>
           未找到相关消息
         </div>
       )}
@@ -72,7 +72,7 @@ export default function SearchResults({ results, query, searching, onSelect, onC
                 ) : idx >= 0 ? (
                   <>
                     {msg.content.slice(0, idx)}
-                    <span style={{ color: '#07C160', fontWeight: 600 }}>
+                    <span style={{ color: 'var(--green)', fontWeight: 600 }}>
                       {msg.content.slice(idx, idx + query.length)}
                     </span>
                     {msg.content.slice(idx + query.length)}

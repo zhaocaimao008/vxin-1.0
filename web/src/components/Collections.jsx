@@ -35,9 +35,9 @@ export default function Collections() {
   return (
     <div style={{ height: '100%', overflowY: 'auto' }}>
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-tertiary)', fontSize: 13 }}>加载中…</div>
+        <div role="status" style={{ textAlign: 'center', padding: 40, color: 'var(--text-tertiary)', fontSize: 13 }}>加载中…</div>
       ) : list.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-tertiary)', fontSize: 13 }}>暂无收藏</div>
+        <div role="status" style={{ textAlign: 'center', padding: 60, color: 'var(--text-tertiary)', fontSize: 13 }}>暂无收藏</div>
       ) : (
         list.map(c => (
           <div key={c.id} style={{ padding: '14px 18px', borderBottom: '1px solid var(--border-color)' }}>

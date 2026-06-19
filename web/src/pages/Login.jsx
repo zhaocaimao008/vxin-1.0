@@ -188,7 +188,7 @@ export default function Login() {
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 6,
                   padding: '7px 14px', borderRadius: 8,
-                  background: 'rgba(7,193,96,.08)', color: '#07C160',
+                  background: 'rgba(7,193,96,.08)', color: 'var(--green)',
                   fontSize: 13, fontWeight: 500, textDecoration: 'none',
                   border: '1px solid rgba(7,193,96,.20)',
                   transition: 'background .15s',
@@ -239,6 +239,7 @@ export default function Login() {
                 <div className="auth-server-title">服务器地址（IP 或域名）</div>
                 <input
                   className="auth-server-input"
+                  aria-label="服务器地址"
                   value={serverInput}
                   onChange={e => { setServerInput(e.target.value); setServerTest(null); }}
                   placeholder="https://example.com"
@@ -246,7 +247,7 @@ export default function Login() {
                   spellCheck={false}
                 />
                 {serverTest && (
-                  <div className="auth-server-result" style={{ color: serverTest.ok ? '#07C160' : '#FF7575' }}>
+                  <div className="auth-server-result" role="alert" style={{ color: serverTest.ok ? 'var(--green)' : '#FF7575' }}>
                     {serverTest.msg}
                   </div>
                 )}

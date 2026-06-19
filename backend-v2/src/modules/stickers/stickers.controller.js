@@ -63,7 +63,7 @@ exports.send = asyncHandler(async (req, res) => {
   if (!isMember(conversationId, req.user.id)) throw forbidden('无权发送');
   const sticker = db.prepare('SELECT url FROM user_stickers WHERE id=? AND user_id=?').get(stickerId, req.user.id);
   if (!sticker) throw notFound('表情不存在');
-  const msg = msgSvc.saveUploadedFile(io(req), conversationId, req.user.id, {
+  const msg = await msgSvc.saveUploadedFile(io(req), conversationId, req.user.id, {
     type: 'image', content: '[表情]', fileUrl: sticker.url,
   });
   res.json(msg);

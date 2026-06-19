@@ -12,7 +12,7 @@ const swaggerUi = require('swagger-ui-express');
 const config = require('./config');
 const csrfProtection = require('./middleware/csrf');
 const { notFoundHandler, errorHandler } = require('./middleware/error');
-const { requestLogger } = require('./utils/logger');
+const { requestLogger, warn } = require('./utils/logger');
 const { metricsMiddleware, metrics } = require('./utils/monitoring');
 const swaggerSpec = require('./utils/swagger');
 const sentry = require('./utils/sentry');
@@ -109,6 +109,22 @@ app.get('/api/metrics', (req, res) => {
     return res.status(404).json({ error: 'Not found' });
   }
   res.json(metrics.getMetrics());
+});
+
+// 前端错误边界上报（免鉴权 / 免 CSRF，置于 CSRF 门控之前）。仅记录日志，best-effort。
+app.post('/api/client-errors', (req, res) => {
+  try {
+    const { message, stack, componentStack, url, ua } = req.body || {};
+    warn('[client-error] 前端异常上报', {
+      message: String(message || '').slice(0, 500),
+      stack: String(stack || '').slice(0, 2000),
+      componentStack: String(componentStack || '').slice(0, 2000),
+      url: String(url || '').slice(0, 300),
+      ua: String(ua || '').slice(0, 300),
+      ip: req.ip,
+    });
+  } catch { /* 上报失败不影响前端 */ }
+  res.json({ ok: true });
 });
 
 // CSRF 双提交门控（路由之前）

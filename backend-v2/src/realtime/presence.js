@@ -24,6 +24,12 @@ function removeSocket(userId, socketId) {
 }
 function isOnline(uid)     { return (onlineUsers.get(uid)?.size || 0) > 0; }
 function onlineUserIdSet() { return new Set(onlineUsers.keys()); }
+// 监控：在线用户数 + 总连接数（多端聚合）
+function stats() {
+  let sockets = 0;
+  for (const s of onlineUsers.values()) sockets += s.size;
+  return { users: onlineUsers.size, sockets };
+}
 
 // ── 资料缓存（send_message 免 SELECT）──────────────────────────
 function cacheProfile(userId) {
@@ -55,6 +61,6 @@ function recordDeliveries(messageId, userIds) {
 }
 
 module.exports = {
-  onlineUsers, addSocket, removeSocket, isOnline, onlineUserIdSet,
+  onlineUsers, addSocket, removeSocket, isOnline, onlineUserIdSet, stats,
   cacheProfile, getProfile, dropProfile, checkMsgRate, recordDeliveries,
 };

@@ -89,6 +89,7 @@ export default function ImagePreview({ url, onClose }) {
       <img
         src={url}
         alt=""
+        loading="lazy"
         draggable={false}
         onClick={(e) => e.stopPropagation()}
         style={{

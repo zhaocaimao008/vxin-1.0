@@ -3,6 +3,8 @@ import axios from 'axios';
 import Avatar from './Avatar';
 import { GroupAvatar } from './GroupInfo';
 
+const gsHlCls = 'gs-highlight';
+
 function highlight(text, q) {
   const s = String(text || '');
   const i = s.toLowerCase().indexOf(q);
@@ -10,20 +12,11 @@ function highlight(text, q) {
   return (
     <>
       {s.slice(0, i)}
-      <span style={{ color: '#07C160' }}>{s.slice(i, i + q.length)}</span>
+      <span className={gsHlCls}>{s.slice(i, i + q.length)}</span>
       {s.slice(i + q.length)}
     </>
   );
 }
-
-const catStyle = {
-  fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 500,
-  padding: '10px 18px 6px', background: 'var(--bg-panel)',
-};
-const rowStyle = {
-  display: 'flex', alignItems: 'center', gap: 12,
-  padding: '10px 18px', cursor: 'pointer',
-};
 
 export default function GlobalSearch({ query, onSelectConv, onNetworkSearch }) {
   const [contacts, setContacts] = useState([]);
@@ -135,13 +128,11 @@ export default function GlobalSearch({ query, onSelectConv, onNetworkSearch }) {
 
   const empty = matchedContacts.length === 0 && matchedConversations.length === 0 && messages.length === 0;
 
-  const hover = (e, on) => { e.currentTarget.style.background = on ? 'var(--bg-hover)' : 'transparent'; };
-
   return (
-    <div style={{ height: '100%', overflowY: 'auto' }}>
+    <div className="gs-scroll">
       {/* 数据加载状态 */}
       {q && (
-        <div style={{ fontSize: 11, color: '#999', padding: '8px 12px', background: '#f5f5f5', borderBottom: '1px solid #eee' }}>
+        <div className="gs-status-bar">
           {convError ? `❌ 群聊加载失败: ${convError}` : `✓ 联系人:${contacts.length} 群聊:${conversations.length} 消息:${messages.length + (searchingMsg ? '+' : '')}`}
         </div>
       )}
@@ -149,18 +140,19 @@ export default function GlobalSearch({ query, onSelectConv, onNetworkSearch }) {
       {/* 联系人 */}
       {matchedContacts.length > 0 && (
         <>
-          <div style={catStyle}>联系人</div>
+          <div className="gs-cat">联系人</div>
           {matchedContacts.map(c => (
-            <div key={c.id} style={rowStyle} onClick={() => openContact(c)}
-              onMouseEnter={e => hover(e, true)} onMouseLeave={e => hover(e, false)}>
+            <div key={c.id} className="gs-row" onClick={() => openContact(c)}
+              role="button" tabIndex={0}
+              onKeyDown={e => e.key === 'Enter' && openContact(c)}>
               <Avatar src={c.avatar} name={c.remark || c.username} size={42} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14.5, color: 'var(--text-primary)' }}>{highlight(c.remark || c.username, q)}</div>
+              <div className="gs-info">
+                <div className="gs-name">{highlight(c.remark || c.username, q)}</div>
                 {c.remark && c.username && c.username.toLowerCase().includes(q) && (
-                  <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 1 }}>昵称：{highlight(c.username, q)}</div>
+                  <div className="gs-sub">昵称：{highlight(c.username, q)}</div>
                 )}
                 {c.wechat_id && c.wechat_id.toLowerCase().includes(q) && (
-                  <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 1 }}>微信号：{highlight(c.wechat_id, q)}</div>
+                  <div className="gs-sub">微信号：{highlight(c.wechat_id, q)}</div>
                 )}
               </div>
             </div>
@@ -171,20 +163,21 @@ export default function GlobalSearch({ query, onSelectConv, onNetworkSearch }) {
       {/* 会话(群聊、文件传输助手等) */}
       {matchedConversations.length > 0 && (
         <>
-          <div style={catStyle}>{matchedConversations.some(c => c.type === 'filehelper') ? '特殊会话' : '群聊'}</div>
+          <div className="gs-cat">{matchedConversations.some(c => c.type === 'filehelper') ? '特殊会话' : '群聊'}</div>
           {matchedConversations.map(g => (
-            <div key={g.id} style={rowStyle} onClick={() => openConversation(g)}
-              onMouseEnter={e => hover(e, true)} onMouseLeave={e => hover(e, false)}>
+            <div key={g.id} className="gs-row" onClick={() => openConversation(g)}
+              role="button" tabIndex={0}
+              onKeyDown={e => e.key === 'Enter' && openConversation(g)}>
               {g.type === 'filehelper' ? (
-                <div style={{ width: 42, height: 42, borderRadius: 10, background: '#10AEFF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div className="gs-filehelper-icon">
                   <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
                 </div>
               ) : (
                 <GroupAvatar members={g.members || []} avatar={g.avatar} size={42} />
               )}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14.5, color: 'var(--text-primary)' }}>{highlight(g.name, q)}</div>
-                {g.group_number && <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 1 }}>群号 {g.group_number}</div>}
+              <div className="gs-info">
+                <div className="gs-name">{highlight(g.name, q)}</div>
+                {g.group_number && <div className="gs-sub">群号 {g.group_number}</div>}
               </div>
             </div>
           ))}
@@ -194,16 +187,17 @@ export default function GlobalSearch({ query, onSelectConv, onNetworkSearch }) {
       {/* 历史消息 */}
       {messages.length > 0 && (
         <>
-          <div style={catStyle}>聊天记录 ({messages.length})</div>
+          <div className="gs-cat">聊天记录 ({messages.length})</div>
           {messages.map(m => (
-            <div key={m.id} style={rowStyle} onClick={() => openMessageLocation(m)}
-              onMouseEnter={e => hover(e, true)} onMouseLeave={e => hover(e, false)}>
+            <div key={m.id} className="gs-row" onClick={() => openMessageLocation(m)}
+              role="button" tabIndex={0}
+              onKeyDown={e => e.key === 'Enter' && openMessageLocation(m)}>
               <Avatar src={m.senderAvatar} name={m.senderName} size={42} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12.5, color: 'var(--text-tertiary)', marginBottom: 2 }}>
+              <div className="gs-info">
+                <div className="gs-msg-meta">
                   {m.senderName} {m.convType === 'group' ? `在「${m.convName}」` : ''}
                 </div>
-                <div style={{ fontSize: 14, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div className="gs-msg-text">
                   {highlight(m.preview || m.content, q)}
                 </div>
               </div>
@@ -213,17 +207,18 @@ export default function GlobalSearch({ query, onSelectConv, onNetworkSearch }) {
       )}
 
       {searchingMsg && (
-        <div style={{ textAlign: 'center', padding: '20px 18px', color: 'var(--text-tertiary)', fontSize: 13 }}>搜索中…</div>
+        <div role="status" className="gs-searching">搜索中…</div>
       )}
 
       {/* 降级兜底 */}
       {empty && !searchingMsg && (
         <div
           onClick={() => onNetworkSearch(query)}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 18px', cursor: 'pointer', fontSize: 13.5, color: 'var(--text-secondary)' }}
-          onMouseEnter={e => hover(e, true)} onMouseLeave={e => hover(e, false)}>
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="#07C160" style={{ flexShrink: 0 }}><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-          <span>未找到相关本地结果，去网络搜索添加<span style={{ color: '#07C160' }}>「{query}」</span></span>
+          className="gs-network-row"
+          role="button" tabIndex={0}
+          onKeyDown={e => e.key === 'Enter' && onNetworkSearch(query)}>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--green)" className="gs-network-icon"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <span>未找到相关本地结果，去网络搜索添加<span className="gs-highlight">「{query}」</span></span>
         </div>
       )}
     </div>

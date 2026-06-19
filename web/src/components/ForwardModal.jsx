@@ -3,6 +3,7 @@ import axios from 'axios';
 import Avatar from './Avatar';
 import { GroupAvatar } from './GroupInfo';
 import { showToast } from '../utils/toast';
+import './ForwardModal.css';
 
 export default function ForwardModal({ message, onClose }) {
   const [tab, setTab] = useState('friends');

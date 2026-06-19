@@ -209,7 +209,7 @@ export default function Moments() {
               <div className="wc-moment-img-preview">
                 {images.map((img, i) => (
                   <div key={i} className="wc-moment-img-thumb">
-                    <img src={img.previewUrl} alt="" />
+                    <img src={img.previewUrl} alt="" loading="lazy" />
                     <button className="wc-moment-img-remove" onClick={() => removeImage(i)}>×</button>
                   </div>
                 ))}

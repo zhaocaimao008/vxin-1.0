@@ -33,20 +33,27 @@ function flush() {
 
   const batch = queue.splice(0, MAX_BATCH);
 
+  // 执行单个队列项：普通单语句 {sql,params} 或原子批次 {ops:[{sql,params}]}
+  const runItem = (item) => {
+    if (item.ops) { for (const op of item.ops) stmt(op.sql).run(...op.params); }
+    else stmt(item.sql).run(...item.params);
+  };
+
   try {
     db.transaction(() => {
-      for (const { sql, params } of batch) stmt(sql).run(...params);
+      for (const item of batch) runItem(item);
     })();
     const acks = batch.filter(b => b.reqId != null);
     if (acks.length) parentPort.postMessage({ type: 'ack', ids: acks.map(b => b.reqId) });
   } catch (e) {
-    // 逐条重试：一条坏数据不阻塞整批
+    // 逐条重试：一条坏数据不阻塞整批（批次项各自包一层事务，保持原子性）
     for (const item of batch) {
       try {
-        stmt(item.sql).run(...item.params);
+        if (item.ops) db.transaction(() => runItem(item))();
+        else runItem(item);
         if (item.reqId != null) parentPort.postMessage({ type: 'ack', ids: [item.reqId] });
       } catch (itemErr) {
-        console.error('[dbWorker] SQL 执行失败:', item.sql, itemErr.message);
+        console.error('[dbWorker] SQL 执行失败:', item.sql || '(batch)', itemErr.message);
         if (item.reqId != null) parentPort.postMessage({ type: 'ack', ids: [item.reqId], error: itemErr.message });
       }
     }
@@ -67,6 +74,7 @@ function schedule() {
 parentPort.on('message', msg => {
   switch (msg.type) {
     case 'write':
+    case 'writeBatch':
       queue.push(msg);
       schedule();
       break;

@@ -5,6 +5,7 @@
  */
 const { v4: uuidv4 } = require('uuid');
 const { db } = require('../../db/connection');
+const { writeAsync, writeBatch } = require('../../db/writer');
 const config = require('../../config');
 const { badRequest, forbidden, notFound } = require('../../utils/http');
 const { isMember, requireMember, memberRole, buildMessage } = require('./shared');
@@ -163,8 +164,11 @@ async function send(io, convId, userId, { content, type, reply_to_id }) {
   const conv = db.prepare('SELECT mute_all FROM conversations WHERE id=?').get(convId);
   if (conv?.mute_all && member.role === 'member') throw forbidden('全员禁言中，您没有发言权限');
   const id = uuidv4();
-  db.prepare('INSERT INTO messages (id,conversation_id,sender_id,type,content,reply_to_id) VALUES (?,?,?,?,?,?)')
-    .run(id, convId, userId, safeType, content, reply_to_id || null);
+  // P0-1：改走 worker 异步写，主线程不再同步抢 WAL 写锁；await 保证落库后再 buildMessage 读回
+  await writeAsync(
+    'INSERT INTO messages (id,conversation_id,sender_id,type,content,reply_to_id) VALUES (?,?,?,?,?,?)',
+    [id, convId, userId, safeType, content, reply_to_id || null]
+  );
 
   // P2 优化：清除搜索和会话列表缓存（新消息发送时）
   await cache.delPattern(`search:*${userId}*`);  // 清除该用户的搜索缓存
@@ -176,42 +180,50 @@ async function send(io, convId, userId, { content, type, reply_to_id }) {
 }
 
 // ── 文件消息（本地上传后入库 + 广播）───────────────────────────
-function saveUploadedFile(io, convId, userId, { type, content, fileUrl, reply_to_id }) {
+async function saveUploadedFile(io, convId, userId, { type, content, fileUrl, reply_to_id }) {
   const id = uuidv4();
-  db.prepare('INSERT INTO messages (id,conversation_id,sender_id,type,content,file_url,reply_to_id) VALUES (?,?,?,?,?,?,?)')
-    .run(id, convId, userId, type, content, fileUrl, reply_to_id || null);
+  // P0-1：worker 异步写，await 落库后再读回构建消息
+  await writeAsync(
+    'INSERT INTO messages (id,conversation_id,sender_id,type,content,file_url,reply_to_id) VALUES (?,?,?,?,?,?,?)',
+    [id, convId, userId, type, content, fileUrl, reply_to_id || null]
+  );
   const msg = buildMessage(id);
   if (io) io.to(convId).emit('new_message', msg);
   return msg;
 }
 
 // ── 转发 ────────────────────────────────────────────────────────
-function forward(io, userId, { msgId, conversationIds }) {
+async function forward(io, userId, { msgId, conversationIds }) {
   if (!msgId || !conversationIds?.length) throw badRequest('参数缺失');
   const msg = db.prepare('SELECT * FROM messages WHERE id=? AND deleted=0').get(msgId);
   if (!msg) throw notFound('消息不存在');
   requireMember(msg.conversation_id, userId, '无权转发该消息');
 
-  const insertStmt = db.prepare('INSERT INTO messages (id,conversation_id,sender_id,type,content,file_url,duration) VALUES (?,?,?,?,?,?,?)');
-  const selectStmt = db.prepare('SELECT m.*, u.username as senderName, u.avatar as senderAvatar FROM messages m JOIN users u ON u.id=m.sender_id WHERE m.id=?');
-  const sent = [];
+  const insertSql = 'INSERT INTO messages (id,conversation_id,sender_id,type,content,file_url,duration) VALUES (?,?,?,?,?,?,?)';
+  const ops = [];
+  const targets = [];   // { convId, id }
+  conversationIds.forEach(convId => {
+    if (!isMember(convId, userId)) return;
+    const id = uuidv4();
+    ops.push({ sql: insertSql, params: [id, convId, userId, msg.type, msg.content, msg.file_url || '', msg.duration || 0] });
+    targets.push({ convId, id });
+  });
 
-  db.transaction(() => {
-    conversationIds.forEach(convId => {
-      if (!isMember(convId, userId)) return;
-      const id = uuidv4();
-      insertStmt.run(id, convId, userId, msg.type, msg.content, msg.file_url || '', msg.duration || 0);
-      const newMsg = selectStmt.get(id);
-      newMsg.reactions = [];
-      if (io) io.to(convId).emit('new_message', newMsg);
-      sent.push(convId);
-    });
-  })();
-  return sent.length;
+  // P0-1：原子批次走 worker（保持"多条转发要么全成功要么全失败"语义），await 落库后再读回广播
+  if (ops.length) await writeBatch(ops);
+
+  const selectStmt = db.prepare('SELECT m.*, u.username as senderName, u.avatar as senderAvatar FROM messages m JOIN users u ON u.id=m.sender_id WHERE m.id=?');
+  targets.forEach(({ convId, id }) => {
+    const newMsg = selectStmt.get(id);
+    if (!newMsg) return;
+    newMsg.reactions = [];
+    if (io) io.to(convId).emit('new_message', newMsg);
+  });
+  return targets.length;
 }
 
 // ── 批量撤回 ────────────────────────────────────────────────────
-function batchDelete(io, userId, { msgIds, conversationId }) {
+async function batchDelete(io, userId, { msgIds, conversationId }) {
   if (!msgIds?.length || !conversationId) throw badRequest('参数缺失');
   if (msgIds.length > 20) throw badRequest('单次最多批量撤回 20 条');
   const role = memberRole(conversationId, userId);
@@ -219,6 +231,7 @@ function batchDelete(io, userId, { msgIds, conversationId }) {
 
   const isAdmin = role === 'owner' || role === 'admin';
   const now = Math.floor(Date.now() / 1000);
+  const ops = [];
   const deleted = [];
   msgIds.forEach(msgId => {
     const msg = db.prepare('SELECT * FROM messages WHERE id=? AND conversation_id=?').get(msgId, conversationId);
@@ -226,16 +239,18 @@ function batchDelete(io, userId, { msgIds, conversationId }) {
     const isOwn = msg.sender_id === userId;
     const inTime = (now - msg.created_at) <= RECALL;
     if ((isOwn && inTime) || isAdmin) {
-      db.prepare('UPDATE messages SET deleted=1 WHERE id=?').run(msgId);
+      ops.push({ sql: 'UPDATE messages SET deleted=1 WHERE id=?', params: [msgId] });
       deleted.push(msgId);
     }
   });
+  // P0-1：原子批次走 worker，落库后再广播
+  if (ops.length) await writeBatch(ops);
   if (io && deleted.length > 0) deleted.forEach(msgId => io.to(conversationId).emit('message_deleted', { msgId, conversationId }));
   return deleted.length;
 }
 
 // ── 单条撤回 ────────────────────────────────────────────────────
-function remove(io, userId, msgId, forEveryone) {
+async function remove(io, userId, msgId, forEveryone) {
   const msg = db.prepare('SELECT * FROM messages WHERE id=?').get(msgId);
   if (!msg) throw notFound('消息不存在');
   if (forEveryone) {
@@ -244,24 +259,26 @@ function remove(io, userId, msgId, forEveryone) {
     const isAdmin = callerRole === 'owner' || callerRole === 'admin';
     if (!isOwn && !isAdmin) throw forbidden('无权删除该消息');
     if (isOwn && Math.floor(Date.now() / 1000) - msg.created_at > RECALL) throw badRequest('超过2分钟无法撤回');
-    db.prepare('UPDATE messages SET deleted=1 WHERE id=?').run(msgId);
+    // P0-1：worker 异步写，await 落库后再广播
+    await writeAsync('UPDATE messages SET deleted=1 WHERE id=?', [msgId]);
     if (io) io.to(msg.conversation_id).emit('message_deleted', { msgId, conversationId: msg.conversation_id });
   }
   // 仅自己隐藏：前端处理，不改库
 }
 
 // ── 表情回应（toggle）────────────────────────────────────────────
-function react(io, userId, msgId, emoji) {
+async function react(io, userId, msgId, emoji) {
   if (!emoji) throw badRequest('参数缺失');
   const msg = db.prepare('SELECT conversation_id FROM messages WHERE id=?').get(msgId);
   if (!msg) throw notFound('消息不存在');
   requireMember(msg.conversation_id, userId, '无权操作');  // 防越权：非会话成员不得贴表情
 
   const existing = db.prepare('SELECT * FROM message_reactions WHERE message_id=? AND user_id=?').get(msgId, userId);
+  // P0-1：worker 异步写，await 落库后再聚合读回（读后写一致）
   if (existing && existing.emoji === emoji) {
-    db.prepare('DELETE FROM message_reactions WHERE message_id=? AND user_id=?').run(msgId, userId);
+    await writeAsync('DELETE FROM message_reactions WHERE message_id=? AND user_id=?', [msgId, userId]);
   } else {
-    db.prepare('INSERT OR REPLACE INTO message_reactions (message_id,user_id,emoji) VALUES (?,?,?)').run(msgId, userId, emoji);
+    await writeAsync('INSERT OR REPLACE INTO message_reactions (message_id,user_id,emoji) VALUES (?,?,?)', [msgId, userId, emoji]);
   }
   const result = db.prepare(`
     SELECT emoji, GROUP_CONCAT(user_id) as userIds, COUNT(*) as count
@@ -272,7 +289,7 @@ function react(io, userId, msgId, emoji) {
 }
 
 // ── 编辑 ────────────────────────────────────────────────────────
-function edit(io, userId, msgId, content) {
+async function edit(io, userId, msgId, content) {
   if (!content?.trim()) throw badRequest('内容不能为空');
   if (content.trim().length > MAX) throw badRequest(`消息内容不能超过 ${MAX} 个字符`);
   const msg = db.prepare('SELECT * FROM messages WHERE id=?').get(msgId);
@@ -283,18 +300,20 @@ function edit(io, userId, msgId, content) {
   if (Math.floor(Date.now() / 1000) - msg.created_at > RECALL) throw badRequest('超过2分钟无法编辑');
 
   const trimmed = content.trim();
-  db.prepare('UPDATE messages SET content=?, edited=1 WHERE id=?').run(trimmed, msgId);
+  // P0-1：worker 异步写，await 落库后再广播
+  await writeAsync('UPDATE messages SET content=?, edited=1 WHERE id=?', [trimmed, msgId]);
   if (io) io.to(msg.conversation_id).emit('message_edited', { msgId, content: trimmed, conversationId: msg.conversation_id });
   return trimmed;
 }
 
 // ── 收藏 ────────────────────────────────────────────────────────
-function collect(userId, msgId) {
+async function collect(userId, msgId) {
   const msg = db.prepare('SELECT * FROM messages WHERE id=?').get(msgId);
   if (!msg) throw notFound('消息不存在');
   requireMember(msg.conversation_id, userId, '无权操作');
-  db.prepare('INSERT INTO collections (id,user_id,type,content,extra) VALUES (?,?,?,?,?)').run(
-    uuidv4(), userId, msg.type, msg.content, JSON.stringify({ file_url: msg.file_url, source_msg_id: msg.id })
+  // P0-1：worker 异步写
+  await writeAsync('INSERT INTO collections (id,user_id,type,content,extra) VALUES (?,?,?,?,?)',
+    [uuidv4(), userId, msg.type, msg.content, JSON.stringify({ file_url: msg.file_url, source_msg_id: msg.id })]
   );
 }
 

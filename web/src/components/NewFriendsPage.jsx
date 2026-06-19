@@ -61,7 +61,7 @@ export default function NewFriendsPage({ onClose }) {
         )}
 
         {!loading && visible.length === 0 && (
-          <div className="nf-empty">
+          <div className="nf-empty" role="status">
             {/* 空状态 SVG：带 + 号的人群剪影 */}
             <svg className="nf-empty-icon" viewBox="0 0 120 96" fill="none" xmlns="http://www.w3.org/2000/svg">
               {/* 左侧人 */}

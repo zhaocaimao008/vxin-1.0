@@ -62,7 +62,9 @@ function Card({ children, style, className }) {
 function CRow({ icon, bg, label, value, desc, onClick, right, danger }) {
   return (
     <div className={`wc-crow${onClick ? ' wc-crow-clickable' : ''}`}
-      onClick={onClick}>
+      onClick={onClick}
+      role="button" tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? e => e.key === 'Enter' && onClick(e) : undefined}>
       {icon && (
         <div className="wc-crow-icon" style={{ background: bg }}>
           {icon}
@@ -122,12 +124,13 @@ function EditName({ user, updateUser, onBack }) {
               maxLength={MAX}
               autoFocus
               placeholder="请输入昵称"
+              aria-label="修改昵称"
               className="wc-edit-input"
             />
             <span className="wc-edit-counter">{username.length}/{MAX}</span>
           </div>
         </Card>
-        {error && <div className="wc-edit-error">{error}</div>}
+        {error && <div className="wc-edit-error" role="alert">{error}</div>}
         <div className="wc-edit-hint">昵称会对所有联系人显示</div>
       </div>
     </PageBg>
@@ -210,7 +213,7 @@ function AppearanceSettings({ onBack }) {
               className="wc-appearance-btn"
               style={{
                 background: bg,
-                border: `2.5px solid ${darkMode === dark ? '#07C160' : border}`,
+                border: `2.5px solid ${darkMode === dark ? 'var(--green)' : border}`,
                 boxShadow: darkMode === dark ? '0 0 0 4px rgba(7,193,96,.15)' : '0 2px 8px rgba(0,0,0,.08)',
               }}
               onClick={() => setDarkMode(dark)}>
@@ -391,12 +394,12 @@ function AccountSwitcher({ user, accounts, login, switchAccount }) {
       ))}
 
       <div onClick={toggleForm} className="wc-add-row">
-        <div className="wc-add-icon-wrap" style={{ borderColor: showForm ? '#07C160' : undefined }}>
-          <svg className="wc-add-icon-svg" style={{ fill: showForm ? '#07C160' : undefined }} viewBox="0 0 24 24">
+        <div className="wc-add-icon-wrap" style={{ borderColor: showForm ? 'var(--green)' : undefined }}>
+          <svg className="wc-add-icon-svg" style={{ fill: showForm ? 'var(--green)' : undefined }} viewBox="0 0 24 24">
             <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
           </svg>
         </div>
-        <span className="wc-add-label" style={{ color: showForm ? '#07C160' : undefined }}>添加账户</span>
+        <span className="wc-add-label" style={{ color: showForm ? 'var(--green)' : undefined }}>添加账户</span>
         <svg className="wc-add-chevron" style={{ transform: showForm ? 'rotate(90deg)' : undefined }} viewBox="0 0 24 24">
           <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
         </svg>
@@ -479,7 +482,7 @@ function ServerSettings({ onBack }) {
           className="wc-server-input"
         />
         {testResult && (
-          <div style={{ marginTop: 8, fontSize: 13, color: testResult.ok ? '#07C160' : '#FA5151' }}>
+          <div style={{ marginTop: 8, fontSize: 13, color: testResult.ok ? 'var(--green)' : '#FA5151' }}>
             {testResult.msg}
           </div>
         )}

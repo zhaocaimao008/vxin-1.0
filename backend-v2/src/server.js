@@ -32,6 +32,9 @@ app.set('onlineUsers', new Set());
 
 setupRealtime(io, app);
 
+// 生产监控：启动周期采样器（ELD>500ms / Worker队列>3000 / 内存>80% 自动告警）
+require('./utils/prodMetrics').startSampler();
+
 // ── 定时维护（每10分钟）─────────────────────────────────────────
 //   1) 红包过期标记：24h 未领完的标记 expired（系统无钱包，仅状态回收）
 //   2) 清理过期群邀请令牌

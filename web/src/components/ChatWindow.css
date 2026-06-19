@@ -7,8 +7,8 @@
 .wc-drag-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(7,193,96,.12);
-  border: 2px dashed #07C160;
+  background: rgba(var(--green-rgb),.12);
+  border: 2px dashed var(--green);
   border-radius: 4px;
   z-index: 200;
   display: flex;
@@ -21,11 +21,11 @@
 .wc-drag-overlay svg {
   width: 48px;
   height: 48px;
-  fill: #07C160;
+  fill: var(--green);
 }
 .wc-drag-overlay span {
   font-size: 16px;
-  color: #07C160;
+  color: var(--green);
   font-weight: 600;
 }
 
@@ -91,7 +91,7 @@
   font-size: 14px;
 }
 .wc-search-cancel-btn {
-  color: #07C160;
+  color: var(--green);
   font-size: 13px;
 }
 .wc-search-results {
@@ -141,7 +141,7 @@
   white-space: nowrap;
 }
 .wc-search-result-highlight {
-  color: #07C160;
+  color: var(--green);
   font-weight: 600;
 }
 
@@ -172,12 +172,12 @@
 }
 .wc-pinned-count {
   font-size: 11px;
-  color: #888;
+  color: var(--text-tertiary);
   flex-shrink: 0;
 }
 .wc-pinned-toggle {
   font-size: 12px;
-  color: #B2B2B2;
+  color: var(--text-tertiary);
   flex-shrink: 0;
 }
 .wc-pinned-detail {
@@ -203,19 +203,19 @@
 }
 .wc-pinned-item-meta {
   font-size: 12px;
-  color: #888;
+  color: var(--text-tertiary);
   margin-bottom: 2px;
 }
 .wc-pinned-item-text {
   font-size: 13px;
-  color: #333;
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .wc-unpin-btn {
   font-size: 12px;
-  color: #FA5151;
+  color: var(--color-badge);
   padding: 2px 8px;
   border: 1px solid #FFCDD2;
   border-radius: 4px;
@@ -320,10 +320,10 @@
   flex-shrink: 0;
 }
 .wc-upload-icon-ok {
-  color: #07C160;
+  color: var(--green);
 }
 .wc-upload-icon-fail {
-  color: #FA5151;
+  color: var(--color-badge);
 }
 .wc-upload-body {
   flex: 1;
@@ -331,7 +331,7 @@
 }
 .wc-upload-name {
   font-size: 12px;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 3px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -345,30 +345,30 @@
 }
 .wc-upload-fill {
   height: 100%;
-  background: #07C160;
+  background: var(--green);
   border-radius: 2px;
   transition: width .15s;
 }
 .wc-upload-error-text {
   flex: 1;
   font-size: 12px;
-  color: #FA5151;
+  color: var(--color-badge);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .wc-retry-btn {
   font-size: 12px;
-  color: #07C160;
+  color: var(--green);
   padding: 3px 10px;
-  border: 1px solid #07C160;
+  border: 1px solid var(--green);
   border-radius: 4px;
   flex-shrink: 0;
   cursor: pointer;
 }
 .wc-cancel-upload-btn {
   font-size: 14px;
-  color: #B2B2B2;
+  color: var(--text-tertiary);
   flex-shrink: 0;
   cursor: pointer;
 }
@@ -395,13 +395,13 @@
 }
 .wc-edit-bar-text {
   font-size: 12px;
-  color: #888;
+  color: var(--text-tertiary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .wc-edit-cancel-btn {
-  color: #888;
+  color: var(--text-tertiary);
   font-size: 14px;
   cursor: pointer;
   padding: 2px;
@@ -415,7 +415,7 @@
 
 /* ── 多选模式底部工具栏 ── */
 .wc-multiselect-bar {
-  background: #F5F5F5;
+  background: var(--bg-panel);
   border-top: 1px solid rgba(0,0,0,.07);
   padding: 10px 16px;
   display: flex;
@@ -426,12 +426,12 @@
 .wc-ms-btn {
   font-size: 14px;
   padding: 6px 14px;
-  border: 1px solid #07C160;
+  border: 1px solid var(--green);
   border-radius: 4px;
   cursor: pointer;
 }
 .wc-ms-btn-primary {
-  color: #fff;
+  color: var(--bg-msg-other);
   border: none;
   padding: 6px 16px;
   border-radius: 4px;
@@ -441,14 +441,14 @@
   opacity: 0.5;
 }
 .wc-ms-btn-forward {
-  background: #07C160;
+  background: var(--green);
 }
 .wc-ms-btn-delete {
-  background: #FA5151;
+  background: var(--color-badge);
 }
 .wc-ms-count {
   font-size: 13px;
-  color: #888;
+  color: var(--text-tertiary);
 }
 .wc-ms-btn-group {
   display: flex;
@@ -456,26 +456,26 @@
 }
 .wc-ms-cancel-btn {
   font-size: 14px;
-  color: #07C160;
+  color: var(--green);
   padding: 6px 14px;
-  border: 1px solid #07C160;
+  border: 1px solid var(--green);
   border-radius: 4px;
   cursor: pointer;
 }
 .wc-ms-cancel-btn:hover {
-  background: rgba(7,193,96,.05);
+  background: rgba(var(--green-rgb),.05);
 }
 
 /* ── 全群禁言提示 ── */
 .wc-mute-notice {
-  background: #F5F5F5;
+  background: var(--bg-panel);
   border-top: 1px solid rgba(0,0,0,.07);
   padding: 14px 20px;
   text-align: center;
 }
 .wc-mute-notice span {
   font-size: 13px;
-  color: #B2B2B2;
+  color: var(--text-tertiary);
 }
 
 /* ── 语音输入容器 ── */
@@ -494,7 +494,7 @@
   bottom: 100%;
   left: 0;
   right: 0;
-  background: #fff;
+  background: var(--bg-msg-other);
   border: 1px solid var(--border-color);
   border-radius: 4px;
   box-shadow: 0 2px 12px rgba(0,0,0,.1);
@@ -515,7 +515,7 @@
   background: rgba(0,0,0,.04);
 }
 .wc-at-list-item.active {
-  background: rgba(7,193,96,.12);
+  background: rgba(var(--green-rgb),.12);
 }
 
 /* ── 输入框容器 ── */
@@ -533,11 +533,11 @@
 }
 .wc-deleted-msg-text {
   font-size: 12px;
-  color: #B2B2B2;
+  color: var(--text-tertiary);
 }
 .wc-reedit-link {
   font-size: 12px;
-  color: #07C160;
+  color: var(--green);
   margin-left: 8px;
   cursor: pointer;
   text-decoration: underline;
@@ -551,16 +551,16 @@
 
 /* ── 消息状态指示（已读/已送达/已发送） ── */
 .wc-msg-status-read {
-  color: #07C160;
+  color: var(--green);
 }
 .wc-msg-status-delivered {
-  color: #B2B2B2;
+  color: var(--text-tertiary);
 }
 .wc-msg-status-sent {
   color: #C8C8C8;
 }
 .wc-msg-status-error {
-  color: #FA5151;
+  color: var(--color-badge);
   cursor: pointer;
   font-size: 18px;
   line-height: 1;
@@ -569,7 +569,7 @@
 /* ── 消息状态（群已读数） ── */
 .wc-group-read-count {
   font-size: 11px;
-  color: #B2B2B2;
+  color: var(--text-tertiary);
   text-align: right;
   margin-top: 2px;
   padding-right: 4px;
@@ -604,7 +604,7 @@
 }
 .wc-upload-progress-fill {
   height: 100%;
-  background: #07C160;
+  background: var(--green);
   border-radius: 2px;
   transition: width .15s;
 }
@@ -655,7 +655,7 @@
   border-radius: 8px;
   overflow: hidden;
   background: linear-gradient(135deg,#F9A825,#F4511E);
-  color: #fff;
+  color: var(--bg-msg-other);
   box-shadow: 0 1px 4px rgba(0,0,0,.15);
 }
 .wc-redpacket-body {
@@ -699,7 +699,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 3000;
+  z-index: calc(var(--z-popover, 1100) + 1);
 }
 .wc-rp-detail-card {
   width: 320px;
@@ -711,7 +711,7 @@
 .wc-rp-detail-header {
   padding: 26px 20px 18px;
   text-align: center;
-  color: #fff;
+  color: var(--bg-msg-other);
 }
 .wc-rp-detail-icon {
   font-size: 36px;
@@ -727,7 +727,7 @@
   margin-top: 4px;
 }
 .wc-rp-detail-body {
-  background: #fff;
+  background: var(--bg-msg-other);
   padding: 0 20px 20px;
 }
 .wc-rp-center {
@@ -736,7 +736,7 @@
 }
 .wc-rp-claimed-label {
   font-size: 12px;
-  color: #999;
+  color: var(--text-tertiary);
   margin-bottom: 4px;
 }
 .wc-rp-amount {
@@ -753,11 +753,11 @@
   text-align: center;
   padding: 14px 0 10px;
   font-size: 14px;
-  color: #999;
+  color: var(--text-tertiary);
 }
 .wc-rp-stats {
   font-size: 12px;
-  color: #999;
+  color: var(--text-tertiary);
   text-align: center;
   margin-bottom: 8px;
 }
@@ -774,7 +774,7 @@
   border-bottom: 1px solid #f5f5f5;
 }
 .wc-rp-claim-name {
-  color: #333;
+  color: var(--text-primary);
 }
 .wc-rp-claim-amount {
   color: #F4511E;
@@ -784,9 +784,9 @@
   text-align: center;
   padding: 12px;
   font-size: 14px;
-  color: #888;
+  color: var(--text-tertiary);
   cursor: pointer;
-  background: #fff;
+  background: var(--bg-msg-other);
   border-top: 1px solid #f0f0f0;
 }
 
@@ -797,7 +797,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 999;
+  z-index: var(--z-modal, 1000);
 }
 .wc-ctx-menu-fixed {
   position: fixed;
@@ -818,7 +818,7 @@
   width: 28px;
   height: 28px;
   border-radius: 14px;
-  background: #07C160;
+  background: var(--green);
   border: none;
   cursor: pointer;
   display: flex;
@@ -833,12 +833,12 @@
 .wc-voice-play-icon {
   width: 14px;
   height: 14px;
-  fill: #fff;
+  fill: var(--bg-msg-other);
 }
 .wc-voice-play-icon-offset {
   width: 14px;
   height: 14px;
-  fill: #fff;
+  fill: var(--bg-msg-other);
   margin-left: 1px;
 }
 .wc-voice-progress-track {
@@ -852,13 +852,13 @@
 }
 .wc-voice-progress-fill {
   height: 100%;
-  background: #07C160;
+  background: var(--green);
   border-radius: 2px;
   transition: width .15s linear;
 }
 .wc-voice-duration {
   font-size: 11px;
-  color: #999;
+  color: var(--text-tertiary);
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
   min-width: 32px;
@@ -869,7 +869,7 @@
 .wc-more-item-icon svg {
   width: 24px;
   height: 24px;
-  fill: #fff;
+  fill: var(--bg-msg-other);
 }
 
 /* ── 头部返回按钮 SVG ── */
@@ -946,7 +946,7 @@
   flex-shrink: 0;
 }
 .wc-settings-toggle.on {
-  background: #07C160;
+  background: var(--green);
 }
 .wc-settings-toggle.off {
   background: #D8D8D8;
@@ -961,7 +961,7 @@
   width: 20px;
   height: 20px;
   border-radius: 10px;
-  background: #fff;
+  background: var(--bg-msg-other);
   box-shadow: 0 1px 3px rgba(0,0,0,0.25);
   transition: left 0.18s;
 }
@@ -977,7 +977,7 @@
   margin: 0 12px 20px;
   padding: 11px;
   background: var(--bg-msg-other);
-  color: #FA5151;
+  color: var(--color-badge);
   border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
@@ -994,7 +994,7 @@
 
 /* ── 消息状态指示（发送中/错误） ── */
 .wc-msg-status-error-icon {
-  color: #FA5151;
+  color: var(--color-badge);
   cursor: pointer;
   font-size: 18px;
   line-height: 1;
@@ -1018,15 +1018,15 @@
   transition: all .1s;
 }
 .wc-multiselect-check.checked {
-  background: #07C160;
-  border: 2px solid #07C160;
+  background: var(--green);
+  border: 2px solid var(--green);
 }
 .wc-multiselect-check.unchecked {
-  background: #fff;
+  background: var(--bg-msg-other);
   border: 2px solid #D9D9D9;
 }
 .wc-multiselect-check-mark {
-  color: #fff;
+  color: var(--bg-msg-other);
   font-size: 12px;
   font-weight: 700;
   line-height: 1;

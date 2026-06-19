@@ -8,6 +8,8 @@ const { asyncHandler } = require('../../utils/http');
 const { addToBlacklist } = require('../../utils/tokenBlacklist');
 const svc = require('./admin.service');
 const sec = require('./security.service');
+const prodMetrics = require('../../utils/prodMetrics');
+const presence = require('../../realtime/presence');
 
 const io = req => req.app.get('io');
 const DEVICE_COOKIE = 'vxin_admin_device';
@@ -106,6 +108,12 @@ exports.me = asyncHandler(async (req, res) => res.json({ username: req.admin.use
 // ── 数据 ────────────────────────────────────────────────────────
 exports.stats = asyncHandler(async (req, res) =>
   res.json(svc.stats(req.app.get('onlineUsers')?.size || 0)));
+
+// 生产监控指标快照（10 项指标 + 阈值 + 近期告警）
+exports.metrics = asyncHandler(async (req, res) => {
+  const online = presence.stats();
+  res.json(prodMetrics.snapshot(online.users, online.sockets));
+});
 
 exports.listUsers  = asyncHandler(async (req, res) => res.json(svc.listUsers(req.query)));
 exports.userDetail = asyncHandler(async (req, res) => res.json(svc.userDetail(req.params.id)));

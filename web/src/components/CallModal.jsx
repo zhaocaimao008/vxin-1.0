@@ -313,7 +313,7 @@ export default function CallModal({ socket, user, call, onClose }) {
         {/* 来电：拒绝 + 接听 */}
         {status === 'incoming' && <>
           <CtrlBtn icon="📵"                        label="拒绝" bg="#FA5151" size={64} onClick={reject} />
-          <CtrlBtn icon={isVideo ? '📹' : '📞'}    label="接听" bg="#07C160" size={64} onClick={accept} />
+          <CtrlBtn icon={isVideo ? '📹' : '📞'}    label="接听" bg="var(--green)" size={64} onClick={accept} />
         </>}
 
         {/* 通话进行中 */}
@@ -342,6 +342,10 @@ export default function CallModal({ socket, user, call, onClose }) {
 function CtrlBtn({ icon, label, bg, size = 52, onClick }) {
   return (
     <div
+      role="button"
+      aria-label={label}
+      tabIndex={0}
+      onKeyDown={e => e.key === 'Enter' && onClick(e)}
       style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer' }}
       onClick={onClick}
     >

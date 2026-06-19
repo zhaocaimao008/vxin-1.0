@@ -8,7 +8,7 @@ import { showToast, showConfirm } from '../utils/toast';
 export function GroupAvatar({ members = [], size = 46, avatar = '' }) {
   // 有自定义群头像直接显示
   if (avatar) {
-    return <img src={mediaUrl(avatar)} alt="" style={{ width: size, height: size, borderRadius: Math.round(size * 0.22), objectFit: 'cover', flexShrink: 0 }} />;
+    return <img src={mediaUrl(avatar)} alt="" loading="lazy" style={{ width: size, height: size, borderRadius: Math.round(size * 0.22), objectFit: 'cover', flexShrink: 0 }} />;
   }
   const n = Math.min(members.length, 9);
   if (n === 0) return <Avatar name="群" size={size} />;
@@ -39,7 +39,7 @@ function GroupAvatarUpload({ info, isAdmin, uploading, inputRef, onAvatarClick, 
       title={isAdmin ? '点击更换群头像' : undefined}
     >
       {info.avatar
-        ? <img src={mediaUrl(info.avatar)} alt="" className="gi-av-img" style={{ borderRadius: r }} />
+        ? <img src={mediaUrl(info.avatar)} alt="" loading="lazy" className="gi-av-img" style={{ borderRadius: r }} />
         : <GroupAvatar members={info.members} size={50} />
       }
       {isAdmin && (hovered || uploading) && (
@@ -68,7 +68,7 @@ function Toggle({ on, onChange, disabled }) {
     <div
       onClick={() => !disabled && onChange(!on)}
       className="gi-toggle"
-      style={{ background: on ? '#07C160' : '#D8D8D8', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1 }}
+      style={{ background: on ? 'var(--green)' : '#D8D8D8', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1 }}
     >
       <div className="gi-toggle-thumb" style={{ left: on ? 21 : 3 }} />
     </div>
@@ -275,7 +275,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
   if (loading) return (
     <div className="gi-panel gi-fcd gi-ccc">
       <div className="gi-fcd gi-fca gi-gap8">
-        <div className="gi-spinner" style={{ borderTopColor: '#07C160' }} />
+        <div className="gi-spinner gi-spinner-green" />
         <span className="gi-loading-txt">加载中…</span>
       </div>
     </div>
@@ -430,19 +430,19 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
           <div className="gi-warn">
             {info.mute_all && (
               <div className="gi-warn-row">
-                <svg viewBox="0 0 24 24" className="gi-s12" style={{ fill: '#FA8C16' }}><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                <svg viewBox="0 0 24 24" className="gi-s12 gi-warn-icon"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
                 全员禁言已开启，您当前无法发送消息
               </div>
             )}
             {info.no_private_chat && (
               <div className="gi-warn-row">
-                <svg viewBox="0 0 24 24" className="gi-s12" style={{ fill: '#FA8C16' }}><path d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zm-1 5h2v6h-2zm0 8h2v2h-2z"/></svg>
+                <svg viewBox="0 0 24 24" className="gi-s12 gi-warn-icon"><path d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zm-1 5h2v6h-2zm0 8h2v2h-2z"/></svg>
                 禁止私聊已开启，您无法与群成员私信
               </div>
             )}
             {info.no_add_friend && (
               <div className="gi-warn-row">
-                <svg viewBox="0 0 24 24" className="gi-s12" style={{ fill: '#FA8C16' }}><path d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zm-1 5h2v6h-2zm0 8h2v2h-2z"/></svg>
+                <svg viewBox="0 0 24 24" className="gi-s12 gi-warn-icon"><path d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zm-1 5h2v6h-2zm0 8h2v2h-2z"/></svg>
                 禁止互加好友已开启，不可通过本群添加群成员为好友
               </div>
             )}
@@ -453,7 +453,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
         <div className="gi-section">
           {/* 标题行 + 搜索框 */}
           <div className="gi-ml-head">
-            <div className="gi-fcsb" style={{ marginBottom: 6 }}>
+            <div className="gi-fcsb gi-ml-last">
               <span className="gi-grp-tit">
                 群成员 ({info.members.length})
               </span>
@@ -461,7 +461,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
             {/* 仅管理员显示搜索框（用于快速找人踢出） */}
             {isAdmin && (
               <div className="gi-ml-search">
-                <svg viewBox="0 0 24 24" className="gi-s13" style={{ fill: 'var(--text-tertiary)' }}>
+                <svg viewBox="0 0 24 24" className="gi-s13 gi-search-icon">
                   <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
                 </svg>
                 <input
@@ -507,7 +507,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
                             return (
                               <>
                                 {m.username.slice(0, idx)}
-                                <span style={{ color: '#07C160', fontWeight: 600 }}>{m.username.slice(idx, idx + kickSearch.length)}</span>
+                                <span className="gi-search-hl">{m.username.slice(idx, idx + kickSearch.length)}</span>
                                 {m.username.slice(idx + kickSearch.length)}
                               </>
                             );
@@ -521,7 +521,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
                   {isOwner && m.role !== 'owner' && (
                     <button
                       className="gi-btn-admin"
-                      style={{ color: m.role === 'admin' ? '#888' : '#07C160', border: `1px solid ${m.role === 'admin' ? '#E0E0E0' : '#07C160'}` }}
+                      style={{ color: m.role === 'admin' ? '#888' : 'var(--green)', border: `1px solid ${m.role === 'admin' ? '#E0E0E0' : 'var(--green)'}` }}
                       onClick={() => toggleAdmin(m.id, m.role)}
                     >{m.role === 'admin' ? '撤销管理员' : '设为管理员'}</button>
                   )}
@@ -556,7 +556,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
               }}
             />
           </div>
-          <div className="gi-row" style={{ borderBottom: 'none' }}>
+          <div className="gi-row gi-row-noborder">
             <span className="gi-label">置顶聊天</span>
             <Toggle
               on={myPinned}
@@ -593,7 +593,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
                 <button className="gi-btn-xl-sm" onClick={() => setEditNickname(false)}>取消</button>
               </>
             ) : (
-              <div className="gi-f1 gi-fcsb" style={{ cursor: 'pointer' }} onClick={() => { setNicknameVal(myNickname || ''); setEditNickname(true); }}>
+              <div className="gi-f1 gi-fcsb gi-nk-cp" onClick={() => { setNicknameVal(myNickname || ''); setEditNickname(true); }}>
                 <span style={{ fontSize: 14, color: myNickname ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>{myNickname || '未设置'}</span>
                 <svg viewBox="0 0 24 24" className="gi-s14 gi-fill-tertiary"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
               </div>
@@ -605,7 +605,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
         <div className="gi-qr">
           <div className="gi-qr-row" onClick={loadQR}>
             <span className="gi-text14">群二维码</span>
-            <svg viewBox="0 0 24 24" className="gi-s14" style={{ fill: 'var(--text-tertiary)' }}><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+            <svg viewBox="0 0 24 24" className="gi-s14 gi-chevron"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
           </div>
         </div>
 
@@ -633,7 +633,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
       {/* 群二维码弹窗 */}
       {showQR && (
         <div className="wc-modal-overlay" onClick={e => e.target === e.currentTarget && setShowQR(false)}>
-          <div className="wc-modal" style={{ width: 300, textAlign: 'center' }}>
+          <div className="wc-modal gi-qr-panel">
             <div className="wc-modal-header">
               <span className="wc-modal-title">群二维码</span>
               <button className="wc-modal-close" onClick={() => setShowQR(false)} aria-label="关闭二维码">✕</button>

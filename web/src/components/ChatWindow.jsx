@@ -70,6 +70,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   const [showPinnedDetail, setShowPinnedDetail] = useState(false);
   const [atList, setAtList] = useState(null); // members for @ mention
   const [atIndex, setAtIndex] = useState(0); // selected index in atList
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   // 通话状态
@@ -360,7 +361,10 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
   // Load more on scroll to top（convIdRef 守卫防止慢响应污染新会话）
   const handleScroll = useCallback(async () => {
     const container = messagesContainerRef.current;
-    if (!container || loadingMore || !hasMore) return;
+    if (!container) return;
+    // 滚动按钮：距离底部超过 300px 时显示
+    setShowScrollBtn(container.scrollTop < container.scrollHeight - container.clientHeight - 300);
+    if (loadingMore || !hasMore) return;
     if (container.scrollTop < 60 && messages.length > 0) {
       setLoadingMore(true);
       const oldest    = messages[0]?.created_at;
@@ -1245,7 +1249,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         {/* 多选复选框 */}
         {multiSelect && (
           <div style={{ display: 'flex', alignItems: 'center', marginRight: 8, flexShrink: 0, alignSelf: 'center' }}>
-            <div style={{ width: 20, height: 20, borderRadius: 10, border: `2px solid ${selectedMsgs.has(msg.id) ? '#07C160' : '#D9D9D9'}`, background: selectedMsgs.has(msg.id) ? '#07C160' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .1s' }}>
+            <div style={{ width: 20, height: 20, borderRadius: 10, border: `2px solid ${selectedMsgs.has(msg.id) ? 'var(--green)' : '#D9D9D9'}`, background: selectedMsgs.has(msg.id) ? 'var(--green)' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .1s' }}>
               {selectedMsgs.has(msg.id) && <span style={{ color: '#fff', fontSize: 12, fontWeight: 700, lineHeight: 1 }}>✓</span>}
             </div>
           </div>
@@ -1280,7 +1284,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
               onContextMenu={e => handleContextMenu(e, msg)}
             >
               {msg.replyTo && (
-                <div className="wc-msg-reply" style={{ cursor: 'pointer' }} onClick={(e) => {
+                <div className="wc-msg-reply gi-cp" onClick={(e) => {
                   e.stopPropagation();
                   const el = document.getElementById(`msg-${msg.replyTo.id}`);
                   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1342,6 +1346,8 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                   <div
                     onClick={() => card.uid && setShowUserProfile(card.uid)}
                     className="wc-contact-card"
+                    role="button" tabIndex={0}
+                    onKeyDown={e => e.key === 'Enter' && card.uid && setShowUserProfile(card.uid)}
                   >
                     <div className="wc-contact-card-body">
                       <Avatar src={card.avatar} name={card.username} size={44} style={{ borderRadius: 6, flexShrink: 0 }} />
@@ -1361,6 +1367,8 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                   <div
                     onClick={() => openRedPacket(rp.packetId)}
                     className="wc-redpacket-card"
+                    role="button" tabIndex={0}
+                    onKeyDown={e => e.key === 'Enter' && openRedPacket(rp.packetId)}
                   >
                     <div className="wc-redpacket-body">
                       <div className="wc-redpacket-icon">🧧</div>
@@ -1390,6 +1398,8 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                   key={r.emoji}
                   className={`wc-reaction-pill${r.userIds.map(String).includes(String(user.id)) ? ' mine' : ''}`}
                   onClick={() => axios.post(`/api/messages/${msg.id}/react`, { emoji: r.emoji })}
+                  role="button" tabIndex={0}
+                  onKeyDown={e => e.key === 'Enter' && axios.post(`/api/messages/${msg.id}/react`, { emoji: r.emoji })}
                 >
                   <span>{r.emoji}</span>
                   {r.count > 1 && <span>{r.count}</span>}
@@ -1493,6 +1503,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                 value={msgSearchQ}
                 onChange={e => { setMsgSearchQ(e.target.value); searchMessages(e.target.value); }}
                 placeholder="搜索聊天记录..."
+                aria-label="搜索聊天记录"
                 className="wc-search-input"
                 onKeyDown={e => e.key === 'Escape' && setShowMsgSearch(false)}
               />
@@ -1503,9 +1514,9 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
           {/* 搜索结果 */}
           {msgSearchQ && (
             <div className="wc-search-results">
-              {msgSearching && <div className="wc-search-status">搜索中…</div>}
+              {msgSearching && <div className="wc-search-status" role="status">搜索中…</div>}
               {!msgSearching && msgSearchResults.length === 0 && msgSearchQ && (
-                <div className="wc-search-status">未找到相关记录</div>
+                <div className="wc-search-status" role="status">未找到相关记录</div>
               )}
               {msgSearchResults.map(msg => {
                 const q = msgSearchQ.toLowerCase();
@@ -1523,6 +1534,15 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                       }, 100);
                     }}
+                    role="button" tabIndex={0}
+                    onKeyDown={e => e.key === 'Enter' && (() => {
+                      const exists = messages.find(m => m.id === msg.id);
+                      if (!exists) setMessages(prev => [...prev, { ...msg, _highlighted: true }]);
+                      setTimeout(() => {
+                        const el = document.getElementById(`msg-${msg.id}`);
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }, 100);
+                    })()}
                   >
                     <div className="wc-search-result-body">
                       <div className="wc-search-result-meta">
@@ -1583,16 +1603,22 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
       <div className="wc-messages-wrap">
         <div className="wc-messages" ref={messagesContainerRef} onScroll={handleScroll}>
           {loadingMore && (
-            <div className="wc-search-status">加载中...</div>
+            <div className="wc-search-status" role="status">加载中...</div>
           )}
           {renderMessages()}
           {typingName && (
-            <div style={{ fontSize: 12, color: 'var(--text-tertiary)', padding: '4px 0 2px', marginTop: 4 }}>
-              {typingName} 正在输入…
-            </div>
+            <div className="cw-typing"><span></span><span></span><span></span> {typingName} 正在输入</div>
           )}
           <div ref={messagesEndRef} />
         </div>
+        {/* 滚动到底部按钮 */}
+        {showScrollBtn && (
+          <button
+            className="cw-scroll-bottom"
+            onClick={() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })}
+            aria-label="滚动到底部"
+          ></button>
+        )}
 
         {showGroupInfo && conversation.type === 'group' && (
           <GroupInfo
@@ -1646,7 +1672,9 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
               )}
               {cardContacts.map(c => (
                 <div key={c.id} onClick={() => sendContactCard(c)}
-                  className="wc-card-picker-item">
+                  className="wc-card-picker-item"
+                  role="button" tabIndex={0}
+                  onKeyDown={e => e.key === 'Enter' && sendContactCard(c)}>
                   <Avatar src={c.avatar} name={c.remark || c.username} size={42} style={{ borderRadius: 6 }} />
                   <div className="wc-card-picker-item-info">
                     <div className="wc-card-picker-item-name">{c.remark || c.username}</div>
@@ -1759,7 +1787,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
             className={`wc-tool-btn${showStickers ? ' active' : ''}`}
             title="表情包"
             onClick={() => { setShowStickers(v => !v); setShowEmoji(false); setShowMore(false); }}
-          ><svg viewBox="0 0 24 24" style={{ width: 22, height: 22, fill: 'currentColor' }}><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h10l6-6V5c0-1.1-.9-2-2-2zM9 11c-.83 0-1.5-.67-1.5-1.5S8.17 8 9 8s1.5.67 1.5 1.5S9.83 11 9 11zm3.5 5c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5zM15 11c-.83 0-1.5-.67-1.5-1.5S14.17 8 15 8s1.5.67 1.5 1.5S15.83 11 15 11zm-1 9.5V15h5.5L14 20.5z"/></svg></button>
+          ><svg viewBox="0 0 24 24" className="wc-tool-svg"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h10l6-6V5c0-1.1-.9-2-2-2zM9 11c-.83 0-1.5-.67-1.5-1.5S8.17 8 9 8s1.5.67 1.5 1.5S9.83 11 9 11zm3.5 5c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5zM15 11c-.83 0-1.5-.67-1.5-1.5S14.17 8 15 8s1.5.67 1.5 1.5S15.83 11 15 11zm-1 9.5V15h5.5L14 20.5z"/></svg></button>
 
           <button
             className={`wc-tool-btn${voiceMode ? ' active' : ''}`}
@@ -1803,7 +1831,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
               { bg:'#2B2B2B', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M12 15.2A3.2 3.2 0 008.8 12 3.2 3.2 0 0012 8.8 3.2 3.2 0 0115.2 12 3.2 3.2 0 0112 15.2M12 7a5 5 0 000 10A5 5 0 0012 7m0-5c0 0-8.02 0-9.5 1.5S1 7 1 12s0 8 1.5 9.5S7 23 12 23s8 0 9.5-1.5S23 17 23 12s0-8-1.5-9.5S17 1 12 1m0 20c-5 0-9-4-9-9s4-9 9-9 9 4 9 9-4 9-9 9z"/></svg>, label:'相机' },
               { bg:'#1890FF', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M20 6h-2.18c.07-.44.18-.88.18-1.36C18 2.05 15.96 0 13.5 0c-1.3 0-2.47.6-3.28 1.53L9 3 7.78 1.53C6.97.6 5.8 0 4.5 0 2.04 0 0 2.05 0 4.64c0 .48.11.92.18 1.36H0v2h20v-2zM20 10H4v8c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-8z"/></svg>, label:'文件', action:()=>fileInputRef.current?.click() },
               { bg:'#13C2C2', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>, label:'视频通话', action:()=>{ setShowMore(false); startCall('video'); } },
-              { bg:'#07C160', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>, label:'语音通话', action:()=>{ setShowMore(false); startCall('audio'); } },
+              { bg:'var(--green)', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>, label:'语音通话', action:()=>{ setShowMore(false); startCall('audio'); } },
               { bg:'#FA9D3B', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>, label:'名片', action: openCardPicker },
             ].map(item => (
               <div key={item.label} className="wc-more-item" onClick={item.action}>
@@ -1851,6 +1879,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
                 <textarea
                   ref={textareaRef}
                   className="wc-textarea"
+                  aria-label="输入消息"
                   value={input}
                   onChange={e => {
                     const val = e.target.value;

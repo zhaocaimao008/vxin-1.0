@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
 import ElectronTitlebar from './components/ElectronTitlebar';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Electron 使用 HashRouter（file:// 不支持 pushState）；Web 用 BrowserRouter
 const Router = window.__ELECTRON_CONFIG__ ? HashRouter : BrowserRouter;
@@ -20,6 +21,8 @@ const PrivateRoute = ({ children }) => {
 export default function App() {
   const isElectron = !!window.__ELECTRON_CONFIG__;
   return (
+    // 最外层兜底：任何子树渲染异常都降级为友好错误页，绝不白屏
+    <ErrorBoundary>
     <SettingsProvider>
     <AuthProvider>
       {/* ── Skip-link：无障碍跳过导航 ── */}
@@ -36,9 +39,12 @@ export default function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/*" element={
               <PrivateRoute>
-                <SocketProvider>
-                  <Home />
-                </SocketProvider>
+                {/* 内层边界：聊天主页崩溃时不连累已登录外壳，可单独重试 */}
+                <ErrorBoundary>
+                  <SocketProvider>
+                    <Home />
+                  </SocketProvider>
+                </ErrorBoundary>
               </PrivateRoute>
             } />
           </Routes>
@@ -46,5 +52,6 @@ export default function App() {
       </div>
     </AuthProvider>
     </SettingsProvider>
+    </ErrorBoundary>
   );
 }

@@ -9,6 +9,8 @@ const jwt = require('jsonwebtoken');
 const config = require('../config');
 const { db, readDb } = require('../db/connection');
 const presence = require('./presence');
+const broadcaster = require('./broadcaster');
+const prodMetrics = require('../utils/prodMetrics');
 
 const registerMessage = require('./handlers/message');
 const registerFile    = require('./handlers/file');
@@ -16,21 +18,26 @@ const registerTyping  = require('./handlers/typing');
 const registerCall    = require('./handlers/call');
 
 module.exports = function setupRealtime(io, app) {
+  broadcaster.setIo(io); // 广播调度器绑定 io 实例（分片削峰派发）
+
   // ── 握手鉴权（Cookie 优先，Electron 降级到 auth.token）──────
   io.use((socket, next) => {
+    prodMetrics.recordConnAttempt(); // 监控：连接/重连成功率（每次握手即一次尝试）
     const cookieHeader = socket.handshake.headers.cookie || '';
     const match = cookieHeader.match(new RegExp(`${config.cookieName}=([^;]+)`));
     const cookieToken = match ? decodeURIComponent(match[1]) : null;
     const bearerToken = socket.handshake.auth?.token || null;
     const token = cookieToken || bearerToken;
-    if (!token) return next(new Error('未授权'));
+    if (!token) { prodMetrics.recordConnResult(false); return next(new Error('未授权')); }
     try {
       socket.user = jwt.verify(token, config.jwtSecret);
       // 检查封禁状态（封禁用户即使持有有效 JWT 也不得接入 Socket）
       const user = db.prepare('SELECT banned FROM users WHERE id=?').get(socket.user.id);
-      if (user?.banned) return next(new Error('账号已被封禁'));
+      if (user?.banned) { prodMetrics.recordConnResult(false); return next(new Error('账号已被封禁')); }
+      prodMetrics.recordConnResult(true);
       next();
     } catch {
+      prodMetrics.recordConnResult(false);
       next(new Error('Token无效'));
     }
   });
