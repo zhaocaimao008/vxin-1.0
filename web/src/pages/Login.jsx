@@ -177,6 +177,53 @@ export default function Login() {
           还没有账号？<Link to="/register" className="auth-link">注册新账号</Link>
         </p>
 
+        {/* 下载客户端 — 仅网页端显示 */}
+        {!isElectron && (
+          <div style={{ marginTop: 20, borderTop: '1px solid rgba(0,0,0,.06)', paddingTop: 16, textAlign: 'center' }}>
+            <p style={{ fontSize: 12, color: 'var(--text-muted, #999)', marginBottom: 10 }}>下载客户端</p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+              <a
+                href="/downloads/vxin-setup-1.0.0.exe"
+                download
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '7px 14px', borderRadius: 8,
+                  background: 'rgba(7,193,96,.08)', color: '#07C160',
+                  fontSize: 13, fontWeight: 500, textDecoration: 'none',
+                  border: '1px solid rgba(7,193,96,.20)',
+                  transition: 'background .15s',
+                }}
+                onMouseOver={e => e.currentTarget.style.background = 'rgba(7,193,96,.15)'}
+                onMouseOut={e => e.currentTarget.style.background = 'rgba(7,193,96,.08)'}
+              >
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                  <path d="M3 3h18v2H3V3zm0 16h18v2H3v-2zM13 7v6.586l2.293-2.293 1.414 1.414L12 17.414l-4.707-4.707 1.414-1.414L11 13.586V7h2z"/>
+                </svg>
+                Windows 安装包
+              </a>
+              <a
+                href="/downloads/vxin-portable-1.0.0.exe"
+                download
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '7px 14px', borderRadius: 8,
+                  background: 'rgba(0,0,0,.04)', color: 'var(--text-secondary, #666)',
+                  fontSize: 13, fontWeight: 500, textDecoration: 'none',
+                  border: '1px solid rgba(0,0,0,.08)',
+                  transition: 'background .15s',
+                }}
+                onMouseOver={e => e.currentTarget.style.background = 'rgba(0,0,0,.08)'}
+                onMouseOut={e => e.currentTarget.style.background = 'rgba(0,0,0,.04)'}
+              >
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                  <path d="M3 3h18v2H3V3zm0 16h18v2H3v-2zM13 7v6.586l2.293-2.293 1.414 1.414L12 17.414l-4.707-4.707 1.414-1.414L11 13.586V7h2z"/>
+                </svg>
+                便携版
+              </a>
+            </div>
+          </div>
+        )}
+
         {/* 服务器切换 — 仅桌面端 */}
         {isElectron && (
           <div className="auth-server">
