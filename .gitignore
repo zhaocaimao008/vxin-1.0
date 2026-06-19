@@ -1,28 +1,25 @@
-node_modules/
-dist/
-.env
-.env.local
-*.db
-*.db-shm
-*.db-wal
-*.db.bak*
-uploads/avatars/*
-uploads/files/*
-uploads/moments/*
-!uploads/avatars/.gitkeep
-!uploads/files/.gitkeep
-!uploads/moments/.gitkeep
-.DS_Store
-*.log
-backend/.bot_tokens.json
-**/.bot_tokens.json
-mobile/vxin.apk
-tests/test-reports/
-tests/node_modules/
-mobile/.expo/
+# Desktop Electron
+desktop-electron/node_modules/
+desktop-electron/dist/
+desktop-electron/*.exe
+desktop-electron/*.dmg
+desktop-electron/*.AppImage
+desktop-electron/*.deb
+desktop-electron/release/
+
+# Capacitor Mobile
+mobile/node_modules/
 mobile/android/
-mobile/package-lock.json
-desktop/package-lock.json
-backend/backup/
-demo.html
-.deploy-config/
+mobile/ios/
+mobile/web-dist/
+mobile/*.apk
+mobile/*.aab
+
+# Web build output
+web/dist/
+web/node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+*.log

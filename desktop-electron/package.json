@@ -1,0 +1,69 @@
+{
+  "name": "vxin-desktop",
+  "version": "2.0.0",
+  "description": "v信 桌面客户端",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "electron .",
+    "build:web": "cd ../web && npx vite build --mode desktop",
+    "build": "npm run build:web && electron-builder",
+    "build:win": "npm run build:web && electron-builder --win --x64",
+    "build:mac": "npm run build:web && electron-builder --mac --x64",
+    "build:linux": "npm run build:web && electron-builder --linux --x64",
+    "pack": "npm run build:web && electron-builder --dir",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "appId": "com.vxin.desktop",
+    "productName": "v信",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "src/**/*",
+      "../web/dist/**/*"
+    ],
+    "win": {
+      "target": ["nsis"],
+      "icon": "assets/icon.ico",
+      "artifactName": "vxin-${version}-setup.${ext}",
+      "publisherName": "vxin"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "v信",
+      "runAfterFinish": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": ["dmg", "zip"],
+      "icon": "assets/icon.png",
+      "category": "public.app-category.social-networking"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "assets/icon.png",
+      "category": "Network;InstantMessaging"
+    },
+    "publish": {
+      "provider": "generic",
+      "url": "https://dipsin.com/downloads/updates",
+      "channel": "latest"
+    }
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0",
+    "electron-updater": "^6.1.0",
+    "electron-log": "^5.0.0"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.0"
+  }
+}

@@ -1841,6 +1841,28 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
             />
           </label>
 
+          {/* 截图按钮（Electron 桌面端） */}
+          {window.__ELECTRON_CONFIG__ && (
+            <button
+              className="wc-tool-btn"
+              title="截图 (Ctrl+Alt+A)"
+              onClick={async () => {
+                const base64 = await import('../utils/electron').then(m => m.triggerScreenshot());
+                if (!base64) return;
+                // 将截图作为文件上传
+                const blob = await (await fetch(base64)).blob();
+                const file = new File([blob], `screenshot-${Date.now()}.png`, { type: 'image/png' });
+                // 复用文件上传逻辑
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'file';
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                hiddenInput.files = dt.files;
+                handleFileUpload({ target: hiddenInput });
+              }}
+            ><svg viewBox="0 0 24 24" className="wc-tool-svg"><path d="M3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2zm16 0v14H5V5h14zm-2 4.5c0 .83-.67 1.5-1.5 1.5S14 10.33 14 9.5 14.67 8 15.5 8s1.5.67 1.5 1.5zM12 19l5-6H7l5 6z"/></svg></button>
+          )}
+
           <button
             className="wc-tool-btn"
             title="发红包"
@@ -1858,7 +1880,23 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         {showMore && (
           <div className="wc-more-panel">
             {[
-              { bg:'#2B2B2B', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M12 15.2A3.2 3.2 0 008.8 12 3.2 3.2 0 0012 8.8 3.2 3.2 0 0115.2 12 3.2 3.2 0 0112 15.2M12 7a5 5 0 000 10A5 5 0 0012 7m0-5c0 0-8.02 0-9.5 1.5S1 7 1 12s0 8 1.5 9.5S7 23 12 23s8 0 9.5-1.5S23 17 23 12s0-8-1.5-9.5S17 1 12 1m0 20c-5 0-9-4-9-9s4-9 9-9 9 4 9 9-4 9-9 9z"/></svg>, label:'相机' },
+              { bg:'#2B2B2B', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M12 15.2A3.2 3.2 0 008.8 12 3.2 3.2 0 0012 8.8 3.2 3.2 0 0115.2 12 3.2 3.2 0 0112 15.2M12 7a5 5 0 000 10A5 5 0 0012 7m0-5c0 0-8.02 0-9.5 1.5S1 7 1 12s0 8 1.5 9.5S7 23 12 23s8 0 9.5-1.5S23 17 23 12s0-8-1.5-9.5S17 1 12 1m0 20c-5 0-9-4-9-9s4-9 9-9 9 4 9 9-4 9-9 9z"/></svg>, label:'相机', action: async () => {
+                setShowMore(false);
+                // Capacitor 移动端通过 window.__takePhoto__ 调用原生相机
+                // Web 端回退到文件选择
+                const cam = window.__takePhoto__;
+                if (typeof cam === 'function') {
+                  const dataUrl = await cam();
+                  if (!dataUrl) return;
+                  try {
+                    const blob = await (await fetch(dataUrl)).blob();
+                    const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+                    handleFileUpload({ target: { files: [file] } });
+                  } catch {}
+                } else {
+                  document.querySelector('input[accept*="image"]')?.click();
+                }
+              } },
               { bg:'#1890FF', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M20 6h-2.18c.07-.44.18-.88.18-1.36C18 2.05 15.96 0 13.5 0c-1.3 0-2.47.6-3.28 1.53L9 3 7.78 1.53C6.97.6 5.8 0 4.5 0 2.04 0 0 2.05 0 4.64c0 .48.11.92.18 1.36H0v2h20v-2zM20 10H4v8c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-8z"/></svg>, label:'文件', action:()=>fileInputRef.current?.click() },
               { bg:'#13C2C2', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>, label:'视频通话', action:()=>{ setShowMore(false); startCall('video'); } },
               { bg:'var(--green)', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'#fff'}}><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>, label:'语音通话', action:()=>{ setShowMore(false); startCall('audio'); } },
