@@ -1,3 +1,4 @@
+import './perf-monitor.js';   // 端到端性能打点（注入 window.__vxinPerf，须在 App 之前）
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import axios from 'axios';

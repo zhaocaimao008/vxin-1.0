@@ -1,6 +1,6 @@
 import React, { useRef, useCallback, forwardRef, useImperativeHandle, memo } from 'react';
 import { VariableSizeList } from 'react-window';
-import { AutoSizer } from 'react-virtualized-auto-sizer';
+import AutoSizer from 'react-virtualized-auto-sizer';
 import MessageItem, { TimeDivider } from './MessageItem';
 
 // Height estimates per item type
@@ -126,20 +126,22 @@ const VirtualMessageList = forwardRef(function VirtualMessageList(
   return (
     <AutoSizer>
       {({ height, width }) => (
-        <VariableSizeList
-          ref={listRef}
-          outerRef={outerRef}
-          height={height}
-          width={width}
-          itemCount={items.length}
-          itemSize={getItemSize}
-          estimatedItemSize={82}
-          itemData={itemData}
-          overscanCount={8}
-          style={{ overflowX: 'hidden', background: '#F5F5F5' }}
-        >
-          {Row}
-        </VariableSizeList>
+        (!height || !width) ? null : (
+          <VariableSizeList
+            ref={listRef}
+            outerRef={outerRef}
+            height={height}
+            width={width}
+            itemCount={items.length}
+            itemSize={getItemSize}
+            estimatedItemSize={82}
+            itemData={itemData}
+            overscanCount={8}
+            style={{ overflowX: 'hidden', background: '#F5F5F5' }}
+          >
+            {Row}
+          </VariableSizeList>
+        )
       )}
     </AutoSizer>
   );
