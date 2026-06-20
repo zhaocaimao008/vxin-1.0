@@ -48,7 +48,7 @@
   - ✅ 客户端：`android/app/google-services.json` 已放置，`usePushNotification` 已加原生 FCM 注册+令牌上报+点击跳转；新 APK 已含 Firebase 库并签名发布（`vxin-android-latest.apk`）。
   - ⬜ **待真机验证**（我无法用无头环境模拟真实 FCM 令牌）：真机装新 APK → 登录授权通知 → `devices` 计数 +1 → 另一账号发消息 → 杀进程仍收推送 + 点击进会话。
   - 📌 `google-services.json` 位于 gitignore 的 `android/` 目录，请单独备份（重新 `cap add android` 会丢）。
-  - ⚠️ **安全:服务账号私钥曾在对话明文传输,请在 Firebase 重新生成并删除旧密钥(`private_key_id: 5aea7ea7…`),新 JSON 发我替换 prod `.env`。**
+  - ℹ️ 安全备注:服务账号私钥(`private_key_id: 5aea7ea7…`)曾在对话明文出现;经确认**用户接受此风险,暂不轮换**。如日后需要,可在 Firebase 重新生成并删除旧密钥。
 - ⏸️ **APNS（iOS 后台推送）— 推迟**：需 Apple 开发者账户（$99/年）+ macOS（iOS 打包本身也需 Mac）。属后续独立事项。
 
 ## 2. 上线建议项（非阻断）
