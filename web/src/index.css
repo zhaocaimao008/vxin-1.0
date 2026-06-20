@@ -554,10 +554,12 @@ img { display: block; }
   border-color: transparent var(--bg-msg-other) transparent transparent;
 }
 
-/* 图片/视频/贴纸：透明气泡、无内边距、无尾巴，避免媒体消息尖角错位 */
+/* 图片/视频/贴纸/红包/名片：自带卡片样式，气泡设为透明无内边距无尾巴，避免双层框与尖角错位 */
 .wc-msg-bubble:has(.wc-msg-img),
 .wc-msg-bubble:has(.wc-msg-video),
-.wc-msg-bubble:has(.wc-msg-sticker) {
+.wc-msg-bubble:has(.wc-msg-sticker),
+.wc-msg-bubble:has(.wc-redpacket-card),
+.wc-msg-bubble:has(.wc-contact-card) {
   padding: 0;
   background: transparent !important;
   box-shadow: none !important;
@@ -565,9 +567,20 @@ img { display: block; }
 .wc-msg-bubble:has(.wc-msg-img)::after,
 .wc-msg-bubble:has(.wc-msg-video)::after,
 .wc-msg-bubble:has(.wc-msg-sticker)::after,
-.wc-msg-bubble:has(.wc-msg-file-link)::after {
+.wc-msg-bubble:has(.wc-msg-file-link)::after,
+.wc-msg-bubble:has(.wc-redpacket-card)::after,
+.wc-msg-bubble:has(.wc-contact-card)::after {
   display: none;
 }
+
+/* 连续消息（同一发送者）：隐藏重复头像、收紧间距、去掉尾巴形成"成组"观感 */
+.wc-msg-row.consecutive { padding-top: 3px; }
+.wc-msg-row.consecutive .wc-msg-avatar { visibility: hidden; height: 0; }
+.wc-msg-row.consecutive .wc-msg-bubble::after { display: none; }
+
+/* 气泡轻微的按下/悬停反馈，柔和不抢眼 */
+.wc-msg-bubble.mine:active  { filter: brightness(.97); }
+.wc-msg-bubble.other:active { filter: brightness(.98); }
 
 .wc-msg-time-small {
   font-size: 10px;

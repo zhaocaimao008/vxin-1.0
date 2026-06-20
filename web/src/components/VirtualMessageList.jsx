@@ -109,10 +109,16 @@ const VirtualMessageList = forwardRef(function VirtualMessageList(
 
   // Expose imperative API to parent (ChatWindow)
   useImperativeHandle(ref, () => ({
-    scrollToBottom(behavior = 'smooth') {
-      const outer = outerRef?.current;
-      if (!outer) return;
-      outer.scrollTo({ top: outer.scrollHeight, behavior });
+    scrollToBottom() {
+      // 多帧 sticky 贴底，兼容行高异步测量（react-window + ResizeObserver）
+      let n = 0;
+      const step = () => {
+        const o = outerRef?.current;
+        if (!o) return;
+        o.scrollTop = o.scrollHeight;
+        if (++n < 10) requestAnimationFrame(step);
+      };
+      step();
     },
     scrollToItem(index, align = 'auto') {
       listRef.current?.scrollToItem(index, align);

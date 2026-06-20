@@ -370,12 +370,23 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     return () => window.removeEventListener('vxin:remark-changed', handler);
   }, [conversation.type, conversation.otherUser?.id]);
 
-  // 发送/收到消息时若已接近底部则自动跟随（阈值 400px 避免平滑动画期间误判）
+  // 发送/收到消息时若已接近底部则自动跟随。
+  // 新消息行高由 ResizeObserver 异步测得，单次 scrollTo 会因高度未定而滚不到底，
+  // 故用多帧 sticky 滚动持续贴底，直到高度测量稳定。
   useEffect(() => {
     const outer = listOuterRef.current;
     if (!outer) return;
     const isAtBottom = outer.scrollHeight - outer.scrollTop - outer.clientHeight < 400;
-    if (isAtBottom) outer.scrollTo({ top: outer.scrollHeight, behavior: 'smooth' });
+    if (!isAtBottom) return;
+    let n = 0, raf = 0;
+    const step = () => {
+      const o = listOuterRef.current;
+      if (!o) return;
+      o.scrollTop = o.scrollHeight;
+      if (++n < 10) raf = requestAnimationFrame(step);
+    };
+    step();
+    return () => cancelAnimationFrame(raf);
   }, [messages]);
 
   // Load more on scroll to top — RAF 节流，避免高频 scroll 事件触发多次 setState
@@ -1259,8 +1270,10 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     const newCache = new Map();
     const items = [];
     let lastTime = 0;
+    let prevSenderId = null;
 
     for (const msg of messages) {
+      let dividerInserted = false;
       if (msg.created_at - lastTime > 300) {
         const key = `t_${msg.id}`;
         const cached = cache.get(key);
@@ -1270,7 +1283,11 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         newCache.set(key, divider);
         items.push(divider);
         lastTime = msg.created_at;
+        dividerInserted = true;
       }
+      // 同一发送者、且中间无时间分割线 → 连续消息（隐藏重复头像、收紧间距）
+      const consecutive = !dividerInserted && prevSenderId === msg.sender_id && !msg.deleted;
+      prevSenderId = msg.sender_id;
 
       const isMine = msg.sender_id === user.id;
       const isLastMine = isMine && msg.id === lastMineId;
@@ -1293,6 +1310,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         && cached.claiming === claiming
         && cached.pinnedMessages === pinnedMessages
         && cached.recalledContent === recalledContent
+        && cached.consecutive === consecutive
       ) {
         item = cached;
       } else {
@@ -1300,6 +1318,7 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
           type: 'message',
           key: msg.id,
           msg,
+          consecutive,
           isMine,
           isLastMine,
           isSelected,
