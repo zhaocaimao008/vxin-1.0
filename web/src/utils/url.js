@@ -27,7 +27,7 @@ function getBaseUrl() {
 }
 
 function bearerToken() {
-  try { return sessionStorage.getItem('vxin_electron_token') || ''; } catch { return ''; }
+  try { return localStorage.getItem('vxin_electron_token') || ''; } catch { return ''; }
 }
 
 export function mediaUrl(u) {
