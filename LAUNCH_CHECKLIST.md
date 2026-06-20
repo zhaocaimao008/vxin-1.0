@@ -43,10 +43,12 @@
 - ✅ **Web Push**：VAPID 已配置（`enabled=true`），浏览器后台/关页可收通知，无需任何第三方账户。
 - ✅ **桌面（Electron）**：系统原生通知（IPC 已接），常驻托盘即可收消息。
 - ✅ **各端前台**：socket 实时到达 + 本地通知。
-- 🟡 **FCM（Android 后台推送）— 服务端已启用，客户端待完成**：
-  - ✅ 服务端：Firebase 服务账号已配置（prod `.env` 的 `FIREBASE_*`），重启后日志 `[Push] Firebase Admin 初始化成功`，`/notifications/status` → `fcm.enabled=true`（项目 `vxin-a1230`）。
-  - ⬜ 客户端待办：① 用户提供 `com.vxin.app` 的 `google-services.json` → 放 `android/app/`；② `usePushNotification` 补原生 FCM 注册+令牌上报；③ 重新打包 APK + 真机验证。
-  - ⚠️ **安全：本次服务账号私钥曾在对话中明文传输，须在 Firebase 控制台重新生成并删除旧密钥（生成后把新 JSON 发我替换）。**
+- 🟢 **FCM（Android 后台推送）— 服务端+客户端均已就绪，待真机验证**：
+  - ✅ 服务端：`FIREBASE_*` 已配置（prod `.env`），`[Push] Firebase Admin 初始化成功`，`fcm.enabled=true`（项目 `vxin-a1230`）。
+  - ✅ 客户端：`android/app/google-services.json` 已放置，`usePushNotification` 已加原生 FCM 注册+令牌上报+点击跳转；新 APK 已含 Firebase 库并签名发布（`vxin-android-latest.apk`）。
+  - ⬜ **待真机验证**（我无法用无头环境模拟真实 FCM 令牌）：真机装新 APK → 登录授权通知 → `devices` 计数 +1 → 另一账号发消息 → 杀进程仍收推送 + 点击进会话。
+  - 📌 `google-services.json` 位于 gitignore 的 `android/` 目录，请单独备份（重新 `cap add android` 会丢）。
+  - ⚠️ **安全:服务账号私钥曾在对话明文传输,请在 Firebase 重新生成并删除旧密钥(`private_key_id: 5aea7ea7…`),新 JSON 发我替换 prod `.env`。**
 - ⏸️ **APNS（iOS 后台推送）— 推迟**：需 Apple 开发者账户（$99/年）+ macOS（iOS 打包本身也需 Mac）。属后续独立事项。
 
 ## 2. 上线建议项（非阻断）
