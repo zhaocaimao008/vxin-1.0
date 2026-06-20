@@ -28,9 +28,18 @@
 - [x] **【P2 安全】上传内容类型校验修复** — `80b96b3` 已部署生产并验证：伪装 PNG → 400 拒绝；真实 PNG 正常。✅ 2026-06-20 已关闭。
 - [x] **【P1 媒体·后端】`/uploads` 兜底鉴权** — `80b96b3` 已部署生产并验证：`?token=`/Bearer 下载成功且完整、无 token 仍 401。✅
 - [x] **【P1 媒体·前端】** `mediaUrl` 已在 Electron/Capacitor 下为 `/uploads` 资源追加 `?token=`（commit `256a60d`），三端已重新构建发布。Electron 实测：带 token 图片加载成功、无 token 401。✅ 桌面/移动媒体不再依赖跨域 Cookie。建议仍在正式安装包真机抽验一次。
-- [ ] **【文档/DNS】** `config.dipsin.com`、`api/ws/cdn.dipsin.com` 均无 DNS 解析；实际全部走 `dipsin.com`（`dipsin.com/config.json` 已正确指向）。需更新文档或补齐子域名，避免误配。
+- [x] **【文档/DNS】** 已确认代码无任何对 `config/api/ws/cdn.dipsin.com` 的硬编码（仅一处注释，已修正），全部走 `dipsin.com`。如需子域名拆分，须在 DNS 服务商添加记录（我无注册商权限）。
 
-> 回滚两文件：`meta-cats:/root/v信/backend-v2/src/{utils/upload.js,app.js}` 已备份为 `*.bak-20260620_144340`。
+> 回滚后端文件备份：`meta-cats:/root/v信/backend-v2/src/{utils/upload.js,app.js}` → `*.bak-20260620_144340`；`{utils/upload.js,modules/messages/messages.routes.js}` → `*.bak2/.bak-20260620_150923`；nginx → `nginx.conf.bak-20260620_151212`。
+
+## 1b. 本轮额外完成 / 修复（2026-06-20）
+
+- [x] **【新功能】大文件分片 / 断点续传** — 后端 `chunk` 模块（init/chunk/status/finish，断点以 user+conv+hash 复用，魔数+sha256 校验，上限 200MB）+ 前端 `uploadChunked`（>8MB 走分片、错误自动从服务端 offset 续传）。**生产端到端实测**：6MB 文件中断于 4MB → 续传 → finish → md5 完整。三端已发布。
+- [x] **【P1 修复·基础设施】nginx `client_max_body_size`** — 线上配置缺失该指令（默认 1MB），导致**所有 >1MB 上传静默 413**。已在 `meta-cats` 的 `nginx.conf` http 段加入 `55m` 并 reload，实测 2MB/6MB 上传通过。这同时修复了普通大图/文件上传。
+
+## 1c. 仍需你提供（FCM / APNS 推送）
+
+- [ ] **FCM（Android）+ APNS（iOS）** 代码已就绪（`firebase-admin`），仅缺凭据。请提供 **Firebase 服务账号 JSON**（→ 配置 `FIREBASE_PROJECT_ID/CLIENT_EMAIL/PRIVATE_KEY` 到 prod `.env` 并重启即生效）；iOS 另需在 Firebase 控制台上传 APNs `.p8` 密钥。提供后我即配置 + 真机验证。
 
 ## 2. 上线建议项（非阻断）
 
