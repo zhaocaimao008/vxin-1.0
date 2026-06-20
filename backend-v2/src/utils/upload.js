@@ -171,5 +171,5 @@ function makeImageUploader(dest, fieldName = 'image', maxCount = 1, maxSize = 5 
 
 module.exports = {
   ALLOWED_CHAT_MIMES, ALLOWED_IMAGE_MIMES, MIME_TO_EXT, BLOCKED_EXTENSIONS,
-  sanitizeFilename, makeChatUploader, makeImageUploader,
+  sanitizeFilename, makeChatUploader, makeImageUploader, verifyMagicBytes,
 };

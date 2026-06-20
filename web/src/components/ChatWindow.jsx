@@ -923,6 +923,44 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
     });
   }, [conversation.id, replyTo]);
 
+  // ── 分片 / 断点续传上传（大文件，云存储未配置时的本地大文件通道）──
+  const uploadChunked = useCallback(async (file, onProgress) => {
+    // 计算 SHA-256（用作断点续传的唯一键 + 完整性校验）
+    const buf = await file.arrayBuffer();
+    const digest = await crypto.subtle.digest('SHA-256', buf);
+    const hash = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+    const { data: init } = await axios.post(`/api/messages/${conversation.id}/upload-init`, {
+      filename: file.name, size: file.size, hash, mime: file.type || 'application/octet-stream',
+    });
+    const chunkSize = init.chunkSize || 4 * 1024 * 1024;
+    let received = init.received || 0; // 断点续传起点
+    while (received < file.size) {
+      const end = Math.min(received + chunkSize, file.size);
+      const slice = buf.slice(received, end);
+      let attempt = 0;
+      for (;;) {
+        try {
+          const { data } = await axios.put(
+            `/api/messages/${conversation.id}/upload-chunk/${init.uploadId}?offset=${received}`,
+            slice, { headers: { 'Content-Type': 'application/octet-stream' } }
+          );
+          received = data.received;
+          break;
+        } catch (e) {
+          // 偏移不一致(409) → 以服务端 received 为准续传；其它错误最多重试 3 次
+          if (e.response?.status === 409 && typeof e.response.data?.received === 'number') {
+            received = e.response.data.received; break;
+          }
+          if (++attempt >= 3) throw e;
+          await new Promise(r => setTimeout(r, 500 * attempt));
+        }
+      }
+      onProgress?.(Math.round(received / file.size * 100));
+    }
+    await axios.post(`/api/messages/${conversation.id}/upload-finish/${init.uploadId}`,
+      replyTo?.id ? { reply_to_id: replyTo.id } : {});
+  }, [conversation.id, replyTo]);
+
   // ── 统一文件处理入口（handleFileUpload / handleDrop 共用）────
   const handleFileSelect = useCallback(async (file) => {
     // 阻断并发上传：防止用户疯狂拖入多个文件
@@ -967,9 +1005,11 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
         try {
           publicUrl = await uploadToCloud(file, file.type, file.name, onProg);
         } catch (cloudErr) {
-          // 云存储未配置(503) → 回退本地上传；后端 /upload 自己入库+广播，无需再 emit
+          // 云存储未配置(503) → 回退本地上传；后端自己入库+广播，无需再 emit
+          // 大文件(>8MB)走分片/断点续传通道，突破单次 50MB 上限并支持断点续传
           if (cloudErr.response?.status === 503) {
-            await uploadLocal(file, onProg);
+            if (file.size > 8 * 1024 * 1024) await uploadChunked(file, onProg);
+            else await uploadLocal(file, onProg);
             isUploadingRef.current = false;
             setUploadState(null);
             setReplyTo(null);
