@@ -15,9 +15,9 @@ export default function Login() {
   const navigate = useNavigate();
 
   // ── 服务器切换（仅桌面端，登录前即可切换，无需重装） ──
-  const currentServer = isElectron
-    ? (localStorage.getItem('vxin_server_url') || window.__ELECTRON_CONFIG__.serverUrl)
-    : '';
+  // 地址来自 localStorage（手动切换）或远程配置（config.vxin.com）
+  // 不再硬编码任何域名
+  const currentServer = localStorage.getItem('vxin_server_url') || axios.defaults.baseURL || '';
   const [showServer, setShowServer] = useState(false);
   const [serverInput, setServerInput] = useState(currentServer);
   const [serverTest, setServerTest] = useState(null);
@@ -28,7 +28,6 @@ export default function Login() {
     if (!url.startsWith('http')) { setServerTest({ ok: false, msg: '请以 http:// 或 https:// 开头' }); return; }
     setServerBusy(true); setServerTest(null);
     try {
-      // 只要服务器有 HTTP 响应就算可达（health 返回 200）
       await fetch(`${url}/health`, { signal: AbortSignal.timeout(6000) });
       setServerTest({ ok: true, msg: '连接成功 ✓' });
     } catch {
@@ -40,8 +39,7 @@ export default function Login() {
     const url = serverInput.trim().replace(/\/$/, '');
     if (!url.startsWith('http')) { setServerTest({ ok: false, msg: '请以 http:// 或 https:// 开头' }); return; }
     localStorage.setItem('vxin_server_url', url);
-    window.electron?.setServerUrl?.(url);
-    // 重载页面，main.jsx 会读取新地址重设 axios baseURL 和 socket
+    axios.defaults.baseURL = url;
     window.location.reload();
   };
 

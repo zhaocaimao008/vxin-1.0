@@ -220,12 +220,12 @@ export default function SettingsScreen() {
                   style={{ borderWidth: 1, borderColor: '#E8ECF0', borderRadius: 8, padding: 10, fontSize: 15, backgroundColor: '#F7F8FA' }}
                   value={serverInput}
                   onChangeText={setServerInput}
-                  placeholder="https://dipsin.com"
+                  placeholder="https://example.com"
                   autoCapitalize="none"
                   keyboardType="url"
                 />
               </View>
-              <Row label="恢复默认服务器" onPress={() => setServerInput('https://dipsin.com')} />
+              <Row label="恢复默认服务器" onPress={() => setServerInput('')} />
             </Section>
             <TouchableOpacity
               style={{ margin: 16, backgroundColor: '#07C160', borderRadius: 10, padding: 14, alignItems: 'center' }}
@@ -308,7 +308,7 @@ export default function SettingsScreen() {
           onPress={() => {
             Alert.alert('修改服务器地址', '重启 App 后生效', [
               { text: '取消', style: 'cancel' },
-              { text: '恢复默认', onPress: () => changeServer('https://dipsin.com') },
+              { text: '恢复默认', onPress: () => changeServer('') },
               { text: '手动输入', onPress: () => setPage('server') },
             ]);
           }}

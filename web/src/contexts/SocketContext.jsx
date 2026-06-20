@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { getConfig } from '../utils/config';
 
 const SocketContext = createContext(null);
 
@@ -13,7 +14,6 @@ export const SocketProvider = ({ children }) => {
   const everConnectedRef  = useRef(false);
 
   // 多端同步：其他设备读了某会话 → 本设备清零该会话未读
-  // 用 ref 存 callback，避免 useEffect 重复注册
   const onUnreadClearedRef = useRef(null);
   // 送达回执回调
   const onDeliveredRef = useRef(null);
@@ -24,15 +24,19 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     if (!user) { setSocket(null); setConnected(false); return; }
 
-    // Socket.io 不传 auth.token——后端从 Cookie 中提取 JWT。
-    // withCredentials 确保 WebSocket 握手时携带 httpOnly Cookie。
-    // Electron 本地文件模式下，VITE_SERVER_URL 指定远程服务器地址。
-    const serverUrl = window.__ELECTRON_CONFIG__
-      ? (localStorage.getItem('vxin_server_url') || window.__ELECTRON_CONFIG__.serverUrl)
-      : (import.meta.env.VITE_API_BASE || import.meta.env.VITE_SERVER_URL || '/');
+    // ── 服务器地址优先级 ────────────────────────────
+    // 1. 运行时手动切换（localStorage，由 Login 页面的"切换服务器"功能设置）
+    // 2. 远程配置 Config.socket
+    // 3. Vite 环境变量（开发模式）
+    // 4. 空值 → 使用同源相对路径
+    const manualUrl = localStorage.getItem('vxin_server_url');
+    const cfg = getConfig();
+    const serverUrl = manualUrl || cfg.socket || import.meta.env.VITE_SERVER_URL || import.meta.env.VITE_API_BASE || '/';
+
     const electronToken = window.__ELECTRON_CONFIG__
       ? sessionStorage.getItem('vxin_electron_token')
       : null;
+
     const s = io(serverUrl, {
       transports: ['websocket'],
       withCredentials: true,

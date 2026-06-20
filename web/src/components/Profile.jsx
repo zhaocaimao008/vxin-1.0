@@ -444,7 +444,7 @@ async function doLogout(logout) {
 /* ── 设置总览页（二级） ── */
 function ServerSettings({ onBack }) {
   const { changeServer } = useAuth();
-  const currentUrl = localStorage.getItem('vxin_server_url') || window.__ELECTRON_CONFIG__?.serverUrl || 'https://dipsin.com';
+  const currentUrl = localStorage.getItem('vxin_server_url') || axios.defaults.baseURL || '';
   const [input, setInput] = useState(currentUrl);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
@@ -495,9 +495,6 @@ function ServerSettings({ onBack }) {
           {saving ? '切换中...' : '保存并切换'}
         </button>
       </div>
-      <div className="wc-server-reset-row">
-        <button onClick={() => setInput('https://dipsin.com')} className="wc-btn-link">恢复默认 (dipsin.com)</button>
-      </div>
       <div className="wc-server-hint">
         <div className="wc-server-hint-box">
           切换服务器后当前账号会自动退出，用新服务器的账号重新登录即可，无需重装客户端。
@@ -537,7 +534,7 @@ function SettingsPage({ user, setSubPage, logout }) {
           <div className="wc-section-pad">
             <Card>
               <CRow icon={<IcoServer />} bg="#34C759" label="服务器地址"
-                desc={(localStorage.getItem('vxin_server_url') || window.__ELECTRON_CONFIG__?.serverUrl || '').replace(/^https?:\/\//, '')}
+                desc={(localStorage.getItem('vxin_server_url') || '').replace(/^https?:\/\//, '') || '远程配置'}
                 onClick={() => setSubPage('server')} />
             </Card>
           </div>
@@ -590,7 +587,7 @@ export default function Profile() {
           <div className="wc-section-pad">
             <Card>
               <CRow icon={<IcoServer />} bg="#34C759" label="服务器地址"
-                desc={(localStorage.getItem('vxin_server_url') || window.__ELECTRON_CONFIG__?.serverUrl || '').replace(/^https?:\/\//, '')}
+                desc={(localStorage.getItem('vxin_server_url') || '').replace(/^https?:\/\//, '') || '远程配置'}
                 onClick={() => setSubPage('server')} />
             </Card>
           </div>

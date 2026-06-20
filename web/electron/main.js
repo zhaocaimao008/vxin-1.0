@@ -5,18 +5,54 @@ const {
   shell, nativeTheme, session, Menu, systemPreferences,
 } = require('electron');
 const path = require('path');
+const { net } = require('electron');
+
+// ── 唯一固定的配置入口 ─────────────────────────────────────
+// 客户端只硬编码这一个 URL：远程配置服务器地址。
+// 以后迁移服务器只需修改 config.vxin.com/config.json，
+// 客户端无需重新编译。
+const CONFIG_URL = 'https://config.vxin.com/config.json';
 
 // ── 环境检测 ──────────────────────────────────────────────────
 const IS_DEV     = process.env.ELECTRON_DEV === '1';
-const LOAD_LOCAL = process.env.VXIN_LOAD_LOCAL === '1';
-const SERVER_URL = process.env.VXIN_SERVER_URL || 'https://chat.91aigu.com';
-const DEV_URL    = 'http://localhost:3000';
+const IS_LINUX   = process.platform === 'linux';
+const IS_MAC     = process.platform === 'darwin';
 const PROD_INDEX = path.join(__dirname, '../dist/index.html');
 
-const IS_LINUX = process.platform === 'linux';
-const IS_MAC   = process.platform === 'darwin';
-
 nativeTheme.themeSource = 'system';
+
+// ── 远程配置缓存（会话级） ──────────────────────────────────
+let g_config = {
+  api:    '',
+  socket: '',
+  cdn:    '',
+  version:'2.0.0',
+};
+
+/**
+ * 从 CONFIG_URL 拉取远程配置，超时 5 秒。
+ * 失败时使用空值（Electron 生产模式需要 api/socket 字段，
+ * 空值会导致后续从 localStorage 或手动切换中读取）。
+ */
+async function fetchRemoteConfig() {
+  try {
+    const res = await net.fetch(CONFIG_URL, { method: 'GET' });
+    if (res.ok) {
+      const data = await res.json();
+      g_config = {
+        api:    data.api    || '',
+        socket: data.socket || '',
+        cdn:    data.cdn    || '',
+        version:data.version|| '2.0.0',
+      };
+      console.log(`[config] 已加载远程配置: api=${g_config.api}, socket=${g_config.socket}`);
+      return true;
+    }
+  } catch (e) {
+    console.warn('[config] 远程配置加载失败:', e.message);
+  }
+  return false;
+}
 
 // ── 窗口工厂 ─────────────────────────────────────────────────
 function createWindow() {
@@ -64,11 +100,9 @@ function createWindow() {
   win.once('ready-to-show', () => win.show());
 
   // ── 向渲染层推送窗口最大化状态 ──────────────────────────────
-  // Linux 和 Windows 必须手动 send，macOS 同样需要以保持一致
   win.on('maximize',   () => win.webContents.send('maximize'));
   win.on('unmaximize', () => win.webContents.send('unmaximize'));
 
-  // Linux 全屏也触发最大化状态更新
   if (IS_LINUX) {
     win.on('enter-full-screen', () => win.webContents.send('maximize'));
     win.on('leave-full-screen', () => win.webContents.send('unmaximize'));
@@ -76,15 +110,14 @@ function createWindow() {
 
   // ── 加载策略 ───────────────────────────────────────────────
   if (IS_DEV) {
-    // 开发：Vite HMR，开启 DevTools
-    win.loadURL(DEV_URL);
+    // 开发模式：加载 Vite HMR（端口由 vite.config.js 决定，默认 3000）
+    win.loadURL('http://localhost:3000');
     win.webContents.openDevTools({ mode: 'detach' });
-  } else if (LOAD_LOCAL) {
-    // 本地文件模式（需配合 .env.desktop 的 VITE_API_BASE）
-    win.loadFile(PROD_INDEX);
   } else {
-    // 生产推荐：加载已部署服务端，Cookie/Auth 完全同源
-    win.loadURL(SERVER_URL);
+    // ✅ 生产模式：永远加载本地 dist/index.html
+    //    渲染进程启动后从远程配置 + localStorage 获取服务器地址
+    //    → 无需在 Electron 层面硬编码任何服务器域名
+    win.loadFile(PROD_INDEX);
   }
 
   // target="_blank" 链接交给系统默认浏览器打开
@@ -97,21 +130,28 @@ function createWindow() {
 }
 
 // ── 应用生命周期 ──────────────────────────────────────────────
-app.whenReady().then(() => {
-  // 开发模式：放宽 CSP 允许 Vite HMR 的 ws:// 连接
-  if (IS_DEV) {
-    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-      callback({
-        responseHeaders: {
-          ...details.responseHeaders,
-          'Content-Security-Policy': [
-            "default-src 'self' 'unsafe-inline' 'unsafe-eval' " +
-            "http://localhost:* ws://localhost:* https://chat.91aigu.com",
-          ],
-        },
-      });
+app.whenReady().then(async () => {
+  // 1. 先拉取远程配置（主进程获取后也可通过 IPC 传递给渲染进程）
+  await fetchRemoteConfig();
+
+  // 2. 放宽 CSP 允许远程配置加载和实际 API 请求
+  //    注意：由于 api/socket 地址是运行时动态的，CSP 中使用 * 通配。
+  //    生产环境若需严格 CSP，可将已知域名写入 config.json 的 csp 字段，
+  //    然后在 fetchRemoteConfig 成功后动态设置更严格的策略。
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self' 'unsafe-inline' 'unsafe-eval' * data: blob: mediastream:; " +
+          "connect-src 'self' * data: blob: mediastream:; " +
+          "img-src 'self' * data: blob:; " +
+          "media-src 'self' * data: blob: mediastream:; " +
+          "font-src 'self' * data:;",
+        ],
+      },
     });
-  }
+  });
 
   createWindow();
 
@@ -128,6 +168,9 @@ app.on('window-all-closed', () => {
 
 // ── IPC 通道 ──────────────────────────────────────────────────
 
+// 渲染进程请求远程配置（启动时由 preload 调用获取初始配置）
+ipcMain.handle('config:get', () => g_config);
+
 // 自定义标题栏窗口控制按钮
 ipcMain.on('window:minimize', (_e) => {
   BrowserWindow.getFocusedWindow()?.minimize();
@@ -135,7 +178,6 @@ ipcMain.on('window:minimize', (_e) => {
 ipcMain.on('window:maximize', (_e) => {
   const win = BrowserWindow.getFocusedWindow();
   if (!win) return;
-  // Linux 全屏与最大化统一处理
   if (IS_LINUX && win.isFullScreen()) {
     win.setFullScreen(false);
   } else {
@@ -146,7 +188,7 @@ ipcMain.on('window:close', (_e) => {
   BrowserWindow.getFocusedWindow()?.close();
 });
 
-// 查询最大化状态（渲染层初始化时同步一次）
+// 查询最大化状态
 ipcMain.handle('window:isMaximized', (_e) => {
   const win = BrowserWindow.getFocusedWindow();
   return win ? (win.isMaximized() || (IS_LINUX && win.isFullScreen())) : false;

@@ -5,23 +5,44 @@ import App from './App';
 import './design-tokens.css';
 import './index.css';
 import './mobile-adapt.css';
+import { loadRemoteConfig, getConfig } from './utils/config';
 
-// Electron 桌面端：从 preload 同步注入的 __ELECTRON_CONFIG__ 读取服务器地址
-// Web 端：从 Vite 环境变量读取（同域部署时留空即可）
-const apiBase = window.__ELECTRON_CONFIG__
-  ? (localStorage.getItem('vxin_server_url') || window.__ELECTRON_CONFIG__.serverUrl)
-  : (import.meta.env.VITE_API_BASE || import.meta.env.VITE_SERVER_URL || '');
-if (apiBase) axios.defaults.baseURL = apiBase;
+// ── 通用加载流程 ──────────────────────────────────────────
+// 1. 加载远程配置（所有平台统一入口）
+// 2. 设置 Axios baseURL
+// 3. 启动 React
 
-// 跨域请求必须携带 Cookie，全局开启
-axios.defaults.withCredentials = true;
+(async function boot() {
+  // 平台判断
+  const isElectron = !!window.__ELECTRON_CONFIG__;
+  const isMobile   = !!(window.Capacitor && window.Capacitor.isNativePlatform());
 
-// ── 平台初始化 ────────────────────────────────────────────
-// Electron 桌面端特性
-if (window.__ELECTRON_CONFIG__) {
-  import('./utils/electron').then(mod => mod.initElectronFeatures()).catch(() => {});
-}
-// Capacitor 移动端特性 — 从 window 引入，构建时不解析路径
-// 在 Capacitor 环境中，bridge.js 会通过 capacitor.config.json 的 server.url 加载时注入
+  // 1. 加载远程配置
+  await loadRemoteConfig();
+  const cfg = getConfig();
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  // 2. 设置 Axios baseURL
+  //    优先级：运行时手动切换的 URL > 远程配置 > Vite 环境变量
+  const manualUrl = localStorage.getItem('vxin_server_url');
+  const apiBase = manualUrl || cfg.api || import.meta.env.VITE_API_BASE || '';
+
+  if (apiBase) {
+    axios.defaults.baseURL = apiBase;
+  }
+  // 跨域请求必须携带 Cookie，全局开启
+  axios.defaults.withCredentials = true;
+
+  // 3. Electron 恢复 Bearer token
+  if (isElectron) {
+    const stored = sessionStorage.getItem('vxin_electron_token');
+    if (stored) axios.defaults.headers.common['Authorization'] = `Bearer ${stored}`;
+  }
+
+  // 4. 平台初始化
+  if (isElectron) {
+    import('./utils/electron').then(mod => mod.initElectronFeatures()).catch(() => {});
+  }
+
+  // 5. 渲染 React
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+})();

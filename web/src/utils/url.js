@@ -5,13 +5,34 @@
 //   file:///uploads/x.jpg（不存在）。必须补上服务器地址。
 //   注意：axios.defaults.baseURL 只对 axios/fetch 生效，对 <img> 标签无效，
 //   所以这里必须显式拼接。
+//
+// 地址优先级：
+//   1. 运行时手动切换（localStorage vxin_server_url）
+//   2. 远程配置（Config.api/socket）
+//   3. 空值 → Web 同源，相对路径可用
+import { getConfig, isConfigLoaded } from './config';
+
+function getBaseUrl() {
+  const manualUrl = localStorage.getItem('vxin_server_url');
+  if (manualUrl) return manualUrl;
+
+  // config 可能还未加载（页面渲染时资源先于配置加载）
+  if (isConfigLoaded()) {
+    const cfg = getConfig();
+    if (cfg.api) return cfg.api;
+    if (cfg.socket) return cfg.socket;
+  }
+
+  return '';
+}
+
 export function mediaUrl(u) {
   if (!u) return u;
   // 已经是绝对地址 / data / blob，原样返回
   if (/^(https?:|data:|blob:)/i.test(u)) return u;
   if (!window.__ELECTRON_CONFIG__) return u; // Web 同源，相对路径可用
 
-  const base = (localStorage.getItem('vxin_server_url') || window.__ELECTRON_CONFIG__.serverUrl || '').replace(/\/$/, '');
+  const base = getBaseUrl().replace(/\/$/, '');
   if (!base) return u;
   return u.startsWith('/') ? base + u : `${base}/${u}`;
 }

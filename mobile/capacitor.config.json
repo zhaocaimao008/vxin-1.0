@@ -4,11 +4,13 @@
   "bundledWebRuntime": false,
   "webDir": "../web/dist",
   "server": {
-    "url": "https://dipsin.com",
     "cleartext": false,
     "allowNavigation": [
-      "dipsin.com",
-      "*.dipsin.com"
+      "config.vxin.com",
+      "*.vxin.com",
+      "api.vxin.com",
+      "ws.vxin.com",
+      "cdn.vxin.com"
     ]
   },
   "android": {
