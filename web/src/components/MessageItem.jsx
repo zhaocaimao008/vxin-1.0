@@ -76,7 +76,7 @@ const MessageItem = memo(function MessageItem({ item, cbRef }) {
         </div>
       )}
       <div className="wc-msg-avatar" onClick={!multiSelect ? handleAvatarClick : undefined} style={{ cursor: !multiSelect && canClickAvatar && !isMine ? 'pointer' : 'default' }}>
-        <Avatar src={msg.senderAvatar} name={msg.senderName} size={38} />
+        <Avatar src={msg.senderAvatar} name={msg.senderName} size={36} />
       </div>
       <div className="wc-msg-body">
         {!isMine && convType === 'group' && (

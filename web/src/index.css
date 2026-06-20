@@ -10,7 +10,7 @@
 
   /* ── Surface (覆盖 design-tokens LEGACY ALIASES) ── */
   --bg-search:        #F0F2F5;
-  --bg-msg-mine:      #07C160;
+  --bg-msg-mine:      #95EC69;
   --bg-msg-other:     #FFFFFF;
 
   /* ── Text ── */
@@ -473,7 +473,8 @@ img { display: block; }
 .wc-msg-row { animation: bubbleIn .2s var(--ease);
   display: flex;
   align-items: flex-start;
-  margin-top: 12px;
+  /* 用 padding 而非 margin：保证间距被 react-window 的高度测量计入，避免气泡重叠 */
+  padding-top: 10px;
   flex-shrink: 0;
   content-visibility: auto;
   contain-intrinsic-size: auto 62px; /* auto = 使用上次渲染的实际尺寸，62px = 首次估计 */
@@ -484,7 +485,8 @@ img { display: block; }
 .wc-msg-body {
   display: flex;
   flex-direction: column;
-  max-width: 62%;
+  max-width: 60%;
+  min-width: 0;
 }
 .wc-msg-row.mine .wc-msg-body { align-items: flex-end; }
 .wc-msg-sender {
@@ -510,49 +512,61 @@ img { display: block; }
 
 /* 气泡 — 企业微信更大圆角 */
 .wc-msg-bubble {
-  padding: 9px 13px;
+  padding: 10px 14px;
   border-radius: var(--radius-bubble);
+  white-space: pre-wrap;
   word-break: break-word;
+  overflow-wrap: anywhere;
   position: relative;
   font-size: var(--font-msg);
-  line-height: var(--lh-msg);
+  line-height: 1.5;
   cursor: default;
   user-select: text;
   min-width: 0;
 }
 .wc-msg-bubble.mine {
   background: var(--bg-msg-mine);
-  color: #fff;
-  border-top-right-radius: var(--radius-bubble-tip);
-  box-shadow: 0 2px 6px rgba(var(--green-rgb),.20);
+  color: #1a1a1a;
 }
 .wc-msg-bubble.other {
   background: var(--bg-msg-other);
-  border-top-left-radius: var(--radius-bubble-tip);
-  box-shadow: 0 1px 4px rgba(0,0,0,.06), 0 0 0 .5px rgba(0,0,0,.04);
+  color: #1a1a1a;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
 }
 
-/* 气泡尾巴 */
-.wc-msg-bubble.mine::after {
+/* 气泡尾巴 — 每个气泡仅一个，靠近头像，用 ::after 实现，绝对定位不占布局 */
+.wc-msg-bubble.mine::after,
+.wc-msg-bubble.other::after {
   content: '';
   position: absolute;
-  top: 0;
-  right: -6px;
+  top: 9px;
   width: 0; height: 0;
   border-style: solid;
-  border-width: 7px 0 0 7px;
-  border-color: transparent transparent transparent var(--bg-msg-mine);
-  filter: brightness(.85);
 }
-.wc-msg-bubble.other::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -6px;
-  width: 0; height: 0;
-  border-style: solid;
-  border-width: 7px 7px 0 0;
+.wc-msg-bubble.mine::after {
+  right: -5px;
+  border-width: 5px 0 5px 6px;
+  border-color: transparent transparent transparent var(--bg-msg-mine);
+}
+.wc-msg-bubble.other::after {
+  left: -5px;
+  border-width: 5px 6px 5px 0;
   border-color: transparent var(--bg-msg-other) transparent transparent;
+}
+
+/* 图片/视频/贴纸：透明气泡、无内边距、无尾巴，避免媒体消息尖角错位 */
+.wc-msg-bubble:has(.wc-msg-img),
+.wc-msg-bubble:has(.wc-msg-video),
+.wc-msg-bubble:has(.wc-msg-sticker) {
+  padding: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.wc-msg-bubble:has(.wc-msg-img)::after,
+.wc-msg-bubble:has(.wc-msg-video)::after,
+.wc-msg-bubble:has(.wc-msg-sticker)::after,
+.wc-msg-bubble:has(.wc-msg-file-link)::after {
+  display: none;
 }
 
 .wc-msg-time-small {
@@ -1393,10 +1407,10 @@ body.dark-mode input, body.dark-mode textarea { color: var(--text-primary); }
 
 /* 气泡 — 暗色模式下绿气泡保留 #1A6E3C（微信经典深绿）*/
 body.dark-mode .wc-msg-bubble { border-color: rgba(255,255,255,.06); box-shadow: none; }
-body.dark-mode .wc-msg-bubble.mine { background: #1A6E3C; border-color: rgba(255,255,255,.08); }
-body.dark-mode .wc-msg-bubble.other { background: var(--bg-input-search); backdrop-filter: none; -webkit-backdrop-filter: none; border-color: rgba(255,255,255,.06); }
+body.dark-mode .wc-msg-bubble.mine { background: #1A6E3C; color: #fff; border-color: rgba(255,255,255,.08); }
+body.dark-mode .wc-msg-bubble.other { background: var(--bg-input-search); color: #e6e6e6; backdrop-filter: none; -webkit-backdrop-filter: none; border-color: rgba(255,255,255,.06); }
 body.dark-mode .wc-msg-bubble.mine::after { border-color: transparent transparent transparent #1A6E3C; }
-body.dark-mode .wc-msg-bubble.other::before { border-color: transparent var(--bg-input-search) transparent transparent; }
+body.dark-mode .wc-msg-bubble.other::after { border-color: transparent var(--bg-input-search) transparent transparent; }
 body.dark-mode .wc-chat-item:hover,
 body.dark-mode .wc-contact-item:hover,
 body.dark-mode .wc-menu-item:hover,
@@ -2001,22 +2015,9 @@ body {
 }
 
 .wc-msg-bubble {
-  border: 1px solid rgba(255,255,255,.68);
-  box-shadow: var(--glass-shadow-soft);
-  transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur) var(--ease);
+  transition: box-shadow var(--dur) var(--ease);
 }
-.wc-msg-bubble:hover {
-  box-shadow: 0 10px 24px rgba(15,23,42,.10);
-}
-.wc-msg-bubble.mine {
-  background: var(--green) !important;
-  border-color: rgba(var(--green-rgb),.3);
-}
-.wc-msg-bubble.other {
-  background: rgba(255,255,255,.86) !important;
-  backdrop-filter: blur(18px) saturate(1.18);
-  -webkit-backdrop-filter: blur(18px) saturate(1.18);
-}
+/* mine/other 背景与圆角统一在前面的主气泡规则里定义，这里不再覆盖 */
 
 .wc-input-area {
   background: rgba(249,250,251,.9);
