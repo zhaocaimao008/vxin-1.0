@@ -43,7 +43,10 @@
 - ✅ **Web Push**：VAPID 已配置（`enabled=true`），浏览器后台/关页可收通知，无需任何第三方账户。
 - ✅ **桌面（Electron）**：系统原生通知（IPC 已接），常驻托盘即可收消息。
 - ✅ **各端前台**：socket 实时到达 + 本地通知。
-- ⏸️ **FCM（Android 后台推送）— 推迟，非阻断**：代码已就绪（`firebase-admin`），仅差一个**免费 Firebase 账户**（任意 Google 账号，约 10 分钟、零成本）。届时提供 Firebase 服务账号 JSON → 配 `FIREBASE_PROJECT_ID/CLIENT_EMAIL/PRIVATE_KEY` 到 prod `.env` + 重启即生效。当前 `fcm.enabled=false` 已优雅降级，不影响上线。
+- 🟡 **FCM（Android 后台推送）— 服务端已启用，客户端待完成**：
+  - ✅ 服务端：Firebase 服务账号已配置（prod `.env` 的 `FIREBASE_*`），重启后日志 `[Push] Firebase Admin 初始化成功`，`/notifications/status` → `fcm.enabled=true`（项目 `vxin-a1230`）。
+  - ⬜ 客户端待办：① 用户提供 `com.vxin.app` 的 `google-services.json` → 放 `android/app/`；② `usePushNotification` 补原生 FCM 注册+令牌上报；③ 重新打包 APK + 真机验证。
+  - ⚠️ **安全：本次服务账号私钥曾在对话中明文传输，须在 Firebase 控制台重新生成并删除旧密钥（生成后把新 JSON 发我替换）。**
 - ⏸️ **APNS（iOS 后台推送）— 推迟**：需 Apple 开发者账户（$99/年）+ macOS（iOS 打包本身也需 Mac）。属后续独立事项。
 
 ## 2. 上线建议项（非阻断）
