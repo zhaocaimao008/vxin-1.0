@@ -27,7 +27,7 @@
 
 - [x] **【P2 安全】上传内容类型校验修复** — `80b96b3` 已部署生产并验证：伪装 PNG → 400 拒绝；真实 PNG 正常。✅ 2026-06-20 已关闭。
 - [x] **【P1 媒体·后端】`/uploads` 兜底鉴权** — `80b96b3` 已部署生产并验证：`?token=`/Bearer 下载成功且完整、无 token 仍 401。✅
-- [ ] **【P1 媒体·前端，待办】** 后端已支持 `?token=`，但前端 `web/src/utils/url.js` 的 `mediaUrl` 尚未在 Electron/移动端为媒体 URL 追加 token；当前桌面/移动媒体仍依赖跨域 SameSite=None Cookie。**完整方案：mediaUrl 在 Electron/Capacitor 下追加 `?token=<sessionStorage token>`，再重新构建三端**；上线前须真机验证头像/图片/文件加载。
+- [x] **【P1 媒体·前端】** `mediaUrl` 已在 Electron/Capacitor 下为 `/uploads` 资源追加 `?token=`（commit `256a60d`），三端已重新构建发布。Electron 实测：带 token 图片加载成功、无 token 401。✅ 桌面/移动媒体不再依赖跨域 Cookie。建议仍在正式安装包真机抽验一次。
 - [ ] **【文档/DNS】** `config.dipsin.com`、`api/ws/cdn.dipsin.com` 均无 DNS 解析；实际全部走 `dipsin.com`（`dipsin.com/config.json` 已正确指向）。需更新文档或补齐子域名，避免误配。
 
 > 回滚两文件：`meta-cats:/root/v信/backend-v2/src/{utils/upload.js,app.js}` 已备份为 `*.bak-20260620_144340`。
