@@ -1,6 +1,8 @@
 package com.vxin.app.data.api
 
 import com.vxin.app.data.model.Conversation
+import com.vxin.app.data.model.CreateConversationResponse
+import com.vxin.app.data.model.CreatePrivateBody
 import com.vxin.app.data.model.MarkReadRequest
 import com.vxin.app.data.model.Message
 import okhttp3.MultipartBody
@@ -40,4 +42,8 @@ interface MessageApi {
         @Path("conversationId") conversationId: String,
         @Body body: MarkReadRequest,
     )
+
+    /** 获取/创建与某用户的私聊会话 */
+    @POST("api/messages/conversation/private")
+    suspend fun createPrivate(@Body body: CreatePrivateBody): CreateConversationResponse
 }

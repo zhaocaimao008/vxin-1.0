@@ -3,6 +3,7 @@ import SwiftUI
 struct ConversationListView: View {
     @EnvironmentObject private var session: SessionStore
     @StateObject private var vm: ConversationListViewModel
+    @State private var path = NavigationPath()
     private let myId: String
 
     init(myId: String) {
@@ -11,39 +12,62 @@ struct ConversationListView: View {
     }
 
     var body: some View {
-        Group {
-            if vm.loading && vm.conversations.isEmpty {
-                ProgressView()
-            } else if let error = vm.error, vm.conversations.isEmpty {
-                Text(error).foregroundColor(.vxinError)
-            } else if vm.conversations.isEmpty {
-                Text("暂无会话").foregroundColor(.vxinTextSecondary)
-            } else {
-                List(vm.conversations) { conv in
-                    NavigationLink(value: conv) {
-                        ConversationRow(conversation: conv)
+        NavigationStack(path: $path) {
+            content
+                .navigationTitle("消息")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        VStack(spacing: 2) {
+                            Text("消息").font(.headline)
+                            Text(statusLabel)
+                                .font(.caption2)
+                                .foregroundColor(vm.socketStatus == .connected ? .vxinGreen : .vxinTextSecondary)
+                        }
+                    }
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button { path.append(ContactRoute.contacts) } label: {
+                            Image(systemName: "person.2")
+                        }
+                    }
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("退出") { Task { await session.logout() } }
                     }
                 }
-                .listStyle(.plain)
-            }
+                .navigationDestination(for: Conversation.self) { conv in
+                    ChatView(conversation: conv, myId: myId)
+                }
+                .navigationDestination(for: ContactRoute.self) { route in
+                    switch route {
+                    case .contacts:
+                        ContactsView(
+                            onStartChat: { path.append($0) },
+                            onAddFriend: { path.append(ContactRoute.addFriend) },
+                            onRequests: { path.append(ContactRoute.requests) }
+                        )
+                    case .addFriend:
+                        AddFriendView()
+                    case .requests:
+                        FriendRequestsView()
+                    }
+                }
         }
-        .navigationTitle("消息")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                VStack(spacing: 2) {
-                    Text("消息").font(.headline)
-                    Text(statusLabel)
-                        .font(.caption2)
-                        .foregroundColor(vm.socketStatus == .connected ? .vxinGreen : .vxinTextSecondary)
+    }
+
+    @ViewBuilder private var content: some View {
+        if vm.loading && vm.conversations.isEmpty {
+            ProgressView()
+        } else if let error = vm.error, vm.conversations.isEmpty {
+            Text(error).foregroundColor(.vxinError)
+        } else if vm.conversations.isEmpty {
+            Text("暂无会话").foregroundColor(.vxinTextSecondary)
+        } else {
+            List(vm.conversations) { conv in
+                NavigationLink(value: conv) {
+                    ConversationRow(conversation: conv)
                 }
             }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("退出") { Task { await session.logout() } }
-            }
-        }
-        .navigationDestination(for: Conversation.self) { conv in
-            ChatView(conversation: conv, myId: myId)
+            .listStyle(.plain)
         }
     }
 

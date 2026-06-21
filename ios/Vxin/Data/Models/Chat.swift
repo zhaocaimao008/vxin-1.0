@@ -20,6 +20,14 @@ struct Conversation: Decodable, Identifiable, Equatable, Hashable {
         case unreadCount, pinned, muted
     }
 
+    /// 本地构建（如刚创建的私聊会话），用于导航跳转
+    init(id: String, type: String = "private", name: String = "", avatar: String = "") {
+        self.id = id
+        self.type = type
+        self.name = name
+        self.avatar = avatar
+    }
+
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(String.self, forKey: .id)

@@ -22,6 +22,9 @@ import com.vxin.app.feature.auth.LoginScreen
 import com.vxin.app.feature.auth.RegisterScreen
 import com.vxin.app.feature.chat.ChatScreen
 import com.vxin.app.feature.chat.ConversationListScreen
+import com.vxin.app.feature.contacts.AddFriendScreen
+import com.vxin.app.feature.contacts.ContactsScreen
+import com.vxin.app.feature.contacts.FriendRequestsScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
@@ -37,6 +40,9 @@ private object Routes {
     const val LOGIN = "login"
     const val REGISTER = "register"
     const val CONVERSATIONS = "conversations"
+    const val CONTACTS = "contacts"
+    const val ADD_FRIEND = "addFriend"
+    const val REQUESTS = "requests"
     const val CHAT = "chat/{conversationId}?title={title}"
     fun chat(conversationId: String, title: String) =
         "chat/$conversationId?title=${Uri.encode(title)}"
@@ -75,7 +81,22 @@ private fun MainFlow() {
                 onOpenConversation = { conv ->
                     navController.navigate(Routes.chat(conv.id, conv.name))
                 },
+                onOpenContacts = { navController.navigate(Routes.CONTACTS) },
             )
+        }
+        composable(Routes.CONTACTS) {
+            ContactsScreen(
+                onBack = { navController.popBackStack() },
+                onOpenChat = { target -> navController.navigate(Routes.chat(target.conversationId, target.title)) },
+                onAddFriend = { navController.navigate(Routes.ADD_FRIEND) },
+                onRequests = { navController.navigate(Routes.REQUESTS) },
+            )
+        }
+        composable(Routes.ADD_FRIEND) {
+            AddFriendScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.REQUESTS) {
+            FriendRequestsScreen(onBack = { navController.popBackStack() })
         }
         composable(
             route = Routes.CHAT,

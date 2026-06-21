@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -48,6 +49,7 @@ import com.vxin.app.ui.theme.VxinTextSecondary
 @Composable
 fun ConversationListScreen(
     onOpenConversation: (Conversation) -> Unit,
+    onOpenContacts: () -> Unit,
     viewModel: ConversationListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -81,6 +83,9 @@ fun ConversationListScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onOpenContacts) {
+                        Icon(Icons.Filled.Person, contentDescription = "通讯录")
+                    }
                     IconButton(onClick = viewModel::logout) {
                         Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "退出登录")
                     }

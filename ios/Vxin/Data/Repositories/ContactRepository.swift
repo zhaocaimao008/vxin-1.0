@@ -1,0 +1,47 @@
+import Foundation
+
+struct FriendRequestBody: Encodable { let toId: String; let message: String }
+struct HandleRequestBody: Encodable { let action: String }
+struct SendRequestResponse: Decodable { let success: Bool?; let autoAccepted: Bool? }
+struct CreatePrivateBody: Encodable { let userId: String }
+struct CreateConversationResponse: Decodable { let conversationId: String }
+
+/// 联系人/好友/会话创建。与 Android ContactRepository 等价。
+final class ContactRepository {
+    static let shared = ContactRepository()
+    private init() {}
+
+    private let api = APIClient.shared
+
+    func contacts() async throws -> [Contact] {
+        try await api.send("api/users/contacts")
+    }
+
+    func search(_ q: String) async throws -> [SearchUser] {
+        let encoded = q.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? q
+        return try await api.send("api/users/search?q=\(encoded)")
+    }
+
+    func sendFriendRequest(toId: String, message: String = "") async throws -> SendRequestResponse {
+        try await api.send("api/users/friend-request", method: "POST", body: FriendRequestBody(toId: toId, message: message))
+    }
+
+    func receivedRequests() async throws -> [FriendRequest] {
+        try await api.send("api/users/friend-requests")
+    }
+
+    func handleRequest(id: String, accept: Bool) async throws {
+        let _: EmptyResponse = try await api.send(
+            "api/users/friend-request/\(id)/handle", method: "POST",
+            body: HandleRequestBody(action: accept ? "accept" : "reject")
+        )
+    }
+
+    /// 创建/获取私聊会话，返回 conversationId
+    func createPrivate(userId: String) async throws -> String {
+        let res: CreateConversationResponse = try await api.send(
+            "api/messages/conversation/private", method: "POST", body: CreatePrivateBody(userId: userId)
+        )
+        return res.conversationId
+    }
+}
