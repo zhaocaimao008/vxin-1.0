@@ -15,6 +15,8 @@ import com.vxin.app.data.model.Message
 import com.vxin.app.data.repository.ChatRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,6 +43,8 @@ data class ChatUiState(
     val input: String = "",
     val sending: Boolean = false,
     val recording: Boolean = false,
+    val peerTyping: Boolean = false,
+    val peerReadAt: Long = 0,         // 对方已读时间（秒）；我的消息 createdAt <= 此值即「已读」
     val error: String? = null,
 )
 
@@ -63,9 +67,15 @@ class ChatViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ChatUiState(title = title, loading = true))
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
+    private var lastTypingEmit = 0L
+    private var typingClearJob: Job? = null
+
     init {
+        chatRepository.joinConversation(conversationId)
         loadHistory()
         observeIncoming()
+        observeTyping()
+        observeRead()
     }
 
     /** /uploads 相对路径 → 带 token 的绝对地址，供 Coil/播放器加载 */
@@ -79,7 +89,10 @@ class ChatViewModel @Inject constructor(
     private fun loadHistory() {
         viewModelScope.launch {
             runCatching { chatRepository.loadHistory(conversationId) }
-                .onSuccess { list -> _uiState.update { it.copy(loading = false, messages = list) } }
+                .onSuccess { list ->
+                    _uiState.update { it.copy(loading = false, messages = list) }
+                    markReadLatest()   // 打开会话即标记已读
+                }
                 .onFailure { e -> _uiState.update { it.copy(loading = false, error = e.toUserMessage("加载消息失败")) } }
         }
     }
@@ -89,17 +102,68 @@ class ChatViewModel @Inject constructor(
             chatRepository.incomingMessages.collect { msg ->
                 if (msg.conversation_id != conversationId) return@collect
                 appendUnique(msg)
+                if (msg.sender_id != myId) markReadLatest()   // 在会话内收到对方消息即已读
             }
         }
     }
 
+    private fun observeTyping() {
+        viewModelScope.launch {
+            chatRepository.typingEvents.collect { e ->
+                if (e.conversationId != conversationId || e.userId == myId) return@collect
+                _uiState.update { it.copy(peerTyping = e.isTyping) }
+                typingClearJob?.cancel()
+                if (e.isTyping) {
+                    // 兜底：5s 无新 typing 自动隐藏（防 stop 丢失）
+                    typingClearJob = launch {
+                        delay(5000)
+                        _uiState.update { it.copy(peerTyping = false) }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun observeRead() {
+        viewModelScope.launch {
+            chatRepository.readEvents.collect { e ->
+                if (e.conversationId != conversationId || e.userId == myId) return@collect
+                _uiState.update { if (e.readAt > it.peerReadAt) it.copy(peerReadAt = e.readAt) else it }
+            }
+        }
+    }
+
+    /** 我的消息是否已被对方读过（双勾） */
+    fun isReadByPeer(msg: Message): Boolean =
+        msg.sender_id == myId && _uiState.value.peerReadAt > 0 && msg.created_at <= _uiState.value.peerReadAt
+
+    private fun markReadLatest() {
+        val last = _uiState.value.messages.lastOrNull() ?: return
+        viewModelScope.launch { chatRepository.markRead(conversationId, last.id) }
+    }
+
+    /** 退出聊天时发送 read + stop_typing */
+    fun onLeave() {
+        chatRepository.emitStopTyping(conversationId)
+        markReadLatest()
+    }
+
     // ── 文本 ──────────────────────────────────────────────
-    fun onInputChange(v: String) = _uiState.update { it.copy(input = v) }
+    fun onInputChange(v: String) {
+        _uiState.update { it.copy(input = v) }
+        // 节流：非空且距上次 emit > 2s 才发 typing，避免刷屏
+        val now = System.currentTimeMillis()
+        if (v.isNotBlank() && now - lastTypingEmit > 2000) {
+            lastTypingEmit = now
+            chatRepository.emitTyping(conversationId)
+        }
+    }
 
     fun send() {
         val text = _uiState.value.input.trim()
         if (text.isEmpty() || _uiState.value.sending) return
         _uiState.update { it.copy(input = "", sending = true, error = null) }
+        chatRepository.emitStopTyping(conversationId)
         viewModelScope.launch {
             chatRepository.sendText(conversationId, text)
                 .onSuccess { msg -> appendUnique(msg); _uiState.update { it.copy(sending = false) } }

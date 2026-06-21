@@ -1,9 +1,12 @@
 package com.vxin.app.data.repository
 
+import com.vxin.app.core.realtime.ReadEvent
 import com.vxin.app.core.realtime.SocketManager
 import com.vxin.app.core.realtime.SocketStatus
+import com.vxin.app.core.realtime.TypingEvent
 import com.vxin.app.data.api.MessageApi
 import com.vxin.app.data.model.Conversation
+import com.vxin.app.data.model.MarkReadRequest
 import com.vxin.app.data.model.Message
 import okhttp3.MultipartBody
 import kotlinx.coroutines.flow.Flow
@@ -22,6 +25,20 @@ class ChatRepository @Inject constructor(
 
     /** 全局新消息流（各会话共用，UI 自行按 conversation_id 过滤） */
     val incomingMessages: SharedFlow<Message> = socketManager.incomingMessages
+
+    /** typing / 已读 / 未读清除 事件流 */
+    val typingEvents: SharedFlow<TypingEvent> = socketManager.typingEvents
+    val readEvents: SharedFlow<ReadEvent> = socketManager.readEvents
+    val unreadClearedEvents: SharedFlow<String> = socketManager.unreadClearedEvents
+
+    fun joinConversation(conversationId: String) = socketManager.joinConversation(conversationId)
+    fun emitTyping(conversationId: String) = socketManager.emitTyping(conversationId)
+    fun emitStopTyping(conversationId: String) = socketManager.emitStopTyping(conversationId)
+
+    /** 标记会话已读 */
+    suspend fun markRead(conversationId: String, messageId: String?) {
+        runCatching { api.markRead(conversationId, MarkReadRequest(messageId)) }
+    }
 
     suspend fun loadConversations(): List<Conversation> = api.conversations()
 

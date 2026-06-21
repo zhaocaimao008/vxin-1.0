@@ -18,6 +18,8 @@ final class ChatViewModel: ObservableObject {
     @Published var input = ""
     @Published var sending = false
     @Published var recording = false
+    @Published var peerTyping = false
+    @Published var peerReadAt: Double = 0      // 对方已读时间（秒）；我的消息 createdAt <= 此值即「已读」
     @Published var error: String?
 
     let conversationId: String
@@ -28,6 +30,8 @@ final class ChatViewModel: ObservableObject {
     private let recorder = AudioRecorder.shared
     private let player = AudioPlayerService.shared
     private var cancellables = Set<AnyCancellable>()
+    private var lastTypingEmit = Date.distantPast
+    private var typingClearTask: Task<Void, Never>?
 
     init(conversationId: String, title: String, myId: String) {
         self.conversationId = conversationId
@@ -35,11 +39,18 @@ final class ChatViewModel: ObservableObject {
         self.myId = myId
 
         repo.incomingPublisher
-            .sink { [weak self] msg in
-                Task { @MainActor in self?.onIncoming(msg) }
-            }
+            .sink { [weak self] msg in Task { @MainActor in self?.onIncoming(msg) } }
             .store(in: &cancellables)
 
+        repo.typingPublisher
+            .sink { [weak self] e in Task { @MainActor in self?.onTyping(e) } }
+            .store(in: &cancellables)
+
+        repo.readPublisher
+            .sink { [weak self] e in Task { @MainActor in self?.onRead(e) } }
+            .store(in: &cancellables)
+
+        repo.joinConversation(conversationId)
         Task { await loadHistory() }
     }
 
@@ -47,13 +58,58 @@ final class ChatViewModel: ObservableObject {
 
     // MARK: - 历史 / 实时
     func loadHistory() async {
-        do { messages = try await repo.loadHistory(conversationId) }
-        catch { self.error = (error as? LocalizedError)?.errorDescription ?? "加载消息失败" }
+        do {
+            messages = try await repo.loadHistory(conversationId)
+            markReadLatest()   // 打开会话即标记已读
+        } catch { self.error = (error as? LocalizedError)?.errorDescription ?? "加载消息失败" }
     }
 
     private func onIncoming(_ msg: Message) {
         guard msg.conversationId == conversationId else { return }
         appendUnique(msg)
+        if msg.senderId != myId { markReadLatest() }   // 在会话内收到对方消息即已读
+    }
+
+    private func onTyping(_ e: TypingEvent) {
+        guard e.conversationId == conversationId, e.userId != myId else { return }
+        peerTyping = e.isTyping
+        typingClearTask?.cancel()
+        if e.isTyping {
+            typingClearTask = Task { [weak self] in
+                try? await Task.sleep(nanoseconds: 5_000_000_000)   // 5s 兜底隐藏
+                await MainActor.run { self?.peerTyping = false }
+            }
+        }
+    }
+
+    private func onRead(_ e: ReadEvent) {
+        guard e.conversationId == conversationId, e.userId != myId else { return }
+        if e.readAt > peerReadAt { peerReadAt = e.readAt }
+    }
+
+    /// 我的消息是否已被对方读过（双勾）
+    func isReadByPeer(_ msg: Message) -> Bool {
+        msg.senderId == myId && peerReadAt > 0 && msg.createdAt <= peerReadAt
+    }
+
+    func markReadLatest() {
+        guard let last = messages.last else { return }
+        Task { await repo.markRead(conversationId: conversationId, messageId: last.id) }
+    }
+
+    /// 输入变化时节流发送 typing
+    func userIsTyping() {
+        guard !input.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        if Date().timeIntervalSince(lastTypingEmit) > 2 {
+            lastTypingEmit = Date()
+            repo.emitTyping(conversationId)
+        }
+    }
+
+    /// 退出聊天：发送 read + stop_typing
+    func onLeave() {
+        repo.emitStopTyping(conversationId)
+        markReadLatest()
     }
 
     // MARK: - 文本
@@ -63,6 +119,7 @@ final class ChatViewModel: ObservableObject {
         input = ""
         sending = true
         error = nil
+        repo.emitStopTyping(conversationId)
         Task {
             let result = await repo.sendText(conversationId: conversationId, content: text)
             sending = false

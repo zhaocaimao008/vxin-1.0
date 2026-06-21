@@ -45,6 +45,22 @@ class ConversationListViewModel @Inject constructor(
         refresh()
         observeIncoming()
         observeReconnect()
+        observeUnreadCleared()
+    }
+
+    /** 本人已读某会话（本端或其他端）→ 清零未读 */
+    private fun observeUnreadCleared() {
+        viewModelScope.launch {
+            chatRepository.unreadClearedEvents.collect { convId ->
+                _uiState.update { state ->
+                    val idx = state.conversations.indexOfFirst { it.id == convId }
+                    if (idx < 0 || state.conversations[idx].unreadCount == 0) return@update state
+                    val list = state.conversations.toMutableList()
+                    list[idx] = list[idx].copy(unreadCount = 0)
+                    state.copy(conversations = list)
+                }
+            }
+        }
     }
 
     fun refresh() {

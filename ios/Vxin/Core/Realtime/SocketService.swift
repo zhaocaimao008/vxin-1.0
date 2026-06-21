@@ -6,6 +6,19 @@ enum SocketStatus {
     case disconnected, connecting, connected
 }
 
+struct TypingEvent {
+    let userId: String
+    let conversationId: String
+    let isTyping: Bool
+}
+
+struct ReadEvent {
+    let userId: String
+    let conversationId: String
+    let readAt: Double
+    let lastReadMessageId: String?
+}
+
 /// Socket.IO 实时通道（封装 Socket.IO-Client-Swift）。职责等同 Android 的 SocketManager。
 ///
 /// - 鉴权：connect(withPayload:) 把 {token} 作为 CONNECT auth 负载发送，
@@ -25,6 +38,10 @@ final class SocketService {
 
     let status = CurrentValueSubject<SocketStatus, Never>(.disconnected)
     let incoming = PassthroughSubject<Message, Never>()
+    let typing = PassthroughSubject<TypingEvent, Never>()
+    let read = PassthroughSubject<ReadEvent, Never>()
+    /// 本人某会话已读（多端同步 + 本端 markRead 回声）→ conversationId
+    let unreadCleared = PassthroughSubject<String, Never>()
 
     private let decoder = JSONDecoder()
 
@@ -60,6 +77,22 @@ final class SocketService {
                 arr.forEach { self?.handleMessage($0) }
             }
         }
+        sock.on("typing") { [weak self] data, _ in self?.handleTyping(data.first, isTyping: true) }
+        sock.on("stop_typing") { [weak self] data, _ in self?.handleTyping(data.first, isTyping: false) }
+        sock.on("message_read") { [weak self] data, _ in
+            guard let dict = data.first as? [String: Any] else { return }
+            self?.read.send(ReadEvent(
+                userId: dict["userId"] as? String ?? "",
+                conversationId: dict["conversationId"] as? String ?? "",
+                readAt: (dict["readAt"] as? NSNumber)?.doubleValue ?? 0,
+                lastReadMessageId: dict["lastReadMessageId"] as? String
+            ))
+        }
+        sock.on("sync:unread_cleared") { [weak self] data, _ in
+            if let id = (data.first as? [String: Any])?["conversationId"] as? String, !id.isEmpty {
+                self?.unreadCleared.send(id)
+            }
+        }
 
         manager = mgr
         socket = sock
@@ -90,6 +123,19 @@ final class SocketService {
         }
     }
 
+    /// 进入会话主动入房（连上后服务端已自动入房，这里兜底防时序）
+    func joinConversation(_ conversationId: String) {
+        socket?.emit("join_conversation", ["conversationId": conversationId])
+    }
+
+    func emitTyping(_ conversationId: String) {
+        socket?.emit("typing", ["conversationId": conversationId])
+    }
+
+    func emitStopTyping(_ conversationId: String) {
+        socket?.emit("stop_typing", ["conversationId": conversationId])
+    }
+
     func disconnect() {
         socket?.removeAllHandlers()
         socket?.disconnect()
@@ -101,6 +147,15 @@ final class SocketService {
 
     private func handleMessage(_ any: Any?) {
         decode(any).map { incoming.send($0) }
+    }
+
+    private func handleTyping(_ any: Any?, isTyping: Bool) {
+        guard let dict = any as? [String: Any] else { return }
+        typing.send(TypingEvent(
+            userId: dict["userId"] as? String ?? "",
+            conversationId: dict["conversationId"] as? String ?? "",
+            isTyping: isTyping
+        ))
     }
 
     private func decode(_ any: Any?) -> Message? {

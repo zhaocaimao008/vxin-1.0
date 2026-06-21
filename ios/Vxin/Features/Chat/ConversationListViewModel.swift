@@ -31,7 +31,20 @@ final class ConversationListViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
+        // 本人已读某会话（本端或其他端）→ 清零未读
+        repo.unreadClearedPublisher
+            .sink { [weak self] convId in
+                Task { @MainActor in self?.clearUnread(convId) }
+            }
+            .store(in: &cancellables)
+
         Task { await refresh() }
+    }
+
+    private func clearUnread(_ conversationId: String) {
+        guard let idx = conversations.firstIndex(where: { $0.id == conversationId }),
+              conversations[idx].unreadCount != 0 else { return }
+        conversations[idx].unreadCount = 0
     }
 
     func refresh() async {

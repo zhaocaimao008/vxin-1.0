@@ -22,8 +22,10 @@ struct ChatView: View {
             messageList
             inputBar
         }
-        .navigationTitle(vm.title.isEmpty ? "聊天" : vm.title)
+        .navigationTitle(vm.peerTyping ? "对方正在输入…" : (vm.title.isEmpty ? "聊天" : vm.title))
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: vm.input) { _ in vm.userIsTyping() }
+        .onDisappear { vm.onLeave() }
         .onChange(of: photoItem) { item in handlePhoto(item) }
         .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.item], allowsMultipleSelection: false) { result in
             handleFile(result)
@@ -130,6 +132,12 @@ private struct MessageBubble: View {
                     Text(msg.senderName).font(.caption2).foregroundColor(.vxinTextSecondary)
                 }
                 content
+                if isMine {
+                    let read = vm.isReadByPeer(msg)
+                    Text(read ? "✓✓ 已读" : "✓")
+                        .font(.caption2)
+                        .foregroundColor(read ? .vxinGreen : .vxinTextSecondary)
+                }
             }
             if !isMine { Spacer(minLength: 40) } else {
                 InitialAvatar(name: msg.senderName.isEmpty ? "我" : msg.senderName, size: 36)

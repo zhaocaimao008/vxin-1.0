@@ -1,8 +1,10 @@
 package com.vxin.app.data.api
 
 import com.vxin.app.data.model.Conversation
+import com.vxin.app.data.model.MarkReadRequest
 import com.vxin.app.data.model.Message
 import okhttp3.MultipartBody
+import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
@@ -31,4 +33,11 @@ interface MessageApi {
         @Path("conversationId") conversationId: String,
         @Part file: MultipartBody.Part,
     ): Message
+
+    /** 标记会话已读（服务端会向房间发 message_read、向本人各端发 sync:unread_cleared） */
+    @POST("api/messages/conversation/{conversationId}/read")
+    suspend fun markRead(
+        @Path("conversationId") conversationId: String,
+        @Body body: MarkReadRequest,
+    )
 }

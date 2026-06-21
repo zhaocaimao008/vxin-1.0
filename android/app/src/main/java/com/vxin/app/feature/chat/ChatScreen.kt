@@ -36,6 +36,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -46,6 +47,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -80,10 +82,22 @@ fun ChatScreen(
         if (totalCount > 0) listState.animateScrollToItem(totalCount - 1)
     }
 
+    // 退出聊天：发送已读 + stop_typing
+    DisposableEffect(Unit) {
+        onDispose { viewModel.onLeave() }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(state.title.ifBlank { "聊天" }) },
+                title = {
+                    Column {
+                        Text(state.title.ifBlank { "聊天" })
+                        if (state.peerTyping) {
+                            Text("对方正在输入…", fontSize = 11.sp, color = VxinGreen)
+                        }
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
@@ -122,9 +136,11 @@ fun ChatScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(state.messages, key = { it.id }) { msg ->
+                        val isMine = msg.sender_id == viewModel.myId
                         MessageBubble(
                             msg = msg,
-                            isMine = msg.sender_id == viewModel.myId,
+                            isMine = isMine,
+                            isRead = isMine && viewModel.isReadByPeer(msg),
                             resolveUrl = viewModel::resolveMediaUrl,
                             onPlayVoice = { viewModel.playVoice(msg.file_url) },
                             onOpenFile = { openUrl(context, viewModel.resolveMediaUrl(msg.file_url)) },
@@ -150,6 +166,7 @@ fun ChatScreen(
 private fun MessageBubble(
     msg: Message,
     isMine: Boolean,
+    isRead: Boolean,
     resolveUrl: (String?) -> String?,
     onPlayVoice: () -> Unit,
     onOpenFile: () -> Unit,
@@ -165,6 +182,14 @@ private fun MessageBubble(
         Column(horizontalAlignment = if (isMine) Alignment.End else Alignment.Start) {
             if (!isMine && msg.senderName.isNotBlank()) {
                 Text(msg.senderName, color = VxinTextSecondary, style = MaterialTheme.typography.labelSmall)
+            }
+            if (isMine) {
+                // 已读双勾（绿）/ 已发单勾（灰）
+                Text(
+                    text = if (isRead) "✓✓ 已读" else "✓",
+                    fontSize = 10.sp,
+                    color = if (isRead) VxinGreen else VxinTextSecondary,
+                )
             }
             when (msg.type) {
                 "image" -> AsyncImage(
