@@ -43,12 +43,19 @@ struct ConversationListView: View {
                         ContactsView(
                             onStartChat: { path.append($0) },
                             onAddFriend: { path.append(ContactRoute.addFriend) },
-                            onRequests: { path.append(ContactRoute.requests) }
+                            onRequests: { path.append(ContactRoute.requests) },
+                            onCreateGroup: { path.append(ContactRoute.createGroup) }
                         )
                     case .addFriend:
                         AddFriendView()
                     case .requests:
                         FriendRequestsView()
+                    case .createGroup:
+                        CreateGroupView(onCreated: { conv in
+                            // 回到根再进入群聊
+                            path.removeLast(path.count)
+                            path.append(conv)
+                        })
                     }
                 }
         }

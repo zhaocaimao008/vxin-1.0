@@ -52,4 +52,7 @@ data class SendRequestResponse(val success: Boolean = false, val autoAccepted: B
 data class CreatePrivateBody(val userId: String)
 
 @Serializable
-data class CreateConversationResponse(val conversationId: String)
+data class CreateGroupBody(val name: String, val memberIds: List<String>)
+
+@Serializable
+data class CreateConversationResponse(val conversationId: String, val groupNumber: String? = null)

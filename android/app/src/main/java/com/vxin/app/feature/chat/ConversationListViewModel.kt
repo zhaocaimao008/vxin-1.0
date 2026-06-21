@@ -46,6 +46,14 @@ class ConversationListViewModel @Inject constructor(
         observeIncoming()
         observeReconnect()
         observeUnreadCleared()
+        observeNewConversation()
+    }
+
+    /** 被拉入群聊/新会话 → 整表刷新 */
+    private fun observeNewConversation() {
+        viewModelScope.launch {
+            chatRepository.newConversationEvents.collect { refresh() }
+        }
     }
 
     /** 本人已读某会话（本端或其他端）→ 清零未读 */

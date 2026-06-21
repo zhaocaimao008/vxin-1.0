@@ -4,7 +4,8 @@ struct FriendRequestBody: Encodable { let toId: String; let message: String }
 struct HandleRequestBody: Encodable { let action: String }
 struct SendRequestResponse: Decodable { let success: Bool?; let autoAccepted: Bool? }
 struct CreatePrivateBody: Encodable { let userId: String }
-struct CreateConversationResponse: Decodable { let conversationId: String }
+struct CreateGroupBody: Encodable { let name: String; let memberIds: [String] }
+struct CreateConversationResponse: Decodable { let conversationId: String; let groupNumber: String? }
 
 /// 联系人/好友/会话创建。与 Android ContactRepository 等价。
 final class ContactRepository {
@@ -41,6 +42,14 @@ final class ContactRepository {
     func createPrivate(userId: String) async throws -> String {
         let res: CreateConversationResponse = try await api.send(
             "api/messages/conversation/private", method: "POST", body: CreatePrivateBody(userId: userId)
+        )
+        return res.conversationId
+    }
+
+    /// 创建群聊，返回 conversationId
+    func createGroup(name: String, memberIds: [String]) async throws -> String {
+        let res: CreateConversationResponse = try await api.send(
+            "api/messages/conversation/group", method: "POST", body: CreateGroupBody(name: name, memberIds: memberIds)
         )
         return res.conversationId
     }

@@ -47,6 +47,7 @@ fun ContactsScreen(
     onOpenChat: (ConversationTarget) -> Unit,
     onAddFriend: () -> Unit,
     onRequests: () -> Unit,
+    onCreateGroup: () -> Unit,
     viewModel: ContactsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -68,6 +69,7 @@ fun ContactsScreen(
                     }
                 },
                 actions = {
+                    TextButton(onClick = onCreateGroup) { Text("群聊") }
                     IconButton(onClick = onAddFriend) {
                         Icon(Icons.Filled.Add, contentDescription = "添加好友")
                     }

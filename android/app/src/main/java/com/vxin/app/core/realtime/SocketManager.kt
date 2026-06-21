@@ -61,6 +61,10 @@ class SocketManager @Inject constructor(
     private val _unreadCleared = MutableSharedFlow<String>(extraBufferCapacity = 64)
     val unreadClearedEvents: SharedFlow<String> = _unreadCleared.asSharedFlow()
 
+    /** 新会话（如被拉入群聊）→ 提示列表刷新 */
+    private val _newConversation = MutableSharedFlow<Unit>(extraBufferCapacity = 8)
+    val newConversationEvents: SharedFlow<Unit> = _newConversation.asSharedFlow()
+
     @Synchronized
     fun connect() {
         val token = tokenStore.token ?: return        // 未登录不连
@@ -116,6 +120,7 @@ class SocketManager @Inject constructor(
             (args.firstOrNull() as? JSONObject)?.optString("conversationId")
                 ?.takeIf { it.isNotEmpty() }?.let(_unreadCleared::tryEmit)
         }
+        s.on("new_conversation") { _newConversation.tryEmit(Unit) }
 
         _status.value = SocketStatus.CONNECTING
         s.connect()

@@ -24,6 +24,7 @@ import com.vxin.app.feature.chat.ChatScreen
 import com.vxin.app.feature.chat.ConversationListScreen
 import com.vxin.app.feature.contacts.AddFriendScreen
 import com.vxin.app.feature.contacts.ContactsScreen
+import com.vxin.app.feature.contacts.CreateGroupScreen
 import com.vxin.app.feature.contacts.FriendRequestsScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
@@ -43,6 +44,7 @@ private object Routes {
     const val CONTACTS = "contacts"
     const val ADD_FRIEND = "addFriend"
     const val REQUESTS = "requests"
+    const val CREATE_GROUP = "createGroup"
     const val CHAT = "chat/{conversationId}?title={title}"
     fun chat(conversationId: String, title: String) =
         "chat/$conversationId?title=${Uri.encode(title)}"
@@ -90,6 +92,7 @@ private fun MainFlow() {
                 onOpenChat = { target -> navController.navigate(Routes.chat(target.conversationId, target.title)) },
                 onAddFriend = { navController.navigate(Routes.ADD_FRIEND) },
                 onRequests = { navController.navigate(Routes.REQUESTS) },
+                onCreateGroup = { navController.navigate(Routes.CREATE_GROUP) },
             )
         }
         composable(Routes.ADD_FRIEND) {
@@ -97,6 +100,16 @@ private fun MainFlow() {
         }
         composable(Routes.REQUESTS) {
             FriendRequestsScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.CREATE_GROUP) {
+            CreateGroupScreen(
+                onBack = { navController.popBackStack() },
+                onCreated = { target ->
+                    // 创建成功后回到会话列表再进入群聊（避免返回栈停在创建页）
+                    navController.popBackStack(Routes.CONVERSATIONS, inclusive = false)
+                    navController.navigate(Routes.chat(target.conversationId, target.title))
+                },
+            )
         }
         composable(
             route = Routes.CHAT,

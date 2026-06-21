@@ -5,12 +5,14 @@ enum ContactRoute: Hashable {
     case contacts
     case addFriend
     case requests
+    case createGroup
 }
 
 struct ContactsView: View {
     var onStartChat: (Conversation) -> Void
     var onAddFriend: () -> Void
     var onRequests: () -> Void
+    var onCreateGroup: () -> Void
 
     @StateObject private var vm = ContactsViewModel()
 
@@ -57,7 +59,10 @@ struct ContactsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: onAddFriend) { Image(systemName: "plus") }
+                HStack {
+                    Button(action: onCreateGroup) { Image(systemName: "person.3") }
+                    Button(action: onAddFriend) { Image(systemName: "plus") }
+                }
             }
         }
         .overlay {

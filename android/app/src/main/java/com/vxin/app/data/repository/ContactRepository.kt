@@ -3,6 +3,7 @@ package com.vxin.app.data.repository
 import com.vxin.app.data.api.ContactApi
 import com.vxin.app.data.api.MessageApi
 import com.vxin.app.data.model.Contact
+import com.vxin.app.data.model.CreateGroupBody
 import com.vxin.app.data.model.CreatePrivateBody
 import com.vxin.app.data.model.FriendRequest
 import com.vxin.app.data.model.FriendRequestBody
@@ -32,4 +33,8 @@ class ContactRepository @Inject constructor(
     /** 创建/获取私聊会话，返回 conversationId */
     suspend fun createPrivate(userId: String): String =
         messageApi.createPrivate(CreatePrivateBody(userId)).conversationId
+
+    /** 创建群聊，返回 conversationId */
+    suspend fun createGroup(name: String, memberIds: List<String>): String =
+        messageApi.createGroup(CreateGroupBody(name, memberIds)).conversationId
 }

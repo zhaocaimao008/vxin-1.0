@@ -38,6 +38,13 @@ final class ConversationListViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
+        // 被拉入群聊/新会话 → 整表刷新
+        repo.newConversationPublisher
+            .sink { [weak self] _ in
+                Task { @MainActor in await self?.refresh() }
+            }
+            .store(in: &cancellables)
+
         Task { await refresh() }
     }
 

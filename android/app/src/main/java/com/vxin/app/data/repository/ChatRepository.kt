@@ -30,6 +30,7 @@ class ChatRepository @Inject constructor(
     val typingEvents: SharedFlow<TypingEvent> = socketManager.typingEvents
     val readEvents: SharedFlow<ReadEvent> = socketManager.readEvents
     val unreadClearedEvents: SharedFlow<String> = socketManager.unreadClearedEvents
+    val newConversationEvents: SharedFlow<Unit> = socketManager.newConversationEvents
 
     fun joinConversation(conversationId: String) = socketManager.joinConversation(conversationId)
     fun emitTyping(conversationId: String) = socketManager.emitTyping(conversationId)

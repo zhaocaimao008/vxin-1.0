@@ -42,6 +42,8 @@ final class SocketService {
     let read = PassthroughSubject<ReadEvent, Never>()
     /// 本人某会话已读（多端同步 + 本端 markRead 回声）→ conversationId
     let unreadCleared = PassthroughSubject<String, Never>()
+    /// 新会话（如被拉入群聊）→ 提示列表刷新
+    let newConversation = PassthroughSubject<Void, Never>()
 
     private let decoder = JSONDecoder()
 
@@ -93,6 +95,7 @@ final class SocketService {
                 self?.unreadCleared.send(id)
             }
         }
+        sock.on("new_conversation") { [weak self] _, _ in self?.newConversation.send(()) }
 
         manager = mgr
         socket = sock
