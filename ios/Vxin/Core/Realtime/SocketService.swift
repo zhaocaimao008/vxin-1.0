@@ -218,11 +218,9 @@ final class SocketService {
         socket?.emit("call:answer", ["to": to, "answer": ["type": "answer", "sdp": sdp]])
     }
     func emitCallIce(to: String, candidate: String, sdpMid: String?, sdpMLineIndex: Int32) {
-        socket?.emit("call:ice", ["to": to, "candidate": [
-            "candidate": candidate,
-            "sdpMid": sdpMid ?? NSNull(),
-            "sdpMLineIndex": sdpMLineIndex,
-        ]])
+        var cand: [String: Any] = ["candidate": candidate, "sdpMLineIndex": sdpMLineIndex]
+        if let sdpMid { cand["sdpMid"] = sdpMid }
+        socket?.emit("call:ice", ["to": to, "candidate": cand])
     }
     func emitCallEnd(to: String) {
         socket?.emit("call:end", ["to": to])
