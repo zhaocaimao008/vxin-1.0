@@ -11,7 +11,8 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    # macos-15 自带 Xcode 16，可读取 XcodeGen 生成的新工程格式(objectVersion 77)
+    runs-on: macos-15
     timeout-minutes: 30
     steps:
       - name: Checkout
