@@ -6,6 +6,7 @@ import com.vxin.app.core.network.HostSelectionInterceptor
 import com.vxin.app.core.storage.ServerConfig
 import com.vxin.app.data.api.AuthApi
 import com.vxin.app.data.api.MessageApi
+import com.vxin.app.data.api.NotificationApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -78,4 +79,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideMessageApi(retrofit: Retrofit): MessageApi = retrofit.create(MessageApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideNotificationApi(retrofit: Retrofit): NotificationApi = retrofit.create(NotificationApi::class.java)
 }

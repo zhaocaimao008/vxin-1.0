@@ -53,6 +53,20 @@ fun ConversationListScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val socketStatus by viewModel.socketStatus.collectAsStateWithLifecycle()
 
+    // Android 13+ 请求通知权限（用于 FCM 推送展示）
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val notifPermLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        if (android.os.Build.VERSION.SDK_INT >= 33 &&
+            androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            notifPermLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(

@@ -29,6 +29,7 @@ sealed interface AuthState {
 class SessionManager @Inject constructor(
     private val authRepository: AuthRepository,
     private val socketManager: SocketManager,
+    private val pushManager: com.vxin.app.core.push.PushManager,
     authInterceptor: AuthInterceptor,
     @AppScope private val scope: CoroutineScope,
 ) {
@@ -49,6 +50,7 @@ class SessionManager @Inject constructor(
         val user = authRepository.restoreSession()
         if (user != null) {
             socketManager.connect()
+            pushManager.registerCurrentToken()
             _state.value = AuthState.Authenticated(user)
         } else {
             _state.value = AuthState.Unauthenticated
@@ -57,10 +59,12 @@ class SessionManager @Inject constructor(
 
     fun onAuthenticated(user: User) {
         socketManager.connect()
+        pushManager.registerCurrentToken()
         _state.value = AuthState.Authenticated(user)
     }
 
     suspend fun logout() {
+        pushManager.unregisterCurrentToken()   // 须在清 auth token 前
         socketManager.disconnect()
         authRepository.logout()
         _state.value = AuthState.Unauthenticated

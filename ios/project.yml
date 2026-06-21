@@ -12,6 +12,9 @@ packages:
   Kingfisher:
     url: https://github.com/onevcat/Kingfisher
     from: "7.10.0"
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: "11.4.0"
 
 targets:
   Vxin:
@@ -22,6 +25,8 @@ targets:
     dependencies:
       - package: SocketIO
       - package: Kingfisher
+      - package: Firebase
+        product: FirebaseMessaging
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.vxin.app
@@ -36,6 +41,9 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        # 后台收推送（远程通知）
+        UIBackgroundModes:
+          - remote-notification
         # 录音 / 相册 用途说明（聊天媒体阶段需要）
         NSMicrophoneUsageDescription: 用于录制语音消息
         NSPhotoLibraryUsageDescription: 用于发送图片

@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -87,4 +88,8 @@ dependencies {
 
     // Image loading
     implementation(libs.coil.compose)
+
+    // Push (Firebase Cloud Messaging)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 }

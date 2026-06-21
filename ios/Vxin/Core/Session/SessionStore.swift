@@ -39,6 +39,7 @@ final class SessionStore: ObservableObject {
     func restoreSession() async {
         if let user = await repo.restoreSession() {
             SocketService.shared.connect()
+            PushManager.shared.requestAuthorizationAndRegister()
             state = .authenticated(user)
         } else {
             state = .unauthenticated
@@ -47,10 +48,12 @@ final class SessionStore: ObservableObject {
 
     func onAuthenticated(_ user: User) {
         SocketService.shared.connect()
+        PushManager.shared.requestAuthorizationAndRegister()
         state = .authenticated(user)
     }
 
     func logout() async {
+        await PushManager.shared.unregister()
         SocketService.shared.disconnect()
         await repo.logout()
         state = .unauthenticated
