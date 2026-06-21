@@ -1,9 +1,7 @@
 import SwiftUI
 
 struct ConversationListView: View {
-    @EnvironmentObject private var session: SessionStore
     @StateObject private var vm: ConversationListViewModel
-    @State private var path = NavigationPath()
     private let myId: String
 
     init(myId: String) {
@@ -12,7 +10,7 @@ struct ConversationListView: View {
     }
 
     var body: some View {
-        NavigationStack(path: $path) {
+        NavigationStack {
             content
                 .navigationTitle("消息")
                 .navigationBarTitleDisplayMode(.inline)
@@ -25,38 +23,9 @@ struct ConversationListView: View {
                                 .foregroundColor(vm.socketStatus == .connected ? .vxinGreen : .vxinTextSecondary)
                         }
                     }
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button { path.append(ContactRoute.contacts) } label: {
-                            Image(systemName: "person.2")
-                        }
-                    }
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("退出") { Task { await session.logout() } }
-                    }
                 }
                 .navigationDestination(for: Conversation.self) { conv in
                     ChatView(conversation: conv, myId: myId)
-                }
-                .navigationDestination(for: ContactRoute.self) { route in
-                    switch route {
-                    case .contacts:
-                        ContactsView(
-                            onStartChat: { path.append($0) },
-                            onAddFriend: { path.append(ContactRoute.addFriend) },
-                            onRequests: { path.append(ContactRoute.requests) },
-                            onCreateGroup: { path.append(ContactRoute.createGroup) }
-                        )
-                    case .addFriend:
-                        AddFriendView()
-                    case .requests:
-                        FriendRequestsView()
-                    case .createGroup:
-                        CreateGroupView(onCreated: { conv in
-                            // 回到根再进入群聊
-                            path.removeLast(path.count)
-                            path.append(conv)
-                        })
-                    }
                 }
         }
     }

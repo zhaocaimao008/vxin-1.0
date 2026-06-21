@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -43,7 +42,6 @@ import com.vxin.app.ui.theme.VxinTextSecondary
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactsScreen(
-    onBack: () -> Unit,
     onOpenChat: (ConversationTarget) -> Unit,
     onAddFriend: () -> Unit,
     onRequests: () -> Unit,
@@ -63,11 +61,6 @@ fun ContactsScreen(
         topBar = {
             TopAppBar(
                 title = { Text("通讯录") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
-                    }
-                },
                 actions = {
                     TextButton(onClick = onCreateGroup) { Text("群聊") }
                     IconButton(onClick = onAddFriend) {

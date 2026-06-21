@@ -27,7 +27,7 @@ class MediaUploader @Inject constructor(
     )
 
     /** 从相册/文件选择器返回的 Uri 准备上传（IO 操作，请在 Dispatchers.IO 调用） */
-    fun prepareFromUri(uri: Uri): Prepared? {
+    fun prepareFromUri(uri: Uri, fieldName: String = "file"): Prepared? {
         val resolver = context.contentResolver
         val mime = resolver.getType(uri) ?: "application/octet-stream"
         val name = queryDisplayName(uri) ?: "file_${System.currentTimeMillis()}"
@@ -35,16 +35,16 @@ class MediaUploader @Inject constructor(
         resolver.openInputStream(uri)?.use { input ->
             tmp.outputStream().use { input.copyTo(it) }
         } ?: return null
-        return buildPart(tmp, mime, name)
+        return buildPart(tmp, mime, name, fieldName)
     }
 
     /** 录音等已落地的本地文件直接准备上传 */
     fun prepareFromFile(file: File, mime: String, displayName: String): Prepared =
-        buildPart(file, mime, displayName)
+        buildPart(file, mime, displayName, "file")
 
-    private fun buildPart(file: File, mime: String, displayName: String): Prepared {
+    private fun buildPart(file: File, mime: String, displayName: String, fieldName: String): Prepared {
         val body = file.asRequestBody(mime.toMediaTypeOrNull())
-        val part = MultipartBody.Part.createFormData("file", displayName, body)
+        val part = MultipartBody.Part.createFormData(fieldName, displayName, body)
         val type = when {
             mime.startsWith("image/") -> "image"
             mime.startsWith("audio/") -> "voice"

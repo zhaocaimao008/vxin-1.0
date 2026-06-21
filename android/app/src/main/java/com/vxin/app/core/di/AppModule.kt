@@ -8,6 +8,7 @@ import com.vxin.app.data.api.AuthApi
 import com.vxin.app.data.api.ContactApi
 import com.vxin.app.data.api.MessageApi
 import com.vxin.app.data.api.NotificationApi
+import com.vxin.app.data.api.UserApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -88,4 +89,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideContactApi(retrofit: Retrofit): ContactApi = retrofit.create(ContactApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideUserApi(retrofit: Retrofit): UserApi = retrofit.create(UserApi::class.java)
 }

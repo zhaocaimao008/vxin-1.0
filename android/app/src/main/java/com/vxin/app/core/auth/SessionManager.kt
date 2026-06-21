@@ -63,6 +63,13 @@ class SessionManager @Inject constructor(
         _state.value = AuthState.Authenticated(user)
     }
 
+    /** 资料更新后刷新当前用户（不改变登录态） */
+    fun updateCurrentUser(user: User) {
+        if (_state.value is AuthState.Authenticated) _state.value = AuthState.Authenticated(user)
+    }
+
+    val currentUser: User? get() = (_state.value as? AuthState.Authenticated)?.user
+
     suspend fun logout() {
         pushManager.unregisterCurrentToken()   // 须在清 auth token 前
         socketManager.disconnect()

@@ -3,17 +3,30 @@ package com.vxin.app.navigation
 import android.net.Uri
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.vxin.app.core.auth.AuthState
@@ -26,6 +39,7 @@ import com.vxin.app.feature.contacts.AddFriendScreen
 import com.vxin.app.feature.contacts.ContactsScreen
 import com.vxin.app.feature.contacts.CreateGroupScreen
 import com.vxin.app.feature.contacts.FriendRequestsScreen
+import com.vxin.app.feature.profile.ProfileScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
@@ -41,6 +55,7 @@ private object Routes {
     const val LOGIN = "login"
     const val REGISTER = "register"
     const val CONVERSATIONS = "conversations"
+    const val PROFILE = "profile"
     const val CONTACTS = "contacts"
     const val ADD_FRIEND = "addFriend"
     const val REQUESTS = "requests"
@@ -74,28 +89,65 @@ private fun AuthFlow() {
     }
 }
 
+private data class TabItem(val route: String, val label: String, val icon: ImageVector)
+
+private val TAB_ITEMS = listOf(
+    TabItem(Routes.CONVERSATIONS, "消息", Icons.Filled.Email),
+    TabItem(Routes.CONTACTS, "通讯录", Icons.Filled.Person),
+    TabItem(Routes.PROFILE, "我", Icons.Filled.AccountCircle),
+)
+private val TAB_ROUTES = TAB_ITEMS.map { it.route }.toSet()
+
 @Composable
 private fun MainFlow() {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = Routes.CONVERSATIONS) {
-        composable(Routes.CONVERSATIONS) {
-            ConversationListScreen(
-                onOpenConversation = { conv ->
-                    navController.navigate(Routes.chat(conv.id, conv.name))
-                },
-                onOpenContacts = { navController.navigate(Routes.CONTACTS) },
-            )
-        }
-        composable(Routes.CONTACTS) {
-            ContactsScreen(
-                onBack = { navController.popBackStack() },
-                onOpenChat = { target -> navController.navigate(Routes.chat(target.conversationId, target.title)) },
-                onAddFriend = { navController.navigate(Routes.ADD_FRIEND) },
-                onRequests = { navController.navigate(Routes.REQUESTS) },
-                onCreateGroup = { navController.navigate(Routes.CREATE_GROUP) },
-            )
-        }
-        composable(Routes.ADD_FRIEND) {
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+
+    Scaffold(
+        bottomBar = {
+            if (currentRoute in TAB_ROUTES) {
+                NavigationBar {
+                    TAB_ITEMS.forEach { tab ->
+                        NavigationBarItem(
+                            selected = currentRoute == tab.route,
+                            onClick = {
+                                navController.navigate(tab.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(tab.icon, contentDescription = tab.label) },
+                            label = { Text(tab.label) },
+                        )
+                    }
+                }
+            }
+        },
+    ) { padding ->
+        NavHost(
+            navController = navController,
+            startDestination = Routes.CONVERSATIONS,
+            modifier = Modifier.padding(padding),
+        ) {
+            composable(Routes.CONVERSATIONS) {
+                ConversationListScreen(
+                    onOpenConversation = { conv -> navController.navigate(Routes.chat(conv.id, conv.name)) },
+                )
+            }
+            composable(Routes.CONTACTS) {
+                ContactsScreen(
+                    onOpenChat = { target -> navController.navigate(Routes.chat(target.conversationId, target.title)) },
+                    onAddFriend = { navController.navigate(Routes.ADD_FRIEND) },
+                    onRequests = { navController.navigate(Routes.REQUESTS) },
+                    onCreateGroup = { navController.navigate(Routes.CREATE_GROUP) },
+                )
+            }
+            composable(Routes.PROFILE) {
+                ProfileScreen()
+            }
+            composable(Routes.ADD_FRIEND) {
             AddFriendScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.REQUESTS) {
@@ -119,6 +171,7 @@ private fun MainFlow() {
             ),
         ) {
             ChatScreen(onBack = { navController.popBackStack() })
+        }
         }
     }
 }

@@ -52,6 +52,16 @@ final class SessionStore: ObservableObject {
         state = .authenticated(user)
     }
 
+    var currentUser: User? {
+        if case .authenticated(let user) = state { return user }
+        return nil
+    }
+
+    /// 资料更新后刷新当前用户（不改变登录态）
+    func updateCurrentUser(_ user: User) {
+        if case .authenticated = state { state = .authenticated(user) }
+    }
+
     func logout() async {
         await PushManager.shared.unregister()
         SocketService.shared.disconnect()

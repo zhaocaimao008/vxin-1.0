@@ -7,6 +7,7 @@ import com.vxin.app.data.model.User
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 
 interface AuthApi {
 
@@ -22,4 +23,7 @@ interface AuthApi {
 
     @POST("api/auth/logout")
     suspend fun logout()
+
+    @PUT("api/auth/change-password")
+    suspend fun changePassword(@Body body: com.vxin.app.data.model.ChangePasswordRequest)
 }

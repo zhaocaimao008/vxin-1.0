@@ -12,7 +12,7 @@ struct RootView: View {
         case .unauthenticated:
             NavigationStack { LoginView() }
         case .authenticated(let user):
-            ConversationListView(myId: user.id)
+            MainTabView(myId: user.id)
         }
     }
 }
