@@ -61,6 +61,7 @@ class ChatViewModel @Inject constructor(
 
     val conversationId: String = savedStateHandle.get<String>("conversationId").orEmpty()
     private val title: String = savedStateHandle.get<String>("title").orEmpty()
+    val isGroup: Boolean = savedStateHandle.get<String>("type") == "group"
 
     val myId: String = (sessionManager.state.value as? AuthState.Authenticated)?.user?.id.orEmpty()
 

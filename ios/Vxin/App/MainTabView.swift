@@ -33,7 +33,15 @@ private struct ContactsTab: View {
                 onCreateGroup: { path.append(ContactRoute.createGroup) }
             )
             .navigationDestination(for: Conversation.self) { conv in
-                ChatView(conversation: conv, myId: myId)
+                ChatView(conversation: conv, myId: myId, onOpenGroupInfo: { path.append(GroupRoute.info(conv.id)) })
+            }
+            .navigationDestination(for: GroupRoute.self) { route in
+                switch route {
+                case .info(let id):
+                    GroupInfoView(conversationId: id, onInvite: { path.append(GroupRoute.invite(id)) }, onLeft: { path.removeLast(path.count) })
+                case .invite(let id):
+                    InviteMembersView(conversationId: id, onDone: { if !path.isEmpty { path.removeLast() } })
+                }
             }
             .navigationDestination(for: ContactRoute.self) { route in
                 switch route {

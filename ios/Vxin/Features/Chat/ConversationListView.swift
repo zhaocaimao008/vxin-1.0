@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ConversationListView: View {
     @StateObject private var vm: ConversationListViewModel
+    @State private var path = NavigationPath()
     private let myId: String
 
     init(myId: String) {
@@ -10,7 +11,7 @@ struct ConversationListView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             content
                 .navigationTitle("消息")
                 .navigationBarTitleDisplayMode(.inline)
@@ -25,7 +26,15 @@ struct ConversationListView: View {
                     }
                 }
                 .navigationDestination(for: Conversation.self) { conv in
-                    ChatView(conversation: conv, myId: myId)
+                    ChatView(conversation: conv, myId: myId, onOpenGroupInfo: { path.append(GroupRoute.info(conv.id)) })
+                }
+                .navigationDestination(for: GroupRoute.self) { route in
+                    switch route {
+                    case .info(let id):
+                        GroupInfoView(conversationId: id, onInvite: { path.append(GroupRoute.invite(id)) }, onLeft: { path.removeLast(path.count) })
+                    case .invite(let id):
+                        InviteMembersView(conversationId: id, onDone: { if !path.isEmpty { path.removeLast() } })
+                    }
                 }
         }
     }

@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -61,6 +62,7 @@ import com.vxin.app.ui.theme.VxinTextSecondary
 @Composable
 fun ChatScreen(
     onBack: () -> Unit,
+    onOpenGroupInfo: (String) -> Unit = {},
     viewModel: ChatViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -101,6 +103,13 @@ fun ChatScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                    }
+                },
+                actions = {
+                    if (viewModel.isGroup) {
+                        IconButton(onClick = { onOpenGroupInfo(viewModel.conversationId) }) {
+                            Icon(Icons.Filled.MoreVert, contentDescription = "群聊信息")
+                        }
                     }
                 },
             )

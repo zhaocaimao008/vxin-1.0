@@ -39,6 +39,8 @@ import com.vxin.app.feature.contacts.AddFriendScreen
 import com.vxin.app.feature.contacts.ContactsScreen
 import com.vxin.app.feature.contacts.CreateGroupScreen
 import com.vxin.app.feature.contacts.FriendRequestsScreen
+import com.vxin.app.feature.group.GroupInfoScreen
+import com.vxin.app.feature.group.InviteMembersScreen
 import com.vxin.app.feature.profile.ProfileScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
@@ -60,9 +62,13 @@ private object Routes {
     const val ADD_FRIEND = "addFriend"
     const val REQUESTS = "requests"
     const val CREATE_GROUP = "createGroup"
-    const val CHAT = "chat/{conversationId}?title={title}"
-    fun chat(conversationId: String, title: String) =
-        "chat/$conversationId?title=${Uri.encode(title)}"
+    const val GROUP_INFO = "groupInfo/{conversationId}"
+    const val INVITE_MEMBERS = "inviteMembers/{conversationId}"
+    const val CHAT = "chat/{conversationId}?title={title}&type={type}"
+    fun chat(conversationId: String, title: String, type: String) =
+        "chat/$conversationId?title=${Uri.encode(title)}&type=$type"
+    fun groupInfo(conversationId: String) = "groupInfo/$conversationId"
+    fun inviteMembers(conversationId: String) = "inviteMembers/$conversationId"
 }
 
 @Composable
@@ -133,12 +139,12 @@ private fun MainFlow() {
         ) {
             composable(Routes.CONVERSATIONS) {
                 ConversationListScreen(
-                    onOpenConversation = { conv -> navController.navigate(Routes.chat(conv.id, conv.name)) },
+                    onOpenConversation = { conv -> navController.navigate(Routes.chat(conv.id, conv.name, conv.type)) },
                 )
             }
             composable(Routes.CONTACTS) {
                 ContactsScreen(
-                    onOpenChat = { target -> navController.navigate(Routes.chat(target.conversationId, target.title)) },
+                    onOpenChat = { target -> navController.navigate(Routes.chat(target.conversationId, target.title, "private")) },
                     onAddFriend = { navController.navigate(Routes.ADD_FRIEND) },
                     onRequests = { navController.navigate(Routes.REQUESTS) },
                     onCreateGroup = { navController.navigate(Routes.CREATE_GROUP) },
@@ -159,7 +165,7 @@ private fun MainFlow() {
                 onCreated = { target ->
                     // 创建成功后回到会话列表再进入群聊（避免返回栈停在创建页）
                     navController.popBackStack(Routes.CONVERSATIONS, inclusive = false)
-                    navController.navigate(Routes.chat(target.conversationId, target.title))
+                    navController.navigate(Routes.chat(target.conversationId, target.title, "group"))
                 },
             )
         }
@@ -168,9 +174,32 @@ private fun MainFlow() {
             arguments = listOf(
                 navArgument("conversationId") { type = NavType.StringType },
                 navArgument("title") { type = NavType.StringType; defaultValue = "" },
+                navArgument("type") { type = NavType.StringType; defaultValue = "private" },
             ),
         ) {
-            ChatScreen(onBack = { navController.popBackStack() })
+            ChatScreen(
+                onBack = { navController.popBackStack() },
+                onOpenGroupInfo = { convId -> navController.navigate(Routes.groupInfo(convId)) },
+            )
+        }
+        composable(
+            route = Routes.GROUP_INFO,
+            arguments = listOf(navArgument("conversationId") { type = NavType.StringType }),
+        ) {
+            GroupInfoScreen(
+                onBack = { navController.popBackStack() },
+                onInvite = { convId -> navController.navigate(Routes.inviteMembers(convId)) },
+                onLeft = { navController.popBackStack(Routes.CONVERSATIONS, inclusive = false) },
+            )
+        }
+        composable(
+            route = Routes.INVITE_MEMBERS,
+            arguments = listOf(navArgument("conversationId") { type = NavType.StringType }),
+        ) {
+            InviteMembersScreen(
+                onBack = { navController.popBackStack() },
+                onDone = { navController.popBackStack() },
+            )
         }
         }
     }

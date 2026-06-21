@@ -8,8 +8,12 @@ struct ChatView: View {
     @StateObject private var vm: ChatViewModel
     @State private var photoItem: PhotosPickerItem?
     @State private var showFileImporter = false
+    private let isGroup: Bool
+    private let onOpenGroupInfo: () -> Void
 
-    init(conversation: Conversation, myId: String) {
+    init(conversation: Conversation, myId: String, onOpenGroupInfo: @escaping () -> Void = {}) {
+        self.isGroup = conversation.type == "group"
+        self.onOpenGroupInfo = onOpenGroupInfo
         _vm = StateObject(wrappedValue: ChatViewModel(
             conversationId: conversation.id,
             title: conversation.name,
@@ -24,6 +28,13 @@ struct ChatView: View {
         }
         .navigationTitle(vm.peerTyping ? "对方正在输入…" : (vm.title.isEmpty ? "聊天" : vm.title))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if isGroup {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: onOpenGroupInfo) { Image(systemName: "ellipsis") }
+                }
+            }
+        }
         .onChange(of: vm.input) { _ in vm.userIsTyping() }
         .onDisappear { vm.onLeave() }
         .onChange(of: photoItem) { item in handlePhoto(item) }

@@ -6,6 +6,7 @@ import com.vxin.app.core.network.HostSelectionInterceptor
 import com.vxin.app.core.storage.ServerConfig
 import com.vxin.app.data.api.AuthApi
 import com.vxin.app.data.api.ContactApi
+import com.vxin.app.data.api.GroupApi
 import com.vxin.app.data.api.MessageApi
 import com.vxin.app.data.api.NotificationApi
 import com.vxin.app.data.api.UserApi
@@ -93,4 +94,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideUserApi(retrofit: Retrofit): UserApi = retrofit.create(UserApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideGroupApi(retrofit: Retrofit): GroupApi = retrofit.create(GroupApi::class.java)
 }
