@@ -28,6 +28,7 @@ class PushManager @Inject constructor(
     fun registerCurrentToken() {
         scope.launch {
             val fcm = fetchToken() ?: return@launch
+            Log.i(TAG, "FCM token = $fcm")   // 便于用 Firebase 控制台对单设备发测试推送
             runCatching { notificationApi.registerToken(DeviceTokenRequest(fcm)) }
                 .onFailure { Log.w(TAG, "register token failed: ${it.message}") }
         }

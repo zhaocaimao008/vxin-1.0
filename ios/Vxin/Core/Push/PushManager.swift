@@ -14,6 +14,7 @@ final class PushManager {
     /// MessagingDelegate 回调：拿到/刷新 FCM token
     func onToken(_ token: String) {
         latestToken = token
+        print("[Push] FCM token = \(token)")   // 便于用 Firebase 控制台对单设备发测试推送
         if KeychainStore.shared.isLoggedIn {
             Task { await repo.register(token: token) }
         }

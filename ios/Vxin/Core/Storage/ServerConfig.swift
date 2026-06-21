@@ -6,7 +6,7 @@ final class ServerConfig {
     private init() {}
 
     /// 默认服务器地址（真机联调请改成你的域名，或在登录页「切换服务器」修改）
-    static let defaultURL = "https://api.91aigu.com"
+    static let defaultURL = "https://dipsin.com"
 
     private let key = "vxin_base_url"
 
