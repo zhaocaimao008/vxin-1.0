@@ -1995,7 +1995,10 @@ export default function ChatWindow({ conversation: initialConv, onClose }) {
             )}
             {/* 转发：所有类型消息都可转发 */}
             <div className="wc-ctx-item" onClick={() => ctxAction('forward')}>转发</div>
-            <div className="wc-ctx-item" onClick={() => ctxAction('collect')}>收藏</div>
+            {/* 收藏功能暂在前端隐藏（逻辑保留，改为 true 即可恢复入口） */}
+            {false && (
+              <div className="wc-ctx-item" onClick={() => ctxAction('collect')}>收藏</div>
+            )}
             {conversation.type === 'group' && (
               <div className="wc-ctx-item" onClick={() => ctxAction('pin')}>
                 {pinnedMessages.some(p => p.msgId === ctxMenu.msg.id) ? '取消置顶' : '置顶消息'}
