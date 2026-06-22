@@ -317,7 +317,7 @@ async function collect(userId, msgId) {
   const dedupKey = collectionDedupKey(msg.type, msg.content, extra);
   // 去重：同一内容已收藏则 409（唯一索引兜底竞态，避免重复行）
   const existing = db.prepare('SELECT id FROM collections WHERE user_id=? AND dedup_key=?').get(userId, dedupKey);
-  if (existing) throw conflict('已收藏');
+  if (existing) throw conflict('已收藏', 'COLLECTION_DUPLICATE');
   // P0-1：worker 异步写
   await writeAsync('INSERT INTO collections (id,user_id,type,content,extra,dedup_key) VALUES (?,?,?,?,?,?)',
     [uuidv4(), userId, msg.type, msg.content, JSON.stringify(extra), dedupKey]

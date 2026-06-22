@@ -157,7 +157,7 @@ function addCollection(userId, { type, content, extra }) {
   const dedupKey    = collectionDedupKey(safeType, safeContent, safeExtra);
 
   const existing = db.prepare('SELECT id FROM collections WHERE user_id=? AND dedup_key=?').get(userId, dedupKey);
-  if (existing) throw conflict('已收藏');
+  if (existing) throw conflict('已收藏', 'COLLECTION_DUPLICATE');
 
   const id = uuidv4();
   db.prepare('INSERT INTO collections (id,user_id,type,content,extra,dedup_key) VALUES (?,?,?,?,?,?)')
