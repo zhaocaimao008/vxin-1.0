@@ -19,8 +19,9 @@ const badRequest  = msg => new ApiError(400, msg);
 const unauthorized = msg => new ApiError(401, msg);
 const forbidden   = msg => new ApiError(403, msg);
 const notFound    = msg => new ApiError(404, msg);
+const conflict    = msg => new ApiError(409, msg);
 
 const asyncHandler = fn => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
-module.exports = { ApiError, asyncHandler, badRequest, unauthorized, forbidden, notFound };
+module.exports = { ApiError, asyncHandler, badRequest, unauthorized, forbidden, notFound, conflict };
