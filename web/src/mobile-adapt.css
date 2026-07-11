@@ -189,6 +189,10 @@ html.capacitor-app {
 @media (orientation: landscape) and (max-height: 500px) {
   /* 横屏小高度设备 — 隐藏底部导航、缩小标题栏 */
   .wc-bottom-nav { display: none; }
+  .m-tabbar { height: 42px; }
+  .m-tab-label { display: none; }  /* 横屏只留图标，节省空间 */
+  .m-tab-ico svg { width: 22px; height: 22px; }
+  .m-tab-badge { top: 0; left: 56%; }
 
   /* 聊天窗口全屏 */
   .wc-chat-container {
@@ -199,6 +203,14 @@ html.capacitor-app {
   .wc-textarea {
     max-height: 60px !important;
   }
+}
+
+/* ── 平板横屏适配 (768px~1024px)
+   平板横屏时面板与聊天区并排显示，无需底部导航 ──────────── */
+@media (orientation: landscape) and (min-width: 768px) and (max-width: 1024px) {
+  .m-tabbar { height: 48px; }
+  .m-tab-label { font-size: 9px; }
+  .m-tab-ico svg { width: 22px; height: 22px; }
 }
 
 /* ── 深色模式（移动端原生） ────────────────────────────────── */
