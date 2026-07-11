@@ -5,7 +5,9 @@
 
 .fwd-panel {
   width: 480px;
+  max-width: 92vw;
   height: 600px;
+  max-height: 90vh;
   background: var(--bg-modal);
   border-radius: var(--radius-modal);
   display: flex;
