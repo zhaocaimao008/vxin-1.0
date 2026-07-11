@@ -73,7 +73,7 @@ function useFocusTrap(open) {
 }
 
 // ── Hook: WebRTC 群通话信令与连接管理 ──────────────────────────
-function useGroupCallWebRTC({ socket, user, session, nameOf }) {
+function useGroupCallWebRTC({ socket, user: _user, session, nameOf: _nameOf }) {
   const { mode, conversationId, type } = session;
   const isVideo = type === 'video';
 
@@ -94,7 +94,7 @@ function useGroupCallWebRTC({ socket, user, session, nameOf }) {
 
   const removePeer = useCallback((peerId) => {
     const pc = pcsRef.current.get(peerId);
-    if (pc) { try { pc.close(); } catch {} pcsRef.current.delete(peerId); }
+    if (pc) { try { pc.close(); } catch { /* 连接已关闭 */ } pcsRef.current.delete(peerId); }
     remoteSetRef.current.delete(peerId);
     pendingIceRef.current.delete(peerId);
     setRemoteStreams(prev => {
@@ -134,7 +134,7 @@ function useGroupCallWebRTC({ socket, user, session, nameOf }) {
     if (closedRef.current) return;
     closedRef.current = true;
     if (callIdRef.current) socket?.emit('group_call:leave', { callId: callIdRef.current });
-    pcsRef.current.forEach(pc => { try { pc.onicecandidate = null; pc.ontrack = null; pc.close(); } catch {} });
+    pcsRef.current.forEach(pc => { try { pc.onicecandidate = null; pc.ontrack = null; pc.close(); } catch { /* 连接已关闭 */ } });
     pcsRef.current.clear();
     localStreamRef.current?.getTracks().forEach(t => t.stop());
   }, [socket]);
@@ -162,7 +162,7 @@ function useGroupCallWebRTC({ socket, user, session, nameOf }) {
     (async () => {
       let stream;
       try { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideo }); }
-      catch { stream = new MediaStream(); }
+      catch { /* 权限拒绝/设备占用，用空流保底 */ stream = new MediaStream(); }
       if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
       localStreamRef.current = stream;
       setLocalStream(stream);
@@ -217,6 +217,7 @@ function useGroupCallWebRTC({ socket, user, session, nameOf }) {
     const onError = ({ reason }) => {
       const msg = { busy: '你正在通话中', not_group: '仅群聊支持多人通话', not_found: '通话已结束', full: '通话人数已满' }[reason] || '通话出错';
       showToast(msg, 'error');
+      hangup();
     };
     socket.on('group_call:started', onStarted);
     socket.on('group_call:peers', onPeers);
@@ -236,7 +237,7 @@ function useGroupCallWebRTC({ socket, user, session, nameOf }) {
       socket.off('group_call:peer_left', onPeerLeft);
       socket.off('group_call:error', onError);
     };
-  }, [socket, createPC, drainIce, removePeer]);
+  }, [socket, createPC, drainIce, removePeer, hangup]);
 
   return {
     callId, muted, cameraOff, remoteStreams, localStream, status,
