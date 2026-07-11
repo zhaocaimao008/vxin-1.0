@@ -200,6 +200,20 @@ img { display: block; }
   height: 100vh;
   overflow: hidden;
   background: var(--bg-app);
+  transition: background var(--dur) var(--ease);
+}
+
+/* 响应式布局过渡 — 面板/消息区宽度随断点平滑变化 */
+.wc-main {
+  transition: flex var(--dur) var(--ease);
+}
+
+.wc-panel {
+  transition: width var(--dur) var(--ease), min-width var(--dur) var(--ease), padding var(--dur) var(--ease);
+}
+
+.wc-chat {
+  transition: flex var(--dur) var(--ease);
 }
 
 /* 主内容区（面板 + 聊天，水平排列） */
@@ -245,6 +259,7 @@ img { display: block; }
   background: var(--bg-shell);
   flex-shrink: 0;
   border-top: 2px solid rgba(255,255,255,.10);
+  transition: height var(--dur-fast) var(--ease), padding var(--dur-fast) var(--ease);
 }
 
 .wc-bottom-nav {
@@ -395,7 +410,7 @@ img { display: block; }
   gap: var(--sp-2h);
   cursor: pointer;
   position: relative;
-  transition: background var(--dur-fast);
+  transition: background var(--dur-fast), height var(--dur) var(--ease), padding var(--dur) var(--ease);
   border-bottom: none;
   content-visibility: auto;
   contain-intrinsic-size: auto 64px;
@@ -578,6 +593,7 @@ img { display: block; }
   display: flex;
   flex-direction: column;
   background: var(--bg-messages);  /* 比 #EDEDED 更干净 */
+  transition: padding var(--dur) var(--ease);
 }
 
 /* Virtual list mode: no padding (each Row adds its own) */
@@ -821,6 +837,7 @@ img { display: block; }
   background: var(--bg-input);
   border-top: 1px solid rgba(0,0,0,.09);
   flex-shrink: 0;
+  transition: padding var(--dur-fast) var(--ease);
 }
 
 /* 工具栏 — 微信原版无内分隔线 */
@@ -1073,6 +1090,7 @@ img { display: block; }
   padding: 9px var(--sp-4);
   gap: var(--sp-3);
   cursor: pointer;
+  transition: padding var(--dur) var(--ease);
   border-bottom: 1px solid rgba(0,0,0,.03);
   transition: background var(--dur-fast);
   content-visibility: auto;
@@ -4348,3 +4366,74 @@ body.dark-mode .wc-sidebar-btn:hover { background: rgba(109,90,230,.16); }
 /* 暗色模式：Hero 阴影加重，QR 按钮对比保持 */
 body.dark-mode .pf-hero { box-shadow: 0 10px 34px rgba(0,0,0,.5); }
 /* AURORA 个人资料 Hero ▲ END */
+
+/* ================================================================
+   § 共享组件样式 — IconButton / Skeleton / Empty / Error
+   (20-robot audit 优化：A11y 图标按钮 + 统一三态组件)
+   ================================================================ */
+
+/* IconButton — 无障碍图标按钮，≥40px 命中区 */
+.wc-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease, transform .1s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.wc-icon-btn:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-primary); }
+.wc-icon-btn:active:not(:disabled) { transform: scale(.94); }
+.wc-icon-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.wc-icon-btn.is-active { color: var(--color-primary); }
+.wc-icon-btn:disabled { color: var(--text-disabled); cursor: not-allowed; }
+
+/* Skeleton 骨架屏 */
+.wc-skeleton { padding: 8px 0; }
+.wc-skeleton-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+.wc-skeleton-avatar {
+  width: 44px; height: 44px; flex: 0 0 44px;
+  border-radius: var(--radius-avatar);
+  background: var(--bg-hover);
+}
+.wc-skeleton-lines { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.wc-skeleton-line { height: 12px; border-radius: var(--radius-sm); background: var(--bg-hover); }
+.wc-skeleton-avatar, .wc-skeleton-line {
+  position: relative; overflow: hidden;
+}
+.wc-skeleton-avatar::after, .wc-skeleton-line::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent);
+  transform: translateX(-100%);
+  animation: wc-shimmer 1.4s infinite;
+}
+@keyframes wc-shimmer { 100% { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) {
+  .wc-skeleton-avatar::after, .wc-skeleton-line::after { animation: none; }
+}
+
+/* Empty / Error 三态 */
+.wc-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 48px 24px; text-align: center; gap: 8px;
+  color: var(--text-secondary);
+}
+.wc-state-icon { font-size: 40px; line-height: 1; opacity: .85; }
+.wc-state-title { font-size: var(--text-md); color: var(--text-primary); font-weight: 500; }
+.wc-state-desc { font-size: var(--text-note); color: var(--text-muted); }
+.wc-state-action { margin-top: 8px; }
+.wc-state-retry {
+  margin-top: 8px; padding: 8px 20px;
+  border: none; border-radius: var(--radius-full);
+  background: var(--color-primary); color: var(--text-on-brand);
+  font-size: var(--text-sm2); cursor: pointer;
+  transition: background-color .15s ease;
+}
+.wc-state-retry:hover { background: var(--color-primary-hover); }
+.wc-state-retry:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
