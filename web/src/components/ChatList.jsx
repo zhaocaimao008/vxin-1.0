@@ -386,7 +386,8 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
                   itemCount={filtered.length}
                   itemSize={ITEM_HEIGHT}
                   itemData={listData}
-                  overscanCount={5}
+                  overscanCount={8}
+                  itemKey={(index, data) => data.items[index]?.id ?? index}
                 >
                   {ConvRow}
                 </FixedSizeList>

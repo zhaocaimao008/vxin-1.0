@@ -39,6 +39,7 @@ const RedPacketModal      = lazy(() => import('./RedPacketModal'));
 const TransferModal       = lazy(() => import('./TransferModal'));
 const ForwardModal        = lazy(() => import('./ForwardModal'));
 import GroupCallModal from './GroupCallModal'; // 保持 eager：处理来电需立即挂载
+import { ModalSkeleton, PanelSkeleton, InlineSkeleton } from './ModalSkeleton';
 const ScheduleSendModal   = lazy(() => import('./ScheduleSendModal'));
 const PrivateChatSettings = lazy(() => import('./PrivateChatSettings'));
 const ChatFiles           = lazy(() => import('./ChatFiles'));
@@ -2477,8 +2478,8 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
         )}
 
         {/* Emoji panel */}
-        {showEmoji && <Suspense fallback={null}><EmojiPicker onSelect={e => { dispatchCompose({ type: 'APPEND_INPUT', text: e }); textareaRef.current?.focus(); }} /></Suspense>}
-        {showStickers && <Suspense fallback={null}><StickerPanel onSend={sendSticker} /></Suspense>}
+        {showEmoji && <Suspense fallback={<InlineSkeleton height={280} />}><EmojiPicker onSelect={e => { dispatchCompose({ type: 'APPEND_INPUT', text: e }); textareaRef.current?.focus(); }} /></Suspense>}
+        {showStickers && <Suspense fallback={<InlineSkeleton height={280} />}><StickerPanel onSend={sendSticker} /></Suspense>}
 
         {/* Text / Voice input — 始终显示 */}
         {!showMore && (
