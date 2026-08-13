@@ -1,8 +1,9 @@
-import React, { useRef, useCallback, forwardRef, useImperativeHandle, memo } from 'react';
+import React, { useRef, useCallback, forwardRef, useImperativeHandle, memo, useState, useEffect } from 'react';
 import { VariableSizeList } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import MessageItem, { TimeDivider } from './MessageItem';
 import { estimateHeight } from './estimateHeight';
+import { networkMonitor } from '../utils/networkMonitor';
 
 // 批量行高刷新调度器（增强版）：多行异步测量合并为一次重排，并添加防抖避免连续触发。
 // 优化点：1) 同帧合并 2) 微任务批处理 3) 最小影响范围追踪
@@ -99,11 +100,30 @@ const Row = memo(function Row({ index, style, data }) {
     && prev.style.height === next.style.height;
 });
 
+// 动态 overscanCount：快速网络/快速滚动时增大预渲染区域，慢速网络减少不必要渲染
+function useDynamicOverscan() {
+  const [overscan, setOverscan] = useState(8);
+  useEffect(() => {
+    const update = () => {
+      // 慢速网络或省流模式：减小 overscan 节省带宽和渲染时间
+      if (networkMonitor.isSlow || networkMonitor.state.saveData) {
+        setOverscan(3);
+      } else {
+        setOverscan(12);  // 快速网络：更大预渲染区，滚动更流畅
+      }
+    };
+    update();
+    return networkMonitor.on('change', update);
+  }, []);
+  return overscan;
+}
+
 const VirtualMessageList = forwardRef(function VirtualMessageList(
   { items, cbRef, outerRef, onHeightSettle },
   ref
 ) {
   const listRef = useRef(null);
+  const overscanCount = useDynamicOverscan();
   const sizeMapRef = useRef({});
   // onHeightSettle 用 ref 承接,避免父组件每次传新函数导致 flusher 重建
   const onSettleRef = useRef(onHeightSettle);
@@ -227,7 +247,7 @@ const VirtualMessageList = forwardRef(function VirtualMessageList(
             estimatedItemSize={82}
             itemData={itemData}
             itemKey={itemKey}
-            overscanCount={8}
+            overscanCount={overscanCount}
             style={{ overflowX: 'hidden', background: 'transparent' }}
           >
             {Row}

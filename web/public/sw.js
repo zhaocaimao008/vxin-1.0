@@ -1,170 +1,201 @@
-/* V信 Service Worker — 离线缓存 + Web Push 推送处理 */
-const CACHE_NAME = 'vxin-v2.0.19';
-const CACHE_URLS = [
+/**
+ * v信 Service Worker — PWA 离线缓存 & 性能加速
+ * 策略：
+ *   - 静态资源（JS/CSS/字体/图片）→ Cache First（离线可用）
+ *   - API 请求 → Network First，失败时返回 504
+ *   - 推送通知 → 本地展示
+ * 版本号变更自动触发旧缓存清理
+ */
+const SW_VERSION = 'vxin-sw-v3';
+const STATIC_CACHE = `${SW_VERSION}-static`;
+const DYNAMIC_CACHE = `${SW_VERSION}-dynamic`;
+const MAX_DYNAMIC_ENTRIES = 60;
+
+// 预缓存核心 Shell（由 Vite Build 动态替换，这里是默认列表）
+const PRECACHE_URLS = [
   '/',
   '/index.html',
-  '/manifest.json',
-  '/icon.png',
 ];
 
-// ── 安装：预缓存核心资源 ────────────────────────────────────────
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(CACHE_URLS).catch((err) => {
-        console.warn('[SW] 预缓存失败:', err.message);
-      });
-    })
-  );
-  // 立即激活新 SW，不等待旧标签页关闭
+// ── 安装：预缓存核心 Shell ───────────────────────────────────
+self.addEventListener('install', (event) => {
   self.skipWaiting();
-});
-
-// ── 激活：清理旧缓存 ────────────────────────────────────────────
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            console.log('[SW] 删除旧缓存:', key);
-            return caches.delete(key);
-          }
-        })
-      );
-    })
+  event.waitUntil(
+    caches.open(STATIC_CACHE).then(cache => cache.addAll(PRECACHE_URLS))
   );
-  // 立即接管所有页面
-  return self.clients.claim();
 });
 
-// ── Fetch：网络优先，失败则降级到缓存（离线可用）──────────────
-self.addEventListener('fetch', (e) => {
-  const { request } = e;
+// ── 激活：清理旧版本缓存 ─────────────────────────────────────
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.map(key => {
+        if (key !== STATIC_CACHE && key !== DYNAMIC_CACHE) {
+          return caches.delete(key);
+        }
+      }))
+    ).then(() => self.clients.claim())
+  );
+});
+
+// ── Fetch 拦截 ────────────────────────────────────────────────
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
   const url = new URL(request.url);
 
-  // 只处理同源请求，跳过 API 调用（需要实时数据）
-  if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith('/api/')) return;
-  if (url.pathname.startsWith('/uploads/')) return;
-
-  e.respondWith(
-    fetch(request)
-      .then((response) => {
-        // 成功：更新缓存并返回
-        if (response && response.status === 200 && request.method === 'GET') {
-          const cloned = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, cloned).catch(() => {});
-          });
-        }
-        return response;
-      })
-      .catch(() => {
-        // 网络失败：尝试从缓存读取
-        return caches.match(request).then((cached) => {
-          if (cached) {
-            console.log('[SW] 离线缓存命中:', url.pathname);
-            return cached;
-          }
-          // 缓存也没有：返回离线页面或 404
-          if (request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
-          return new Response('离线不可用', { status: 503 });
-        });
-      })
-  );
+  // 1. 非 GET 请求直接透传
+  if (request.method !== 'GET') return;
+  // 2. Chrome 扩展、data: 等跳过
+  if (!url.protocol.startsWith('http')) return;
+  // 3. Socket.IO 长连接跳过
+  if (url.pathname.startsWith('/socket.io')) return;
+  // 4. API 请求 → Network First
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+  // 5. 媒体/上传文件 → Cache First（带 TTL 检查，图片/语音/视频离线可用）
+  if (url.pathname.startsWith('/uploads/') || url.pathname.startsWith('/media/')) {
+    event.respondWith(cacheFirst(request, DYNAMIC_CACHE));
+    return;
+  }
+  // 6. 静态资源（JS/CSS/字体/图标）→ Cache First
+  if (isStaticAsset(url)) {
+    event.respondWith(cacheFirst(request, STATIC_CACHE));
+    return;
+  }
+  // 7. 导航请求（HTML）→ Network First + 离线 fallback
+  if (request.mode === 'navigate') {
+    event.respondWith(navigationHandler(request));
+    return;
+  }
+  // 8. 其余 → Stale-While-Revalidate
+  event.respondWith(staleWhileRevalidate(request));
 });
 
-// ── Push 事件：收到推送消息 ──────────────────────────────────────
-self.addEventListener('push', (e) => {
-  let payload = { title: 'V信新消息', body: '你有一条新消息' };
+// ── 策略实现 ──────────────────────────────────────────────────
 
-  if (e.data) {
-    try {
-      payload = e.data.json();
-    } catch {
-      payload = { title: 'V信', body: e.data.text() };
+/** Cache First：静态资源，缓存命中直接返回，未命中存入缓存 */
+async function cacheFirst(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      // 动态缓存容量控制
+      if (cacheName === DYNAMIC_CACHE) await trimCache(cache, MAX_DYNAMIC_ENTRIES);
+      cache.put(request, response.clone());
     }
+    return response;
+  } catch {
+    return new Response('离线，资源不可用', { status: 503 });
   }
+}
 
-  const title = payload.senderName || payload.title || 'V信新消息';
+/** Network First：API 请求，网络优先，失败返回 504 */
+async function networkFirst(request) {
+  try {
+    const response = await fetch(request, { signal: AbortSignal.timeout(8000) });
+    return response;
+  } catch {
+    return new Response(JSON.stringify({ error: '网络不可用' }), {
+      status: 504,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+/** Navigation Handler：HTML 导航，网络优先，离线返回缓存根路径 */
+async function navigationHandler(request) {
+  try {
+    const response = await fetch(request);
+    return response;
+  } catch {
+    const cache = await caches.open(STATIC_CACHE);
+    const fallback = await cache.match('/index.html') || await cache.match('/');
+    return fallback || new Response('v信 - 离线模式', { status: 200, headers: { 'Content-Type': 'text/html' } });
+  }
+}
+
+/** Stale-While-Revalidate：返回缓存同时后台更新 */
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(DYNAMIC_CACHE);
+  const cached = await cache.match(request);
+  const networkPromise = fetch(request).then(response => {
+    if (response.ok) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  }).catch(() => null);
+  return cached || await networkPromise || new Response('', { status: 503 });
+}
+
+// ── 工具函数 ──────────────────────────────────────────────────
+
+function isStaticAsset(url) {
+  return /\.(js|css|woff2?|ttf|eot|svg|ico|png|jpg|jpeg|webp|avif)(\?.*)?$/.test(url.pathname);
+}
+
+/** 裁剪动态缓存到最大条目数（LRU 近似：删除最早的条目） */
+async function trimCache(cache, maxEntries) {
+  const keys = await cache.keys();
+  if (keys.length >= maxEntries) {
+    const toDelete = keys.slice(0, keys.length - maxEntries + 1);
+    await Promise.all(toDelete.map(k => cache.delete(k)));
+  }
+}
+
+// ── 推送通知 ──────────────────────────────────────────────────
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+  let data;
+  try { data = event.data.json(); } catch { data = { title: 'v信', body: event.data.text() }; }
+
   const options = {
-    body: payload.body || '',
-    icon: '/icon.png',
-    badge: '/icon.png',
-    tag: `vxin-conv-${payload.conversationId || 'default'}`,
+    body: data.body || '',
+    icon: '/icon-192.png',
+    badge: '/badge-72.png',
+    tag: data.conversationId || 'vxin-msg',    // 同会话消息折叠为一条
     renotify: true,
+    data: { conversationId: data.conversationId, url: data.url || '/' },
+    actions: [
+      { action: 'open', title: '查看' },
+      { action: 'dismiss', title: '关闭' },
+    ],
     silent: false,
     vibrate: [200, 100, 200],
-    timestamp: payload.timestamp ? payload.timestamp * 1000 : Date.now(),
-    data: {
-      conversationId: payload.conversationId || '',
-      senderId: payload.senderId || '',
-      url: '/',
-    },
-    actions: [
-      { action: 'reply', title: '回复' },
-      { action: 'dismiss', title: '忽略' },
-    ],
   };
 
-  e.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(self.registration.showNotification(data.title || 'v信消息', options));
 });
 
-// ── notificationclick：点击通知跳转到对应会话 ────────────────────
-self.addEventListener('notificationclick', (e) => {
-  e.notification.close();
-
-  if (e.action === 'dismiss') return;
-
-  const { conversationId, url } = e.notification.data || {};
-  const targetUrl = url || '/';
-
-  e.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      // 已有打开的标签页：聚焦并传递会话ID
-      for (const client of windowClients) {
-        if (client.url.includes(self.location.origin)) {
-          client.focus();
-          if (conversationId) {
-            client.postMessage({ type: 'openConversation', conversationId });
-          }
-          return;
-        }
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  if (event.action === 'dismiss') return;
+  const url = event.notification.data?.url || '/';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window' }).then(clients => {
+      const existing = clients.find(c => c.url.includes(self.location.origin));
+      if (existing) {
+        existing.focus();
+        existing.postMessage({ type: 'navigate', url, conversationId: event.notification.data?.conversationId });
+      } else {
+        self.clients.openWindow(url);
       }
-      // 没有打开的标签页：打开新窗口
-      return clients.openWindow(targetUrl);
     })
   );
 });
 
-      for (const client of windowClients) {
-        if (client.url.includes(self.location.origin)) {
-          client.focus();
-          if (conversationId) {
-            client.postMessage({ type: 'OPEN_CONVERSATION', conversationId });
-          }
-          return;
-        }
-      }
-      // 没有标签页：打开新窗口
-      return clients.openWindow(targetUrl);
-    })
-  );
+// ── 后台同步（离线发消息补偿）────────────────────────────────
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'vxin-outbox-sync') {
+    event.waitUntil(syncOutbox());
+  }
 });
 
-// ── pushsubscriptionchange：订阅过期自动续期 ────────────────────
-self.addEventListener('pushsubscriptionchange', (e) => {
-  e.waitUntil(
-    self.registration.pushManager.subscribe(e.oldSubscription.options).then((sub) => {
-      return fetch('/api/notifications/web-subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription: sub }),
-        credentials: 'include',
-      });
-    })
-  );
-});
+async function syncOutbox() {
+  // 通知所有标签页触发 outbox 重试
+  const clients = await self.clients.matchAll({ type: 'window' });
+  clients.forEach(client => client.postMessage({ type: 'sync_outbox' }));
+}

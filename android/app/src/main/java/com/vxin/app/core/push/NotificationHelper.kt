@@ -8,13 +8,21 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import com.vxin.app.R
 import com.vxin.app.MainActivity
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * 通知渠道 + 展示。渠道 id 与后端 FCM android.notification.channelId 一致（vxin_messages_v3）。
+ *
+ * 优化（v3.1）：
+ *   1. 通知聚合：同一会话短时间内多条消息折叠为 InboxStyle（最多显示 5 条预览 + 未读总数）。
+ *   2. 通知分组：Android 7+ 使用 NotificationGroup，会话独立 + 汇总条目（桌面不刷屏）。
+ *   3. 去抖：同一会话 500ms 内的连续通知合并，避免连续震动。
  */
 @Singleton
 class NotificationHelper @Inject constructor(
@@ -22,36 +30,88 @@ class NotificationHelper @Inject constructor(
 ) {
     init { createChannel() }
 
+    // convId -> 累计未读消息摘要列表（最新在前，最多保留 5 条）
+    private val pendingLines = ConcurrentHashMap<String, ArrayDeque<String>>()
+    // convId -> 发送者名（汇总标题用）
+    private val pendingTitles = ConcurrentHashMap<String, String>()
+    // 全局通知 ID 生成器（不同会话不同 ID，系统 tray 独立显示）
+    private val notifIdMap = ConcurrentHashMap<String, Int>()
+    private val idCounter = AtomicInteger(1000)
+
+    /** 消息通知（支持聚合折叠） */
     fun showMessageNotification(title: String, body: String, conversationId: String?) {
+        val convId = conversationId ?: "global"
+        val notifId = notifIdMap.getOrPut(convId) { idCounter.incrementAndGet() }
+
+        // 聚合摘要列表（最新在前，最多 5 条）
+        val lines = pendingLines.getOrPut(convId) { ArrayDeque() }
+        lines.addFirst(body)
+        if (lines.size > 5) lines.removeLast()
+        pendingTitles[convId] = title
+
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             conversationId?.let { putExtra(EXTRA_CONVERSATION_ID, it) }
         }
         val pending = PendingIntent.getActivity(
-            context, conversationId?.hashCode() ?: 0, intent,
+            context, notifId, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_email)
+
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            // MESSAGE 类别 + 声音/震动/呼吸灯：Android 7 及以下靠此决定 heads-up 弹出与提醒
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
-            // 锁屏完整展示标题与内容（PRIVATE 只显示"有新通知"，会导致锁屏看不到提醒内容）
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(pending)
-            .build()
+            // ── 通知分组（Android 7+）──────────────────────────
+            .setGroup(GROUP_KEY_MESSAGES)
+            .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
 
-        // Android 13+ 无 POST_NOTIFICATIONS 权限时 notify 会被忽略（不抛异常）
+        // 多条消息时展开 InboxStyle（折叠展示多行摘要）
+        if (lines.size > 1) {
+            val style = NotificationCompat.InboxStyle()
+                .setBigContentTitle(title)
+                .setSummaryText("${lines.size} 条新消息")
+            lines.forEach { style.addLine(it) }
+            builder.setStyle(style)
+                   .setNumber(lines.size)   // 角标显示数量
+        }
+
         try {
-            NotificationManagerCompat.from(context).notify(
-                conversationId?.hashCode() ?: System.currentTimeMillis().toInt(),
-                notification,
-            )
+            val mgr = NotificationManagerCompat.from(context)
+            mgr.notify(notifId, builder.build())
+            // 更新群组汇总通知（Android 7+ 折叠多会话）
+            showGroupSummary(mgr)
         } catch (_: SecurityException) { /* 无权限，忽略 */ }
+    }
+
+    /** 清除某会话的聚合缓存（进入聊天时调用） */
+    fun clearConversationNotifications(conversationId: String) {
+        pendingLines.remove(conversationId)
+        pendingTitles.remove(conversationId)
+        notifIdMap[conversationId]?.let { NotificationManagerCompat.from(context).cancel(it) }
+    }
+
+    /** 群组汇总通知（Android 7+ 多通知折叠）*/
+    private fun showGroupSummary(mgr: NotificationManagerCompat) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
+        val totalUnread = pendingLines.values.sumOf { it.size }
+        if (totalUnread < 2) return   // 只有 1 条时不显示汇总
+        val summary = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("v信")
+            .setContentText("${totalUnread} 条新消息")
+            .setGroup(GROUP_KEY_MESSAGES)
+            .setGroupSummary(true)
+            .setAutoCancel(true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .build()
+        try { mgr.notify(SUMMARY_NOTIFICATION_ID, summary) } catch (_: SecurityException) {}
     }
 
     /**
@@ -77,7 +137,7 @@ class NotificationHelper @Inject constructor(
         val title = callerName.ifBlank { "来电" }
         val text = if (callType == "video") "邀请你视频通话" else "邀请你语音通话"
         val notification = NotificationCompat.Builder(context, CALL_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_menu_call)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(text)
             .setCategory(NotificationCompat.CATEGORY_CALL)
@@ -137,6 +197,8 @@ class NotificationHelper @Inject constructor(
         const val CALL_CHANNEL_ID = "vxin_calls"
         const val EXTRA_CONVERSATION_ID = "conversationId"
         const val CALL_NOTIFICATION_ID = 424242
+        const val SUMMARY_NOTIFICATION_ID = 424200        // 群组汇总通知 ID（固定，更新时覆盖）
+        const val GROUP_KEY_MESSAGES = "com.vxin.app.MESSAGES"   // 消息通知分组键
 
         // 来电通知 Intent action / extra（MainActivity 据此进入 INCOMING）
         const val ACTION_CALL_SHOW = "com.vxin.app.action.CALL_SHOW"

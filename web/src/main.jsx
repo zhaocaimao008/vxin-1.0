@@ -11,6 +11,8 @@ import { loadRemoteConfig, getConfig } from './utils/config';
 import { initWebVitals } from './utils/webVitals';
 import { initImageOptimizer } from './utils/imageOptimizer';
 import { setupAxiosInterceptors } from './utils/axiosInterceptor';
+import { registerSW } from './utils/serviceWorker';
+import { networkMonitor } from './utils/networkMonitor';
 
 // ── Sentry 错误监控初始化 ─────────────────────────────────
 if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
@@ -92,6 +94,27 @@ if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
     initImageOptimizer();
   }
 
-  // 6. 渲染 React
+  // 6. 网络质量监控（全端）
+  networkMonitor.on('offline', () => {
+    window.dispatchEvent(new CustomEvent('vxin:network_offline'));
+  });
+  networkMonitor.on('online', () => {
+    window.dispatchEvent(new CustomEvent('vxin:network_online'));
+  });
+
+  // 7. Service Worker 注册（Web 端，PWA 离线支持）
+  if (!isElectron && !isMobile) {
+    registerSW({
+      onUpdate: (reg) => {
+        // 有新版本：通过自定义事件通知 UpdateBanner 组件
+        window.dispatchEvent(new CustomEvent('vxin:sw_update', { detail: { reg } }));
+      },
+      onSuccess: () => {
+        console.log('[SW] 离线缓存已就绪');
+      },
+    });
+  }
+
+  // 8. 渲染 React
   ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 })();

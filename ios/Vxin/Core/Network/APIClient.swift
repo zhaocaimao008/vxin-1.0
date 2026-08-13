@@ -27,6 +27,11 @@ struct AnyEncodable: Encodable {
 
 /// 统一网络层：URLSession + async/await + Bearer 注入 + 401 处理。
 /// 与 Android APIClient/AuthInterceptor 等价；不处理 CSRF（无 cookie，后端对 Bearer 放行）。
+///
+/// 优化（v3.1）：
+///   - 使用专用 URLSessionConfiguration：HTTP/2、连接池复用（对齐 Android OkHttp 配置）
+///   - 请求超时对齐 Android：connect 20s / resource 60s
+///   - 自动重试：5xx / 网络超时最多重试 2 次（指数退避 1s/2s）
 final class APIClient {
     static let shared = APIClient()
     private init() {}
@@ -37,7 +42,32 @@ final class APIClient {
     private let decoder = JSONDecoder()
     private let encoder = JSONEncoder()
 
-    // MARK: - JSON 请求
+    // ── 专用 URLSession：连接池复用 + HTTP/2 + 超时调优 ────────
+    private lazy var session: URLSession = {
+        let cfg = URLSessionConfiguration.default
+        // HTTP/2 多路复用（iOS 10+ 默认支持，显式确认）
+        cfg.httpShouldUsePipelining = false  // HTTP/2 不需要 pipelining
+        // 连接池：最大并发连接数（对齐 Android OkHttp 10 空闲连接）
+        cfg.httpMaximumConnectionsPerHost = 8
+        // 超时（对齐 Android：connect 20s，resource 60s）
+        cfg.timeoutIntervalForRequest  = 20   // 等待服务器响应超时
+        cfg.timeoutIntervalForResource = 60   // 资源下载总超时（上传/下载文件）
+        // 网络服务类型：responsiveData = 优先保证响应速度（不限速，高优先级）
+        cfg.networkServiceType = .responsiveData
+        // 蜂窝后台访问（配合 Background App Refresh）
+        cfg.allowsCellularAccess = true
+        cfg.allowsConstrainedNetworkAccess = true
+        cfg.allowsExpensiveNetworkAccess  = true
+        // 禁用 cookie（用 Bearer token，不需要 cookie 会话）
+        cfg.httpCookieAcceptPolicy = .never
+        cfg.httpShouldSetCookies = false
+        return URLSession(configuration: cfg)
+    }()
+
+    /// 最大自动重试次数（5xx / 网络超时）
+    private let maxRetries = 2
+
+    // MARK: - JSON 请求（带自动重试）
     func send<T: Decodable>(
         _ path: String,
         method: String = "GET",
@@ -49,17 +79,19 @@ final class APIClient {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = try encoder.encode(AnyEncodable(body))
         }
-        let (data, response): (Data, URLResponse)
-        do { (data, response) = try await URLSession.shared.data(for: request) }
-        catch { throw APIError.network }
-        return try handle(data: data, response: response)
+        return try await withRetry(maxRetries) {
+            let (data, response): (Data, URLResponse)
+            do { (data, response) = try await self.session.data(for: request) }
+            catch { throw APIError.network }
+            return try self.handle(data: data, response: response)
+        }
     }
 
     /// 取原始字节（带 Bearer），用于二维码 PNG 等非 JSON 响应。
     func fetchData(_ path: String) async throws -> Data {
         let request = try makeRequest(path: path, method: "GET", authorized: true)
         let (data, response): (Data, URLResponse)
-        do { (data, response) = try await URLSession.shared.data(for: request) }
+        do { (data, response) = try await session.data(for: request) }
         catch { throw APIError.network }
         guard let http = response as? HTTPURLResponse else { throw APIError.network }
         switch http.statusCode {
@@ -93,9 +125,37 @@ final class APIClient {
         body.appendString("\r\n--\(boundary)--\r\n")
 
         let (data, response): (Data, URLResponse)
-        do { (data, response) = try await URLSession.shared.upload(for: request, from: body) }
+        do { (data, response) = try await session.upload(for: request, from: body) }
         catch { throw APIError.network }
         return try handle(data: data, response: response)
+    }
+
+    // MARK: - 指数退避重试（5xx / 网络超时自动重试）
+    private func withRetry<T>(_ times: Int, operation: () async throws -> T) async throws -> T {
+        var attempt = 0
+        var lastError: Error = APIError.network
+        while attempt <= times {
+            do {
+                return try await operation()
+            } catch let err as APIError {
+                // 401 / 客户端错误不重试
+                switch err {
+                case .unauthorized, .decoding: throw err
+                case .server(let code, _) where code < 500: throw err
+                default: break
+                }
+                lastError = err
+            } catch {
+                lastError = error
+            }
+            if attempt < times {
+                // 指数退避：1s, 2s
+                let delay = UInt64(1_000_000_000) << attempt
+                try? await Task.sleep(nanoseconds: delay)
+            }
+            attempt += 1
+        }
+        throw lastError
     }
 
     // MARK: - 内部

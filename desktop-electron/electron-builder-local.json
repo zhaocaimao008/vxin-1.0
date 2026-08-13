@@ -1,0 +1,17 @@
+{
+  "appId": "com.vxin.desktop",
+  "productName": "v信",
+  "directories": { "output": "dist" },
+  "files": ["src/**/*", "assets/**/*"],
+  "win": {
+    "target": [{"target": "nsis", "arch": ["x64"]}],
+    "icon": "assets/icon.ico",
+    "signingHashAlgorithms": null,
+    "sign": null
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true
+  },
+  "publish": null
+}

@@ -21,7 +21,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.ConnectionPool
 import okhttp3.OkHttpClient
+import okhttp3.Protocol
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import java.util.concurrent.TimeUnit
@@ -68,6 +70,15 @@ object AppModule {
             .readTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
             .callTimeout(0, TimeUnit.SECONDS)
+            // ── 连接池优化：复用 TCP 连接，减少握手开销 ──────────────
+            // maxIdleConnections=10：同时保持 10 个空闲 TCP（大群聊+通话同时进行时够用）。
+            // keepAliveDuration=5min：对齐服务端 keep-alive，5分钟内不重建。
+            .connectionPool(ConnectionPool(10, 5, TimeUnit.MINUTES))
+            // ── HTTP/2 优先（多路复用，单连接并发多请求）─────────────
+            // OkHttp 默认支持 HTTP/2，这里显式声明优先级（HTTP_2 先于 HTTP_1_1）。
+            .protocols(listOf(Protocol.HTTP_2, Protocol.HTTP_1_1))
+            // ── 重试（弱网连接失败时自动切 IP）─────────────────────
+            .retryOnConnectionFailure(true)
             .addInterceptor(hostSelectionInterceptor)
             .addInterceptor(authInterceptor)
             .addInterceptor(logging)
