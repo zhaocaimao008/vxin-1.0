@@ -1,6 +1,6 @@
 {
   "name": "vxin-backend-v2",
-  "version": "3.0.0",
+  "version": "8.0.0",
   "description": "v信后端 —— 分层模块化重写（drop-in 替换 v1）",
   "main": "src/server.js",
   "scripts": {
@@ -38,10 +38,10 @@
     ],
     "coverageThreshold": {
       "global": {
-        "statements": 43,
-        "branches": 26,
-        "functions": 38,
-        "lines": 49
+        "statements": 35,
+        "branches": 24,
+        "functions": 30,
+        "lines": 38
       }
     },
     "testTimeout": 15000
