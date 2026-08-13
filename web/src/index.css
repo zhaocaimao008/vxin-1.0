@@ -146,12 +146,11 @@ button[type="button"]:active {
 
 /* ── 聊天列表项悬停微提升（GPU 加速）── */
 .wc-chat-item {
-  transition: background var(--dur-fast) ease, transform 0.15s ease;
-  will-change: transform;
+  transition: background var(--dur-fast) ease;
 }
 
 .wc-chat-item:hover {
-  transform: translateX(2px) translateZ(0);
+  background: var(--bg-panel-item-hover);
 }
 
 /* ── 消息气泡入场动画 ── */
@@ -580,6 +579,14 @@ body.dark-mode * {
   flex-shrink: 0;
   box-shadow: 0 1px 0 rgba(0,0,0,.04);
 }
+/* 顶栏头像（私聊/群聊）*/
+.wc-chat-header-avatar {
+  flex-shrink: 0;
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
 .wc-header-name-container {
   flex: 1;
   min-width: 0;
@@ -735,9 +742,9 @@ body.dark-mode * {
   box-shadow: 0 1px 3px rgba(20, 24, 40, .08), 0 1px 8px rgba(20, 24, 40, .05);
 }
 /* 浅绿气泡内文字/链接/时间用深色(企业微信标准) */
-.wc-msg-bubble.mine a { color: var(--bubble-mine-link); }
+.wc-msg-bubble.mine a { color: rgba(255,255,255,.85); }
 .wc-msg-bubble.mine .wc-msg-time,
-.wc-msg-bubble.mine .wc-msg-meta { color: rgba(31, 33, 41, .5); }
+.wc-msg-bubble.mine .wc-msg-meta { color: rgba(255,255,255,.60); }
 .wc-msg-bubble.other {
   background: var(--bg-msg-other);
   color: var(--text-primary);
@@ -2206,9 +2213,9 @@ body {
   flex-direction: column;
   align-items: center;
   height: 100%;
-  background: linear-gradient(180deg, #262B38 0%, var(--bg-shell) 55%, #1F2430 100%);
-  border-right: 1px solid rgba(0,0,0,.22);
-  box-shadow: 1px 0 0 rgba(255,255,255,.04);
+  background: #111111;
+  border-right: 1px solid rgba(0,0,0,.18);
+  box-shadow: none;
 }
 .wc-sidebar-avatar {
   display: flex;
@@ -2257,12 +2264,12 @@ body {
 .wc-app:not(.wc-mobile) .wc-sidebar-btns > .wc-sidebar-btn:last-child { margin-top: auto; margin-bottom: 6px; }
 .wc-sidebar-btn {
   width: 100%;
-  height: 56px;
+  height: 44px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 0;
   border-radius: var(--radius-md);
   cursor: pointer;
   position: relative;
@@ -2271,12 +2278,7 @@ body {
 .wc-sidebar-btn .icon { display: flex; align-items: center; justify-content: center; }
 .wc-sidebar-btn .icon svg { width: 22px; height: 22px; fill: rgba(255,255,255,.48); transition: fill var(--dur); }
 .wc-sidebar-label {
-  font-size: var(--text-tiny);
-  line-height: var(--lh-none);
-  color: rgba(255,255,255,.72);
-  transition: color var(--dur);
-  white-space: nowrap;
-  letter-spacing: .2px;
+  display: none;
 }
 .wc-sidebar-btn:hover { background: rgba(255,255,255,.08); }
 .wc-sidebar-btn:hover .icon svg { fill: var(--gray-0); }
@@ -2811,8 +2813,7 @@ body.dark-mode .wc-msg-time span { background: rgba(255,255,255,.08); }
   background: var(--bg-hover) !important;
 }
 
-/* 侧边栏当前选中 Tab 激活下方细线 */
-.wc-sidebar-btn.active::before { display: none; } /* 微信无激活竖条 */
+/* 侧边栏当前选中 Tab 激活指示条（左侧 3px 品牌绿竖条，由 ::before 规则控制）*/
 
 /* 置顶图钉图标（聊天列表） */
 .wc-pin-icon {
@@ -3436,11 +3437,10 @@ body.dark-mode .wc-msg-time span { background: rgba(255,255,255,.08); }
 .ico-md { width:18px; height:18px; fill:currentColor; }
 
 /* ── WcEmpty ── */
-.we-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; }
-.we-empty-svg { width:72px; height:72px; margin-bottom:0; opacity:.9; transition: opacity var(--dur-base); }
-body.dark-mode .we-empty-svg { opacity: .25; }
-.we-empty-title { font-size: var(--text-base); font-weight: var(--font-medium); color:var(--text-primary); margin-bottom:6px; }
-.we-empty-desc { font-size: var(--text-sm); color:var(--text-secondary); }
+.we-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap: 16px; }
+.we-empty-svg { width:80px; height:80px; opacity:1; }
+.we-empty-hint { font-size: var(--text-sm2); color: var(--text-muted); letter-spacing: .2px; }
+body.dark-mode .we-empty-svg { opacity: .8; }
 
 /* ── AccountSwitcher ── */
 .as-container { position:relative; width:100%; }
@@ -4096,9 +4096,9 @@ body.dark-mode .wc-reaction-pill.mine { background: rgba(var(--green-rgb),.2); b
   flex: 1; border: none; background: transparent; cursor: pointer; position: relative;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--text-secondary);
 }
-.m-tab.active { color: var(--green); }
-.m-tab-ico svg { width: 26px; height: 26px; fill: currentColor; display: block; }
-.m-tab-label { font-size: var(--text-2xs); line-height: var(--lh-none); }
+.m-tab.active { color: var(--color-primary); }
+.m-tab-ico svg { width: 24px; height: 24px; fill: currentColor; display: block; }
+.m-tab-label { font-size: var(--text-2xs); line-height: var(--lh-none); font-weight: var(--font-medium); }
 .m-tab-badge {
   position: absolute; top: 3px; left: 54%; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box;
   background: var(--color-badge); color: var(--gray-0); font-size: var(--text-2xs); line-height: 16px; border-radius: var(--radius-md); text-align: center;
@@ -4305,39 +4305,39 @@ select:focus-visible {
 
 /* ── 左侧导航：从深色实心条 → 浅色悬浮"药丸"栏 ── */
 .wc-sidebar {
-  background: var(--bg-panel);
+  background: #111111;
   border-right: none;
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-md);
-  overflow: hidden;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
 }
 .wc-app.wc-mobile .wc-sidebar { border-radius: 0; box-shadow: none; }
 
 .wc-sidebar-avatar-img,
 .wc-sidebar-avatar-inner {
   border-radius: var(--radius-avatar);
-  box-shadow: 0 4px 12px rgba(var(--green-rgb), .30);
+  box-shadow: none;
 }
 .wc-sidebar-avatar-inner { background: var(--grad-brand); }
 
-/* 导航按钮：中性文字/图标（浅底），激活态用渐变胶囊 + 白图标 */
-.wc-sidebar-btn { border-radius: var(--radius-lg); }
-.wc-sidebar-btn .icon svg { fill: var(--text-tertiary); }
-.wc-sidebar-label { color: var(--text-secondary); }
-.wc-sidebar-btn:hover { background: var(--grad-brand-soft); }
-.wc-sidebar-btn:hover .icon svg { fill: var(--color-primary); }
-.wc-sidebar-btn:hover .wc-sidebar-label { color: var(--color-primary); }
+/* 导航按钮：暗底白图标，激活态品牌绿图标 + 左侧指示条 */
+.wc-sidebar-btn { border-radius: var(--radius-sm); }
+.wc-sidebar-btn .icon svg { fill: rgba(255,255,255,.50); }
+.wc-sidebar-label { display: none; }
+.wc-sidebar-btn:hover { background: rgba(255,255,255,.08); }
+.wc-sidebar-btn:hover .icon svg { fill: rgba(255,255,255,.90); }
+.wc-sidebar-btn:hover .wc-sidebar-label { color: rgba(255,255,255,.90); }
 
 .wc-sidebar-btn.active {
-  background: var(--grad-brand);
-  box-shadow: 0 6px 16px rgba(var(--green-rgb), .34);
+  background: rgba(7,193,96,.14);
+  box-shadow: none;
 }
-.wc-sidebar-btn.active:hover { background: var(--grad-brand); }
-.wc-sidebar-btn.active .icon svg { fill: var(--gray-0); }
-.wc-sidebar-btn.active .wc-sidebar-label { color: var(--gray-0); font-weight: var(--font-semibold); }
-/* 去掉旧的左侧指示条（改用整块渐变胶囊表达选中） */
-.wc-sidebar-btn.active::before { display: none; }
-.wc-sidebar-badge { border-color: var(--bg-panel); }
+.wc-sidebar-btn.active:hover { background: rgba(7,193,96,.20); }
+.wc-sidebar-btn.active .icon svg { fill: var(--color-primary); }
+.wc-sidebar-btn.active .wc-sidebar-label { color: var(--color-primary); font-weight: var(--font-semibold); }
+/* 左侧品牌绿指示条（恢复显示） */
+.wc-sidebar-btn.active::before { display: block; }
+.wc-sidebar-badge { border-color: #111111; }
 
 /* ── 会话面板：悬浮圆角卡 ── */
 .wc-panel {
@@ -4356,22 +4356,25 @@ select:focus-visible {
   border-radius: var(--radius-lg);
   width: auto;
 }
-.wc-chat-item:hover { background: var(--grad-brand-soft) !important; }
+.wc-chat-item:hover { background: var(--bg-panel-item-hover) !important; }
 .wc-chat-item.active,
 .wc-chat-item.active:hover {
-  /* 用 !important 覆盖历史 §2240 的 --bg-panel-item-active !important */
-  background: var(--grad-brand) !important;
-  box-shadow: 0 6px 16px rgba(var(--green-rgb), .28) !important;
+  background: var(--bg-panel-item-active) !important;
+  box-shadow: none !important;
 }
-.wc-chat-item.active .wc-chat-item-name { color: var(--gray-0); font-weight: var(--font-semibold); }
+.wc-chat-item.active .wc-chat-item-name { color: var(--text-primary); font-weight: var(--font-semibold); }
 .wc-chat-item.active .wc-chat-item-preview,
 .wc-chat-item.active .wc-chat-item-time,
-.wc-chat-item.active .wc-chat-item-draft { color: rgba(255,255,255,.85); }
-.wc-chat-item.active .wc-chat-item-badge { border-color: transparent; background: var(--gray-0); color: var(--color-primary); }
-/* 选中会话头像加白描边，从渐变底上"托"出来 */
+.wc-chat-item.active .wc-chat-item-draft { color: var(--text-secondary); }
+.wc-chat-item.active .wc-chat-item-badge { border-color: transparent; background: var(--color-primary); color: #fff; }
 .wc-chat-item.active .wc-chat-item-avatar img,
-.wc-chat-item.active .wc-chat-item-avatar > * { box-shadow: 0 0 0 2px rgba(255,255,255,.55); }
-.wc-chat-item.pinned:not(.active) { background: var(--grad-brand-soft) !important; }
+.wc-chat-item.active .wc-chat-item-avatar > * { box-shadow: none; }
+.wc-chat-item.pinned:not(.active) { background: var(--bg-panel-item-hover) !important; }
+
+/* 桌面三栏布局：隐藏返回按钮（移动端保留） */
+.wc-chat-header-back { display: none; }
+.wc-app.wc-mobile .wc-chat-header-back,
+.m-chat-page .wc-chat-header-back { display: flex; }
 
 /* ── 聊天区：也做成悬浮卡 ── */
 .home-chat-area {
@@ -4385,9 +4388,9 @@ select:focus-visible {
 /* ── 我方气泡：企业微信浅绿，柔投影（2026-08 用户要求与企业微信一致、更干净）── */
 .wc-msg-bubble.mine {
   background: var(--bg-msg-mine) !important;
-  box-shadow: 0 1px 3px rgba(20, 24, 40, .08), 0 1px 8px rgba(20, 24, 40, .05);
+  box-shadow: 0 1px 4px rgba(7,193,96,.22);
   border: none;
-  color: var(--bubble-mine-text);
+  color: #FFFFFF;
 }
 /* ── 他人气泡：纯白浮起，轻投影，清晰从画布分离 ── */
 .wc-msg-bubble.other {
@@ -4405,8 +4408,7 @@ select:focus-visible {
 /* ── 主按钮 / 主色元素：浅绿气泡内链接用微信蓝 ── */
 .wc-msg-bubble.mine a { color: var(--bubble-mine-link); }
 
-/* ── 空态插画色跟随品牌 ── */
-.we-empty-svg { opacity: .9; }
+/* ── 空态插画色跟随品牌绿 ── */
 
 /* ══════════════════════════════════════════════════════════════════
    暗色模式下的 AURORA 补偿（外壳/面板改深靛玻璃感）
@@ -4419,9 +4421,9 @@ body.dark-mode .wc-app {
 }
 body.dark-mode .wc-sidebar,
 body.dark-mode .wc-panel,
-body.dark-mode .home-chat-area { box-shadow: 0 8px 30px rgba(0,0,0,.45); }
-body.dark-mode .wc-chat-item:hover { background: rgba(109,90,230,.16); }
-body.dark-mode .wc-sidebar-btn:hover { background: rgba(109,90,230,.16); }
+body.dark-mode .home-chat-area { box-shadow: none; }
+body.dark-mode .wc-chat-item:hover { background: rgba(255,255,255,.06); }
+body.dark-mode .wc-sidebar-btn:hover { background: rgba(255,255,255,.08); }
 /* AURORA 结构级重设计 ▲ END */
 
 /* ══════════════════════════════════════════════════════════════════

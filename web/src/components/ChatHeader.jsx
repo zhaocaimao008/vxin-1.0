@@ -1,4 +1,6 @@
 import React, { memo } from 'react';
+import Avatar from './Avatar';
+import { GroupAvatar } from './GroupAvatar';
 
 /* ── ChatWindow 顶栏 ─────────────────────────────────────────────────
    memo 化：父组件高频 setState 时顶栏不重渲染。 */
@@ -24,11 +26,28 @@ function ChatHeader({
   const isPrivate = conversation.type === 'private';
   const isGroup   = conversation.type === 'group';
 
+  const avatarEl = isGroup
+    ? <GroupAvatar members={conversation.members || []} avatar={conversation.avatar} size={34} />
+    : <Avatar
+        src={conversation.otherUser?.avatar || conversation.avatar}
+        name={conversation.name}
+        size={34}
+        onClick={isPrivate && conversation.otherUser?.id
+          ? () => onOpenUserProfile(conversation.otherUser.id)
+          : undefined}
+      />;
+
   return (
     <div className="wc-chat-header">
+      {/* 桌面端不渲染返回按钮（CSS 已隐藏，此处仅移动端展示） */}
       <button className="wc-chat-header-back wc-back-btn" onClick={onClose} title="返回" aria-label="返回">
         <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
       </button>
+
+      {/* 头像（桌面端点击头像可打开资料卡）*/}
+      <div className="wc-chat-header-avatar" aria-hidden="true">
+        {avatarEl}
+      </div>
 
       <div className="wc-header-name-container">
         {isPrivate && conversation.otherUser?.id ? (
@@ -62,7 +81,6 @@ function ChatHeader({
           {features.groupVoiceCall !== false && <button className="wc-chat-header-btn" title="群语音通话" aria-label="群语音通话" onClick={() => onStartGroupCall('audio')}><IcoVoiceCall /></button>}
           {features.groupVideoCall !== false && <button className="wc-chat-header-btn" title="群视频通话" aria-label="群视频通话" onClick={() => onStartGroupCall('video')}><IcoVideoCall /></button>}
         </>}
-        {/* 搜索聊天记录 */}
         <button
           className={`wc-chat-header-btn${showSearch ? ' active' : ''}`}
           title="搜索聊天记录"
@@ -71,7 +89,6 @@ function ChatHeader({
           data-testid="chat-search-btn"
           onClick={onToggleSearch}
         ><IcoSearch /></button>
-        {/* 群聊信息 / 聊天信息 */}
         <button
           className={`wc-chat-header-btn${showGroupInfo ? ' active' : ''}`}
           title={isGroup ? '群聊信息' : '聊天信息'}

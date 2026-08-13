@@ -19,44 +19,42 @@
    ================================================================ */
 
 /* ================================================================
-   § 1  BRAND — 青岩蓝 Qing-Yan Blue
-   以国内企业级产品广泛验证的蓝色为基调，
-   比微信绿更专业，比钉钉蓝更有温度。
+   § 1  BRAND — v信绿 Vxin Green
+   主色 #07C160，辅助 #111111 / #F5F5F5 / #FFFFFF
+   简洁、清爽、高辨识度的即时通讯品牌色系。
    ================================================================ */
 :root {
-  /* AURORA 极光靛主色阶（原 #1677FF 蓝阶已整体替换为靛紫阶）*/
-  --brand-50:    #F1EFFD;
-  --brand-100:   #E2DEFB;
-  --brand-200:   #C7BFF6;
-  --brand-300:   #A99CF0;
-  --brand-400:   #8A78EB;
-  --brand-500:   #6D5AE6;   /* ← 主品牌色 极光靛 */
-  --brand-600:   #5A47D6;
-  --brand-700:   #4938B8;
-  --brand-800:   #382C90;
-  --brand-900:   #281F68;
+  /* v信绿主色阶 */
+  --brand-50:    #E8F8EF;
+  --brand-100:   #D1F1DF;
+  --brand-200:   #A3E3BF;
+  --brand-300:   #5FCC8E;
+  --brand-400:   #2BB86E;
+  --brand-500:   #07C160;   /* ← 主品牌色 v信绿 */
+  --brand-600:   #06A652;
+  --brand-700:   #058A44;
+  --brand-800:   #046D36;
+  --brand-900:   #035128;
 
   /* 语义别名 */
   --color-primary:        var(--brand-500);
   --color-primary-hover:  var(--brand-600);
   --color-primary-active: var(--brand-700);
   --color-primary-muted:  var(--brand-50);
-  --color-primary-rgb:    109, 90, 230;       /* 供 rgba() 使用 */
+  --color-primary-rgb:    7, 193, 96;         /* 供 rgba() 使用 */
 
-  /* ── 聊天气泡：我的气泡跟随品牌主色，他人气泡用纯白 ── */
-  /* 他人气泡改为纯白 + 阴影，在浅灰画布上清晰浮起（原来的灰蓝与画布过近，气泡糊成一片）*/
+  /* ── 聊天气泡：我的气泡用品牌绿，他人气泡用纯白 ── */
   --bubble-mine:     var(--color-primary);
   --bubble-mine-rgb: var(--color-primary-rgb);
   --bubble-other:    #FFFFFF;
-  --shadow-bubble-other-soft: 0 1px 3px rgba(20,24,40,.07), 0 1px 8px rgba(20,24,40,.05);
-  /* 浅绿气泡内文字/链接（企业微信经典：深色正文 + 微信蓝链接），收敛原散落裸写值 */
-  --bubble-mine-text: #1F2329;
-  --bubble-mine-link: #576B95;
+  --shadow-bubble-other-soft: 0 1px 3px rgba(0,0,0,.07), 0 1px 8px rgba(0,0,0,.05);
+  /* 品牌绿气泡内用白色文字，对比度充足 */
+  --bubble-mine-text: #FFFFFF;
+  --bubble-mine-link: #D1F1DF;
 
-  /* 品牌渐变（AURORA 靛→青碧）：我方气泡、侧栏头像、确认按钮等使用。
-     原定义在 index.css :root，随单一真相源合并迁移至此。*/
-  --grad-brand:       linear-gradient(135deg, #6D5AE6 0%, #5B7BF0 55%, #17B8A6 130%);
-  --grad-brand-soft:  linear-gradient(135deg, rgba(109,90,230,.14), rgba(23,184,166,.12));
+  /* 品牌渐变（绿→浅绿）：我方气泡、侧栏头像、确认按钮等使用 */
+  --grad-brand:       linear-gradient(135deg, #07C160 0%, #2BB86E 100%);
+  --grad-brand-soft:  linear-gradient(135deg, rgba(7,193,96,.12), rgba(43,184,110,.08));
 
 /* ================================================================
    § 2  SEMANTIC COLORS — 状态语义色
@@ -134,29 +132,28 @@
    分层：app 壳 → 导航 → 面板 → 聊天区 → 内容卡
    ================================================================ */
   /* 整体壳层 */
-  --bg-app:               #E7E4F0;   /* 面板缝隙：带紫调的浅雾（AURORA）*/
-  --bg-shell:             #241F38;   /* 应用外壳：深靛夜幕（非纯黑，更有质感）。原在 index.css :root，合并迁移至此 */
+  --bg-app:               #EDEDED;   /* 面板缝隙：中性浅灰 */
+  --bg-shell:             #111111;   /* 应用外壳：v信深黑 */
 
   /* 会话面板 */
-  --bg-panel:             #FBFAFE;   /* 会话列表：近白暖纸（AURORA）*/
-  --bg-panel-header:      #FBFAFE;
+  --bg-panel:             #FFFFFF;   /* 会话列表：纯白 */
+  --bg-panel-header:      #FFFFFF;
   --bg-panel-item-hover:  rgba(0, 0, 0, .04);
-  --bg-panel-item-active: #E6E6E6;       /* 微信淡灰选中(对照官方截图) */
-  --bg-panel-item-active-hover: #DDDDDD;
+  --bg-panel-item-active: #E8E8E8;
+  --bg-panel-item-active-hover: #DEDEDE;
 
   /* 聊天区域 */
   --bg-chat:              #FFFFFF;
   --bg-chat-header:       #FFFFFF;
-  --bg-messages:          #F3F1FA;   /* 聊天区：极浅薰衣草灰（AURORA）*/
-  /* 消息画布：极淡的斜向渐变，避免大面积死板纯色 */
+  --bg-messages:          #F5F5F5;   /* 聊天区：辅助浅灰 */
+  /* 消息画布：极淡绿调，干净通透 */
   --bg-messages-canvas:
-    radial-gradient(900px 600px at 88% -8%, rgba(109,90,230,.045) 0%, transparent 60%),
-    radial-gradient(700px 520px at 6% 108%, rgba(23,184,166,.04) 0%, transparent 60%),
-    linear-gradient(180deg, #EEF1F6 0%, #EAECF2 100%);
+    radial-gradient(900px 600px at 88% -8%, rgba(7,193,96,.03) 0%, transparent 60%),
+    linear-gradient(180deg, #F5F5F5 0%, #F0F0F0 100%);
 
   /* 输入区 */
-  --bg-input:             rgba(251,250,254,.92);   /* AURORA 半透暖白 */
-  --bg-input-search:      #EEEBF7;                 /* 搜索框：柔紫浅灰（AURORA）*/
+  --bg-input:             #FFFFFF;
+  --bg-input-search:      #F0F0F0;   /* 搜索框：中性浅灰 */
 
   /* 内容卡片 / 弹窗 */
   --bg-card:              #FFFFFF;
@@ -179,7 +176,7 @@
   --border-subtle:  rgba(0, 0, 0, .04);  /* 内容区极轻分隔 */
   --border-default: #E3E7EE;             /* 标准边框 */
   --border-medium:  #C9CDD6;             /* 中等强度 */
-  --border-strong:  rgba(36,31,56,.08);  /* 分区强调（AURORA 紫调轻边）*/
+  --border-strong:  rgba(0,0,0,.08);    /* 分区强调 */
   --border-focus:   var(--brand-500);    /* 输入框聚焦 */
   --divider:        #ECEEF3;             /* 区块分隔线 */
 
@@ -187,9 +184,9 @@
    § 6  TYPOGRAPHY — 文字层级与颜色
    ================================================================ */
   /* ── 文字颜色层级 ── */
-  --text-title:       #1E1A2E;   /* 标题：最深，高权重信息（AURORA 深靛近黑）*/
-  --text-primary:     #26223A;   /* 正文：常规阅读（AURORA）*/
-  --text-secondary:   #837E96;   /* 辅助：时间、预览文字（AURORA 柔灰）*/
+  --text-title:       #111111;   /* 标题：v信辅助黑 */
+  --text-primary:     #1A1A1A;   /* 正文 */
+  --text-secondary:   #888888;   /* 辅助：时间、预览文字 */
   --text-muted:       #9AA3B0;   /* 弱化：占位符、禁用描述 */
   --text-disabled:    #C9CDD6;   /* 禁用 */
   --text-link:        var(--brand-500);
@@ -262,7 +259,7 @@
   --sp-16:  64px;
 
   /* ── 布局固定尺寸 ── */
-  --size-nav:     64px;   /* v信 导航栏（含文字标签） */
+  --size-nav:     56px;   /* v信 导航栏（图标化，无文字标签） */
   --size-panel:   280px;  /* 会话面板宽度 */
   --size-header:  54px;   /* 顶栏高度 */
   --size-session: 64px;   /* 会话列表条目高度 */
@@ -405,27 +402,28 @@
    ================================================================ */
   --green:            var(--bubble-mine);
   --green-rgb:        var(--bubble-mine-rgb);
-  --green-hover:      #5A47D6;   /* AURORA 靛紫 hover(原绿色 #0D9460 遗留值,已被 index.css 覆盖,此处对齐避免误用) */
+  --green-hover:      #06A652;   /* brand-600 */
   --link-color:       var(--brand-500);
-  --link:             #4938B8;   /* 消息内链接：AURORA 深靛(比品牌主色稍深，白底可读、和谐不刺眼)*/
-  --bg-panel:         #FBFAFE;
-  --bg-panel-header:  #FBFAFE;
+  --link:             #058A44;   /* brand-700，消息内链接深绿 */
+  --bg-panel:         #FFFFFF;
+  --bg-panel-header:  #FFFFFF;
   --bg-chat:          #FFFFFF;
   --bg-chat-header:   #FFFFFF;
-  --bg-input:         rgba(251,250,254,.92);
+  --bg-input:         #FFFFFF;
   --bg-search:        var(--bg-input-search);
-  --bg-msg-mine:      #95EC69;   /* 我方气泡：企业微信浅绿(2026-08 用户要求) */
+  --bg-msg-mine:      var(--color-primary);   /* v信绿气泡 */
   --bg-msg-other:     var(--bubble-other);
   --bg-hover:         rgba(0, 0, 0, .04);
   --bg-active:        var(--bg-panel-item-active);
   --bg-active-hover:  var(--bg-panel-item-active-hover);
-  --text-primary:     #26223A;
-  --text-secondary:   #837E96;
-  --text-tertiary:    #ADA8BE;
-  --text-placeholder: #ADA8BE;
+  --text-primary:     #1A1A1A;
+  --text-secondary:   #888888;
+  --text-tertiary:    #AAAAAA;
+  --text-placeholder: #AAAAAA;
   --border-color:     var(--border-default);
   --border-light:     var(--border-subtle);
-  --divider:          #ECEEF3;
+  --border-strong:    rgba(0,0,0,.08);
+  --divider:          #EBEBEB;
   --font:             var(--font-sans);
   --font-msg:         var(--text-base);
   --font-name:        var(--text-base);
@@ -450,15 +448,12 @@
    § 13  DARK MODE
    ================================================================ */
 body.dark-mode {
-  /* Brand（深色下主色调稍亮，保持可读性）
-     ⚠️ 必须与浅色的 AURORA 极光靛同色系(#6D5AE6)，仅提亮以保证深底对比度。
-     旧值 #3E8EFF 是遗留的蓝色，会让暗色模式主色从「靛紫」跳成「蓝」，
-     与浅色不协调、也与 --green(仍为靛紫) 分裂成两种强调色。*/
-  --color-primary:       #8A78EB;   /* = brand-400 极光靛提亮档 */
-  --color-primary-hover: #A99CF0;   /* = brand-300 */
-  --color-primary-active:#6D5AE6;   /* = brand-500 */
-  --color-primary-rgb:   138, 120, 235;
-  --color-primary-muted: rgba(138, 120, 235, .14);
+  /* Brand（深色下主色稍亮，保持绿色可读性）*/
+  --color-primary:       #2BB86E;   /* = brand-400 提亮 */
+  --color-primary-hover: #5FCC8E;   /* = brand-300 */
+  --color-primary-active:#07C160;   /* = brand-500 */
+  --color-primary-rgb:   43, 184, 110;
+  --color-primary-muted: rgba(43, 184, 110, .14);
 
   /* Bubble */
   --bubble-mine:         var(--color-primary);
@@ -475,7 +470,7 @@ body.dark-mode {
 
   /* Backgrounds */
   --bg-app:               #0A0D11;
-  --bg-shell:             #17132A;   /* 暗色外壳更深的靛夜幕（原 index.css dark，合并迁移至此）*/
+  --bg-shell:             #111111;   /* 暗色外壳：v信深黑（与浅色一致）*/
   --bg-panel:             #1C1C1E;
   --bg-panel-header:      #1C1C1E;
   --bg-panel-item-hover:  rgba(255, 255, 255, .06);
@@ -486,8 +481,7 @@ body.dark-mode {
   --bg-messages:          #0E0E10;
   /* 暗色画布：极淡靛紫辉光，替代死黑，气泡浮起 */
   --bg-messages-canvas:
-    radial-gradient(900px 600px at 88% -8%, rgba(109,90,230,.10) 0%, transparent 60%),
-    radial-gradient(700px 520px at 6% 108%, rgba(23,184,166,.06) 0%, transparent 60%),
+    radial-gradient(900px 600px at 88% -8%, rgba(7,193,96,.06) 0%, transparent 60%),
     linear-gradient(180deg, #101014 0%, #0C0C0F 100%);
   /* 暗色下他人气泡：深灰卡片色，而非纯白 */
   --bubble-other:         #26262A;
@@ -524,8 +518,8 @@ body.dark-mode {
   --text-secondary:   #8E8E93;
   --text-muted:       #636366;
   --text-disabled:    #48484A;
-  --text-link:        #A99CF0;   /* 暗色链接：浅薰衣草靛，与 AURORA 同色系(原 #3E8EFF 蓝已弃用) */
-  --text-link-hover:  #C7BFF6;
+  --text-link:        #5FCC8E;   /* 暗色链接：浅绿，与 v信绿同色系 */
+  --text-link-hover:  #A3E3BF;
 
   /* Grays（深色模式下中性灰镜像）*/
   --gray-50:   #1A1A1C;
@@ -549,7 +543,7 @@ body.dark-mode {
   --shadow-nav: 2px 0 20px rgba(0, 0, 0, .40);
   --shadow-bubble-mine:  none;
   --shadow-bubble-other: none;
-  --ring-primary: 0 0 0 3px rgba(138, 120, 235, .22);  /* 跟随 AURORA 靛紫主色(原蓝 62,142,255 已弃用) */
+  --ring-primary: 0 0 0 3px rgba(43, 184, 110, .22);  /* 跟随 v信绿 */
   --ring-danger:  0 0 0 3px rgba(255, 107, 107, .20);
 
   /* Glass 毛玻璃（深色模式） */
@@ -564,8 +558,8 @@ body.dark-mode {
   --green-rgb:      var(--bubble-mine-rgb);
   --green-hover:    var(--color-primary-hover);  /* 原 #1F8044 是遗留绿色，暗色下主色 hover 会误变绿，改为跟随靛紫主色 */
   --link-color:     var(--color-primary);
-  --link:           #A99CF0;   /* 暗色下提亮为浅薰衣草靛，保证深底对比度（WCAG）且与 AURORA 和谐 */
-  --bg-msg-mine:    #95EC69;   /* 暗色下我方气泡：同样企业微信浅绿 */
+  --link:           #5FCC8E;   /* 暗色下消息内链接：浅绿，与 v信绿同色系 */
+  --bg-msg-mine:    var(--color-primary);   /* 暗色下我方气泡：跟随品牌绿 */
   --bg-msg-other:   var(--bg-input-search);   /* 暗色他人气泡：深灰搜索框色（原 var(--bubble-other)=#26262A，index.css 覆盖为 #2C2C2E，此处对齐零回归）*/
   --bg-active:      var(--bg-panel-item-active);
   --bg-active-hover:var(--bg-panel-item-active-hover);

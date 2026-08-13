@@ -172,12 +172,12 @@ private fun AuthFlow() {
 
 private data class TabItem(val route: String, val label: String, val icon: ImageVector, val testKey: String)
 
-// 底部导航：仅保留 消息 / 通讯录 / 我（已按需移除 朋友圈 与 收藏）
-// 图标改用自绘品牌图标集 VxinIcons（取代 Material 通用图标）
+// 底部导航：消息 / 联系人 / 动态 / 我的
 private val TAB_ITEMS = listOf(
-    TabItem(Routes.CONVERSATIONS, "消息", VxinIcons.Chat, "chats"),
-    TabItem(Routes.CONTACTS, "通讯录", VxinIcons.Contacts, "contacts"),
-    TabItem(Routes.PROFILE, "我", VxinIcons.Me, "me"),
+    TabItem(Routes.CONVERSATIONS, "消息",   VxinIcons.Chat,    "chats"),
+    TabItem(Routes.CONTACTS,      "联系人", VxinIcons.Contacts,"contacts"),
+    TabItem(Routes.MOMENTS,       "动态",   VxinIcons.Moments, "moments"),
+    TabItem(Routes.PROFILE,       "我的",   VxinIcons.Me,      "me"),
 )
 private val TAB_ROUTES = TAB_ITEMS.map { it.route }.toSet()
 
@@ -296,7 +296,18 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0) {
                     onOpenChat = { target -> navController.navigate(Routes.chat(target.conversationId, target.title, "private", target.peerUserId)) },
                 )
             }
-            // 朋友圈 / 收藏 已按需移除（不再注册路由与入口）
+            // 动态（朋友圈）—— 重新加入底部导航
+            composable(Routes.MOMENTS) {
+                com.vxin.app.feature.moments.MomentsScreen(
+                    onCompose = { navController.navigate(Routes.MOMENT_COMPOSE) },
+                )
+            }
+            composable(Routes.MOMENT_COMPOSE) {
+                com.vxin.app.feature.moments.MomentComposeScreen(
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            // 收藏 已按需移除
             composable(Routes.ADD_ACCOUNT) {
                 LoginScreen(
                     onNavigateRegister = { navController.navigate(Routes.REGISTER) },

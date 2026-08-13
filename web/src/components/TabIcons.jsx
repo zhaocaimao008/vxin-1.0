@@ -37,7 +37,7 @@ export const IcoStar = () => (
 export const TABS = [
   { key: 'chats',     Icon: IcoChat,     label: '消息' },
   { key: 'contacts',  Icon: IcoContacts, label: '通讯录' },
-  { key: 'moments',   Icon: IcoMoments,  label: '朋友圈', feature: 'moments' },
+  { key: 'moments',   Icon: IcoMoments,  label: '动态', feature: 'moments' },
   { key: 'calls',     Icon: IcoCall,     label: '通话' },
   { key: 'favorites', Icon: IcoStar,     label: '收藏',   feature: 'collect' },
   { key: 'me',        Icon: IcoMe,       label: '我' },

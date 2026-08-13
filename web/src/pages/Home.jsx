@@ -31,15 +31,16 @@ import { mediaUrl, goLogin } from '../utils/url';
 import { loadCred, saveCred, removeCred } from '../utils/rememberedCreds';
 
 function WcEmpty() {
-  // 对齐微信 PC：未选会话时近乎纯净留白，仅一枚极淡的单色图标，无文字、无彩色
   return (
     <div className="we-empty">
-      <svg className="we-empty-svg" viewBox="0 0 64 64" aria-hidden="true">
-        <rect x="6" y="12" width="44" height="32" rx="9" fill="#E6E9EF"/>
-        <path d="M16 50l0-9 9 0z" fill="#E6E9EF"/>
-        <rect x="14" y="22" width="28" height="3" rx="1.5" fill="#CFD5DF"/>
-        <rect x="14" y="30" width="20" height="3" rx="1.5" fill="#CFD5DF"/>
+      {/* v信品牌图标 + 简短引导文字 */}
+      <svg className="we-empty-svg" viewBox="0 0 80 80" aria-hidden="true" fill="none">
+        <circle cx="40" cy="40" r="38" fill="rgba(7,193,96,.08)" />
+        <path d="M27 34c0-7.18 5.82-13 13-13s13 5.82 13 13c0 4.42-2.2 8.33-5.56 10.67L40 60l-7.44-15.33A13 13 0 0127 34z"
+          fill="rgba(7,193,96,.22)" />
+        <circle cx="40" cy="34" r="5" fill="#07C160" />
       </svg>
+      <p className="we-empty-hint">选择一个会话开始聊天</p>
     </div>
   );
 }

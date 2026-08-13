@@ -113,4 +113,18 @@ object VxinIcons {
             line { moveTo(6f, 12f); lineTo(18f, 12f) }
         }
     }
+
+    /** 动态（相机图标，用于朋友圈/动态 tab）*/
+    val Moments: ImageVector by lazy {
+        stroke("Moments") {
+            line {
+                moveTo(23f, 19f); arcToRelative(2f, 2f, 0f, false, true, -2f, 2f)
+                lineTo(3f, 21f); arcToRelative(2f, 2f, 0f, false, true, -2f, -2f)
+                lineTo(1f, 8f); arcToRelative(2f, 2f, 0f, false, true, 2f, -2f)
+                lineTo(5.5f, 6f); lineTo(7f, 3f); lineTo(17f, 3f); lineTo(18.5f, 6f)
+                lineTo(21f, 6f); arcToRelative(2f, 2f, 0f, false, true, 2f, 2f); close()
+            }
+            line { moveTo(12f, 12f); moveToRelative(-3.5f, 0f); arcToRelative(3.5f, 3.5f, 0f, true, true, 7f, 0f); arcToRelative(3.5f, 3.5f, 0f, true, true, -7f, 0f) }
+        }
+    }
 }

@@ -503,22 +503,22 @@ export default function Moments() {
         <div style={{ flex: 1 }} />
         <button
           className="wc-moment-settings-btn"
-          title="朋友圈设置"
-          aria-label="朋友圈设置"
+          title="动态设置"
+          aria-label="动态设置"
           onClick={e => { e.stopPropagation(); setShowSettings(true); }}
         ><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 00-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></button>
       </div>
 
-      {/* 朋友圈设置：最近 N 天可见 */}
+      {/* 动态设置：最近 N 天可见 */}
       {showSettings && (
         <div className="wc-modal-overlay" onClick={e => e.target === e.currentTarget && setShowSettings(false)}>
-          <div className="wc-modal" role="dialog" aria-modal="true" aria-label="朋友圈设置" style={{ maxWidth: 360, width: '90%' }}>
+          <div className="wc-modal" role="dialog" aria-modal="true" aria-label="动态设置" style={{ maxWidth: 360, width: '90%' }}>
             <div className="wc-modal-header">
-              <span className="wc-modal-title">朋友圈设置</span>
+              <span className="wc-modal-title">动态设置</span>
               <button className="wc-modal-close" onClick={() => setShowSettings(false)} aria-label="关闭">✕</button>
             </div>
             <div style={{ padding: '8px 0' }}>
-              <div style={{ padding: '10px 18px', fontSize: 'var(--text-sm2)', color: 'var(--text-secondary)' }}>允许朋友查看朋友圈的范围</div>
+              <div style={{ padding: '10px 18px', fontSize: 'var(--text-sm2)', color: 'var(--text-secondary)' }}>允许朋友查看动态的范围</div>
               <div role="radiogroup" aria-label="可见范围">
                 {[{ d: 0, label: '全部' }, { d: 1, label: '最近一天' }, { d: 3, label: '最近三天' }, { d: 30, label: '最近一个月' }].map(o => (
                   <div key={o.d} className="wc-moment-vis-opt"
