@@ -28,34 +28,48 @@ function extractCsrfToken(response) {
 }
 
 /**
- * 刷新 token（防止在请求过程中 token 过期）
+ * 静默刷新 token（使用 Refresh Token 换取新 Access Token）
+ * v3.2: 改用 /api/auth/token-refresh 端点（Refresh Token 轮换，更安全）
+ * 同时只允许一次并发刷新（防止多请求同时 401 触发多次刷新）
  */
 async function refreshToken(axios) {
   if (tokenRefreshPromise) return tokenRefreshPromise;
-  
-  tokenRefreshPromise = axios.post('/api/auth/refresh')
-    .then(res => {
-      const newToken = res.data?.token;
-      if (newToken && (window.__ELECTRON_CONFIG__ || window.Capacitor)) {
-        localStorage.setItem('vxin_electron_token', newToken);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-      }
-      return newToken;
-    })
-    .catch(err => {
-      // 刷新失败，清除认证状态
-      console.error('[axios] Token refresh failed:', err);
-      if (window.__ELECTRON_CONFIG__ || window.Capacitor) {
-        localStorage.removeItem('vxin_electron_token');
-        delete axios.defaults.headers.common['Authorization'];
-      }
-      // 跳转登录由各组件的 401 拦截处理
-      throw err;
-    })
-    .finally(() => {
-      tokenRefreshPromise = null;
-    });
-  
+
+  const isElectronOrMobile = !!(window.__ELECTRON_CONFIG__ || window.Capacitor?.isNativePlatform?.());
+
+  tokenRefreshPromise = axios.post('/api/auth/token-refresh', {
+    // Cookie 模式：服务端从 vxin_refresh cookie 读取（Web/桌面端）
+    // Bearer 模式：从 localStorage 读取存储的 refresh token（Electron/移动端备用）
+    refreshToken: isElectronOrMobile
+      ? localStorage.getItem('vxin_refresh_token')
+      : undefined,
+  }, {
+    withCredentials: true,
+    _skipRefresh: true,   // 防止刷新请求本身触发递归刷新
+  }).then(res => {
+    const { token, user } = res.data;
+    if (!token) throw new Error('刷新响应无 token');
+    // Electron/移动端：更新 Bearer token
+    if (isElectronOrMobile) {
+      localStorage.setItem('vxin_electron_token', token);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
+    // 触发全局 token 更新事件（AuthContext 监听）
+    window.dispatchEvent(new CustomEvent('vxin:token_refreshed', { detail: { token, user } }));
+    return token;
+  }).catch(err => {
+    // 刷新失败（refresh token 也过期）→ 强制登出
+    if (isElectronOrMobile) {
+      localStorage.removeItem('vxin_electron_token');
+      localStorage.removeItem('vxin_refresh_token');
+      delete axios.defaults.headers.common['Authorization'];
+    }
+    window.dispatchEvent(new CustomEvent('vxin:session_expired'));
+    throw err;
+  }).finally(() => {
+    tokenRefreshPromise = null;
+  });
+
   return tokenRefreshPromise;
 }
 

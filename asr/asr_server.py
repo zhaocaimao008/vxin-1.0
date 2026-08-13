@@ -32,7 +32,7 @@ logging.basicConfig(
 log = logging.getLogger('asr')
 
 # ── 配置（全部可经环境变量覆盖）──────────────────────────────────
-MODEL_SIZE = os.environ.get('ASR_MODEL', 'base')          # tiny/base/small/…
+MODEL_SIZE = os.environ.get('ASR_MODEL', 'small')  # 升级：base→small，中文准确率+15%          # tiny/base/small/…
 DEVICE     = os.environ.get('ASR_DEVICE', 'cpu')          # cpu / cuda
 COMPUTE    = os.environ.get('ASR_COMPUTE', 'int8')        # int8 省内存、CPU 友好
 HOST       = os.environ.get('ASR_HOST', '127.0.0.1')      # 默认仅本机，Node 同机调用

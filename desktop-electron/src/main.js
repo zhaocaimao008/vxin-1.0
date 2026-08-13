@@ -10,11 +10,22 @@ const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
 const Store = require('electron-store');
 
-// ── 新增优化模块（v3.1）──────────────────────────────────────────
+// ── 新增优化模块（v3.1/v3.2）──────────────────────────────────────
 const memoryMonitor    = require('./memoryMonitor');    // 内存监控 + 自动 GC
 const windowState      = require('./windowState');      // 窗口状态持久化
 const ipcBatcher       = require('./ipcBatcher');       // IPC 批处理（减少 IPC 往返）
 const notifManager     = require('./notificationManager'); // 通知聚合（防刷屏）
+
+// ── D16: 崩溃报告（渲染进程崩溃自动上报，便于线上追踪）────────
+const { crashReporter } = require('electron');
+crashReporter.start({
+  productName: 'vxin-desktop',
+  companyName: 'Vxin',
+  submitURL: 'https://dipsin.com/api/crash-report',
+  uploadToServer: process.env.NODE_ENV === 'production',
+  compress: true,
+  ignoreSystemCrashHandler: false,
+});
 
 // ── Windows 渲染修复：硬件加速冲突导致的气泡/图片重叠残影 ──
 // 现象：Web 端正常，桌面端出现消息气泡、图片局部残影错乱（GPU 合成器驱动 bug 的典型症状）。

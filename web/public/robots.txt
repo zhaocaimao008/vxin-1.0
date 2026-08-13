@@ -1,0 +1,14 @@
+# v信 robots.txt
+User-agent: *
+# 应用主体：不希望爬虫爬取（需要登录、无SEO价值）
+Disallow: /api/
+Disallow: /uploads/
+Disallow: /socket.io/
+
+# 允许爬取 Landing Page（SEO 目标页）
+Allow: /welcome/
+
+# 主入口允许（让搜索引擎知道应用存在，但 noindex 由 meta 控制）
+Allow: /
+
+Sitemap: https://dipsin.com/sitemap.xml

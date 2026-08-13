@@ -7,10 +7,21 @@ const nextConfig = {
   // 否则子路径下绝对资源路径 /_next/* 会被根应用接管而 404。
   basePath: '/welcome',
 
-  // 静态导出下无服务端图片优化，关闭以直接使用 <img>/next-image 原图
-  images: { unoptimized: true },
-  // 目录式路由，输出 about/index.html 这种结构，静态主机更友好
+  // ── 图片优化：静态导出下用自定义 loader（Cloudflare Image Resizing / Nginx）
+  // unoptimized:false 让 <Image> 组件生成 srcset + sizes，由 loader 决定 URL 格式。
+  // 静态托管时 loader 直接返回原图 URL（CDN 侧转换 WebP/AVIF）。
+  images: {
+    unoptimized: false,
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [640, 828, 1080, 1200, 1920],
+    imageSizes:  [64, 128, 256, 384],
+    loader: 'custom',
+    loaderFile: './lib/imageLoader.js',
+  },
+  // 目录式路由，输出 about/index.html，静态主机更友好
   trailingSlash: true,
+  compress: true,
+  poweredByHeader: false,
 };
 
 export default nextConfig;

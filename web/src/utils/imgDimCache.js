@@ -42,13 +42,24 @@ function scheduleFlush() {
     flushTimer = null;
     try {
       const m = load();
-      // 超限：保留最近 MAX 条（Map 迭代序即插入序）
+      // LRU 裁剪：超出 MAX 保留最近使用的（Map 末尾 = 最近使用）
       let entries = [...m.entries()];
       if (entries.length > MAX) entries = entries.slice(entries.length - MAX);
-      localStorage.setItem(LS_KEY, JSON.stringify(Object.fromEntries(entries)));
-    } catch {
-      /* localStorage 满/隐私模式：静默降级 */
-    }
+      // ⚡ 存满保护：QuotaExceededError 时逐步减半重试（iOS Safari 5MB 限制）
+      let toWrite = entries;
+      while (toWrite.length > 10) {
+        try {
+          localStorage.setItem(LS_KEY, JSON.stringify(Object.fromEntries(toWrite)));
+          break;
+        } catch (e) {
+          if (e?.name === 'QuotaExceededError') {
+            toWrite = toWrite.slice(Math.floor(toWrite.length / 2));
+          } else {
+            break;  // 隐私模式等其他错误直接放弃
+          }
+        }
+      }
+    } catch { /* 兜底静默 */ }
   }, 400);
 }
 
