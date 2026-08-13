@@ -24,8 +24,8 @@ final class BackgroundSyncManager {
     private func handleRefresh(task: BGAppRefreshTask) {
         task.expirationHandler = { task.setTaskCompleted(success: false) }
         Task {
-            // 预热会话列表缓存
-            _ = try? await ConversationRepository.shared.list()
+            // 预热会话列表缓存（直接调用 APIClient，不依赖独立 Repository）
+            let _: [Conversation]? = try? await APIClient.shared.send("api/messages/conversations")
             task.setTaskCompleted(success: true)
             self.scheduleNext()
         }

@@ -1,3 +1,4 @@
+import CommonCrypto
 import Foundation
 
 /// iOS 证书固定（防中间人攻击 MITM）
