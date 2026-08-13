@@ -15,7 +15,7 @@ final class PushManager {
     /// MessagingDelegate 回调：拿到/刷新 FCM token
     func onToken(_ token: String) {
         latestToken = token
-        print("[Push] FCM token = \(token)")
+        print("[Push] FCM token prefix=\(token.prefix(12))…")   // 安全：只打印前缀
         if KeychainStore.shared.isLoggedIn {
             Task { await repo.register(token: token) }
         }

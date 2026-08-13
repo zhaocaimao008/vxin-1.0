@@ -58,7 +58,8 @@ android {
             isMinifyEnabled = false
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true           // R8 代码压缩与混淆（生产安全要求）
+            isShrinkResources = true         // 同步启用资源压缩
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             if (ksPath != null && file(ksPath).exists()) {
                 signingConfig = signingConfigs.getByName("release")
