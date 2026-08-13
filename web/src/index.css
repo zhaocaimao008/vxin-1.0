@@ -2134,7 +2134,7 @@ body.dark-mode .wc-settings-entry:hover {
    ============================================================ */
 @media (max-width: 767px) {
   .wc-app.wc-mobile {
-    --nav-w: 54px;
+    --nav-w: 54px;   /* 移动端 sidebar 保持紧凑无标签 */
     --panel-w: 100%;
   }
   /* 侧边栏更紧凑 */
@@ -2148,6 +2148,7 @@ body.dark-mode .wc-settings-entry:hover {
     min-height: 44px;
     padding: 3px;
   }
+  .wc-app.wc-mobile .wc-sidebar-label { display: none !important; }
   .wc-app.wc-mobile .wc-sidebar-btn .icon svg {
     width: 20px;
     height: 20px;
@@ -2307,7 +2308,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px 0 10px;
+  padding: 18px 0 12px;
   flex-shrink: 0;
   cursor: pointer;
   transition: opacity var(--dur);
@@ -2341,52 +2342,58 @@ body {
   align-items: center;
   gap: 2px;
   width: 100%;
-  padding: 0 6px;
-  /* 头像与功能按钮之间的间距：适度呼吸感，不过近也不过空（原 +30px 太松、太挤都不协调） */
-  margin-top: var(--sp-3);
+  padding: 0 8px;
+  margin-top: var(--sp-2);
 }
 /* 微信 PC：桌面端把最后一项「我」推到导航栏底部(上下分组)；移动端保持顶部排布不裁切 */
 .wc-app:not(.wc-mobile) .wc-sidebar-btns { flex: 1 1 auto; }
 .wc-app:not(.wc-mobile) .wc-sidebar-btns > .wc-sidebar-btn:last-child { margin-top: auto; margin-bottom: 6px; }
 .wc-sidebar-btn {
   width: 100%;
-  height: 44px;
+  height: 64px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0;
+  gap: 6px;
   border-radius: var(--radius-md);
   cursor: pointer;
   position: relative;
   transition: background var(--dur) var(--ease), transform var(--dur-fast) var(--ease);
 }
 .wc-sidebar-btn .icon { display: flex; align-items: center; justify-content: center; }
-.wc-sidebar-btn .icon svg { width: 22px; height: 22px; fill: rgba(255,255,255,.48); transition: fill var(--dur); }
+.wc-sidebar-btn .icon svg { width: 24px; height: 24px; fill: rgba(255,255,255,.48); transition: fill var(--dur); }
+/* 文字标签：图标下方，12px，未选中#999 */
 .wc-sidebar-label {
-  display: none;
+  display: block;
+  font-size: 12px;
+  line-height: 1;
+  color: #999999;
+  transition: color var(--dur);
+  white-space: nowrap;
+  letter-spacing: .1px;
+  user-select: none;
 }
 .wc-sidebar-btn:hover { background: rgba(255,255,255,.08); }
-.wc-sidebar-btn:hover .icon svg { fill: var(--gray-0); }
-.wc-sidebar-btn:hover .wc-sidebar-label { color: var(--gray-0); }
+.wc-sidebar-btn:hover .icon svg { fill: rgba(255,255,255,.90); }
+.wc-sidebar-btn:hover .wc-sidebar-label { color: rgba(255,255,255,.75); }
 .wc-sidebar-btn:active { transform: scale(.95); }
-/* 企业微信激活态：左侧绿色指示线 + 图标高亮 */
-/* 微信 PC：激活态仅图标变绿，无背景框、无指示条 */
+/* 激活态：绿色背景块 + 绿色图标/文字 + 左侧3px指示条 */
 .wc-sidebar-btn.active {
-  background: rgba(var(--color-primary-rgb),.16);
+  background: rgba(7,193,96,.14);
 }
-.wc-sidebar-btn.active:hover { background: rgba(var(--color-primary-rgb),.22); }
-.wc-sidebar-btn.active .icon svg { fill: var(--brand-300); }
-.wc-sidebar-btn.active .wc-sidebar-label { color: var(--brand-300); font-weight: var(--font-medium); }
-/* 左侧品牌色指示条 */
+.wc-sidebar-btn.active:hover { background: rgba(7,193,96,.20); }
+.wc-sidebar-btn.active .icon svg { fill: #07C160; }
+.wc-sidebar-btn.active .wc-sidebar-label { color: #07C160; font-weight: 500; }
+/* 左侧品牌绿指示条 */
 .wc-sidebar-btn.active::before {
   content: '';
   display: block;
   position: absolute;
-  left: -6px; top: 50%; transform: translateY(-50%);
-  width: 3px; height: 22px;
+  left: -8px; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 28px;
   border-radius: 0 3px 3px 0;
-  background: var(--brand-400);
+  background: #07C160;
 }
 .wc-sidebar-badge {
   position: absolute;
@@ -4496,23 +4503,45 @@ select:focus-visible {
 }
 .wc-sidebar-avatar-inner { background: var(--grad-brand); }
 
-/* 导航按钮：暗底白图标，激活态品牌绿图标 + 左侧指示条 */
-.wc-sidebar-btn { border-radius: var(--radius-sm); }
-.wc-sidebar-btn .icon svg { fill: rgba(255,255,255,.50); }
-.wc-sidebar-label { display: none; }
-.wc-sidebar-btn:hover { background: rgba(255,255,255,.08); }
-.wc-sidebar-btn:hover .icon svg { fill: rgba(255,255,255,.90); }
-.wc-sidebar-btn:hover .wc-sidebar-label { color: rgba(255,255,255,.90); }
+/* ── Sidebar 导航按钮：图标 + 文字标签（80px 宽，64px 高）── */
+.wc-sidebar-btn {
+  height: 64px;
+  gap: 6px;
+  border-radius: var(--radius-sm);
+}
+.wc-sidebar-btn .icon svg { width: 24px; height: 24px; fill: rgba(255,255,255,.50); }
 
+/* 文字标签：显示，12px，#999 未选中 */
+.wc-sidebar-label {
+  display: block;
+  font-size: 12px;
+  line-height: 1;
+  color: #999999;
+  transition: color var(--dur-fast);
+  white-space: nowrap;
+  user-select: none;
+  letter-spacing: .1px;
+}
+
+/* Hover 状态 */
+.wc-sidebar-btn:hover { background: rgba(255,255,255,.08); }
+.wc-sidebar-btn:hover .icon svg { fill: rgba(255,255,255,.88); }
+.wc-sidebar-btn:hover .wc-sidebar-label { color: rgba(255,255,255,.72); }
+
+/* 激活状态：绿色背景 + 绿色图标/文字 */
 .wc-sidebar-btn.active {
   background: rgba(7,193,96,.14);
   box-shadow: none;
 }
 .wc-sidebar-btn.active:hover { background: rgba(7,193,96,.20); }
-.wc-sidebar-btn.active .icon svg { fill: var(--color-primary); }
-.wc-sidebar-btn.active .wc-sidebar-label { color: var(--color-primary); font-weight: var(--font-semibold); }
-/* 左侧品牌绿指示条（恢复显示） */
-.wc-sidebar-btn.active::before { display: block; }
+.wc-sidebar-btn.active .icon svg { fill: #07C160; }
+.wc-sidebar-btn.active .wc-sidebar-label {
+  color: #07C160;
+  font-weight: 500;
+}
+/* 左侧品牌绿指示条 */
+.wc-sidebar-btn.active::before { display: block; background: #07C160; height: 28px; }
+
 .wc-sidebar-badge { border-color: #111111; }
 
 /* ── 会话面板：悬浮圆角卡 ── */

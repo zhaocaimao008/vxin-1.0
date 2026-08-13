@@ -40,7 +40,7 @@ export const TABS = [
   { key: 'moments',   Icon: IcoMoments,  label: '动态', feature: 'moments' },
   { key: 'calls',     Icon: IcoCall,     label: '通话' },
   { key: 'favorites', Icon: IcoStar,     label: '收藏',   feature: 'collect' },
-  { key: 'me',        Icon: IcoMe,       label: '我' },
+  { key: 'me',        Icon: IcoMe,       label: '我的' },
 ];
 
 const HIDDEN_TABS = new Set();

@@ -755,7 +755,13 @@ export default function Home() {
                 onClick={() => handleTabChange(key)} title={label}
                 role="tab" tabIndex={0} aria-selected={tab === key} aria-label={label}
                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleTabChange(key); } }}>
-                <div className="icon"><Icon /></div>
+                {/* 「我的」tab 显示真实用户头像，其余 tab 显示 SVG 图标 */}
+                <div className="icon">
+                  {key === 'me'
+                    ? <Avatar src={user?.avatar} name={user?.username || '?'} size={24} style={{ borderRadius: 6 }} />
+                    : <Icon />
+                  }
+                </div>
                 <span className="wc-sidebar-label">{label}</span>
                 {count > 0 && (
                   <span className="wc-sidebar-badge">{count > 99 ? '99+' : count}</span>
