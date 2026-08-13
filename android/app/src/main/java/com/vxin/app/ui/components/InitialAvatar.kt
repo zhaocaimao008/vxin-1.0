@@ -19,9 +19,9 @@ import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import kotlin.math.abs
 
-// 字母头像配色：AURORA 极光系多彩（对齐 Web Avatar COLORS），按名字 hash 稳定取色
+// 字母头像配色：v信绿为主色系多彩（对齐 Web Avatar COLORS），按名字 hash 稳定取色
 private val palette = listOf(
-    Color(0xFF6D5AE6), // 极光靛(主)
+    Color(0xFF07C160), // v信绿(主)
     Color(0xFF17B8A6), // 青碧(辅)
     Color(0xFF5B7BF0), // 靛蓝
     Color(0xFF9B7BF5), // 薰衣草紫

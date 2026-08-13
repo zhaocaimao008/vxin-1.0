@@ -27,7 +27,7 @@ struct ProfileView: View {
 
     var body: some View {
         Form {
-            // Hero 横幅：极光靛渐变（对齐 Web/Android pf-hero），边到边
+            // Hero 横幅：v信绿渐变（对齐 Web/Android pf-hero），边到边
             Section {
                 VStack(spacing: 10) {
                     avatarView

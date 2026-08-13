@@ -1,5 +1,10 @@
 package com.vxin.app.feature.chat
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -1069,11 +1074,8 @@ private fun MessageBubble(
                     )
                 }
                 isMine && showReadStatus -> {
-                    Text(
-                        text = if (isRead) "✓✓ 已读" else "✓",
-                        fontSize = com.vxin.app.ui.theme.VxinTextSize.xs2,
-                        color = if (isRead) VxinGreen else VxinTextSecondary,
-                    )
+                    // 消息状态图标：已读=双勾绿色；已送达=单勾灰色
+                    MsgTickIcon(isRead = isRead)
                 }
             }
             // 定时消息角标（后端到点后才出现，is_scheduled=1 表示由定时任务发送）
@@ -1409,6 +1411,41 @@ private fun bubbleBg(isMine: Boolean): Color =
 private fun bubbleBrush(isMine: Boolean): Brush =
     if (isMine) Brush.linearGradient(listOf(VxinBrandLight, VxinBubbleMine))
     else SolidColor(bubbleBg(false))
+
+/**
+ * 消息状态勾形图标：
+ * isRead=true  → 双勾 绿色（对齐微信/Telegram：已读）
+ * isRead=false → 单勾 灰色（已送达但未读）
+ */
+@Composable
+private fun MsgTickIcon(isRead: Boolean) {
+    val green = VxinGreen
+    val gray  = VxinTextSecondary
+    Canvas(modifier = Modifier.size(width = 20.dp, height = 10.dp).semantics {
+        contentDescription = if (isRead) "已读" else "已送达"
+    }) {
+        val sw = 1.6.dp.toPx()
+        val stroke = Stroke(width = sw, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        val color = if (isRead) green else gray
+        // 第一条勾（左）：仅双勾模式下绘制
+        if (isRead) {
+            val p1 = androidx.compose.ui.graphics.Path().apply {
+                moveTo(0f, size.height * 0.55f)
+                lineTo(size.width * 0.28f, size.height * 0.95f)
+                lineTo(size.width * 0.55f, size.height * 0.20f)
+            }
+            drawPath(p1, color, style = stroke)
+        }
+        // 第二条勾（右 / 单勾时居中）：
+        val offset = if (isRead) size.width * 0.22f else 0f
+        val p2 = androidx.compose.ui.graphics.Path().apply {
+            moveTo(offset + size.width * 0.25f, size.height * 0.55f)
+            lineTo(offset + size.width * 0.53f, size.height * 0.95f)
+            lineTo(offset + size.width * 0.92f, size.height * 0.10f)
+        }
+        drawPath(p2, color, style = stroke)
+    }
+}
 
 // 气泡文字：我方靛底=白字；对方白/深灰底=深/浅字
 @Composable

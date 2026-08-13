@@ -273,9 +273,9 @@
   --radius-none:   0px;
   --radius-xs:     2px;    /* 极小：角标、徽标 */
   --radius-sm:     6px;    /* 小：企业端按钮、输入框(B端) */
-  --radius-md:     12px;   /* 中：输入框、下拉菜单、标准卡片（AURORA 放大）*/
-  --radius-lg:     18px;   /* 大：弹窗、主内容卡片（AURORA 放大）*/
-  --radius-xl:     22px;   /* 特大：移动端 Sheet、大卡片（AURORA 放大）*/
+  --radius-md:     12px;   /* 中：输入框、下拉菜单、标准卡片*/
+  --radius-lg:     18px;   /* 大：弹窗、主内容卡片*/
+  --radius-xl:     22px;   /* 特大：移动端 Sheet、大卡片*/
   --radius-2xl:    20px;   /* 超大：FAB、大圆角卡片 */
   --radius-full:   9999px; /* 胶囊 / 圆形 */
 
@@ -356,7 +356,7 @@
   --ease-spring:    cubic-bezier(.34, 1.56, .64, 1);/* 弹性（慎用）*/
 
   --dur-instant: 50ms;   /* 颜色、边框切换 */
-  --dur-fast:    130ms;  /* Hover、微交互（AURORA 生效值，原 100ms 已被 index.css 覆盖）*/
+  --dur-fast:    130ms;  /* Hover、微交互（v信，原 100ms 已被 index.css 覆盖）*/
   --dur-base:    180ms;  /* 面板展开、弹窗 */
   --dur-slow:    280ms;  /* 侧滑、大布局变化 */
 
@@ -430,15 +430,15 @@
   --font-preview:     12.5px;
   --font-time:        var(--text-xs);
   --font-system:      var(--text-xs);
-  --lh-msg:           1.6;    /* AURORA 生效值（原 var(--lh-relaxed)=1.625，已被 index.css 覆盖为 1.6）*/
-  --lh-base:          1.5;    /* AURORA 生效值（原 var(--lh-snug)=1.375）*/
-  --ease:             cubic-bezier(.22, .61, .36, 1);   /* AURORA 稍带弹性曲线 */
-  --dur:              220ms;  /* AURORA 生效值（原 var(--dur-base)=180ms）*/
+  --lh-msg:           1.6;    /* （原 var(--lh-relaxed)=1.625，已被 index.css 覆盖为 1.6）*/
+  --lh-base:          1.5;    /* （原 var(--lh-snug)=1.375）*/
+  --ease:             cubic-bezier(.22, .61, .36, 1);   /* 轻弹曲线 */
+  --dur:              220ms;  /* （原 var(--dur-base)=180ms）*/
   --nav-w:            var(--size-nav);
   --panel-w:          var(--size-panel);
   --header-h:         var(--size-header);
   --session-h:        var(--size-session);
-  --radius-avatar:    14px;   /* AURORA 生效值（原 6px 已被 index.css 覆盖）*/
+  --radius-avatar:    14px;   /* （原 6px 已被 index.css 覆盖）*/
   /* 注：radius-sm/md/lg/bubble 的最终值已上移至 § 8 规范块统一定义
      (sm=6 md=10 lg=14 bubble=5，微信 PC 小圆角)，此处旧的重复覆盖已删除
      以消除"文档值≠生效值"的隐患，实现单一数据源。 */

@@ -802,9 +802,8 @@ private struct MessageBubble: View {
                                 .foregroundColor(.vxinTextSecondary)
                         }
                         let read = vm.isReadByPeer(msg)
-                        Text(read ? "✓✓ 已读" : "✓")
-                            .font(.caption2)
-                            .foregroundColor(read ? .vxinGreen : .vxinTextSecondary)
+                        // 消息状态：已读=双勾绿色；已送达=单勾灰色（对齐微信/Telegram）
+                        MsgTickView(isRead: read)
                     }
                 }
             }
@@ -1490,5 +1489,24 @@ private struct MessageSearchSheet: View {
         case "sticker": return "[表情]"
         default: return m.content.isEmpty ? "[消息]" : m.content
         }
+    }
+}
+
+// ── 消息状态勾图标 ────────────────────────────────────────────────────────────
+/// 消息状态：已读=双勾绿色；已送达=单勾灰色（对齐微信/Telegram 视觉规范）
+private struct MsgTickView: View {
+    let isRead: Bool
+    var body: some View {
+        HStack(spacing: -4) {
+            Image(systemName: "checkmark")
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundColor(isRead ? .vxinGreen : .vxinTextSecondary)
+            if isRead {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundColor(.vxinGreen)
+            }
+        }
+        .accessibilityLabel(isRead ? "已读" : "已送达")
     }
 }

@@ -112,7 +112,7 @@ fun ProfileScreen(
             Modifier.fillMaxSize().padding(padding).padding(16.dp).verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // 个人信息 Hero 卡片：极光靛渐变横幅（对齐 Web pf-hero）
+            // 个人信息 Hero 卡片：品牌绿渐变横幅（对齐 Web pf-hero）
             Row(
                 Modifier
                     .fillMaxWidth()

@@ -57,6 +57,10 @@ import com.vxin.app.core.util.formatChatTime
 import com.vxin.app.data.model.Conversation
 import com.vxin.app.ui.VxinIcons
 import com.vxin.app.ui.components.InitialAvatar
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.vxin.app.ui.theme.VxinBrand
 import com.vxin.app.ui.theme.VxinGreen
 import com.vxin.app.ui.theme.VxinTextSecondary
 
@@ -212,10 +216,22 @@ private fun ConversationRow(
             .fillMaxWidth()
             .testTag("conv-item-${conv.id}")
             .combinedClickable(onClick = onClick, onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); menuOpen = true })
-            .background(if (conv.pinned == 1) Color(0x11000000) else Color.Transparent)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .background(if (conv.pinned == 1) Color(0x07000000) else Color.Transparent),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // 置顶：左侧绿色细线指示（对齐 Web .wc-chat-item.pinned::before）
+        if (conv.pinned == 1) {
+            Box(
+                Modifier
+                    .width(3.dp)
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(0.dp, 3.dp, 3.dp, 0.dp))
+                    .background(VxinBrand.copy(alpha = 0.7f))
+            )
+            Spacer(Modifier.width(13.dp))
+        } else {
+            Spacer(Modifier.width(16.dp))
+        }
         InitialAvatar(name = conv.name.ifBlank { "?" }, size = 48.dp, avatarUrl = avatarUrl)
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
@@ -262,7 +278,11 @@ private fun ConversationRow(
             }
         }
         Spacer(Modifier.width(8.dp))
-        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.Center) {
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(end = 16.dp),
+        ) {
             Text(formatChatTime(conv.lastTime), color = VxinTextSecondary, fontSize = com.vxin.app.ui.theme.VxinTextSize.xs)
             Spacer(Modifier.size(4.dp))
             when {

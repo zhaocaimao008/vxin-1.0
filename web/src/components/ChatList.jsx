@@ -17,10 +17,12 @@ const byPinnedThenTime = (a, b) =>
 
 // Stable module-level row component so react-window doesn't unmount on re-render
 const ConvRow = memo(function ConvRow({ index, style, data }) {
-  const { items, activeConvId, onSelectConv, onCtxMenu, previewMsg, user, drafts } = data;
+  const { items, activeConvId, onSelectConv, onCtxMenu, previewMsg, user, drafts, onlineIds } = data;
   const conv = items[index];
   const count = conv._unread || 0;
   const draft = (drafts && drafts[conv.id]) || '';
+  // 在线绿点：仅私聊且对方在线时显示
+  const isOnline = conv.type !== 'group' && onlineIds && onlineIds.has(conv.otherUser?.id);
   return (
     <div style={style}>
       <div
@@ -48,6 +50,7 @@ const ConvRow = memo(function ConvRow({ index, style, data }) {
           }
           {count > 0 && <span className={`wc-chat-item-badge${conv.muted ? ' muted' : ''}`}>{count > 99 ? '99+' : count}</span>}
           {count === 0 && !!conv.manually_unread && <span className="wc-chat-item-unread-dot" />}
+          {isOnline && count === 0 && <span className="wc-online-dot" aria-hidden="true" />}
         </div>
         <div className="wc-chat-item-info">
           <div className="wc-chat-item-row1">
@@ -137,6 +140,7 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
   const [loaded, setLoaded] = useState(false);   // 首屏是否已拉过一次：未拉完显示骨架，避免闪「暂无聊天」
   const [ctxMenu, setCtxMenu] = useState(null);
   const [drafts, setDrafts] = useState(readAllDrafts);
+  const [onlineIds, setOnlineIds] = useState(new Set()); // 在线用户集合，用于显示绿点
   const { socket, reconnectCount } = useSocket();
   const { user } = useAuth();
 
@@ -260,6 +264,9 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
         return next.sort(byPinnedThenTime);
       });
     };
+    // 在线状态：监听 presence 事件更新绿点（只做 UI 展示，不影响业务）
+    const onOnline  = ({ userId }) => setOnlineIds(s => { const n = new Set(s); n.add(userId); return n; });
+    const onOffline = ({ userId }) => setOnlineIds(s => { const n = new Set(s); n.delete(userId); return n; });
     socket.on('new_message', onMsg);
     socket.on('new_message_batch', onMsgBatch);
     socket.on('new_conversation', onNewConv);
@@ -267,6 +274,8 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
     socket.on('group_updated', onGroupUpdated);
     socket.on('group_kicked', onGroupKicked);
     socket.on('group_dismissed', onGroupDismissed);
+    socket.on('user_online', onOnline);
+    socket.on('user_offline', onOffline);
     return () => {
       socket.off('new_message', onMsg);
       socket.off('new_message_batch', onMsgBatch);
@@ -275,6 +284,8 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
       socket.off('group_updated', onGroupUpdated);
       socket.off('group_kicked', onGroupKicked);
       socket.off('group_dismissed', onGroupDismissed);
+      socket.off('user_online', onOnline);
+      socket.off('user_offline', onOffline);
     };
   }, [socket, fetchConvs]);
 
@@ -346,7 +357,8 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
     previewMsg,
     user,
     drafts,
-  }), [filtered, activeConvId, handleSelectConv, user, drafts]);
+    onlineIds,
+  }), [filtered, activeConvId, handleSelectConv, user, drafts, onlineIds]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-panel)' }}>

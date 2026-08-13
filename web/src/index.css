@@ -1037,13 +1037,25 @@ body.dark-mode .wc-msg-status-delivered { color: rgba(255,255,255,.42); }
 .wc-tool-btn svg { width: 18px; height: 18px; fill: currentColor; transition: transform var(--dur-fast); }
 .wc-tool-svg { width: 22px; height: 22px; fill: currentColor; }
 
-/* 输入框区域 */
-/* 微信输入区无边框无圆角卡片，直接平铺白底 */
-.wc-input-box { padding: 4px 14px 2px; position: relative; background: transparent; border: none; border-radius: var(--radius-none); margin: 0; }
+/* 输入框区域：微信风格圆角容器 */
+.wc-input-box {
+  margin: 0 12px 4px;
+  padding: 8px 14px 6px;
+  background: var(--bg-input-search, #F5F5F5);
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  transition: border-color var(--dur-fast), background var(--dur-fast);
+  position: relative;
+}
+.wc-input-box:focus-within {
+  border-color: rgba(7,193,96,.40);
+  background: var(--bg-panel, #fff);
+  box-shadow: 0 0 0 3px rgba(7,193,96,.08);
+}
 .wc-textarea {
   width: 100%;
-  min-height: 72px;
-  max-height: 130px;
+  min-height: 52px;
+  max-height: 120px;
   background: transparent;
   resize: none;
   font-size: var(--text-base);
@@ -1051,6 +1063,8 @@ body.dark-mode .wc-msg-status-delivered { color: rgba(255,255,255,.42); }
   line-height: 1.55;
   overflow-y: auto;
   caret-color: var(--green);
+  border: none;
+  outline: none;
 }
 
 /* 底部：发送按钮 */
@@ -1407,7 +1421,7 @@ body.dark-mode .wc-me-qr-btn:hover { background: rgba(255,255,255,.08); }
 .auth-page {
   min-height: 100vh; display: flex;
   align-items: center; justify-content: center;
-  /* v信绿深色背景，摒弃 AURORA 靛紫 */
+  /* v信绿深色背景，摒弃旧紫色 */
   background:
     radial-gradient(900px 700px at 70% -5%,  rgba(7,193,96,.22) 0%, transparent 55%),
     radial-gradient(800px 600px at 8%  108%, rgba(7,193,96,.14) 0%, transparent 55%),
@@ -3003,7 +3017,7 @@ body.dark-mode .wc-msg-time span { background: rgba(255,255,255,.08); }
 .up-cover { width: 100%; height: 100%; object-fit: cover; display: block; }
 .up-cover-default {
   width: 100%; height: 100%;
-  /* AURORA：默认封面用品牌渐变，与个人资料 Hero 统一 */
+  /* 默认封面用品牌渐变，与个人资料 Hero 统一 */
   background:
     radial-gradient(120% 120% at 0% 0%, rgba(255,255,255,.20), transparent 55%),
     var(--grad-brand);
@@ -3877,7 +3891,7 @@ body.dark-mode .we-empty-svg { opacity: .75; }
 .wc-confirm-cancel:hover { opacity: .8; }
 .wc-confirm-ok:hover     { opacity: .88; }
 .wc-confirm-cancel { background: var(--bg-card-hover); color: var(--text-secondary); border: 1px solid var(--border-default); }
-/* 确认按钮改用品牌渐变(极光靛)，与 AURORA 一致；红色留给真正的危险操作 */
+/* 确认按钮改用品牌渐变，与 AURORA 一致；红色留给真正的危险操作 */
 .wc-confirm-ok     { background: var(--grad-brand); color: var(--gray-0); box-shadow: 0 3px 10px rgba(var(--green-rgb),.28); }
 
 /* === GroupInfo component classes === */
@@ -4467,7 +4481,7 @@ select:focus-visible {
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   ▓▓▓  AURORA · 结构级视觉重设计 (Structural Redesign)  ▓▓▓
+   ▓▓▓  v信 · 结构级视觉重设计 (Structural Redesign)  ▓▓▓
    ──────────────────────────────────────────────────────────────────
    目标：在不改动任何 JSX / 核心功能的前提下，用纯 CSS 把界面骨架
          从"深色导航条 + 扁平蓝气泡"重塑为原创的"暖白纸感 + 悬浮
@@ -4680,7 +4694,7 @@ body.dark-mode .wc-chat-header-btn:hover { background: rgba(255,255,255,.08); }
 /* ── 空态插画色跟随品牌绿 ── */
 
 /* ══════════════════════════════════════════════════════════════════
-   暗色模式下的 AURORA 补偿（外壳/面板改深靛玻璃感）
+   暗色模式下的 视觉补偿（外壳/面板改深靛玻璃感）
    ══════════════════════════════════════════════════════════════════ */
 body.dark-mode .wc-app {
   background:
@@ -4693,7 +4707,7 @@ body.dark-mode .wc-panel,
 body.dark-mode .home-chat-area { box-shadow: none; }
 body.dark-mode .wc-chat-item:hover { background: rgba(255,255,255,.06); }
 body.dark-mode .wc-sidebar-btn:hover { background: rgba(255,255,255,.08); }
-/* AURORA 结构级重设计 ▲ END */
+/* v信结构级重设计 ▲ END */
 
 /* ══════════════════════════════════════════════════════════════════
    AURORA · 个人资料详情页 Hero 重设计
