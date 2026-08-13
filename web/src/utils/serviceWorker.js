@@ -8,7 +8,7 @@
  */
 
 let swRegistration = null;
-let updateAvailableCallback = null;
+let _updateAvailableCallback = null;
 
 /**
  * 注册 Service Worker
@@ -23,7 +23,7 @@ export async function registerSW({ onUpdate, onSuccess, onOffline } = {}) {
   // 开发模式不注册（避免缓存干扰热更新）
   if (import.meta.env.DEV) return;
 
-  updateAvailableCallback = onUpdate;
+  _updateAvailableCallback = onUpdate;
 
   try {
     const registration = await navigator.serviceWorker.register('/sw.js', {
@@ -104,7 +104,7 @@ export async function requestPushPermission(vapidPublicKey) {
 // ── 内部 ──────────────────────────────────────────────────────
 
 function handleSWMessage(event) {
-  const { type, url, conversationId } = event.data || {};
+  const { type, url, conversationId: _conversationId } = event.data || {};
   if (type === 'navigate' && url) {
     window.location.href = url;
   }

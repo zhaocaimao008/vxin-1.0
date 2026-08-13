@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Avatar from '../components/Avatar';
 import { mediaUrl } from '../utils/url';
 import { showConfirm } from '../utils/toast';
+import AuthImage from './AuthImage';
 import { useAuth } from '../contexts/AuthContext';
 import { loadCred, saveCred, removeCred } from '../utils/rememberedCreds';
 

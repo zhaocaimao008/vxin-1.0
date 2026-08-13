@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/refs */
 /**
  * useGroupData — 群组数据管理 Hook
  * 从 ChatWindow 拆分：群成员、群角色、群公告、群设置 等群专属状态

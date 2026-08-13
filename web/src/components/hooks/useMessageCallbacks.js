@@ -15,11 +15,11 @@ export function useMessageCallbacks({
   setCtxMenu, setForwardMsg, setForwardMsgs,
   setShowUserProfile, setRedPacketDetail,
   setLightboxState, setVideoPreview,
-  setMultiSelect, setSelectedMsgs, selectedMsgs,
-  editMsg, copyToClipboard, copyImageToClipboard,
-  downloadFile, shareMessage, canShare,
-  pinMessage, unpinMessage, transcribeVoice,
-  reactToMsg, collectMsg, removeMsg,
+  _setMultiSelect, setSelectedMsgs, _selectedMsgs,
+  _editMsg, _copyToClipboard, _copyImageToClipboard,
+  _downloadFile, _shareMessage, _canShare,
+  _pinMessage, _unpinMessage, _transcribeVoice,
+  _reactToMsg, _collectMsg, _removeMsg,
   setReplyTo, setEditingMsg, scrollToMsg,
 }) {
   // 右键菜单

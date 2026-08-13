@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, Suspense, lazy } from 'react';
-import { showConfirm } from '../utils/toast';
+import { } from '../utils/toast';
 import { playMessageTone } from '../utils/notifySound';
 import './Home.css';
 import axios from 'axios';
@@ -27,8 +27,8 @@ import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
 import { usePushNotification } from '../hooks/usePushNotification';
 import useFocusTrap from '../hooks/useFocusTrap';
-import { mediaUrl, goLogin } from '../utils/url';
-import { loadCred, saveCred, removeCred } from '../utils/rememberedCreds';
+import { } from '../utils/url';
+import { } from '../utils/rememberedCreds';
 
 function WcEmpty() {
   return (
@@ -64,8 +64,8 @@ function WcEmpty() {
 }
 
 /* ── SVG Icons ── */
-import { IcoAdd, IcoSearch, visibleTabs, TABS, DESKTOP_TABS, desktopVisibleTabs } from '../components/TabIcons';
-import { ModalSkeleton, InlineSkeleton } from '../components/ModalSkeleton';
+import { IcoAdd, IcoSearch, visibleTabs, TABS, desktopVisibleTabs } from '../components/TabIcons';
+import { ModalSkeleton } from '../components/ModalSkeleton';
 
 /* ── 左上角头像 — 点击展开账号切换/添加下拉面板 ── */
 

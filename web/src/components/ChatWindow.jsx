@@ -39,7 +39,7 @@ const RedPacketModal      = lazy(() => import('./RedPacketModal'));
 const TransferModal       = lazy(() => import('./TransferModal'));
 const ForwardModal        = lazy(() => import('./ForwardModal'));
 import GroupCallModal from './GroupCallModal'; // 保持 eager：处理来电需立即挂载
-import { ModalSkeleton, PanelSkeleton, InlineSkeleton } from './ModalSkeleton';
+import { InlineSkeleton } from './ModalSkeleton';
 const ScheduleSendModal   = lazy(() => import('./ScheduleSendModal'));
 const PrivateChatSettings = lazy(() => import('./PrivateChatSettings'));
 const ChatFiles           = lazy(() => import('./ChatFiles'));
@@ -2071,8 +2071,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
     if (idx >= 0) {
       virtListRef.current?.scrollToItem(idx, 'center');
       setHighlightedMsgId(String(msgId));
-      const _hl = setTimeout(() => setHighlightedMsgId(null), 2000);
-    return () => clearTimeout(_hl);
+      setTimeout(() => setHighlightedMsgId(null), 2000);
       return;
     }
     const el = document.getElementById(`msg-${msgId}`);

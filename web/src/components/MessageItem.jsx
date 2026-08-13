@@ -223,7 +223,7 @@ const MessageItem = memo(function MessageItem({ item, cbRef, measure }) {
                   className="wc-msg-img"
                   style={aspectStyle}
                   decoding="async"
-                  fetchpriority="auto"
+                  fetchPriority="auto"
                   width={aspect && aspect < 0.75 ? Math.round(320 * aspect) : 240}
                   height={aspect ? Math.round((aspect && aspect < 0.75 ? Math.round(320 * aspect) : 240) / aspect) : 180}
                   role="button" tabIndex={0} aria-label="查看大图"

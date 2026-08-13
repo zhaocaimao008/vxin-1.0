@@ -16,11 +16,13 @@
  */
 export function sanitizeText(text, maxLen = 100) {
   if (typeof text !== 'string') return '';
+  /* eslint-disable no-control-regex */
   return text
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // 控制字符
     .replace(/\s+/g, ' ')                                 // 折叠空格
     .trim()
     .slice(0, maxLen);
+  /* eslint-enable no-control-regex */
 }
 
 /**
@@ -28,9 +30,11 @@ export function sanitizeText(text, maxLen = 100) {
  */
 export function sanitizeMessage(text, maxLen = 2000) {
   if (typeof text !== 'string') return '';
+  /* eslint-disable no-control-regex */
   return text
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // 控制字符（保留 \t \n \r）
     .slice(0, maxLen);
+  /* eslint-enable no-control-regex */
 }
 
 /**

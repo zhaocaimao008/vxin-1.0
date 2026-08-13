@@ -66,7 +66,7 @@ export default memo(function Avatar({ src, name = '', size = 40, style = {}, onl
             width={size}
             height={size}
             loading={priority ? 'eager' : 'lazy'}
-            fetchpriority={priority ? 'high' : 'auto'}
+            fetchPriority={priority ? 'high' : 'auto'}
             decoding={priority ? 'sync' : 'async'}
             crossOrigin="anonymous"
             onError={() => setErrored(true)}

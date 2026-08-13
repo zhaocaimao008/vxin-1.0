@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/refs */
 /**
  * useMessageLoader — 消息加载与分页 Hook
  * 从 ChatWindow 拆分：历史消息加载、分页、缓存读写
@@ -16,7 +17,7 @@ import { loadOutbox } from '../utils/outbox';
 
 const PAGE_SIZE = 40;
 
-export function useMessageLoader({ conversationId, userId, socket, reconnectCount }) {
+export function useMessageLoader({ conversationId, userId: _userId, socket: _socket, reconnectCount }) {
   const [messages, setMessages]       = useState([]);
   const [hasMore, setHasMore]         = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
