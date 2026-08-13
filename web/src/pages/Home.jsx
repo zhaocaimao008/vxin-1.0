@@ -46,6 +46,7 @@ function WcEmpty() {
 
 /* ── SVG Icons ── */
 import { IcoAdd, IcoSearch, visibleTabs } from '../components/TabIcons';
+import { ModalSkeleton, InlineSkeleton } from '../components/ModalSkeleton';
 
 /* ── 左上角头像 — 点击展开账号切换/添加下拉面板 ── */
 
@@ -578,7 +579,7 @@ export default function Home() {
     <>
       <ReconnectingBanner />
       {activeCall && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<ModalSkeleton height={420} />}>
           <CallModal
             socket={socket}
             user={user}
@@ -621,7 +622,7 @@ export default function Home() {
           onCreated={(conv) => { setShowCreateGroup(false); handleSelectConv(conv); }} />
       )}
       {netSearchQ !== null && (
-        <Suspense fallback={null}><AddFriendModal initialQuery={netSearchQ} onClose={() => setNetSearchQ(null)} /></Suspense>
+        <Suspense fallback={<ModalSkeleton height={480} />}><AddFriendModal initialQuery={netSearchQ} onClose={() => setNetSearchQ(null)} /></Suspense>
       )}
       {showMentions && (
         <div className="wc-modal-overlay" onClick={e => e.target === e.currentTarget && setShowMentions(false)}>

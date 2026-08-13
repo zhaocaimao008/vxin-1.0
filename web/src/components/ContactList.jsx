@@ -576,7 +576,7 @@ const ContactRow = memo(function ContactRow({ contact: c, online, onOpen }) {
   );
 });
 
-function EntryRow({ icon, color, label, badge, onClick }) {
+const EntryRow = memo(function EntryRow({ icon, color, label, badge, onClick }) {
   return (
     <div className="wc-contact-item gi-cp" onClick={onClick}
       role="button" tabIndex={0}
@@ -597,9 +597,9 @@ function EntryRow({ icon, color, label, badge, onClick }) {
       </svg>
     </div>
   );
-}
+});
 
-function SectionHeader({ title, onBack }) {
+const SectionHeader = memo(function SectionHeader({ title, onBack }) {
   return (
     <div className="cl-section-header">
       <button onClick={onBack} className="cl-section-back">
@@ -609,4 +609,4 @@ function SectionHeader({ title, onBack }) {
       <span className="cl-section-title">{title}</span>
     </div>
   );
-}
+});

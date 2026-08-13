@@ -168,7 +168,7 @@ const MessageItem = memo(function MessageItem({ item, cbRef, measure }) {
                     {/* width/height 显式声明：缩略图未解码前就按 34×34 预留盒子，
                         使本行首帧高度即等于 estimateHeight 的预留值，杜绝图片解码后
                         撑高本行、下一行事后回落造成的重叠/抖动。 */}
-                    <img loading="lazy" width={34} height={34} src={mediaUrl(msg.replyTo.file_url)} alt="" className="wc-msg-reply-thumb"
+                    <img loading="lazy" width={34} height={34} decoding="async" src={mediaUrl(msg.replyTo.file_url)} alt="" className="wc-msg-reply-thumb"
                       onLoad={() => measure?.()}
                       onError={e => { e.currentTarget.style.display = 'none'; measure?.(); }} />
                   </div>
@@ -201,6 +201,10 @@ const MessageItem = memo(function MessageItem({ item, cbRef, measure }) {
                   alt="消息图片"
                   className="wc-msg-img"
                   style={aspectStyle}
+                  decoding="async"
+                  fetchpriority="auto"
+                  width={aspect && aspect < 0.75 ? Math.round(320 * aspect) : 240}
+                  height={aspect ? Math.round((aspect && aspect < 0.75 ? Math.round(320 * aspect) : 240) / aspect) : 180}
                   role="button" tabIndex={0} aria-label="查看大图"
                   onClick={() => cbs.setLightboxUrl(imgSrc)}
                   onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cbs.setLightboxUrl(imgSrc); } }}
