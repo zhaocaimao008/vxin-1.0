@@ -5,36 +5,41 @@ import { clearCache } from '../utils/msgCache';
 // 所有请求自动携带 httpOnly Cookie（同源时浏览器自动附加，跨域需此选项）
 axios.defaults.withCredentials = true;
 
-// ── CSRF 防护：响应拦截器 ──────────────────────────────────────────
-// 从任何 API 响应头中读取 X-CSRF-Token 并存入 sessionStorage
-// 注：使用 sessionStorage 而非 localStorage，标签页关闭即清除，
-//     XSS 仍可读取（SameSite=Strict Cookie 是防 CSRF 的主力），
-//     但至少不会跨会话持久化。
-axios.interceptors.response.use(
-  (res) => {
-    const csrfHeader = res.headers['x-csrf-token'];
-    if (csrfHeader) {
-      sessionStorage.setItem('csrf_token', csrfHeader);
-      // 移动端浏览器刷新后 sessionStorage 清空但 Cookie 保留会导致 403，
-      // 用 localStorage 作为兜底，避免首次 POST 前 token 尚未到达时失败。
-      localStorage.setItem('csrf_token_cache', csrfHeader);
-    }
-    return res;
-  },
-  (err) => Promise.reject(err)
-);
-
-// ── CSRF 防护：请求拦截器 ──────────────────────────────────────────
-axios.interceptors.request.use(
-  (config) => {
-    if (['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase())) {
-      const csrfToken = sessionStorage.getItem('csrf_token') || localStorage.getItem('csrf_token_cache');
-      if (csrfToken) config.headers['X-CSRF-Token'] = csrfToken;
-    }
-    return config;
-  },
-  (err) => Promise.reject(err)
-);
+// ── CSRF 防护拦截器（模块级单次注册，避免热重载/re-import 累积注册）────
+// Bug修复：原来在模块顶层注册，开发热重载时每次都叠加新拦截器，
+// 导致同一响应被多次处理（CSRF token 重复写入/覆盖，性能下降）。
+// 解决：用标志位 + eject 保证全局只注册一次。
+const _interceptors = { req: -1, res: -1 };
+function _setupInterceptors() {
+  if (_interceptors.res >= 0) {
+    axios.interceptors.response.eject(_interceptors.res);
+    axios.interceptors.request.eject(_interceptors.req);
+  }
+  // 响应拦截器：读取 CSRF token
+  _interceptors.res = axios.interceptors.response.use(
+    (res) => {
+      const csrfHeader = res.headers['x-csrf-token'];
+      if (csrfHeader) {
+        sessionStorage.setItem('csrf_token', csrfHeader);
+        localStorage.setItem('csrf_token_cache', csrfHeader);
+      }
+      return res;
+    },
+    (err) => Promise.reject(err)
+  );
+  // 请求拦截器：注入 CSRF token
+  _interceptors.req = axios.interceptors.request.use(
+    (config) => {
+      if (['post', 'put', 'patch', 'delete'].includes(config.method?.toLowerCase())) {
+        const csrfToken = sessionStorage.getItem('csrf_token') || localStorage.getItem('csrf_token_cache');
+        if (csrfToken) config.headers['X-CSRF-Token'] = csrfToken;
+      }
+      return config;
+    },
+    (err) => Promise.reject(err)
+  );
+}
+_setupInterceptors(); // 模块加载时注册一次
 
 const AuthContext = createContext(null);
 
