@@ -57,18 +57,6 @@ jobs:
       - name: Xcode 版本
         run: xcodebuild -version
 
-      - name: 修复 App Icon（移除 Alpha 通道，App Store 要求不透明图标）
-        run: |
-          ICON="ios/Vxin/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png"
-          pip3 install Pillow -q 2>/dev/null || true
-          python3 -c "
-from PIL import Image
-img = Image.open('$ICON').convert('RGB')
-img.save('$ICON', format='PNG', optimize=False)
-print('App Icon alpha removed, size:', img.size)
-"
-          echo "✅ App Icon alpha 已移除"
-
       - name: 安装 XcodeGen
         run: brew install xcodegen
 
