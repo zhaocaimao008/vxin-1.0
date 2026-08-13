@@ -1,9 +1,16 @@
 package com.vxin.app.navigation
 
 import android.net.Uri
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -305,6 +312,7 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0) {
             composable(Routes.MOMENT_COMPOSE) {
                 com.vxin.app.feature.moments.MomentComposeScreen(
                     onBack = { navController.popBackStack() },
+                    onPublished = { navController.popBackStack() },
                 )
             }
             // 收藏 已按需移除
@@ -395,7 +403,38 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0) {
 
 @Composable
 private fun SplashScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
+    val brandGreen = androidx.compose.ui.graphics.Color(0xFF07C160)
+    val white = androidx.compose.ui.graphics.Color.White
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(brandGreen),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            // v信 Logo
+            Text(
+                text = "v信",
+                color = white,
+                style = androidx.compose.material3.MaterialTheme.typography.displaySmall,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            // 品牌标语
+            Text(
+                text = "安全 · 私密 · 畅聊",
+                color = white.copy(alpha = 0.72f),
+                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+            )
+            Spacer(modifier = Modifier.height(44.dp))
+            // 加载指示器
+            CircularProgressIndicator(
+                color = white.copy(alpha = 0.65f),
+                strokeWidth = 2.dp,
+                modifier = Modifier.size(22.dp),
+            )
+        }
     }
 }

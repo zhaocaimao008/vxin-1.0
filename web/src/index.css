@@ -785,13 +785,7 @@ body.dark-mode .wc-msg-status-delivered { color: rgba(255,255,255,.42); }
   min-width: 0;
   transition: box-shadow var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
 }
-.wc-msg-bubble.mine {
-  background: var(--bg-msg-mine);
-  color: #FFFFFF;
-  /* Telegram 风格：右下角收尖 */
-  border-radius: 18px 18px 4px 18px;
-  box-shadow: 0 1px 2px rgba(7,193,96,.20);
-}
+/* .wc-msg-bubble.mine - see canonical definition below */
 .wc-msg-bubble.mine a { color: rgba(255,255,255,.88); }
 .wc-msg-bubble.mine .wc-msg-time,
 .wc-msg-bubble.mine .wc-msg-meta { color: rgba(255,255,255,.58); }
@@ -1786,7 +1780,7 @@ body.dark-mode .wc-me-qr-btn:hover { background: rgba(255,255,255,.08); }
    Misc utilities
    ============================================================ */
 .wc-online-dot { position: absolute; bottom: 0; right: 0; width: 9px; height: 9px; background: var(--status-online); border-radius: var(--radius-full); border: 1.5px solid var(--gray-0); }
-.wc-logout-btn { margin: var(--sp-4); padding: var(--sp-3); background: var(--bg-card); color: #E24C4C; border-radius: var(--radius-button-sm); font-size: var(--text-md); font-weight: var(--font-medium); text-align: center; cursor: pointer; border: 1px solid rgba(226,76,76,.3); transition: background var(--dur-fast); }
+/* .wc-logout-btn – see canonical definition at file end */
 .wc-logout-btn:hover { background: rgba(226,76,76,.05); }
 .wc-collection-item { display: flex; align-items: center; gap: 11px; padding: 11px var(--sp-4); background: var(--bg-card); border-bottom: 1px solid var(--border-subtle); cursor: pointer; transition: background var(--dur-fast); }
 .wc-collection-item:hover { background: var(--bg-hover); }
@@ -1851,7 +1845,7 @@ body.dark-mode .wc-moment-comment-submit { color: var(--link); }
 
 /* 气泡 — 暗色模式下我方气泡：企业微信浅绿，深色文字 */
 body.dark-mode .wc-msg-bubble { border-color: rgba(255,255,255,.06); box-shadow: none; }
-body.dark-mode .wc-msg-bubble.mine { background: var(--bg-msg-mine); color: var(--bubble-mine-text); border-color: transparent; box-shadow: 0 1px 3px rgba(20,24,40,.08), 0 1px 8px rgba(20,24,40,.05); }
+body.dark-mode .wc-msg-bubble.mine { background: var(--bg-msg-mine); color: #fff; border: none; box-shadow: 0 1px 3px rgba(0,0,0,.22); }
 body.dark-mode .wc-msg-bubble.other { background: var(--bg-input-search); color: #e6e6e6; border-color: rgba(255,255,255,.06); }
 body.dark-mode .wc-msg-bubble.mine::after,
 body.dark-mode .wc-msg-bubble.other::after { display: none; }
@@ -2817,7 +2811,7 @@ body:not(.dark-mode) .wc-discover {
 
 /* 气泡保留柔和投影，从画布上浮起（与基础规则一致，不再抹平） */
 .wc-msg-bubble.other { box-shadow: var(--shadow-bubble-other-soft, 0 1px 3px rgba(20,24,40,.07), 0 1px 8px rgba(20,24,40,.05)); }
-.wc-msg-bubble.mine { box-shadow: 0 1px 3px rgba(20, 24, 40, .08), 0 1px 8px rgba(20, 24, 40, .05); }
+/* .wc-msg-bubble.mine shadow - merged into canonical definition */
 
 /* 微信会话列表选中态不带左侧绿条 —— 去除 */
 
@@ -3326,7 +3320,7 @@ body.dark-mode .wc-msg-time span { background: rgba(255,255,255,.08); }
 /* ── Section wrappers ── */
 .wc-section-pad { padding: 0 14px; }
 .wc-logout-div { padding: 20px 14px 32px; }
-.wc-logout-btn { width: 100%; padding: 15px 0; border-radius: var(--radius-modal); background: var(--bg-msg-other, #fff); color: var(--color-badge); font-size: var(--text-md); font-weight: var(--font-medium); border: 1px solid rgba(250,81,81,.2); box-shadow: var(--elev-dropdown); cursor: pointer; transition: opacity var(--dur-fast); }
+/* .wc-logout-btn – see canonical definition at file end */
 .wc-logout-btn:hover { opacity: .7; }
 
 /* ── Loading / Empty ── */
@@ -3381,7 +3375,7 @@ body.dark-mode .wc-msg-time span { background: rgba(255,255,255,.08); }
 .gi-btn-cancel { flex:1; padding:7px; background:var(--bg-search); border-radius:var(--radius-sm); font-size: var(--text-sm2); color:var(--text-secondary); }
 
 /* ── Avatar + name section ── */
-.gi-avinfo { background:var(--bg-msg-other); padding:16px 14px 14px; display:flex; gap:13px; align-items:center; margin-bottom: var(--sp-2); border-bottom:1px solid var(--border-color); }
+/* .gi-avinfo – see canonical definition in refinements section */
 .gi-body { flex:1; overflow-y:auto; }
 .gi-name-row { display:flex; align-items:center; gap: var(--sp-1); }
 
@@ -4193,7 +4187,9 @@ body.dark-mode .wc-reaction-pill.mine { background: rgba(var(--green-rgb),.2); b
 .m-topbar {
   flex-shrink: 0; min-height: 50px; padding-top: env(safe-area-inset-top);
   display: flex; align-items: center; justify-content: center; position: relative;
-  background: var(--bg-search); border-bottom: 1px solid rgba(0,0,0,.05);
+  background: var(--bg-panel);
+  border-bottom: .5px solid rgba(0,0,0,.08);
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
 }
 .m-title { font-size: var(--text-h5); font-weight: var(--font-semibold); color: var(--text-title); }
 .m-topbar-add {
@@ -4341,16 +4337,8 @@ body.dark-mode .wc-reaction-pill.mine { background: rgba(var(--green-rgb),.2); b
 /* 分组小标题：去全大写与字间距，回归普通灰标签 */
 .wc-slabel { text-transform: none !important; letter-spacing: normal !important; }
 
-/* 退出登录：通栏白底红字行(微信式)，无圆角卡片/投影 */
+/* .wc-logout-btn – see canonical definition at file end */
 .wc-logout-div { padding-left: 0 !important; padding-right: 0 !important; }
-.wc-logout-btn {
-  border-radius: var(--radius-none) !important;
-  border-left: none !important;
-  border-right: none !important;
-  box-shadow: none !important;
-  border-top: 1px solid var(--divider) !important;
-  border-bottom: 1px solid var(--divider) !important;
-}
 
 /* 群信息侧栏：不透明纯色、去毛玻璃(docked 面板不浮投影) */
 .wc-group-info {
@@ -4480,11 +4468,10 @@ select:focus-visible {
    本块置于文件末尾，覆盖前述历史规则（同优先级后者胜出）。
    ══════════════════════════════════════════════════════════════════ */
 
-/* ── 应用外壳：极淡的紫雾渐变底，让面板"浮"起来 ── */
+/* ── 应用外壳：极淡品牌绿渐变底 ── */
 .wc-app {
   background:
-    radial-gradient(1200px 600px at 12% -8%, rgba(109,90,230,.10), transparent 60%),
-    radial-gradient(1000px 620px at 110% 115%, rgba(23,184,166,.10), transparent 60%),
+    radial-gradient(900px 600px at 8% -5%, rgba(7,193,96,.05), transparent 55%),
     var(--bg-app);
   padding: 10px;
   gap: 10px;
@@ -4638,7 +4625,7 @@ body.dark-mode .wc-chat-header-btn:hover { background: rgba(255,255,255,.08); }
 }
 .wc-app.wc-mobile .home-chat-area { border-radius: 0; box-shadow: none; }
 
-/* ── 我方气泡：企业微信浅绿，柔投影（2026-08 用户要求与企业微信一致、更干净）── */
+/* ── 我方气泡：v信品牌绿（#07C160），白字，轻投影 ── */
 .wc-msg-bubble.mine {
   background: var(--bg-msg-mine) !important;
   box-shadow: 0 1px 4px rgba(7,193,96,.22);
@@ -4668,8 +4655,8 @@ body.dark-mode .wc-chat-header-btn:hover { background: rgba(255,255,255,.08); }
    ══════════════════════════════════════════════════════════════════ */
 body.dark-mode .wc-app {
   background:
-    radial-gradient(1200px 600px at 12% -8%, rgba(109,90,230,.16), transparent 60%),
-    radial-gradient(1000px 620px at 110% 115%, rgba(23,184,166,.14), transparent 60%),
+    radial-gradient(900px 600px at 8% -5%, rgba(7,193,96,.08), transparent 55%),
+    radial-gradient(1000px 620px at 110% 115%, rgba(7,193,96,.14), transparent 60%),
     var(--bg-app);
 }
 body.dark-mode .wc-sidebar,
@@ -4923,12 +4910,7 @@ body.dark-mode .wc-msg-bubble.other { background: #2C2C2E; box-shadow: none; bor
 .wc-msg-bubble.mine  .wc-msg-img { border-radius: 14px 14px 4px 14px; }
 .wc-msg-bubble.other .wc-msg-img { border-radius: 14px 14px 14px 4px; }
 
-/* ── 移动端聊天页标题栏精修 ── */
-.m-topbar {
-  background: var(--bg-panel);
-  border-bottom: .5px solid rgba(0,0,0,.08);
-  box-shadow: 0 1px 4px rgba(0,0,0,.04);
-}
+/* .m-topbar 已合并到基础定义 */
 
 /* ── 整体滚动条极简化 ── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }

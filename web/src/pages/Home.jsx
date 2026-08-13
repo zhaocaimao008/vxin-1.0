@@ -64,7 +64,7 @@ function WcEmpty() {
 }
 
 /* ── SVG Icons ── */
-import { IcoAdd, IcoSearch, visibleTabs } from '../components/TabIcons';
+import { IcoAdd, IcoSearch, visibleTabs, TABS } from '../components/TabIcons';
 import { ModalSkeleton, InlineSkeleton } from '../components/ModalSkeleton';
 
 /* ── 左上角头像 — 点击展开账号切换/添加下拉面板 ── */

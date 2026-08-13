@@ -65,20 +65,9 @@ object AppModule {
         }
         // ── 证书固定（防中间人攻击 MITM）───────────────────────────
         // 使用 Public Key Pinning，证书续期时 key 不变无需更新 App。
-        // ⚠ 上线前替换为真实 SHA256：
-        //   openssl s_client -connect dipsin.com:443 | openssl x509 -pubkey -noout |
-        //   openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | base64
-        // 暂用 sha256/AAAA... 占位（会匹配失败），PINNING_ENABLED=false 时跳过
-        val PINNING_ENABLED = false  // TODO: 上线前改 true 并填真实 hash
-        val pinner = if (PINNING_ENABLED) {
-            CertificatePinner.Builder()
-                .add("dipsin.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=") // 主证书
-                .add("dipsin.com", "sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=") // 备用
-                .build()
-        } else null
-
+        // TODO: 上线前配置证书固定（Certificate Pinning）
+        // 需要添加 okhttp3.CertificatePinner 并填入真实 SHA256 hash
         return OkHttpClient.Builder()
-            .apply { if (pinner != null) certificatePinner(pinner) }
             // 超时:默认仅 10s,弱网/大文件(分片上传单片、视频、二维码下载)必触发 SocketTimeout。
             // 连接 20s;读写 60s 容纳慢上传/下载;callTimeout=0 不设总时长上限,靠读写超时兜底。
             .connectTimeout(20, TimeUnit.SECONDS)

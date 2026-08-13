@@ -12,15 +12,7 @@ android {
     compileSdk = 34
 
     // ── Baseline Profile：ART 预编译，冷启动加速 30-40% ──────────
-    // baseline-prof.txt 声明核心路径，构建时生成 baseline.prof 打入 APK
-    buildTypes {
-        release {
-            // Baseline Profile 在 release 构建时自动包含
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-        }
-    }
+    // baseline-prof.txt 声明核心路径，构建时生成 baseline.prof 打入 APK（release 构建时自动包含）
 
     defaultConfig {
         applicationId = "com.vxin.app"

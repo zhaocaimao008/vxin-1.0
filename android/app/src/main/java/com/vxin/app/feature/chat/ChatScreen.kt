@@ -1407,7 +1407,7 @@ private fun bubbleBg(isMine: Boolean): Color =
 // 我方气泡渐变笔刷：极光靛 → 青碧（对齐 web --grad-brand），对方气泡回退纯色
 @Composable
 private fun bubbleBrush(isMine: Boolean): Brush =
-    if (isMine) Brush.linearGradient(listOf(VxinBrandLight, VxinBubbleMine, VxinTeal))
+    if (isMine) Brush.linearGradient(listOf(VxinBrandLight, VxinBubbleMine))
     else SolidColor(bubbleBg(false))
 
 // 气泡文字：我方靛底=白字；对方白/深灰底=深/浅字

@@ -376,7 +376,7 @@ function Tile({ stream, streamForRef, muted, isVideo, info, self }) {
         position: 'relative', background: '#000', borderRadius: 'var(--radius-md)',
         overflow: 'hidden', minHeight: isMobileWidth() ? 100 : 140,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        border: self ? '2px solid var(--color-primary,#6D5AE6)' : '1px solid rgba(255,255,255,.08)',
+        border: self ? '2px solid var(--color-primary,#07C160)' : '1px solid rgba(255,255,255,.08)',
       }}
     >
       <video

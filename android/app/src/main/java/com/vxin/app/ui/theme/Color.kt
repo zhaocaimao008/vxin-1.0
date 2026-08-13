@@ -10,6 +10,8 @@ val VxinBrandMuted = Color(0xFFE8F8EF)     // brand-50 主色浅底
 // 兼容旧引用名（各 Screen 无需改动）：统一指向 v信绿
 val VxinGreen = VxinBrand
 val VxinGreenDark = VxinBrandDark
+// VxinTeal：原青碧辅色（#17B8A6），已统一为品牌绿，保留别名防止编译报错
+val VxinTeal = VxinBrand
 val VxinBg = Color(0xFFF5F5F5)             // 辅助浅灰，对齐 web #F5F5F5
 val VxinTextPrimary = Color(0xFF1A1A1A)    // 正文近黑，对齐 web --text-primary
 val VxinTextSecondary = Color(0xFF888888)  // 辅助中性灰，对齐 web --text-secondary

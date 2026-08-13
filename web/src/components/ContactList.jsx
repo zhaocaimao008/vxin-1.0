@@ -397,22 +397,22 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
 function LabelsTab({ labels, contacts, onBack, onUpdate }) {
   const [editLabel, setEditLabel] = useState(null); // null | 'new' | labelObject
   const [nameInput, setNameInput] = useState('');
-  const [colorInput, setColorInput] = useState('#6D5AE6');
+  const [colorInput, setColorInput] = useState('#07C160');
   const [showMembers, setShowMembers] = useState(null); // labelId
   const [saving, setSaving] = useState(false);
 
-  const COLORS = ['#6D5AE6', '#FA5151', '#17B8A6', '#FF9A00', '#FF6B35', '#8A93A6', '#5B7BF0', '#7D4BF0'];
+  const COLORS = ['#07C160', '#FA5151', '#FF9A00', '#FF6B35', '#5B7BF0', '#8A93A6', '#E8619D', '#7D4BF0'];
 
   const startCreate = () => {
     setEditLabel('new');
     setNameInput('');
-    setColorInput('#6D5AE6');
+    setColorInput('#07C160');
   };
 
   const startEdit = (label) => {
     setEditLabel(label);
     setNameInput(label.name);
-    setColorInput(label.color || '#6D5AE6');
+    setColorInput(label.color || '#07C160');
   };
 
   const saveLabel = async () => {
@@ -531,7 +531,7 @@ function LabelsTab({ labels, contacts, onBack, onUpdate }) {
       )}
       {labels.map(label => (
         <div key={label.id} className="wc-contact-item">
-          <div className="lt-label-icon-box" style={{ background: label.color || '#6D5AE6' }}>
+          <div className="lt-label-icon-box" style={{ background: label.color || '#07C160' }}>
             <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff"><path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16z"/></svg>
           </div>
           <div className="cl-contact-info">

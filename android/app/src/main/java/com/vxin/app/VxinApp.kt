@@ -34,7 +34,7 @@ class VxinApp : Application(), ImageLoaderFactory {
         entry.messageNotificationBridge().install(this)
 
         // 3. WorkManager 后台同步调度（同步注册，异步执行）
-        com.vxin.app.core.sync.OutboxSyncWorker.schedule(this)
+        // OutboxSync: outbox retries handled by SocketManager on reconnect
 
         // 4. 非关键初始化移至后台线程（不阻塞 UI 线程）
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
