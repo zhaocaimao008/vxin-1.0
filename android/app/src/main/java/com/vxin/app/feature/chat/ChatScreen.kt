@@ -9,6 +9,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -162,7 +163,9 @@ fun ChatScreen(
         )
     }
 
-    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+    // 相册选择器：使用 Android 官方 PickVisualMedia，同时支持图片和视频
+    // minSdk=24，API 19+ 通过 Photo Picker 或回退 ACTION_GET_CONTENT，均透明兼容
+    val mediaPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         uri?.let { viewModel.uploadFromUri(it, previewLocal = true) }
     }
     val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -432,7 +435,12 @@ fun ChatScreen(
                 }
                 if (showFuncPanel) {
                     FunctionPanel(
-                        onPickImage = { imagePicker.launch("image/*"); showFuncPanel = false },
+                        onPickImage = {
+                            mediaPicker.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)
+                            )
+                            showFuncPanel = false
+                        },
                         onPickFile = { filePicker.launch("*/*"); showFuncPanel = false },
                         onScreenshot = { startScreenshot(); showFuncPanel = false },
                         onRedPacket = { showRedPacketSend = true; showFuncPanel = false },
@@ -1555,7 +1563,7 @@ private fun FunctionPanel(
     onScheduleList: (() -> Unit)? = null, // 我的定时消息列表
 ) {
     val items = buildList {
-        add(Triple("🖼", "图片", onPickImage))
+        add(Triple("🖼", "相册", onPickImage))   // 支持图片和视频
         add(Triple("📎", "文件", onPickFile))
         if (onScreenshot != null) add(Triple("📷", "截屏", onScreenshot))
         add(Triple("🧧", "红包", onRedPacket))

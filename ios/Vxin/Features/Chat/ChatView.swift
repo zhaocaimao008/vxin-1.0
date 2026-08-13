@@ -410,6 +410,12 @@ struct ChatView: View {
             .onChange(of: vm.scrollTarget) { target in
                 if let target { withAnimation { proxy.scrollTo(target, anchor: .center) }; vm.scrollTarget = nil }
             }
+            // P1-01 修复：键盘弹出时，若用户在底部则自动滚底，确保最新消息不被遮挡
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                withAnimation(.easeOut(duration: 0.25)) {
+                    proxy.scrollTo(bottomAnchor, anchor: .bottom)
+                }
+            }
 
             // 「↓ N 条新消息」悬浮按钮：看历史时来了新消息才显示，点按滚到底
             if newMsgCount > 0 {
@@ -526,11 +532,12 @@ struct ChatView: View {
     /// +面板：图片 / 文件 / 红包（对齐微信「更多功能」面板）
     private var functionPanel: some View {
         HStack(spacing: 24) {
-            PhotosPicker(selection: $photoItem, matching: .images) {
-                funcItem(emoji: "🖼", label: "图片")
+            // P1-02 修复：支持从相册选取图片和视频（iOS 16.0+）
+            PhotosPicker(selection: $photoItem, matching: .any(of: [.images, .videos])) {
+                funcItem(emoji: "🖼", label: "相册")
             }
             .accessibilityIdentifier("chat-attach-image")
-            .accessibilityLabel("发送图片")
+            .accessibilityLabel("发送图片或视频")
             Button { showFuncPanel = false; showFileImporter = true } label: { funcItem(emoji: "📎", label: "文件") }
                 .accessibilityIdentifier("chat-attach-file")
                 .accessibilityLabel("发送文件")
@@ -627,11 +634,32 @@ struct ChatView: View {
         guard let item else { return }
         Task {
             defer { photoItem = nil }
-            guard let data = try? await item.loadTransferable(type: Data.self) else { return }
-            let image = UIImage(data: data)
-            let jpeg = image?.jpegData(compressionQuality: 0.85) ?? data
-            let name = "image_\(Int(Date().timeIntervalSince1970)).jpg"
-            vm.upload(data: jpeg, fileName: name, mimeType: "image/jpeg", localType: "image", preview: image)
+            // P1-02: 检测是否为视频（优先检查 UTType conformance）
+            let isVideo = item.supportedContentTypes.contains {
+                $0.conforms(to: .movie) || $0.conforms(to: .video) || $0.conforms(to: .audiovisualContent)
+            }
+            if isVideo {
+                // 视频：通过 TransferableMovie 加载临时文件 URL → 读为 Data 上传
+                if let movie = try? await item.loadTransferable(type: TransferableMovie.self) {
+                    defer { try? FileManager.default.removeItem(at: movie.url) }
+                    let ext = movie.url.pathExtension.isEmpty ? "mp4" : movie.url.pathExtension
+                    let mime = UTType(filenameExtension: ext)?.preferredMIMEType ?? "video/mp4"
+                    let name = "video_\(Int(Date().timeIntervalSince1970)).\(ext)"
+                    guard let data = try? Data(contentsOf: movie.url) else {
+                        vm.error = "视频读取失败，请重试"; return
+                    }
+                    vm.upload(data: data, fileName: name, mimeType: mime, localType: "video", preview: nil)
+                } else {
+                    vm.error = "不支持的视频格式，请通过"文件"按钮上传"
+                }
+            } else {
+                // 图片：原有逻辑
+                guard let data = try? await item.loadTransferable(type: Data.self) else { return }
+                let image = UIImage(data: data)
+                let jpeg = image?.jpegData(compressionQuality: 0.85) ?? data
+                let name = "image_\(Int(Date().timeIntervalSince1970)).jpg"
+                vm.upload(data: jpeg, fileName: name, mimeType: "image/jpeg", localType: "image", preview: image)
+            }
         }
     }
 
@@ -1508,5 +1536,23 @@ private struct MsgTickView: View {
             }
         }
         .accessibilityLabel(isRead ? "已读" : "已送达")
+    }
+}
+
+// ── P1-02: 视频 Transferable 支持（iOS 16.0+）────────────────────────────────
+/// 将 PhotosPickerItem 中的视频导出为临时文件 URL，供上传读取（避免大视频直接 Data 加载 OOM）。
+private struct TransferableMovie: Transferable {
+    let url: URL
+    static var transferRepresentation: some TransferRepresentation {
+        FileRepresentation(contentType: .movie) { movie in
+            SentTransferredFile(movie.url)
+        } importing: { received in
+            let ext = received.file.pathExtension.isEmpty ? "mp4" : received.file.pathExtension
+            let dest = FileManager.default.temporaryDirectory
+                .appendingPathComponent("vxin_video_\(Int(Date().timeIntervalSince1970)).\(ext)")
+            try? FileManager.default.removeItem(at: dest)   // 清理可能存在的旧文件
+            try FileManager.default.copyItem(at: received.file, to: dest)
+            return TransferableMovie(url: dest)
+        }
     }
 }
