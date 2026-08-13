@@ -863,7 +863,7 @@ async function doLogout(logout) {
   goLogin();
 }
 
-/* ── 个人资料详情页（AURORA 重设计：渐变 Hero + 卡片信息） ── */
+/* ── 个人资料详情页（渐变 Hero + 卡片信息） ── */
 function ProfileDetail({ user, updateUser, onBack, navigateTo }) {
   const fileRef = useRef(null);
   const [uploading, setUploading] = useState(false);

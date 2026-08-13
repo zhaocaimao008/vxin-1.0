@@ -132,7 +132,7 @@ fun RegisterScreen(
         }
 
         Spacer(Modifier.height(28.dp))
-        // 注册按钮：极光靛渐变实心药丸（与登录页一致）
+        // 注册按钮：品牌绿渐变实心药丸（与登录页一致）
         Button(
             onClick = viewModel::submit,
             enabled = state.canSubmit,

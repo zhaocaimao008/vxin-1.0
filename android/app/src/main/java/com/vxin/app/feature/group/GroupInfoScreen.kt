@@ -105,7 +105,7 @@ fun GroupInfoScreen(
                 info == null -> Text(state.error ?: "加载失败", color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Center))
                 else -> LazyColumn(Modifier.fillMaxSize()) {
                     item {
-                        // Hero 横幅：极光靛渐变 + 大群头像 + 群名 + 成员数（对齐资料页 Hero）
+                        // Hero 横幅：品牌绿渐变 + 大群头像 + 群名 + 成员数（对齐资料页 Hero）
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()

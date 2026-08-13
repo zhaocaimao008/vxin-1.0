@@ -28,7 +28,7 @@ export const HighlightText = memo(function HighlightText({ highlight, fallback =
   return (
     <span
       dangerouslySetInnerHTML={{ __html: clean }}
-      style={{ '--mark-bg': 'rgba(109,90,230,0.25)', '--mark-color': 'inherit' }}
+      style={{ '--mark-bg': 'rgba(7,193,96,0.22)', '--mark-color': 'inherit' }}
     />
   );
 });
@@ -39,7 +39,7 @@ export const HighlightText = memo(function HighlightText({ highlight, fallback =
  */
 export const HIGHLIGHT_STYLE = `
   mark {
-    background: rgba(109, 90, 230, 0.22);
+    background: rgba(7, 193, 96, 0.22);
     color: inherit;
     border-radius: 2px;
     padding: 0 1px;

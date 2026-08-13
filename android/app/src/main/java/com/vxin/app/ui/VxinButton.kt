@@ -23,7 +23,7 @@ import com.vxin.app.ui.theme.VxinBrandLight
 import com.vxin.app.ui.theme.VxinTextSecondary
 
 /**
- * v信 主按钮：极光靛渐变实心药丸 + 加载态（对齐 Web 主按钮 / 登录注册页）。
+ * v信 主按钮：品牌绿渐变实心药丸 + 加载态（对齐 Web 主按钮 / 登录注册页）。
  * 统一各处 CTA 视觉，避免重复渐变 Box 样板代码。
  */
 @Composable

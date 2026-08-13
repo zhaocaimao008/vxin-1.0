@@ -40,7 +40,7 @@ fun EmptyState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        // 图标徽章：极光靛柔和圆底，替代裸 emoji（对齐 Web cl-empty-icon）
+        // 图标徽章：品牌绿柔和圆底，替代裸 emoji（对齐 Web cl-empty-icon）
         Box(
             modifier = Modifier
                 .size(80.dp)

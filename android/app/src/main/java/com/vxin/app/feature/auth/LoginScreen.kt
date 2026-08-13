@@ -67,7 +67,7 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        // 品牌 Logo 徽章：极光靛渐变圆角方 + 对话图标（对齐 Web 登录页）
+        // 品牌 Logo 徽章：品牌绿渐变圆角方 + 对话图标（对齐 Web 登录页）
         Box(
             modifier = Modifier
                 .size(72.dp)
@@ -124,7 +124,7 @@ fun LoginScreen(
         }
 
         Spacer(Modifier.height(28.dp))
-        // 登录按钮：极光靛渐变实心（对齐 Web 主按钮），禁用态降透明
+        // 登录按钮：品牌绿渐变实心（对齐 Web 主按钮），禁用态降透明
         Button(
             onClick = viewModel::submit,
             enabled = state.canSubmit,

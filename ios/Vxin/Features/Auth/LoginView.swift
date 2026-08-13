@@ -9,7 +9,7 @@ struct LoginView: View {
         VStack(spacing: 16) {
             Spacer()
 
-            // 品牌 Logo 徽章：极光靛渐变圆角方 + 对话图标（对齐 Web/Android 登录页）
+            // 品牌 Logo 徽章：品牌绿渐变圆角方 + 对话图标（对齐 Web/Android 登录页）
             ZStack {
                 RoundedRectangle(cornerRadius: VxinRadius.xl, style: .continuous)
                     .fill(LinearGradient(colors: [.vxinBrandLight, .vxinBrandDark],

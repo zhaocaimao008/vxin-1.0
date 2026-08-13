@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 统一空态：SF Symbol 图标置于极光靛柔和圆形徽章内 + 主文案 + 可选副文案。
+/// 统一空态：SF Symbol 图标置于品牌绿柔和圆形徽章内 + 主文案 + 可选副文案。
 /// 对齐 Android EmptyState 与 Web cl-empty-icon，提升列表/结果为空时的观感。
 struct VxinEmptyState: View {
     let systemImage: String

@@ -3891,7 +3891,7 @@ body.dark-mode .we-empty-svg { opacity: .75; }
 .wc-confirm-cancel:hover { opacity: .8; }
 .wc-confirm-ok:hover     { opacity: .88; }
 .wc-confirm-cancel { background: var(--bg-card-hover); color: var(--text-secondary); border: 1px solid var(--border-default); }
-/* 确认按钮改用品牌渐变，与 AURORA 一致；红色留给真正的危险操作 */
+/* 确认按钮改用品牌渐变，红色留给真正的危险操作 */
 .wc-confirm-ok     { background: var(--grad-brand); color: var(--gray-0); box-shadow: 0 3px 10px rgba(var(--green-rgb),.28); }
 
 /* === GroupInfo component classes === */
@@ -4710,7 +4710,7 @@ body.dark-mode .wc-sidebar-btn:hover { background: rgba(255,255,255,.08); }
 /* v信结构级重设计 ▲ END */
 
 /* ══════════════════════════════════════════════════════════════════
-   AURORA · 个人资料详情页 Hero 重设计
+   v信 · 个人资料详情页 Hero 重设计
    ══════════════════════════════════════════════════════════════════ */
 .pf-hero {
   position: relative;
@@ -4791,7 +4791,7 @@ body.dark-mode .wc-sidebar-btn:hover { background: rgba(255,255,255,.08); }
 
 /* 暗色模式：Hero 阴影加重，QR 按钮对比保持 */
 body.dark-mode .pf-hero { box-shadow: 0 10px 34px rgba(0,0,0,.5); }
-/* AURORA 个人资料 Hero ▲ END */
+/* v信 个人资料 Hero ▲ END */
 
 /* ================================================================
    § 共享组件样式 — IconButton / Skeleton / Empty / Error

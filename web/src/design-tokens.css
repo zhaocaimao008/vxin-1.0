@@ -96,9 +96,9 @@
   --icon-bg-label:       #FF6B35;   /* 好友标签(珊瑚橙) */
 
   /* ── 信息类横幅（群公告 / 桌面更新条）──
-     原散落纯蓝 #3B82F6/#EAF4FF 与 AURORA 靛紫主色系割裂，
+     原散落纯蓝 #3B82F6/#EAF4FF 与旧紫色主色系割裂，
      统一收敛到品牌主色，明暗一致、整体和谐 */
-  --info-banner-bg:       var(--brand-50);           /* 横幅底：极浅靛紫 */
+  --info-banner-bg:       var(--brand-50);           /* 横幅底：极浅品牌色 */
   --info-banner-bg-soft:  rgba(var(--color-primary-rgb), .06);  /* 展开层更淡 */
   --info-banner-fg:       var(--color-primary);      /* 徽标/图标/进度条前景 */
   --info-banner-fg-hover: var(--color-primary-hover);
@@ -279,7 +279,7 @@
   --radius-2xl:    20px;   /* 超大：FAB、大圆角卡片 */
   --radius-full:   9999px; /* 胶囊 / 圆形 */
 
-  /* ── 组件专属圆角（AURORA：整体更圆润）── */
+  /* ── 组件专属圆角（v信：圆润设计语言）── */
   --radius-avatar:     14px;   /* 头像（圆润方形）*/
   --radius-avatar-lg:  20px;   /* 大头像（个人主页）*/
   --radius-bubble:     18px;   /* 气泡（v信规范 18px 大圆角）*/
@@ -303,13 +303,13 @@
   --shadow-xs:
     0 1px 2px rgba(15, 22, 32, .06);
 
-  /* Elevation 1 → 卡片、输入框轮廓（AURORA 极轻紫调）*/
+  /* Elevation 1 → 卡片、输入框轮廓（v信 轻底调）*/
   --shadow-sm:  0 1px 3px rgba(36,31,56,.06), 0 1px 2px rgba(36,31,56,.04);
 
-  /* Elevation 2 → 下拉菜单、悬浮工具栏（AURORA 极轻紫调）*/
+  /* Elevation 2 → 下拉菜单、悬浮工具栏（v信 轻底调）*/
   --shadow-md:  0 6px 18px rgba(36,31,56,.10), 0 2px 6px rgba(36,31,56,.06);
 
-  /* Elevation 3 → 模态框、侧边抽屉（AURORA 极轻紫调）*/
+  /* Elevation 3 → 模态框、侧边抽屉（v信 轻底调）*/
   --shadow-lg:  0 14px 40px rgba(36,31,56,.16), 0 4px 12px rgba(36,31,56,.08);
 
   /* Elevation 4 → 顶层浮层、Toast */
@@ -479,7 +479,7 @@ body.dark-mode {
   --bg-chat:              #111111;
   --bg-chat-header:       #1C1C1E;
   --bg-messages:          #0E0E10;
-  /* 暗色画布：极淡靛紫辉光，替代死黑，气泡浮起 */
+  /* 暗色画布：极淡绿辉光，替代死黑，气泡浮起 */
   --bg-messages-canvas:
     radial-gradient(900px 600px at 88% -8%, rgba(7,193,96,.06) 0%, transparent 60%),
     linear-gradient(180deg, #101014 0%, #0C0C0F 100%);
@@ -494,7 +494,7 @@ body.dark-mode {
   --bg-success-tint:      rgba(7, 193, 96, .16);  /* 暗色下绿态浅底 */
   --bg-ctx-menu:          #2C2C2E;   /* 暗色右键菜单与卡片同底 */
 
-  /* 信息类横幅（暗色）：靛紫 tint，比浅色更透以贴合深底 */
+  /* 信息类横幅（暗色）：品牌绿 tint，比浅色更透以贴合深底 */
   --info-banner-bg:       rgba(var(--color-primary-rgb), .12);
   --info-banner-bg-soft:  rgba(var(--color-primary-rgb), .08);
   --info-banner-border:   rgba(var(--color-primary-rgb), .30);
@@ -556,7 +556,7 @@ body.dark-mode {
   /* Legacy aliases (dark) */
   --green:          var(--bubble-mine);
   --green-rgb:      var(--bubble-mine-rgb);
-  --green-hover:    var(--color-primary-hover);  /* 原 #1F8044 是遗留绿色，暗色下主色 hover 会误变绿，改为跟随靛紫主色 */
+  --green-hover:    var(--color-primary-hover);  /* 原 #1F8044 是遗留绿色，暗色下主色 hover 会误变绿，改为跟随品牌主色 */
   --link-color:     var(--color-primary);
   --link:           #5FCC8E;   /* 暗色下消息内链接：浅绿，与 v信绿同色系 */
   --bg-msg-mine:    var(--color-primary);   /* 暗色下我方气泡：跟随品牌绿 */

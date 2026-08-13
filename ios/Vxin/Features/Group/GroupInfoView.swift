@@ -42,7 +42,7 @@ struct GroupInfoView: View {
                 ProgressView()
             } else if let info = vm.info {
                 List {
-                    // Hero 横幅：极光靛渐变 + 大群头像 + 群名 + 成员数（对齐 Android/资料页）
+                    // Hero 横幅：品牌绿渐变 + 大群头像 + 群名 + 成员数（对齐 Android/资料页）
                     Section {
                         VStack(spacing: 10) {
                             groupHeroAvatar(info)
