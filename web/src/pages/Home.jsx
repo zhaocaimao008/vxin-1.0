@@ -33,14 +33,32 @@ import { loadCred, saveCred, removeCred } from '../utils/rememberedCreds';
 function WcEmpty() {
   return (
     <div className="we-empty">
-      {/* v信品牌图标 + 简短引导文字 */}
-      <svg className="we-empty-svg" viewBox="0 0 80 80" aria-hidden="true" fill="none">
-        <circle cx="40" cy="40" r="38" fill="rgba(7,193,96,.08)" />
-        <path d="M27 34c0-7.18 5.82-13 13-13s13 5.82 13 13c0 4.42-2.2 8.33-5.56 10.67L40 60l-7.44-15.33A13 13 0 0127 34z"
-          fill="rgba(7,193,96,.22)" />
-        <circle cx="40" cy="34" r="5" fill="#07C160" />
+      {/* v信品牌插画：对话气泡 + 品牌绿圆 */}
+      <svg className="we-empty-svg" viewBox="0 0 120 120" aria-hidden="true" fill="none">
+        {/* 背景大圆 */}
+        <circle cx="60" cy="60" r="56" fill="rgba(7,193,96,.07)" />
+        {/* 主气泡（他人） */}
+        <rect x="16" y="32" width="58" height="34" rx="14" fill="rgba(7,193,96,.14)" />
+        {/* 气泡尾 */}
+        <path d="M30 66l-8 10 18-10z" fill="rgba(7,193,96,.14)" />
+        {/* 气泡内文字线条 */}
+        <rect x="26" y="43" width="32" height="4" rx="2" fill="rgba(7,193,96,.40)" />
+        <rect x="26" y="52" width="22" height="4" rx="2" fill="rgba(7,193,96,.28)" />
+        {/* 我的气泡（右侧） */}
+        <rect x="46" y="66" width="56" height="30" rx="12" fill="#07C160" />
+        {/* 气泡尾 */}
+        <path d="M92 96l8 9-16-9z" fill="#07C160" />
+        {/* 气泡内文字线条 */}
+        <rect x="56" y="75" width="28" height="4" rx="2" fill="rgba(255,255,255,.55)" />
+        <rect x="56" y="84" width="18" height="4" rx="2" fill="rgba(255,255,255,.38)" />
+        {/* 品牌绿圆点装饰 */}
+        <circle cx="96" cy="34" r="6" fill="rgba(7,193,96,.30)" />
+        <circle cx="24" cy="92" r="4" fill="rgba(7,193,96,.20)" />
       </svg>
-      <p className="we-empty-hint">选择一个会话开始聊天</p>
+      <div className="we-empty-text">
+        <h3 className="we-empty-title">欢迎使用 v信</h3>
+        <p className="we-empty-hint">开始聊天吧</p>
+      </div>
     </div>
   );
 }

@@ -131,11 +131,32 @@ const MessageItem = memo(function MessageItem({ item, cbRef, measure }) {
                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cbs.retryMessage(msg); } }}
               >❗</div>
             ) : isLastMine && convType === 'private' ? (
-              showRead
-                ? <div className="wc-msg-read wc-msg-status-read" data-testid="msg-read-status">✓✓ 已读</div>
-                : showDelivered
-                  ? <div className="wc-msg-read wc-msg-status-delivered">✓✓ 已送达</div>
-                  : <div className="wc-msg-read wc-msg-status-sent">✓ 已发送</div>
+              showRead ? (
+                /* 双勾-已读：绿色 */
+                <div className="wc-msg-read wc-msg-status-read" data-testid="msg-read-status" title="已读">
+                  <svg className="wc-tick-icon wc-tick-read" viewBox="0 0 18 12" aria-hidden="true">
+                    <path d="M1 6l4 4L12 1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <path d="M6 10l4-9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <path d="M10 1l6 9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                  </svg>
+                </div>
+              ) : showDelivered ? (
+                /* 双勾-已送达：灰色 */
+                <div className="wc-msg-read wc-msg-status-delivered" title="已送达">
+                  <svg className="wc-tick-icon wc-tick-delivered" viewBox="0 0 18 12" aria-hidden="true">
+                    <path d="M1 6l4 4L12 1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <path d="M6 10l4-9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <path d="M10 1l6 9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                  </svg>
+                </div>
+              ) : (
+                /* 单勾-已发送 */
+                <div className="wc-msg-read wc-msg-status-sent" title="已发送">
+                  <svg className="wc-tick-icon wc-tick-sent" viewBox="0 0 12 10" aria-hidden="true">
+                    <path d="M1 5l3.5 3.5L11 1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                  </svg>
+                </div>
+              )
             ) : null
           )}
           {/* 定时消息标记：气泡左上角「定时」角标 */}
