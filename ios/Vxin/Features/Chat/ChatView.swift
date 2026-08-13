@@ -650,7 +650,7 @@ struct ChatView: View {
                     }
                     vm.upload(data: data, fileName: name, mimeType: mime, localType: "video", preview: nil)
                 } else {
-                    vm.error = "不支持的视频格式，请通过"文件"按钮上传"
+                    vm.error = "不支持的视频格式，请通过「文件」按钮上传"
                 }
             } else {
                 // 图片：原有逻辑
