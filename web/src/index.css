@@ -1413,102 +1413,123 @@ body.dark-mode .wc-me-qr-btn:hover { background: rgba(255,255,255,.08); }
 .auth-page {
   min-height: 100vh; display: flex;
   align-items: center; justify-content: center;
+  /* v信绿深色背景，摒弃 AURORA 靛紫 */
   background:
-    radial-gradient(1200px 800px at 78% -10%, rgba(109,90,230,.30) 0%, transparent 55%),
-    radial-gradient(900px 700px at 10% 110%, rgba(23,184,166,.22) 0%, transparent 55%),
-    linear-gradient(160deg, #17132A 0%, #1E1740 46%, #140F26 100%);
+    radial-gradient(900px 700px at 70% -5%,  rgba(7,193,96,.22) 0%, transparent 55%),
+    radial-gradient(800px 600px at 8%  108%, rgba(7,193,96,.14) 0%, transparent 55%),
+    linear-gradient(160deg, #0A1A0E 0%, #0D1F12 50%, #080F09 100%);
   position: relative; overflow-x: hidden; overflow-y: auto;
   font-family: var(--font);
 }
-/* 桌面端：标题栏占 30px，内容区填满剩余空间（而非 100vh，否则会溢出/错位/黑屏） */
+/* 桌面端：标题栏占 30px，内容区填满剩余空间 */
 .electron-app .auth-page { height: 100%; min-height: 100%; }
 .electron-app .wc-app { height: 100%; }
 .auth-bg-circle { position: absolute; border-radius: var(--radius-full); pointer-events: none; }
 .auth-bg-circle-1 {
-  width: 620px; height: 620px;
-  background: radial-gradient(circle, rgba(var(--color-primary-rgb),.16) 0%, transparent 65%);
-  top: -240px; right: -180px;
-  filter: blur(6px);
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(7,193,96,.14) 0%, transparent 65%);
+  top: -220px; right: -160px;
+  filter: blur(8px);
 }
 .auth-bg-circle-2 {
-  width: 520px; height: 520px;
-  background: radial-gradient(circle, rgba(23,184,166,.16) 0%, transparent 65%);
-  bottom: -180px; left: -160px;
-  filter: blur(6px);
+  width: 480px; height: 480px;
+  background: radial-gradient(circle, rgba(7,193,96,.10) 0%, transparent 65%);
+  bottom: -160px; left: -140px;
+  filter: blur(8px);
 }
 .auth-bg-circle-3 {
-  width: 240px; height: 240px;
-  background: radial-gradient(circle, rgba(169,156,240,.12) 0%, transparent 65%);
-  top: 30%; left: 5%;
+  width: 220px; height: 220px;
+  background: radial-gradient(circle, rgba(7,193,96,.07) 0%, transparent 65%);
+  top: 35%; left: 6%;
 }
-.auth-container { position: relative; z-index: var(--z-raised); width: 400px; animation: scaleIn .3s var(--ease); }
-.auth-brand { text-align: center; margin-bottom: 28px; }
+/* ── 登录容器：毛玻璃卡片，max-width 缩紧更精致 ── */
+.auth-container {
+  position: relative; z-index: var(--z-raised);
+  width: 380px;
+  animation: scaleIn .28s var(--ease);
+}
+/* ── 品牌区 ── */
+.auth-brand { text-align: center; margin-bottom: 24px; }
 .auth-brand-icon {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 68px; height: 68px;
-  background: linear-gradient(135deg, var(--brand-400) 0%, var(--brand-600) 100%);
-  border-radius: var(--radius-2xl); color: var(--gray-0); margin-bottom: 14px;
-  box-shadow: 0 10px 34px rgba(var(--color-primary-rgb),.48), inset 0 1px 0 rgba(255,255,255,.25), 0 0 0 1px rgba(var(--color-primary-rgb),.25);
+  width: 72px; height: 72px;
+  background: linear-gradient(135deg, #07C160 0%, #06A652 100%);
+  border-radius: 22px;
+  color: #fff;
+  margin-bottom: 14px;
+  box-shadow:
+    0 12px 38px rgba(7,193,96,.48),
+    inset 0 1px 0 rgba(255,255,255,.28),
+    0 0 0 1px rgba(7,193,96,.22);
 }
-.auth-brand-name { font-size: var(--text-display); font-weight: var(--font-bold); color: var(--gray-0); margin-bottom: 5px; letter-spacing: -.5px; }
-.auth-brand-name--brand { font-size: var(--text-display-lg); } /* 登录页品牌名 v信 —— 对齐原生 30 */
-.auth-brand-desc { font-size: var(--text-sm2); color: rgba(255,255,255,.38); letter-spacing: .3px; }
+.auth-brand-name {
+  font-size: var(--text-display);
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 5px;
+  letter-spacing: -.5px;
+}
+.auth-brand-name--brand { font-size: var(--text-display-lg); }
+.auth-brand-desc {
+  font-size: var(--text-sm2);
+  color: rgba(255,255,255,.42);
+  letter-spacing: .4px;
+}
 .auth-accounts {
-  background: rgba(255,255,255,.05);
-
-  border-radius: var(--radius-lg); margin-bottom: var(--sp-4); overflow: hidden;
-  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.04);
+  border-radius: 14px; margin-bottom: 18px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,.09);
 }
-.auth-accounts-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,.07); background: rgba(255,255,255,.03); }
-.auth-accounts-title { font-size: var(--text-sm); color: rgba(255,255,255,.5); font-weight: var(--font-medium); }
-.auth-accounts-count { font-size: var(--text-xs); color: rgba(255,255,255,.3); }
-.auth-account-row { display: flex; align-items: center; border-bottom: 1px solid rgba(255,255,255,.06); }
+.auth-accounts-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,.06); }
+.auth-accounts-title { font-size: var(--text-sm); color: rgba(255,255,255,.46); font-weight: 500; }
+.auth-accounts-count  { font-size: var(--text-xs); color: rgba(255,255,255,.26); }
+.auth-account-row { display: flex; align-items: center; border-bottom: 1px solid rgba(255,255,255,.05); }
 .auth-account-row:last-child { border-bottom: none; }
-.auth-account-btn { flex: 1; display: flex; align-items: center; gap: var(--sp-3); padding: 11px 16px; text-align: left; cursor: pointer; transition: background var(--dur-fast); min-width: 0; }
-.auth-account-btn:hover { background: rgba(255,255,255,.06); }
-.auth-account-avatar { width: 36px; height: 36px; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--brand-400), var(--brand-600)); color: var(--gray-0); display: flex; align-items: center; justify-content: center; font-size: var(--text-md); font-weight: var(--font-semibold); flex-shrink: 0; }
+.auth-account-btn { flex: 1; display: flex; align-items: center; gap: 12px; padding: 11px 16px; text-align: left; cursor: pointer; transition: background var(--dur-fast); min-width: 0; }
+.auth-account-btn:hover { background: rgba(255,255,255,.05); }
+.auth-account-avatar { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #07C160, #06A652); color: #fff; display: flex; align-items: center; justify-content: center; font-size: var(--text-md); font-weight: 600; flex-shrink: 0; }
 .auth-account-info { min-width: 0; flex: 1; }
-.auth-account-name { display: block; font-size: var(--text-base); color: var(--gray-0); font-weight: var(--font-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.auth-account-id { display: block; font-size: var(--text-xs); color: rgba(255,255,255,.35); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.auth-account-remove { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.2); font-size: var(--text-sm2); cursor: pointer; transition: color var(--dur-fast); flex-shrink: 0; }
+.auth-account-name { display: block; font-size: var(--text-base); color: #fff; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auth-account-id   { display: block; font-size: var(--text-xs); color: rgba(255,255,255,.34); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auth-account-remove { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.18); font-size: var(--text-sm2); cursor: pointer; transition: color var(--dur-fast); flex-shrink: 0; }
 .auth-account-remove:hover { color: var(--color-danger); }
 .auth-form {
-  background: linear-gradient(180deg, rgba(255,255,255,.09) 0%, rgba(255,255,255,.05) 100%);
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  border-radius: var(--radius-xl); padding: 28px 28px 24px;
-  border: 1px solid rgba(255,255,255,.14);
-  box-shadow: 0 24px 70px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.12);
+  background: rgba(255,255,255,.07);
+  backdrop-filter: blur(24px) saturate(1.3);
+  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+  border-radius: 20px; padding: 28px 26px 22px;
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 24px 72px rgba(0,0,0,.48), inset 0 1px 0 rgba(255,255,255,.10);
 }
-.auth-field { margin-bottom: var(--sp-4); }
-.auth-field-label { display: block; font-size: var(--text-sm); font-weight: var(--font-medium); color: rgba(255,255,255,.5); margin-bottom: 6px; letter-spacing: .2px; transition: color var(--dur-fast); }
-.auth-field.focused .auth-field-label { color: var(--brand-300); }
-.auth-field-input-wrap { display: flex; align-items: center; gap: var(--sp-2h); padding: 12px 14px; background: rgba(255,255,255,.05); border: 1.5px solid rgba(255,255,255,.1); border-radius: var(--radius-input); transition: border-color var(--dur-fast), background var(--dur-fast), box-shadow var(--dur-fast); }
-.auth-field.focused .auth-field-input-wrap { border-color: rgba(var(--color-primary-rgb),.65); background: rgba(var(--color-primary-rgb),.10); box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb),.16); }
-.auth-field-icon { width: 18px; height: 18px; color: rgba(255,255,255,.32); flex-shrink: 0; transition: color var(--dur-fast); }
-.auth-field.focused .auth-field-icon { color: var(--brand-300); }
-.auth-field-input { flex: 1; font-size: var(--text-base); color: var(--gray-0); background: transparent; border: none; outline: none; min-width: 0; font-family: inherit; }
-.auth-field-input::placeholder { color: rgba(255,255,255,.25); font-weight: var(--font-normal); }
-.auth-error { display: flex; align-items: center; gap: var(--sp-1h); padding: 9px 14px; background: rgba(255,80,80,.1); border: 1px solid rgba(255,80,80,.22); border-radius: var(--radius-input); color: #FF7575; font-size: var(--text-sm2); margin-bottom: var(--sp-3); animation: scaleIn .2s var(--ease); }
-.auth-submit { width: 100%; padding: 13px; background: linear-gradient(135deg, var(--brand-400), var(--brand-600)); color: var(--gray-0); border-radius: var(--radius-input); font-size: var(--text-md); font-weight: var(--font-semibold); cursor: pointer; transition: background var(--dur-fast), box-shadow var(--dur-fast), transform var(--dur-fast), color var(--dur-fast); display: flex; align-items: center; justify-content: center; letter-spacing: .5px; box-shadow: 0 6px 22px rgba(var(--color-primary-rgb),.42); border: none; }
-.auth-submit:hover { background: linear-gradient(135deg, var(--brand-300), var(--brand-500)); box-shadow: 0 8px 28px rgba(var(--color-primary-rgb),.52); transform: translateY(-1px); }
-.auth-submit:active { transform: translateY(0); box-shadow: 0 3px 12px rgba(var(--color-primary-rgb),.34); }
-.auth-submit:disabled { background: rgba(255,255,255,.09); box-shadow: none; transform: none; cursor: not-allowed; color: rgba(255,255,255,.32); }
-.auth-spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.3); border-top-color: var(--gray-0); border-radius: var(--radius-full); animation: wc-spin .6s linear infinite; }
-.auth-pwd-toggle { background: none; border: none; cursor: pointer; padding: 0; color: rgba(255,255,255,.35); display: flex; align-items: center; flex-shrink: 0; transition: color var(--dur-fast); }
-.auth-pwd-toggle:hover { color: rgba(255,255,255,.75); }
-/* 「记住密码」勾选行：与忘记密码链接同处一行(space-between) */
-.auth-remember-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-3); }
-.auth-remember { display: flex; align-items: center; gap: 6px; font-size: var(--text-sm2); color: rgba(255,255,255,.55); cursor: pointer; user-select: none; transition: color var(--dur-fast); }
-.auth-remember:hover { color: rgba(255,255,255,.8); }
-.auth-remember-box { width: 15px; height: 15px; cursor: pointer; accent-color: var(--brand-400); flex-shrink: 0; }
-.auth-footer { text-align: center; margin-top: 18px; font-size: var(--text-sm2); color: rgba(255,255,255,.38); }
-.auth-link { color: var(--brand-300); font-weight: var(--font-medium); text-decoration: none; }
-.auth-link:hover { color: var(--brand-200); text-decoration: underline; }
-
-/* 下载客户端 */
-.auth-download { margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.08); text-align: center; }
-.auth-download-label { font-size: var(--text-sm); color: rgba(255,255,255,.4); margin-bottom: 12px; letter-spacing: .3px; }
+.auth-field { margin-bottom: 18px; }
+.auth-field-label { display: block; font-size: 12px; font-weight: 500; color: rgba(255,255,255,.48); margin-bottom: 7px; letter-spacing: .3px; text-transform: uppercase; transition: color var(--dur-fast); }
+.auth-field.focused .auth-field-label { color: #2BB86E; }
+.auth-field-input-wrap { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: rgba(255,255,255,.04); border: 1.5px solid rgba(255,255,255,.09); border-radius: 12px; transition: border-color var(--dur-fast), background var(--dur-fast), box-shadow var(--dur-fast); }
+.auth-field.focused .auth-field-input-wrap { border-color: rgba(7,193,96,.55); background: rgba(7,193,96,.08); box-shadow: 0 0 0 3px rgba(7,193,96,.14); }
+.auth-field-icon { width: 18px; height: 18px; color: rgba(255,255,255,.28); flex-shrink: 0; transition: color var(--dur-fast); }
+.auth-field.focused .auth-field-icon { color: #2BB86E; }
+.auth-field-input { flex: 1; font-size: var(--text-base); color: #fff; background: transparent; border: none; outline: none; min-width: 0; font-family: inherit; caret-color: #07C160; }
+.auth-field-input::placeholder { color: rgba(255,255,255,.22); }
+.auth-error { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: rgba(245,63,63,.10); border: 1px solid rgba(245,63,63,.24); border-radius: 10px; color: #FF7878; font-size: var(--text-sm2); margin-bottom: 14px; animation: scaleIn .18s ease; }
+.auth-submit { width: 100%; padding: 13px; background: #07C160; color: #fff; border-radius: 12px; font-size: var(--text-md); font-weight: 600; cursor: pointer; transition: background var(--dur-fast), box-shadow var(--dur-fast), transform var(--dur-fast); display: flex; align-items: center; justify-content: center; letter-spacing: .4px; box-shadow: 0 6px 20px rgba(7,193,96,.38); border: none; }
+.auth-submit:hover { background: #09CC68; box-shadow: 0 8px 26px rgba(7,193,96,.48); transform: translateY(-1px); }
+.auth-submit:active { transform: translateY(0); box-shadow: 0 3px 10px rgba(7,193,96,.28); }
+.auth-submit:disabled { background: rgba(255,255,255,.08); box-shadow: none; transform: none; cursor: not-allowed; color: rgba(255,255,255,.28); }
+.auth-spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.28); border-top-color: #fff; border-radius: 50%; animation: wc-spin .6s linear infinite; }
+.auth-pwd-toggle { background: none; border: none; cursor: pointer; padding: 0; color: rgba(255,255,255,.32); display: flex; align-items: center; flex-shrink: 0; transition: color var(--dur-fast); }
+.auth-pwd-toggle:hover { color: rgba(255,255,255,.72); }
+.auth-remember-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.auth-remember { display: flex; align-items: center; gap: 7px; font-size: var(--text-sm2); color: rgba(255,255,255,.50); cursor: pointer; user-select: none; transition: color var(--dur-fast); }
+.auth-remember:hover { color: rgba(255,255,255,.78); }
+.auth-remember-box { width: 15px; height: 15px; cursor: pointer; accent-color: #07C160; flex-shrink: 0; }
+.auth-agreement { margin-top: 14px; font-size: 11px; color: rgba(255,255,255,.34); text-align: center; line-height: 1.6; }
+.auth-agreement a { color: rgba(255,255,255,.55); text-decoration: none; }
+.auth-agreement a:hover { color: #07C160; text-decoration: underline; }
+.auth-footer { text-align: center; margin-top: 16px; font-size: var(--text-sm2); color: rgba(255,255,255,.36); }
+.auth-link { color: #5FCC8E; font-weight: 500; text-decoration: none; }
+.auth-link:hover { color: #A3E3BF; text-decoration: underline; }
+.auth-download { margin-top: 20px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.07); text-align: center; }
+.auth-download-label { font-size: var(--text-sm); color: rgba(255,255,255,.38); margin-bottom: 12px; letter-spacing: .3px; }
 .auth-download-row { display: flex; gap: 10px; justify-content: center; }
 .auth-download-btn {
   display: inline-flex; align-items: center; gap: 7px;
@@ -4916,3 +4937,443 @@ body.dark-mode .wc-msg-bubble.other { background: #2C2C2E; box-shadow: none; bor
   border-radius: 99px;
 }
 ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.20); }
+
+/* ════════════════════════════════════════
+   v信 第三轮精修 — 用户资料页
+   ════════════════════════════════════════ */
+
+/* ── Profile 顶部信息卡精修 ── */
+.wc-profile-card {
+  transition: background var(--dur-fast);
+}
+.wc-profile-name {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -.3px;
+}
+.wc-profile-wid {
+  font-size: var(--text-sm2);
+  color: var(--text-secondary);
+  display: flex; align-items: center; gap: 6px;
+}
+/* v信号标识 */
+.wc-profile-vid-label {
+  font-size: 11px;
+  color: var(--color-primary);
+  background: rgba(7,193,96,.10);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  letter-spacing: .2px;
+}
+
+/* ── Profile Hero（个人主页卡）精修 ── */
+.pf-hero-inner { gap: 8px; }
+.pf-hero-name {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -.4px;
+}
+.pf-hero-bio {
+  font-size: var(--text-sm2);
+  color: rgba(255,255,255,.78);
+  text-align: center;
+  max-width: 88%;
+  line-height: 1.5;
+}
+/* 头像边框：更细腻 */
+.pf-avatar-wrap {
+  box-shadow: 0 0 0 3px rgba(255,255,255,.30), 0 6px 18px rgba(0,0,0,.28);
+}
+/* 编辑图标：更清晰 */
+.pf-avatar-edit {
+  width: 28px; height: 28px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.22);
+  color: #07C160;
+}
+/* v信号胶囊 */
+.pf-vid-chip {
+  padding: 5px 14px;
+  font-size: var(--text-sm);
+  background: rgba(255,255,255,.14);
+  border: 1px solid rgba(255,255,255,.18);
+  backdrop-filter: blur(6px);
+}
+.pf-vid-chip:hover { background: rgba(255,255,255,.25); }
+
+/* ── 设置菜单项精修 ── */
+.wc-menu-item {
+  transition: background var(--dur-fast);
+}
+.wc-menu-item:hover {
+  background: rgba(0,0,0,.035);
+}
+/* 激活状态的开关 */
+.wc-switch.on { background: #07C160; }
+
+/* ── 个人资料编辑行 ── */
+.wc-profile-bio {
+  font-size: var(--text-sm2);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  cursor: pointer;
+  padding: 2px 0;
+  transition: color var(--dur-fast);
+}
+.wc-profile-bio:hover { color: var(--text-primary); }
+/* 空签名引导 */
+.wc-profile-bio-empty {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+
+/* ════════════════════════════════════════
+   v信 第三轮精修 — 联系人页面
+   ════════════════════════════════════════ */
+
+/* ── 字母分组标题精修 ── */
+.wc-contacts-alpha {
+  padding: 3px 18px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: rgba(7,193,96,.06);
+  border-left: 2px solid var(--color-primary);
+  letter-spacing: .5px;
+}
+body.dark-mode .wc-contacts-alpha { background: rgba(7,193,96,.10); }
+
+/* ── 联系人条目精修 ── */
+.wc-contact-item {
+  padding: 10px 18px;
+  gap: 13px;
+  transition: background var(--dur-fast);
+  border-radius: 0;
+}
+.wc-contact-item:hover { background: rgba(0,0,0,.04); }
+.wc-contact-item-name {
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.wc-contact-item-sub {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  margin-top: 1px;
+}
+
+/* ── 入口行（新朋友/群聊/标签等）精修 ── */
+.wc-contact-item .cl-entry-icon-box {
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.10);
+}
+
+/* ── 搜索高亮 ── */
+.cl-highlight { color: var(--color-primary); font-weight: 600; }
+
+/* ── 在线好友状态 ── */
+.wc-contact-item-online {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--status-online);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1.5px rgba(68,196,100,.3);
+}
+
+/* ── 好友申请角标精修 ── */
+.cl-entry-badge {
+  background: var(--color-badge);
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 99px;
+  padding: 0 5px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.12);
+}
+
+/* ── 搜索栏（联系人内部）── */
+.cl-search {
+  margin: 8px 14px;
+  background: rgba(0,0,0,.05);
+  border-radius: 18px;
+  height: 34px;
+}
+
+
+/* ════════════════════════════════════════
+   v信 第三轮精修 — 群聊管理面板
+   ════════════════════════════════════════ */
+
+/* ── 群头像区域精修 ── */
+.gi-avinfo {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 14px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--divider);
+}
+/* 群名称更突出 */
+.gi-name {
+  font-size: var(--text-md);
+  font-weight: 600;
+  letter-spacing: -.2px;
+}
+.gi-meta {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-top: 4px;
+  display: flex; align-items: center; gap: 8px;
+}
+/* 群号标识 */
+.gi-group-num-badge {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  background: var(--bg-search);
+  padding: 1px 7px;
+  border-radius: 4px;
+}
+
+/* ── 群公告区精修 ── */
+.gi-section-pad { border-radius: 0; }
+.gi-ann-preview {
+  padding: 6px 0;
+  max-height: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  transition: max-height var(--dur-base);
+}
+.gi-ann-preview:hover { max-height: none; }
+/* 公告编辑框 */
+.gi-ann-textarea {
+  border-radius: 10px;
+  border: 1.5px solid var(--border-default);
+  transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
+}
+.gi-ann-textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(7,193,96,.12);
+  outline: none;
+}
+
+/* ── 成员格子精修 ── */
+.gi-member-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  padding: 12px 14px;
+}
+.gi-member-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.gi-member-name-trunc {
+  font-size: 10px; color: var(--text-secondary);
+  text-align: center; width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ── 管理权限区精修 ── */
+.gi-mg-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-primary);
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  padding: 10px 14px 4px;
+}
+
+/* ── 操作按钮精修（退出群/解散群）── */
+.gi-danger-btn {
+  width: 100%;
+  margin: 14px 0 4px;
+  padding: 11px;
+  background: rgba(245,63,63,.08);
+  color: var(--color-danger);
+  border: 1px solid rgba(245,63,63,.18);
+  border-radius: 12px;
+  font-size: var(--text-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--dur-fast), box-shadow var(--dur-fast);
+  text-align: center;
+}
+.gi-danger-btn:hover {
+  background: rgba(245,63,63,.14);
+  box-shadow: 0 2px 8px rgba(245,63,63,.12);
+}
+
+
+/* ════════════════════════════════════════
+   v信 第三轮精修 — 设置页
+   ════════════════════════════════════════ */
+
+/* ── 设置分组标题精修 ── */
+.wc-menu-section {
+  border-radius: 0;
+  overflow: hidden;
+}
+/* 设置项 hover 更精致 */
+.wc-menu-item {
+  padding: 14px 16px;
+  min-height: 52px;
+}
+.wc-menu-item:active { background: rgba(0,0,0,.06); }
+
+/* ── 设置图标容器统一尺寸 ── */
+.wc-menu-icon-box {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,.10);
+}
+/* 安全设置 - 橙色 */
+.wc-menu-icon-security { background: #FF9500; }
+/* 通知设置 - 蓝色 */
+.wc-menu-icon-notify { background: #007AFF; }
+/* 隐私设置 - 绿色 */
+.wc-menu-icon-privacy { background: var(--color-primary); }
+/* 通用/外观 - 灰色 */
+.wc-menu-icon-general { background: var(--icon-bg-neutral); }
+/* 账号安全 - 红色 */
+.wc-menu-icon-account { background: var(--color-danger); }
+
+/* ── 设置项值文字 ── */
+.wc-menu-value {
+  font-size: var(--text-sm2);
+  color: var(--text-secondary);
+  margin-right: 4px;
+}
+/* 版本号等次要信息 */
+.wc-menu-meta {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* ── 开关（Toggle）精修 ── */
+.wc-switch {
+  width: 48px; height: 28px;
+  background: var(--border-medium);
+  border-radius: 14px;
+  position: relative;
+  transition: background var(--dur-base);
+  cursor: pointer;
+  border: none;
+}
+.wc-switch span {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 22px; height: 22px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,.22);
+  transition: transform var(--dur-base) cubic-bezier(.34,1.56,.64,1);
+}
+.wc-switch.on { background: var(--color-primary); }
+.wc-switch.on span { transform: translateX(20px); }
+
+/* ── 退出登录按钮精修 ── */
+.wc-logout-btn {
+  margin: 16px;
+  padding: 13px;
+  width: calc(100% - 32px);
+  background: rgba(245,63,63,.07);
+  color: var(--color-danger);
+  border: 1px solid rgba(245,63,63,.16);
+  border-radius: 12px;
+  font-size: var(--text-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--dur-fast);
+  text-align: center;
+}
+.wc-logout-btn:hover { background: rgba(245,63,63,.13); }
+
+
+/* ════════════════════════════════════════
+   v信 第三轮精修 — 通话记录页
+   ════════════════════════════════════════ */
+
+.ch-page { height: 100%; display: flex; flex-direction: column; background: var(--bg-messages); }
+
+/* 顶栏 */
+.ch-header {
+  height: 52px; padding: 0 18px; flex-shrink: 0;
+  display: flex; align-items: center;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--divider);
+}
+.ch-title { font-size: var(--text-md); font-weight: 600; color: var(--text-primary); }
+
+/* 列表容器 */
+.ch-list { flex: 1; overflow-y: auto; }
+
+/* 条目 */
+.ch-item {
+  display: flex; align-items: center; gap: 13px;
+  padding: 13px 18px;
+  border-bottom: .5px solid rgba(0,0,0,.05);
+  cursor: pointer;
+  transition: background var(--dur-fast);
+  background: var(--bg-card);
+}
+.ch-item:hover { background: rgba(0,0,0,.03); }
+.ch-item:active { background: rgba(0,0,0,.06); }
+body.dark-mode .ch-item { background: var(--bg-card); }
+body.dark-mode .ch-item:hover { background: rgba(255,255,255,.04); }
+
+.ch-info { flex: 1; min-width: 0; }
+.ch-name {
+  font-size: var(--text-name);
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  margin-bottom: 3px;
+}
+.ch-name.missed { color: var(--color-badge); }
+.ch-meta {
+  display: flex; align-items: center; gap: 5px;
+  font-size: var(--text-sm);
+}
+.ch-dir-ico {
+  width: 12px; height: 12px;
+  stroke: currentColor; stroke-width: 2;
+  fill: none; stroke-linecap: round; stroke-linejoin: round;
+  color: var(--text-tertiary); flex-shrink: 0;
+}
+.ch-dir-ico.missed { color: var(--color-badge); }
+.ch-dur {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  padding-left: 4px;
+}
+.ch-right {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+  flex-shrink: 0;
+}
+.ch-time { font-size: 11px; color: var(--text-tertiary); }
+.ch-call-ico {
+  width: 18px; height: 18px;
+  fill: var(--color-primary); opacity: 0;
+  transition: opacity var(--dur-fast);
+}
+.ch-item:hover .ch-call-ico { opacity: 1; }
+
+/* 空态 */
+.ch-empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; color: var(--text-muted);
+  font-size: var(--text-sm2);
+}
+.ch-empty-ico { opacity: .7; }
+.ch-retry {
+  color: var(--color-primary);
+  background: none; border: none; cursor: pointer; padding: 0;
+  font-size: inherit;
+}
+.ch-retry:hover { text-decoration: underline; }
+

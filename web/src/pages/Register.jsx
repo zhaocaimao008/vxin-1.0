@@ -157,8 +157,14 @@ export default function Register() {
           )}
 
           <button type="submit" data-testid="register-submit-btn" className="auth-submit" disabled={loading || !form.username || !form.phone || !form.password || (inviteRequired && !form.inviteCode)}>
-            {loading ? <span className="auth-spinner" /> : '注册'}
+            {loading ? <span className="auth-spinner" /> : '注册账号'}
           </button>
+
+          {/* 协议说明 */}
+          <p className="auth-agreement">
+            注册即表示同意 <a href="#" onClick={e => e.preventDefault()}>《服务条款》</a> 和{' '}
+            <a href="#" onClick={e => e.preventDefault()}>《隐私政策》</a>
+          </p>
         </form>
 
         <p className="auth-footer">
