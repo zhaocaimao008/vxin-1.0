@@ -60,108 +60,13 @@ jobs:
       - name: 修复 App Icon（移除 Alpha 通道，App Store 要求不透明图标）
         run: |
           ICON="ios/Vxin/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png"
-          # sips 是 macOS 内置工具，直接合并到白色背景去掉 alpha
-          sips --setProperty format png --setProperty formatOptions 90 \
-               -p 1024 1024 "$ICON" --out /tmp/icon_flat.png
-          # 用 Python 验证 color type
-          CT=$(python3 -c "
-import struct
-with open('/tmp/icon_flat.png','rb') as f: d=f.read()
-ihdr=d[16:25]
-print(ihdr[9])
-")
-          if [ "$CT" = "6" ]; then
-            # Still RGBA, force strip alpha by compositing over white via sips
-            sips -s format png /tmp/icon_flat.png --out /tmp/icon_flat2.png
-            python3 -c "
-import struct, zlib
-with open('/tmp/icon_flat2.png','rb') as f: d=f.read()
-# Quick check
-ihdr=d[16:25]
-print('color_type after sips:', ihdr[9])
+          pip3 install Pillow -q 2>/dev/null || true
+          python3 -c "
+from PIL import Image
+img = Image.open('$ICON').convert('RGB')
+img.save('$ICON', format='PNG', optimize=False)
+print('App Icon alpha removed, size:', img.size)
 "
-          fi
-          # Use Python to definitively strip alpha: composite RGBA over white → RGB
-          python3 << 'PYEOF'
-import struct, zlib
-
-def strip_alpha(src, dst):
-    with open(src, 'rb') as f:
-        data = f.read()
-    # Parse chunks
-    pos, chunks = 8, []
-    while pos < len(data):
-        ln = struct.unpack('>I', data[pos:pos+4])[0]
-        ct = data[pos+4:pos+8].decode('ascii', errors='replace')
-        cd = data[pos+8:pos+8+ln]
-        chunks.append((ct, cd))
-        pos += 12 + ln
-
-    ihdr = next(c for c in chunks if c[0]=='IHDR')[1]
-    w = struct.unpack('>I', ihdr[0:4])[0]
-    h = struct.unpack('>I', ihdr[4:8])[0]
-    color_type = ihdr[9]
-
-    if color_type != 6:
-        import shutil; shutil.copy(src, dst)
-        print(f"Not RGBA (ct={color_type}), copied as-is")
-        return
-
-    idat = b''.join(c[1] for c in chunks if c[0]=='IDAT')
-    raw = bytearray(zlib.decompress(idat))
-
-    bpp = 4
-    stride = 1 + w * bpp
-    prev_row = None
-    out_rows = bytearray()
-
-    for y in range(h):
-        filt = raw[y * stride]
-        row = bytearray(raw[y*stride+1 : y*stride+1+w*bpp])
-
-        if filt == 1:
-            for x in range(bpp, len(row)): row[x] = (row[x]+row[x-bpp])&0xFF
-        elif filt == 2 and prev_row:
-            for x in range(len(row)): row[x] = (row[x]+prev_row[x])&0xFF
-        elif filt == 3 and prev_row:
-            for x in range(len(row)):
-                a = row[x-bpp] if x >= bpp else 0
-                b = prev_row[x]
-                row[x] = (row[x]+((a+b)>>1))&0xFF
-        elif filt == 4:
-            for x in range(len(row)):
-                a = row[x-bpp] if x >= bpp else 0
-                b = prev_row[x] if prev_row else 0
-                c = prev_row[x-bpp] if (prev_row and x >= bpp) else 0
-                p = a+b-c; pa,pb,pc = abs(p-a),abs(p-b),abs(p-c)
-                pr = a if pa<=pb and pa<=pc else (b if pb<=pc else c)
-                row[x] = (row[x]+pr)&0xFF
-
-        prev_row = row[:]
-        # Composite over white
-        out_rows.append(0)  # filter None
-        for x in range(w):
-            r,g,b,a = row[x*4],row[x*4+1],row[x*4+2],row[x*4+3]
-            al = a/255.0
-            out_rows += bytes([int(r*al+255*(1-al)),int(g*al+255*(1-al)),int(b*al+255*(1-al))])
-
-    new_ihdr = struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)
-    def chunk(t, d):
-        tb = t.encode('ascii')
-        crc = zlib.crc32(tb+d)&0xFFFFFFFF
-        return struct.pack('>I',len(d))+tb+d+struct.pack('>I',crc)
-
-    out = b'\x89PNG\r\n\x1a\n' + chunk('IHDR',new_ihdr)
-    for ct,cd in chunks:
-        if ct not in ('IHDR','IDAT','IEND'): out += chunk(ct,cd)
-    out += chunk('IDAT', zlib.compress(bytes(out_rows),6))
-    out += chunk('IEND', b'')
-
-    with open(dst,'wb') as f: f.write(out)
-    print(f"Done: {w}x{h} RGB, {len(out)} bytes")
-
-strip_alpha('/tmp/icon_flat.png', 'ios/Vxin/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png')
-PYEOF
           echo "✅ App Icon alpha 已移除"
 
       - name: 安装 XcodeGen
