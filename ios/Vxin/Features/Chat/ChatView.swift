@@ -1014,19 +1014,23 @@ private struct MessageBubble: View {
 
     private func card<V: View>(@ViewBuilder _ inner: () -> V) -> some View {
         inner()
-            // 对齐 web AURORA：我的=极光靛渐变+白字；对方=系统浅底(暗色自适应)+主色字
+            // v信规范：我的=品牌绿渐变+白字；对方=#F2F2F2浅灰+主色字
             .foregroundColor(isMine ? Color.vxinBubbleText : .primary)
             .padding(.horizontal, 14).padding(.vertical, 9)
             .background {
                 if isMine {
                     LinearGradient.vxinBubble
                 } else {
-                    Color(.secondarySystemBackground)
+                    // 对方气泡：规范色 #F2F2F2（暗色模式自动反色）
+                    Color(UIColor { t in t.userInterfaceStyle == .dark
+                        ? UIColor(red: 0.15, green: 0.15, blue: 0.15, alpha: 1)
+                        : UIColor(red: 0.949, green: 0.949, blue: 0.949, alpha: 1) // #F2F2F2
+                    })
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: VxinRadius.md))
-            .shadow(color: (isMine ? Color.vxinBrand : .black).opacity(isMine ? 0.28 : 0.06),
-                    radius: isMine ? 5 : 3, y: 1)
+            .clipShape(RoundedRectangle(cornerRadius: VxinRadius.lg))   // 18px
+            .shadow(color: (isMine ? Color.vxinBrand : .black).opacity(isMine ? 0.20 : 0.05),
+                    radius: isMine ? 4 : 2, y: 1)
     }
 
     private func openFile() {

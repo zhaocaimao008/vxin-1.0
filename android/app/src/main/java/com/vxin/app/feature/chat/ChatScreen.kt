@@ -1358,7 +1358,7 @@ private fun TextBubble(content: String, isMine: Boolean) {
     Box(
         modifier = Modifier
             .widthIn(max = 280.dp)
-            .clip(RoundedCornerShape(com.vxin.app.ui.theme.VxinRadius.md))
+            .clip(RoundedCornerShape(com.vxin.app.ui.theme.VxinRadius.lg)) // 18dp，对齐 v信规范
             .background(bubbleBrush(isMine))
             .padding(horizontal = 14.dp, vertical = 9.dp),
     ) {
@@ -1371,8 +1371,8 @@ private val MENTION_RE = Regex("@[^\\s@]+")
 /** 高亮文本中的 @用户名 */
 private fun highlightMentions(content: String, isMine: Boolean): androidx.compose.ui.text.AnnotatedString {
     if (!content.contains('@')) return androidx.compose.ui.text.AnnotatedString(content)
-    // @提及高亮：我方靛底用浅色、对方白底用品牌深色，均保证可读
-    val color = if (isMine) Color(0xFFEAE6FF) else VxinBrandDark
+    // @提及高亮：我方绿底用浅绿（#D1F1DF）、对方灰底用品牌深绿，均保证可读
+    val color = if (isMine) Color(0xFFD1F1DF) else VxinBrandDark
     return androidx.compose.ui.text.buildAnnotatedString {
         var last = 0
         MENTION_RE.findAll(content).forEach { mr ->
@@ -1391,18 +1391,18 @@ private fun MediaCard(isMine: Boolean, onClick: () -> Unit, content: @Composable
     Box(
         modifier = Modifier
             .widthIn(max = 240.dp)
-            .clip(RoundedCornerShape(com.vxin.app.ui.theme.VxinRadius.md))
+            .clip(RoundedCornerShape(com.vxin.app.ui.theme.VxinRadius.lg)) // 18dp，对齐 v信规范
             .background(bubbleBrush(isMine))
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 12.dp),
     ) { content() }
 }
 
-// 气泡背景：对齐 web AURORA——我的=极光靛渐变；对方=白(暗色下深灰)
+// 气泡背景：我的=品牌绿渐变；对方=浅灰 #F2F2F2（暗色下深灰）
 @Composable
 private fun bubbleBg(isMine: Boolean): Color =
     if (isMine) VxinBubbleMine
-    else if (isSystemInDarkTheme()) VxinBubbleOtherDark else Color.White
+    else if (isSystemInDarkTheme()) VxinBubbleOtherDark else Color(0xFFF2F2F2)
 
 // 我方气泡渐变笔刷：极光靛 → 青碧（对齐 web --grad-brand），对方气泡回退纯色
 @Composable

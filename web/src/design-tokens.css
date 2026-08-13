@@ -43,11 +43,11 @@
   --color-primary-muted:  var(--brand-50);
   --color-primary-rgb:    7, 193, 96;         /* 供 rgba() 使用 */
 
-  /* ── 聊天气泡：我的气泡用品牌绿，他人气泡用纯白 ── */
+  /* ── 聊天气泡：我的气泡用品牌绿，他人气泡用 #F2F2F2 浅灰 ── */
   --bubble-mine:     var(--color-primary);
   --bubble-mine-rgb: var(--color-primary-rgb);
-  --bubble-other:    #FFFFFF;
-  --shadow-bubble-other-soft: 0 1px 3px rgba(0,0,0,.07), 0 1px 8px rgba(0,0,0,.05);
+  --bubble-other:    #F2F2F2;
+  --shadow-bubble-other-soft: 0 1px 3px rgba(0,0,0,.06), 0 1px 6px rgba(0,0,0,.04);
   /* 品牌绿气泡内用白色文字，对比度充足 */
   --bubble-mine-text: #FFFFFF;
   --bubble-mine-link: #D1F1DF;
@@ -260,10 +260,10 @@
 
   /* ── 布局固定尺寸 ── */
   --size-nav:     72px;   /* v信 桌面导航栏（图标 + 中文标签，72px） */
-  --size-panel:   280px;  /* 会话面板宽度 */
+  --size-panel:   320px;  /* 会话面板宽度（对齐 UI 规范 320px） */
   --size-header:  54px;   /* 顶栏高度 */
   --size-session: 64px;   /* 会话列表条目高度 */
-  --size-avatar-session: 44px;
+  --size-avatar-session: 48px;  /* 会话列表头像（规范 48px） */
   --size-avatar-message: 36px;
 
 /* ================================================================
@@ -282,8 +282,8 @@
   /* ── 组件专属圆角（AURORA：整体更圆润）── */
   --radius-avatar:     14px;   /* 头像（圆润方形）*/
   --radius-avatar-lg:  20px;   /* 大头像（个人主页）*/
-  --radius-bubble:     16px;   /* 气泡（大圆角，告别小方角）*/
-  --radius-bubble-tip: 12px;   /* 气泡尖角一侧 — 与主圆角一致，避免尖角异常 */
+  --radius-bubble:     18px;   /* 气泡（v信规范 18px 大圆角）*/
+  --radius-bubble-tip: 4px;    /* 气泡尖角侧（方向感细节）*/
   --radius-input:      12px;   /* 输入框 */
   --radius-button:     12px;   /* 常规按钮 */
   --radius-button-sm:  4px;    /* 小按钮（B 端操作）*/

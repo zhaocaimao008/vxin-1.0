@@ -2237,7 +2237,7 @@ body.dark-mode .wc-settings-entry:hover {
    ============================================================ */
 @media (min-width: 768px) and (max-width: 1024px) {
   :root {
-    --panel-w: 260px;
+    --panel-w: 280px;   /* 平板：比桌面 320px 略窄 */
   }
 }
 
