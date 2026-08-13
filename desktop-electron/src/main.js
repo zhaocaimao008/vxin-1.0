@@ -10,6 +10,12 @@ const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
 const Store = require('electron-store');
 
+// ── 新增优化模块（v3.1）──────────────────────────────────────────
+const memoryMonitor    = require('./memoryMonitor');    // 内存监控 + 自动 GC
+const windowState      = require('./windowState');      // 窗口状态持久化
+const ipcBatcher       = require('./ipcBatcher');       // IPC 批处理（减少 IPC 往返）
+const notifManager     = require('./notificationManager'); // 通知聚合（防刷屏）
+
 // ── Windows 渲染修复：硬件加速冲突导致的气泡/图片重叠残影 ──
 // 现象：Web 端正常，桌面端出现消息气泡、图片局部残影错乱（GPU 合成器驱动 bug 的典型症状）。
 // 方案：全局禁用硬件加速 + GPU 合成 + GPU 缓存，渲染全部走软件光栅化，彻底规避驱动层残影。
@@ -382,11 +388,14 @@ function sanitizeBounds(raw) {
 
 // ── 主窗口 ─────────────────────────────────────────────────
 function createWindow() {
-  const bounds = sanitizeBounds(store.get('windowBounds'));
+  // ── 从持久化存储恢复上次窗口位置/尺寸 ──────────────────────────
+  const savedState = windowState.load();
 
   mainWindow = new BrowserWindow({
-    width: bounds.width,
-    height: bounds.height,
+    width:  savedState.width,
+    height: savedState.height,
+    x: savedState.x,
+    y: savedState.y,
     minWidth: 900,
     minHeight: 600,
     title: 'v信',
@@ -450,11 +459,23 @@ function createWindow() {
   const showWindowOnce = () => {
     if (hasShownWindow || mainWindow.isDestroyed()) return;
     hasShownWindow = true;
+    // 恢复最大化状态
+    if (savedState.isMaximized) mainWindow.maximize();
     mainWindow.show();
-    setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 8000);
+    // ── D3: 延迟 15s 再检查更新（避免影响启动体验）───────────────
+    setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 15000);
   };
 
   mainWindow.once('ready-to-show', showWindowOnce);
+
+  // ── D1: 窗口状态追踪（持久化位置/尺寸）──────────────────────────
+  windowState.track(mainWindow);
+
+  // ── D1: 内存监控启动 ─────────────────────────────────────────────
+  memoryMonitor.start();
+
+  // 内存压力事件处理：渲染进程通知主进程清理缓存
+  ipcMain.handle('memory:getCurrent', () => memoryMonitor.getMemoryMB());
 
   // 兜底：若渲染进程崩溃/被 CSP 拦截等异常导致 ready-to-show 永不触发，
   // 窗口会一直停留在 show:false 状态——表现为双击图标后完全无窗口（俗称"黑屏"）。
@@ -651,11 +672,22 @@ function createTray() {
   }
   tray.setToolTip('v信');
 
+  // D4: 托盘快捷入口（一键跳转到各主功能页）
+  const focusAndNavigate = (tab) => {
+    mainWindow?.show(); mainWindow?.focus();
+    mainWindow?.webContents?.send('navigate:tab', tab);
+  };
   const contextMenu = Menu.buildFromTemplate([
     {
       label: '打开 v信',
       click: () => { mainWindow?.show(); mainWindow?.focus(); },
     },
+    { type: 'separator' },
+    // ── 快捷导航 ──────────────────────────────────────────────
+    { label: '💬 消息',   click: () => focusAndNavigate('chat')     },
+    { label: '👥 通讯录', click: () => focusAndNavigate('contacts') },
+    { label: '🌟 朋友圈', click: () => focusAndNavigate('moments')  },
+    { type: 'separator' },
     {
       label: '检查更新',
       click: () => {
@@ -774,21 +806,14 @@ function setupIPC() {
     if (!isTrustedSender(_e)) return;
     if (!store.get('notifications')) return;
     // 输入校验
-    const title = String(payload?.title || '').slice(0, 100);
-    const body  = String(payload?.body  || '').slice(0, 300);
+    const title          = String(payload?.title          || '').slice(0, 100);
+    const body           = String(payload?.body           || '').slice(0, 300);
+    const conversationId = String(payload?.conversationId || '');
     if (!title) return;
-    try {
-      const notif = new Notification({ title, body });
-      notif.on('click', () => {
-        if (!mainWindow || mainWindow.isDestroyed()) return;
-        if (mainWindow.isMinimized()) mainWindow.restore();   // 最小化时 show() 不会还原,需显式 restore
-        mainWindow.show();
-        mainWindow.focus();
-      });
-      notif.show();
-    } catch (e) {
-      log.warn('通知失败:', e.message);
-    }
+    // ── D1: 使用聚合通知管理器（防刷屏 + InboxStyle）──────────────
+    notifManager.notify({ conversationId, title, body, silent: false });
+    // macOS Dock badge 更新
+    notifManager.setBadgeCount((store.get('badgeCount') || 0) + 1);
   });
 
   // 任务栏/Dock 闪烁：他人来消息且窗口失焦时引起注意。

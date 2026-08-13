@@ -50,9 +50,25 @@ export const SocketProvider = ({ children }) => {
       ...(electronToken ? { auth: { token: electronToken } } : {}),
       reconnection: true,
       reconnectionAttempts: Infinity,
+      // W7: 指数退避重连（对齐 Android/iOS，1s→2s→4s…上限30s + ±25%抖动）
       reconnectionDelay: 1000,
-      reconnectionDelayMax: 10000,
+      reconnectionDelayMax: 30000,
+      randomizationFactor: 0.25,
+      // W7: 连接超时10s（原默认20s），更快感知连接失败
+      timeout: 10000,
     });
+
+    // W7: 客户端心跳自检（网络静默断开检测）
+    // 场景：中间件（4G NAT/代理）会静默关闭30s无流量的连接，但客户端不收到 disconnect 事件。
+    // 方案：每20s发一次 ping，若服务端30s内无任何响应（connected但无数据），主动断线重连。
+    let _silenceTimer = null;
+    const _resetSilence = () => {
+      clearTimeout(_silenceTimer);
+      _silenceTimer = setTimeout(() => {
+        if (s.connected) { console.warn('[Socket] 静默超时，主动重连'); s.disconnect(); s.connect(); }
+      }, 30000);
+    };
+    s.onAny(_resetSilence);   // 任何事件（包括 pong）重置计时器
 
     setSocket(s);
     if (typeof window !== 'undefined') window.__vxinSocket = s;

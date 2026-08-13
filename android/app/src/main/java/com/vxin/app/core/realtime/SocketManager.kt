@@ -189,8 +189,14 @@ class SocketManager @Inject constructor(
         val opts = IO.Options().apply {
             transports = arrayOf("websocket")          // 仅 websocket，匹配服务端
             reconnection = true
-            reconnectionDelay = 1000
-            reconnectionDelayMax = 10_000
+            // ── 指数退避重连（A4 优化）──────────────────────────────
+            // 1s → 2s → 4s → 8s … 上限 30s，避免弱网下高频重连耗电
+            // randomizationFactor=0.5：在 [delay*0.5, delay*1.5] 随机抖动，
+            // 防止大量客户端同时断线时服务端被同时重连请求淹没（雷群效应）
+            reconnectionDelay = 1_000L
+            reconnectionDelayMax = 30_000L
+            randomizationFactor = 0.5
+            timeout = 10_000L                          // 握手超时 10s（原默认 20s）
             auth = mapOf("token" to token)             // Bearer 握手鉴权
         }
 

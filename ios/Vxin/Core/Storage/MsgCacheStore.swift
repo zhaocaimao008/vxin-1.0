@@ -19,6 +19,8 @@ final class MsgCacheStore {
 
     private let fm = FileManager.default
     private let dir: URL
+    // I3: 专用串行队列，所有文件 IO 在后台线程执行，绝不阻塞主线程
+    private let ioQueue = DispatchQueue(label: "com.vxin.msgcache", qos: .utility)
 
     /// 允许测试注入独立目录，避免污染真实缓存。
     init(directory: URL? = nil) {
@@ -60,29 +62,36 @@ final class MsgCacheStore {
         return loadItems(conversationId).map { $0.toMessage() }
     }
 
-    /// 覆写会话缓存（内部 normalize：去乐观/待发、按 id 去重、升序、截断最近 50）。异常静默。
+    /// 覆写会话缓存（异步后台 IO，不阻塞主线程）。
     func save(_ conversationId: String, _ msgs: [Message]) {
         guard !conversationId.isEmpty else { return }
         let clean = Self.normalize(msgs).map { Cached(from: $0) }
-        writeItems(conversationId, clean)
+        ioQueue.async { [weak self] in
+            self?.writeItems(conversationId, clean)
+        }
     }
 
-    /// 删除单条（撤回/删除）。
+    /// 删除单条（异步后台 IO）。
     func remove(_ conversationId: String, _ msgId: String) {
         guard !conversationId.isEmpty else { return }
-        let items = loadItems(conversationId)
-        let next = items.filter { $0.id != msgId }
-        if next.count != items.count { writeItems(conversationId, next) }
+        ioQueue.async { [weak self] in
+            guard let self else { return }
+            let items = self.loadItems(conversationId)
+            let next = items.filter { $0.id != msgId }
+            if next.count != items.count { self.writeItems(conversationId, next) }
+        }
     }
 
-    /// 清理：有 convId=清该会话；无参=清全部（登出/切账号，隐私红线）。
+    /// 清理（异步后台 IO）。
     func clear(_ conversationId: String? = nil) {
-        if let conversationId, !conversationId.isEmpty {
-            try? fm.removeItem(at: fileURL(conversationId))
-        } else {
-            // 全清：删整个缓存目录再重建（登出隐私红线）。
-            try? fm.removeItem(at: dir)
-            try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        ioQueue.async { [weak self] in
+            guard let self else { return }
+            if let conversationId, !conversationId.isEmpty {
+                try? self.fm.removeItem(at: self.fileURL(conversationId))
+            } else {
+                try? self.fm.removeItem(at: self.dir)
+                try? self.fm.createDirectory(at: self.dir, withIntermediateDirectories: true)
+            }
         }
     }
 

@@ -94,7 +94,23 @@ class VxinApp : Application(), ImageLoaderFactory {
      */
     override fun newImageLoader(): ImageLoader =
         ImageLoader.Builder(this)
-            .crossfade(true)
+            .crossfade(200)               // A2: 200ms 淡入（原 true=默认300ms，更快）
+            // ── A2: 内存缓存上限（设备可用内存的 20%，最多 128MB）──────
+            .memoryCache {
+                coil.memory.MemoryCache.Builder(this)
+                    .maxSizePercent(0.20)  // 20% 可用内存（系统低内存时自动收缩）
+                    .build()
+            }
+            // ── A2: 磁盘缓存上限（256MB，避免应用占用磁盘无上限增长）──
+            .diskCache {
+                coil.disk.DiskCache.Builder()
+                    .directory(cacheDir.resolve("image_cache"))
+                    .maxSizeBytes(256L * 1024 * 1024)   // 256 MB
+                    .build()
+            }
+            // ── A2: 允许 RGB_565（半精度色深），内存减半，头像/缩略图无感知 ──
+            // 大图/全屏预览仍使用 ARGB_8888（由 ImageRequest.bitmapConfig 覆盖）
+            .bitmapConfig(android.graphics.Bitmap.Config.RGB_565)
             .components {
                 add(object : Interceptor {
                     override suspend fun intercept(chain: Interceptor.Chain): ImageResult {

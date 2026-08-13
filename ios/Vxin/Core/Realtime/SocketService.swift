@@ -100,6 +100,12 @@ final class SocketService {
 
     private let decoder = JSONDecoder()
 
+    // ── I1: 指数退避重连状态 ──────────────────────────────────────
+    private var _reconnectDelay: Double = 1.0   // 当前退避延迟（秒）
+    private let _minDelay: Double = 1.0
+    private let _maxDelay: Double = 30.0        // 上限 30s（对齐 Android）
+    private var _reconnectTask: Task<Void, Never>?
+
     func connect() {
         guard let token = KeychainStore.shared.token else { return }
         if socket?.status == .connected { return }
@@ -109,9 +115,8 @@ final class SocketService {
         let mgr = SocketIO.SocketManager(socketURL: url, config: [
             .log(false),
             .forceWebsockets(true),     // 仅 websocket，匹配服务端
-            .reconnects(true),
-            .reconnectWait(1),
-            .reconnectWaitMax(10),
+            .reconnects(false),         // I1: 禁用库内置重连，改用指数退避自实现
+            .connectParams(["token": token]),
             .compress,
         ])
         let sock = mgr.defaultSocket
@@ -119,14 +124,23 @@ final class SocketService {
         var hasConnectedBefore = false
         sock.on(clientEvent: .connect) { [weak self] _, _ in
             guard let self else { return }
+            // 连接成功：重置退避计数
+            self._reconnectDelay = self._minDelay
+            self._reconnectTask?.cancel()
+            self._reconnectTask = nil
             if hasConnectedBefore { self.reconnected.send(()) }
             hasConnectedBefore = true
             self.status.send(.connected)
         }
         sock.on(clientEvent: .disconnect) { [weak self] _, _ in
-            self?.status.send(.disconnected)
+            guard let self else { return }
+            self.status.send(.disconnected)
+            // I1: 指数退避重连
+            self._scheduleReconnect()
         }
-        sock.on(clientEvent: .error) { _, _ in /* 交给库自动重连 */ }
+        sock.on(clientEvent: .error) { [weak self] _, _ in
+            self?._scheduleReconnect()
+        }
 
         sock.on("new_message") { [weak self] data, _ in
             self?.handleMessage(data.first)
@@ -425,12 +439,32 @@ final class SocketService {
     }
 
     func disconnect() {
+        _reconnectTask?.cancel()
+        _reconnectTask = nil
+        _reconnectDelay = _minDelay
         socket?.removeAllHandlers()
         socket?.disconnect()
         manager?.disconnect()
         socket = nil
         manager = nil
         status.send(.disconnected)
+    }
+
+    // ── I1: 指数退避重连实现 ──────────────────────────────────────
+    private func _scheduleReconnect() {
+        guard KeychainStore.shared.token != nil else { return }
+        guard status.value != .connected else { return }
+        _reconnectTask?.cancel()
+        let delay = _reconnectDelay
+        // 下次延迟翻倍（+ ±25% 随机抖动，防雷群效应）
+        let jitter = Double.random(in: 0.75...1.25)
+        _reconnectDelay = min(_reconnectDelay * 2.0 * jitter, _maxDelay)
+        _reconnectTask = Task { [weak self] in
+            guard let self else { return }
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            await MainActor.run { self.connect() }
+        }
     }
 
     private func handleMessage(_ any: Any?) {
