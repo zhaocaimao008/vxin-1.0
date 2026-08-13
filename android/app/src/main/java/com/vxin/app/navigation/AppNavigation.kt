@@ -16,7 +16,11 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.ui.graphics.Color
+import com.vxin.app.ui.theme.VxinGreen
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -201,7 +205,10 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0) {
     Scaffold(
         bottomBar = {
             if (currentRoute in TAB_ROUTES) {
-                NavigationBar {
+                NavigationBar(
+                    containerColor = Color.White,
+                    contentColor = VxinGreen,
+                ) {
                     visibleTabs.forEach { tab ->
                         NavigationBarItem(
                             modifier = Modifier.testTag("nav-tab-${tab.testKey}"),
@@ -213,6 +220,13 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0) {
                                     restoreState = true
                                 }
                             },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = VxinGreen,
+                                selectedTextColor = VxinGreen,
+                                unselectedIconColor = Color(0xFF999999),
+                                unselectedTextColor = Color(0xFF999999),
+                                indicatorColor = Color(0xFF07C160).copy(alpha = 0.12f),
+                            ),
                             icon = {
                                 // 「消息」tab 显示未读总数红点角标
                                 if (tab.route == Routes.CONVERSATIONS && unreadTotal > 0) {

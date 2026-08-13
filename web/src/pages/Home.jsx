@@ -64,7 +64,7 @@ function WcEmpty() {
 }
 
 /* ── SVG Icons ── */
-import { IcoAdd, IcoSearch, visibleTabs, TABS } from '../components/TabIcons';
+import { IcoAdd, IcoSearch, visibleTabs, TABS, DESKTOP_TABS, desktopVisibleTabs } from '../components/TabIcons';
 import { ModalSkeleton, InlineSkeleton } from '../components/ModalSkeleton';
 
 /* ── 左上角头像 — 点击展开账号切换/添加下拉面板 ── */
@@ -746,7 +746,7 @@ export default function Home() {
         <AccountSwitcher />
         {/* Tab 按钮紧跟头像，不用 spacer 下推，防止小屏被裁切 */}
         <div className="wc-sidebar-btns" role="tablist" aria-label="主导航">
-          {visibleTabs(features).map(({ key, Icon, label }) => {
+          {desktopVisibleTabs(features).map(({ key, Icon, label }) => {
             const count = badges[key] || 0;
             return (
               <div key={key}

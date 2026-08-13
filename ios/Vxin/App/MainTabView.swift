@@ -1,38 +1,55 @@
 import SwiftUI
 
-/// 底部 Tab：消息 / 通讯录 / 我（已按需移除 朋友圈 与 收藏）
+/// 底部 Tab：消息 / 联系人 / 动态 / 我的
 struct MainTabView: View {
     let myId: String
 
-    // 选中的 Tab（0=消息）；点推送通知需切回消息页再打开会话
     @State private var selectedTab = 0
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         TabView(selection: $selectedTab) {
+
+            // ── Tab 1：消息 ─────────────────────────────────────
             ConversationListView(myId: myId)
-                .tabItem { Label("消息", systemImage: "bubble.left.and.bubble.right.fill") }
+                .tabItem {
+                    Label("消息", systemImage: "bubble.left.and.bubble.right.fill")
+                }
                 .accessibilityIdentifier("nav-tab-chats")
                 .tag(0)
 
+            // ── Tab 2：联系人 ───────────────────────────────────
             ContactsTab(myId: myId)
-                .tabItem { Label("通讯录", systemImage: "person.2.fill") }
+                .tabItem {
+                    Label("联系人", systemImage: "person.2.fill")
+                }
                 .accessibilityIdentifier("nav-tab-contacts")
                 .tag(1)
 
+            // ── Tab 3：动态 ─────────────────────────────────────
+            NavigationStack {
+                MomentsView()
+            }
+            .tabItem {
+                Label("动态", systemImage: "camera.fill")
+            }
+            .accessibilityIdentifier("nav-tab-moments")
+            .tag(2)
+
+            // ── Tab 4：我的 ─────────────────────────────────────
             NavigationStack { ProfileView() }
-                .tabItem { Label("我", systemImage: "person.crop.circle.fill") }
+                .tabItem {
+                    Label("我的", systemImage: "person.crop.circle.fill")
+                }
                 .accessibilityIdentifier("nav-tab-me")
-                .tag(2)
+                .tag(3)
         }
         .tint(.vxinBrand)
-        // 点推送通知 → 切回消息页（会话打开由 ConversationListView 观察同一通知处理）
+        // 点推送通知 → 跳回消息页
         .onReceive(NotificationCenter.default.publisher(for: .vxinOpenConversation)) { _ in
             selectedTab = 0
         }
-        // App 每次进入前台时刷新 FCM token 注册，确保服务端 token 有效。
-        // 修复「我发好友无通知」：好友 token 被服务端因 FCM 失效删除后，
-        // 只要下次打开 App 就会重新注册，不再依赖 onToken 被动触发。
+        // App 进入前台刷新推送注册
         .onChange(of: scenePhase) { phase in
             if phase == .active {
                 PushManager.shared.refreshRegistrationIfNeeded()
@@ -41,7 +58,7 @@ struct MainTabView: View {
     }
 }
 
-/// 通讯录 Tab：自带导航栈，处理 添加好友/新的朋友/发起群聊 与 发起聊天
+// ── 联系人 Tab：内置 NavigationStack 处理各子页跳转 ─────────────────
 private struct ContactsTab: View {
     let myId: String
     @State private var path = NavigationPath()
@@ -51,20 +68,29 @@ private struct ContactsTab: View {
             ContactsView(
                 onStartChat: { path.append($0) },
                 onAddFriend: { path.append(ContactRoute.addFriend) },
-                onRequests: { path.append(ContactRoute.requests) },
+                onRequests:  { path.append(ContactRoute.requests) },
                 onCreateGroup: { path.append(ContactRoute.createGroup) },
                 onOpenBlocked: { path.append(ContactRoute.blocked) },
-                onOpenLabels: { path.append(ContactRoute.labels) }
+                onOpenLabels:  { path.append(ContactRoute.labels) }
             )
             .navigationDestination(for: Conversation.self) { conv in
-                ChatView(conversation: conv, myId: myId, onOpenGroupInfo: { path.append(GroupRoute.info(conv.id)) })
+                ChatView(
+                    conversation: conv, myId: myId,
+                    onOpenGroupInfo: { path.append(GroupRoute.info(conv.id)) }
+                )
             }
             .navigationDestination(for: GroupRoute.self) { route in
                 switch route {
                 case .info(let id):
-                    GroupInfoView(conversationId: id, onInvite: { path.append(GroupRoute.invite(id)) }, onLeft: { path.removeLast(path.count) })
+                    GroupInfoView(
+                        conversationId: id,
+                        onInvite: { path.append(GroupRoute.invite(id)) },
+                        onLeft: { path.removeLast(path.count) }
+                    )
                 case .invite(let id):
-                    InviteMembersView(conversationId: id, onDone: { if !path.isEmpty { path.removeLast() } })
+                    InviteMembersView(conversationId: id) {
+                        if !path.isEmpty { path.removeLast() }
+                    }
                 }
             }
             .navigationDestination(for: ContactRoute.self) { route in
@@ -73,24 +99,20 @@ private struct ContactsTab: View {
                     ContactsView(
                         onStartChat: { path.append($0) },
                         onAddFriend: { path.append(ContactRoute.addFriend) },
-                        onRequests: { path.append(ContactRoute.requests) },
+                        onRequests:  { path.append(ContactRoute.requests) },
                         onCreateGroup: { path.append(ContactRoute.createGroup) },
                         onOpenBlocked: { path.append(ContactRoute.blocked) },
-                        onOpenLabels: { path.append(ContactRoute.labels) }
+                        onOpenLabels:  { path.append(ContactRoute.labels) }
                     )
-                case .addFriend:
-                    AddFriendView()
-                case .requests:
-                    FriendRequestsView()
+                case .addFriend:  AddFriendView()
+                case .requests:   FriendRequestsView()
                 case .createGroup:
-                    CreateGroupView(onCreated: { conv in
+                    CreateGroupView { conv in
                         path.removeLast(path.count)
                         path.append(conv)
-                    })
-                case .blocked:
-                    BlockedView()
-                case .labels:
-                    FriendLabelsView()
+                    }
+                case .blocked: BlockedView()
+                case .labels:  FriendLabelsView()
                 }
             }
         }
