@@ -106,15 +106,17 @@ struct ConversationListView: View {
                     ConversationRow(conversation: conv, draft: vm.drafts[conv.id] ?? "")
                 }
                 .accessibilityIdentifier("conv-item-\(conv.id)")
-                .listRowBackground(
-                    conv.pinned == 1
-                    ? HStack(spacing: 0) {
-                          // 置顶：左侧品牌绿细线（对齐 Web/Android）
-                          Rectangle().fill(Color.vxinBrand.opacity(0.7)).frame(width: 3)
-                          Color.vxinBrand.opacity(0.04)
-                      }
-                    : Color.clear
-                )
+                .listRowBackground(Group {
+                    if conv.pinned == 1 {
+                        // 置顶：左侧品牌绿细线（对齐 Web/Android）
+                        HStack(spacing: 0) {
+                            Rectangle().fill(Color.vxinBrand.opacity(0.7)).frame(width: 3)
+                            Color.vxinBrand.opacity(0.04)
+                        }
+                    } else {
+                        Color.clear
+                    }
+                })
                 .contextMenu {
                     if conv.unreadCount > 0 {
                         Button("标为已读") { vm.markRead(conv) }
