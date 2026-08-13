@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import jsQR from 'jsqr';
+// jsqr 按需动态加载：128KB 仅在用户打开「扫一扫」时才下载
+let jsQR = null;
 import axios from 'axios';
 import Avatar from './Avatar';
 import { mediaUrl } from '../utils/url';
@@ -75,6 +76,11 @@ export default function ScanQR({ onClose }) {
         video.setAttribute('playsinline', 'true');
         await video.play();
 
+        // 懒加载 jsQR（128KB，仅扫码时下载）
+        if (!jsQR) {
+          const mod = await import('jsqr');
+          jsQR = mod.default;
+        }
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         const tick = () => {

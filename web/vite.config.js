@@ -50,27 +50,39 @@ export default defineConfig({
         manualChunks: (id) => {
           if (!id.includes('node_modules')) return;
 
-          // React 核心（几乎每页都用，优先缓存）
+          // ── 首屏必须（同步加载，最高优先级缓存）───────────────────
+          // React 核心
           if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/scheduler/')) {
             return 'vendor-react-core';
           }
-          // React Router（路由，首屏必须）
+          // React Router
           if (id.includes('react-router')) return 'vendor-router';
-          // Socket.IO（实时通信，首屏必须）
+          // Socket.IO（实时通信）
           if (id.includes('socket.io-client') || id.includes('engine.io-client')) {
             return 'vendor-socket';
           }
-          // Axios（HTTP，首屏必须）
+          // Axios
           if (id.includes('/axios/')) return 'vendor-axios';
-          // 虚拟列表（聊天核心，按需加载）
+
+          // ── 核心功能（聊天界面加载时）────────────────────────────
+          // 虚拟列表（消息列表核心）
           if (id.includes('react-window') || id.includes('react-virtualized-auto-sizer')) {
             return 'vendor-virtuallist';
           }
-          // Sentry（错误监控，异步加载）
+          // DOMPurify（消息渲染安全，与聊天一起加载）
+          if (id.includes('dompurify')) return 'vendor-dompurify';
+
+          // ── 延迟加载（按需，不影响首屏）─────────────────────────
+          // Sentry（错误监控，启动后异步初始化）
           if (id.includes('@sentry/')) return 'vendor-sentry';
-          // 二维码（低频，懒加载）
-          if (id.includes('jsqr') || id.includes('qrcode')) return 'vendor-qr';
-          // 其余第三方库合并
+          // 二维码生成（个人资料页使用）
+          if (id.includes('qrcode')) return 'vendor-qrcode';
+          // jsqr（扫码，ScanQR 组件动态 import，此处兜底）
+          if (id.includes('jsqr')) return 'vendor-jsqr';
+          // timeago（消息时间格式化，低频）
+          if (id.includes('timeago')) return 'vendor-timeago';
+
+          // ── 其余第三方统一归并 ───────────────────────────────────
           return 'vendor-misc';
         },
         // 文件名加内容 hash 指纹（长期缓存策略）

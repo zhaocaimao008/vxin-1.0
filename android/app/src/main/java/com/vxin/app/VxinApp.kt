@@ -24,13 +24,23 @@ class VxinApp : Application(), ImageLoaderFactory {
 
     override fun onCreate() {
         super.onCreate()
+        // ── 启动优化：按优先级顺序初始化 ────────────────────────────
+        // 1. 主题（同步，影响首帧渲染，必须立即完成）
         com.vxin.app.core.storage.ThemeStore.syncInitial(this)
+
+        // 2. 通知桥（同步，接收来电通知需要立即就绪）
         val entry = EntryPointAccessors.fromApplication(this, BridgeEntryPoint::class.java)
         entry.notificationHelper()
         entry.messageNotificationBridge().install(this)
-        // 有 GMS 时手动启用 FCM 自动注册（Manifest 已关闭自动初始化防华为崩溃）
-        initFirebaseIfGmsAvailable()
-        initGeTui()
+
+        // 3. WorkManager 后台同步调度（同步注册，异步执行）
+        com.vxin.app.core.sync.OutboxSyncWorker.schedule(this)
+
+        // 4. 非关键初始化移至后台线程（不阻塞 UI 线程）
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            initFirebaseIfGmsAvailable()
+            initGeTui()
+        }, 500L) // 延迟 500ms，等主界面首帧渲染完成
     }
 
     /**

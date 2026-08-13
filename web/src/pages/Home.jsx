@@ -5,9 +5,10 @@ import './Home.css';
 import axios from 'axios';
 import ChatList from '../components/ChatList';
 import ChatWindowBoundary from '../components/ChatWindowBoundary';
-import ContactList from '../components/ContactList';
-import Profile from '../components/Profile';
-import GlobalSearch from '../components/GlobalSearch';
+// 非首屏组件懒加载（首屏仅需 ChatList，其余按需加载节省 ~80KB 初始包）
+const ContactList  = lazy(() => import('../components/ContactList'));
+const Profile      = lazy(() => import('../components/Profile'));
+const GlobalSearch = lazy(() => import('../components/GlobalSearch'));
 // 非常驻的重型面板/模态框懒加载，减小首屏 chunk（各自本地 Suspense 兜底）
 // ChatWindow(~2700 行)仅在选中会话后才渲染，懒加载可显著缩小 Home 首屏 chunk。
 const ChatWindow    = lazy(() => import('../components/ChatWindow'));

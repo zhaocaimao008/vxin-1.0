@@ -1,0 +1,31 @@
+# v信 Baseline Profile
+# 用于 Android 9+ 的 ART 预编译优化，加速 App 冷启动 30-40%
+# 生成方式：./gradlew generateBaselineProfile
+# 此文件为手动维护版本，覆盖核心启动路径
+
+# Application 启动
+HSPLcom/vxin/app/VxinApp;->onCreate()V
+HSPLcom/vxin/app/VxinApp;->newImageLoader()Lcoil/ImageLoader;
+
+# MainActivity
+HSPLcom/vxin/app/MainActivity;->onCreate(Landroid/os/Bundle;)V
+
+# Hilt DI 初始化（最耗时启动项）
+HSPLcom/vxin/app/core/di/AppModule;->provideOkHttpClient(Lcom/vxin/app/core/network/AuthInterceptor;Lcom/vxin/app/core/network/HostSelectionInterceptor;)Lokhttp3/OkHttpClient;
+HSPLcom/vxin/app/core/di/AppModule;->provideRetrofit(Lokhttp3/OkHttpClient;Lkotlinx/serialization/json/Json;Lcom/vxin/app/core/storage/ServerConfig;)Lretrofit2/Retrofit;
+
+# SocketManager（实时通信核心）
+HSPLcom/vxin/app/core/realtime/SocketManager;->connect()V
+
+# 存储层
+HSPLcom/vxin/app/core/storage/MsgCacheStore;->load(Ljava/lang/String;)Ljava/util/List;
+HSPLcom/vxin/app/core/storage/DraftStore;->get(Ljava/lang/String;)Ljava/lang/String;
+HSPLcom/vxin/app/core/storage/TokenStore;->getToken()Ljava/lang/String;
+
+# 导航
+HSPLcom/vxin/app/navigation/AppNavigation;->invoke(Landroidx/compose/runtime/Composer;I)V
+
+# Compose 核心（运行时热点）
+HSPLandroidx/compose/runtime/ComposerImpl;->startGroup(I)V
+HSPLandroidx/compose/runtime/ComposerImpl;->endGroup()V
+HSPLandroidx/compose/ui/node/LayoutNode;->measure-BRTryo0(J)V

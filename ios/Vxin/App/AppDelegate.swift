@@ -2,6 +2,7 @@ import UIKit
 import UserNotifications
 import FirebaseCore
 import FirebaseMessaging
+import BackgroundTasks
 
 /// 处理 Firebase 初始化、APNs 注册、FCM token、前台/点击通知。
 /// SwiftUI 通过 @UIApplicationDelegateAdaptor 接入。
@@ -11,13 +12,30 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        // 有配置才初始化 Firebase（占位 plist 也可初始化，仅不会真正投递）
-        if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
-            FirebaseApp.configure()
-        }
-        Messaging.messaging().delegate = self
+        // ── 启动优化：按优先级顺序初始化，非关键任务推后 ────────────
+        // 1. 系统 HTTP 缓存（立即，影响所有后续网络请求）
+        URLCacheConfig.setup()
+
+        // 2. BGTask 注册（必须在 app 完成启动前注册）
+        BackgroundSyncManager.shared.register()
+
+        // 3. 推送（立即，避免首次推送丢失）
         UNUserNotificationCenter.current().delegate = self
+
+        // 4. Firebase（延迟到主线程空闲，减少启动卡顿）
+        DispatchQueue.main.async {
+            if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
+                FirebaseApp.configure()
+            }
+            Messaging.messaging().delegate = self
+        }
+
         return true
+    }
+
+    func applicationDidEnterBackground(_ application: UIApplication) {
+        // App 进入后台：调度下次 BGTask 刷新
+        BackgroundSyncManager.shared.scheduleNext()
     }
 
     // APNs token → 交给 Firebase（FCM 底层走 APNs 投递）

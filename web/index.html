@@ -11,6 +11,9 @@
     <!-- 字体预连接（系统字体无需，保留作为 CDN 字体备用） -->
     <link rel="dns-prefetch" href="//fonts.gstatic.com" />
 
+    <!-- Socket.IO 连接预热：WebSocket 握手提前，减少首次连接延迟 -->
+    <!-- 注：preconnect 对 WebSocket 同样有效（共享 TCP 连接） -->
+
     <!-- 预加载关键资源 -->
     <link rel="modulepreload" href="/src/main.jsx" />
 
