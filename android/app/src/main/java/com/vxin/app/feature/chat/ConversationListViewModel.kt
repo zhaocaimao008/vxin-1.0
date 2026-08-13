@@ -16,7 +16,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 data class ConversationListUiState(
@@ -149,18 +151,36 @@ class ConversationListViewModel @Inject constructor(
     fun refresh() {
         _uiState.update { it.copy(loading = true, error = null) }
         viewModelScope.launch {
-            runCatching { chatRepository.loadConversations() }
-                .onSuccess { list -> _uiState.update { it.copy(loading = false, conversations = list) }; refreshDrafts() }
-                .onFailure { e -> _uiState.update { it.copy(loading = false, error = e.toUserMessage("加载会话失败")) } }
+            runCatching {
+                // 网络请求在 Retrofit 内部的 IO 线程执行（suspend fun 无需手动切换）
+                val list = chatRepository.loadConversations()
+                // DraftStore 读 SharedPreferences 移至 IO 线程，避免主线程磁盘访问（ANR 风险）
+                val drafts = withContext(Dispatchers.IO) {
+                    list.associate { it.id to draftStore.get(it.id) }
+                        .filterValues { it.isNotBlank() }
+                }
+                Pair(list, drafts)
+            }
+                .onSuccess { (list, drafts) ->
+                    _uiState.update { it.copy(loading = false, conversations = list, drafts = drafts) }
+                }
+                .onFailure { e ->
+                    _uiState.update { it.copy(loading = false, error = e.toUserMessage("加载会话失败")) }
+                }
         }
     }
 
-    /** 从聊天页返回时刷新草稿映射(草稿在聊天页写入 SharedPreferences，列表页读取) */
+    /** 从聊天页返回时刷新草稿（IO 线程读 SharedPreferences）*/
     fun refreshDrafts() {
-        val drafts = _uiState.value.conversations
-            .associate { it.id to draftStore.get(it.id) }
-            .filterValues { it.isNotBlank() }
-        _uiState.update { it.copy(drafts = drafts) }
+        val convs = _uiState.value.conversations
+        if (convs.isEmpty()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            val drafts = convs.associate { it.id to draftStore.get(it.id) }
+                .filterValues { it.isNotBlank() }
+            withContext(Dispatchers.Main) {
+                _uiState.update { it.copy(drafts = drafts) }
+            }
+        }
     }
 
     /** 新消息到达：就地更新对应会话的最后消息/时间/未读，并置顶 */

@@ -17,13 +17,22 @@ enum RemoteConfig {
     ]
 
     /// 拉取并应用远程服务器地址；失败则保留上次缓存/默认。请在首个网络请求前 await 调用。
+    // 专用轻量 session：config 拉取不需要认证/证书固定，单独隔离
+    private static let _session: URLSession = {
+        let cfg = URLSessionConfiguration.ephemeral  // 不持久化 cookie/cache，更轻量
+        cfg.timeoutIntervalForRequest  = 5   // 比全局快 1s，尽早切到备用地址
+        cfg.timeoutIntervalForResource = 10
+        cfg.httpMaximumConnectionsPerHost = 2
+        return URLSession(configuration: cfg)
+    }()
+
     static func refresh() async {
         for urlStr in configURLs {
             guard let url = URL(string: urlStr) else { continue }
             do {
-                var req = URLRequest(url: url)
-                req.timeoutInterval = 6
-                let (data, resp) = try await URLSession.shared.data(for: req)
+                let req = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData,
+                                    timeoutInterval: 5)
+                let (data, resp) = try await _session.data(for: req)
                 guard let http = resp as? HTTPURLResponse, http.statusCode == 200 else { continue }
                 let cfg = try JSONDecoder().decode(RemoteConfigDto.self, from: data)
                 let api = cfg.api.isEmpty ? cfg.socket : cfg.api

@@ -60,15 +60,19 @@ export const SocketProvider = ({ children }) => {
 
     // W7: 客户端心跳自检（网络静默断开检测）
     // 场景：中间件（4G NAT/代理）会静默关闭30s无流量的连接，但客户端不收到 disconnect 事件。
-    // 方案：每20s发一次 ping，若服务端30s内无任何响应（connected但无数据），主动断线重连。
+    // 方案：任意事件到达时重置30s定时器；使用节流（1s内只重置一次）避免高频消息连续 clearTimeout/setTimeout
     let _silenceTimer = null;
+    let _lastReset = 0;
     const _resetSilence = () => {
+      const now = Date.now();
+      if (now - _lastReset < 1000) return;  // 节流：1s 内只重置一次
+      _lastReset = now;
       clearTimeout(_silenceTimer);
       _silenceTimer = setTimeout(() => {
-        if (s.connected) { console.warn('[Socket] 静默超时，主动重连'); s.disconnect(); s.connect(); }
+        if (s.connected) { s.disconnect(); s.connect(); }
       }, 30000);
     };
-    s.onAny(_resetSilence);   // 任何事件（包括 pong）重置计时器
+    s.onAny(_resetSilence);  // 任意事件（含 pong）重置计时器（节流版）
 
     setSocket(s);
     if (typeof window !== 'undefined') window.__vxinSocket = s;
