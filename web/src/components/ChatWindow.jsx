@@ -2020,7 +2020,8 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
         virtListRef.current?.scrollToItem(idx, 'center');
         setHighlightedMsgId(String(pendingScrollId));
         setPendingScrollId(null);
-        setTimeout(() => setHighlightedMsgId(null), 2000);
+        const _hl = setTimeout(() => setHighlightedMsgId(null), 2000);
+    return () => clearTimeout(_hl);
       });
     }
   }, [pendingScrollId, flatItems]);
@@ -2070,7 +2071,8 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
     if (idx >= 0) {
       virtListRef.current?.scrollToItem(idx, 'center');
       setHighlightedMsgId(String(msgId));
-      setTimeout(() => setHighlightedMsgId(null), 2000);
+      const _hl = setTimeout(() => setHighlightedMsgId(null), 2000);
+    return () => clearTimeout(_hl);
       return;
     }
     const el = document.getElementById(`msg-${msgId}`);

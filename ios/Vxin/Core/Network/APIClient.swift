@@ -42,7 +42,8 @@ final class APIClient {
     private let decoder = JSONDecoder()
     private let encoder = JSONEncoder()
 
-    // ── 专用 URLSession：连接池复用 + HTTP/2 + 超时调优 ────────
+    // ── 专用 URLSession：连接池复用 + HTTP/2 + 超时调优 + 证书固定 ────
+    private let _pinDelegate = CertificatePinningDelegate()
     private lazy var session: URLSession = {
         let cfg = URLSessionConfiguration.default
         // HTTP/2 多路复用（iOS 10+ 默认支持，显式确认）
@@ -61,7 +62,8 @@ final class APIClient {
         // 禁用 cookie（用 Bearer token，不需要 cookie 会话）
         cfg.httpCookieAcceptPolicy = .never
         cfg.httpShouldSetCookies = false
-        return URLSession(configuration: cfg)
+        // 证书固定 delegate（PINNING_ENABLED=false 时为直通模式，不影响开发）
+        return URLSession(configuration: cfg, delegate: _pinDelegate, delegateQueue: nil)
     }()
 
     /// 最大自动重试次数（5xx / 网络超时）

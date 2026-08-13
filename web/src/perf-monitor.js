@@ -144,21 +144,28 @@
       const div = document.createElement('div');
       div.id = '__vxinPerfPanel';
       div.style.cssText = 'position:fixed;bottom:10px;left:10px;z-index:99999;background:rgba(0,0,0,0.85);color:#0f0;padding:12px;border-radius:8px;font:12px/1.5 monospace;max-height:300px;overflow-y:auto;min-width:280px;';
+      // 关闭按钮（创建一次，不在 update 里重建）
+      const closeBtn = document.createElement('button');
+      closeBtn.textContent = '关闭';
+      closeBtn.style.cssText = 'display:block;margin-top:6px;cursor:pointer;';
+      closeBtn.onclick = () => div.remove();
+      div.appendChild(closeBtn);
+
+      const pre = document.createElement('pre');
+      pre.style.cssText = 'margin:0;white-space:pre;';
+      div.insertBefore(pre, closeBtn);
+
       const update = () => {
         const r = this.getReport();
-        div.innerHTML = `
-┌───── vxin 性能实时 ─────┐<br>
-<b>总端到端(n=${r.totalCount}):</b><br>
-  p50=${r.total.p50}  p95=${r.total.p95}  p99=${r.total.p99}<br>
-<b>发送到Ack(n=${r.ackCount}):</b><br>
-  p50=${r.send_to_ack.p50}  p95=${r.send_to_ack.p95}  p99=${r.send_to_ack.p99}<br>
-<b>Socket→渲染(n=${r.renderCount}):</b><br>
-  p50=${r.socket_to_render.p50}  p95=${r.socket_to_render.p95}  p99=${r.socket_to_render.p99}<br>
-<b>渲染→绘制(n=${r.paintCount}):</b><br>
-  p50=${r.render_to_paint.p50}  p95=${r.render_to_paint.p95}  p99=${r.render_to_paint.p99}<br>
-<b>文件延迟(n=${r.fileCount}):</b><br>
-  p50=${r.file_latency.p50}  p95=${r.file_latency.p95}  p99=${r.file_latency.p99}<br>
-<button onclick="this.parentElement.remove()" style="margin-top:6px;cursor:pointer">关闭</button>`;
+        // XSS防御：textContent 不解析 HTML，所有数据为内部数字不含用户输入
+        pre.textContent = [
+          '┌───── vxin 性能实时 ─────┐',
+          `总端到端  (n=${r.totalCount}): p50=${r.total.p50} p95=${r.total.p95} p99=${r.total.p99}`,
+          `发送→Ack  (n=${r.ackCount}): p50=${r.send_to_ack.p50} p95=${r.send_to_ack.p95}`,
+          `Socket→渲 (n=${r.renderCount}): p50=${r.socket_to_render.p50} p95=${r.socket_to_render.p95}`,
+          `渲染→绘   (n=${r.paintCount}): p50=${r.render_to_paint.p50} p95=${r.render_to_paint.p95}`,
+          `文件延迟  (n=${r.fileCount}): p50=${r.file_latency.p50} p95=${r.file_latency.p95}`,
+        ].join('\n');
         requestAnimationFrame(update);
       };
       document.body.appendChild(div);

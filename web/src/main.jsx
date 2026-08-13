@@ -1,4 +1,5 @@
-import './perf-monitor.js';   // 端到端性能打点（注入 window.__vxinPerf，须在 App 之前）
+// perf-monitor 仅开发环境加载（生产构建中 Vite 的 tree-shaking 会因 import.meta.env.DEV 移除）
+if (import.meta.env.DEV) { import('./perf-monitor.js'); }
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import axios from 'axios';

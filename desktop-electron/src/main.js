@@ -367,7 +367,14 @@ function setupSecurity() {
       // 仅允许停留在本地应用内（file://）；外链交由系统浏览器
       if (!url.startsWith('file://')) {
         e.preventDefault();
-        if (/^https?:\/\//.test(url)) shell.openExternal(url).catch(() => {});
+        // 白名单：只打开 HTTPS 外部链接，且非内网地址（防恶意重定向内网服务）
+        try {
+          const u = new URL(url);
+          const isPrivate = /^(localhost|127\.|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(u.hostname);
+          if ((u.protocol === 'https:' || u.protocol === 'http:') && !isPrivate) {
+            shell.openExternal(url).catch(() => {});
+          }
+        } catch { /* 非法 URL 静默忽略 */ }
       }
     };
     contents.on('will-navigate', denyExternalNav);
