@@ -735,24 +735,34 @@ class ChatViewModel @Inject constructor(
      * 缓存非真相源——loadHistory 成功后会以服务端结果 mergeById 覆盖并重新落盘。
      * 阅后即焚会话不读缓存（该会话本就不落盘，双保险）；已存在 outbox 待发消息也一并合并。
      */
+    /**
+     * 首屏离线缓存占位（ANR 修复）：
+     * SharedPreferences 读取移至 Dispatchers.IO，避免主线程阻塞。
+     * 竞态保护：若 loadHistory 已先返回数据，不覆盖（check-then-act 由 _uiState.update 原子保证）。
+     */
     private fun primeFromCache() {
         if (conversationId.isBlank() || uiBurnAfterEnabled()) return
-        val cached = msgCacheStore.load(conversationId)
-        if (cached.isEmpty()) return
-        val pending = outboxStore.load(conversationId)
-        val merged = (cached + pending).sortedBy { it.created_at }
-        _uiState.update {
-            // 已被 loadHistory 抢先填充则不覆盖（竞态保护）
-            if (it.messages.isNotEmpty()) it else it.copy(messages = merged)
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val cached = msgCacheStore.load(conversationId)
+            if (cached.isEmpty()) return@launch
+            val pending = outboxStore.load(conversationId)
+            val merged = (cached + pending).sortedBy { it.created_at }
+            // 切回主线程更新 UI
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                _uiState.update {
+                    if (it.messages.isNotEmpty()) it else it.copy(messages = merged)
+                }
+            }
         }
     }
 
-    /** 将当前「已确认历史消息」落盘为离线缓存（内部 normalize：去乐观/待发、去重、截断 50）。 */
+    /** 将当前「已确认历史消息」落盘为离线缓存（IO 线程异步写入，不阻塞 UI）。 */
     private fun persistCache(messages: List<Message>) {
         if (conversationId.isBlank()) return
-        if (uiBurnAfterEnabled()) { msgCacheStore.clear(conversationId); return }  // 焚毁会话不落盘
-        // save 内部 normalize 会剔除 clientMsgId/localStatus 的乐观/待发气泡。
-        msgCacheStore.save(conversationId, messages)
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            if (uiBurnAfterEnabled()) { msgCacheStore.clear(conversationId); return@launch }
+            msgCacheStore.save(conversationId, messages)
+        }
     }
 
     private fun uiBurnAfterEnabled(): Boolean = _uiState.value.burnAfter > 0

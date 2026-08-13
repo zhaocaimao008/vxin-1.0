@@ -8,12 +8,15 @@ final class KeychainStore {
 
     private let service = "com.vxin.app"
     private let account = "vxin.token"
+    // 串行队列：保证多线程并发访问 Keychain 时不发生竞态
+    // （SecItemAdd/SecItemCopyMatching 在 iOS 上不是线程安全的）
+    private let queue = DispatchQueue(label: "com.vxin.keychain", qos: .userInitiated)
 
     var token: String? {
-        get { read() }
-        set {
-            if let newValue { save(newValue) } else { delete() }
-        }
+        get { queue.sync { read() } }
+        set { queue.async { [weak self] in
+            if let newValue { self?.save(newValue) } else { self?.delete() }
+        }}
     }
 
     var isLoggedIn: Bool { token?.isEmpty == false }

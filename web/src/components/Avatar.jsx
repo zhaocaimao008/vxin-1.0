@@ -21,37 +21,62 @@ export function getColor(name) {
   return COLORS[Math.abs(hash) % COLORS.length];
 }
 
-export default memo(function Avatar({ src, name = '', size = 40, style = {}, online = false, className: _className = '', onClick }) {
-  const radius = Math.max(3, Math.round(size * 0.13)); // 微信风方圆角(原 0.22 偏圆)
-  const baseStyle = { width: size, height: size, borderRadius: radius, overflow: 'hidden', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', position: 'relative', ...style };
+export default memo(function Avatar({ src, name = '', size = 40, style = {}, online = false,
+  className: _className = '', onClick, priority = false }) {
+  const radius = Math.max(3, Math.round(size * 0.13));
+  const baseStyle = { width: size, height: size, borderRadius: radius, overflow: 'hidden',
+    flexShrink: 0, display: 'inline-flex', alignItems: 'center',
+    justifyContent: 'center', position: 'relative', ...style };
   const letter = (name || '?')[0].toUpperCase();
 
-  // 图片加载失败（如服务器上文件不存在）时回退到字母头像，避免显示浏览器碎图图标。
-  // src 变化即重置错误态：用 render 期派生（存上一次 src）替代 effect，避免多余一帧闪烁。
   const [errored, setErrored] = useState(false);
   const [prevSrc, setPrevSrc] = useState(src);
-  if (src !== prevSrc) {
-    setPrevSrc(src);
-    setErrored(false);
-  }
+  if (src !== prevSrc) { setPrevSrc(src); setErrored(false); }
   const showImg = src && !errored;
+
+  // srcset：根据设备像素比提供 1x/2x/3x 版本（节省移动端带宽 50-70%）
+  // sizes：告知浏览器实际显示尺寸（单位 px × dpr），精确选取最优分辨率
+  const imgUrl = showImg ? mediaUrl(src) : null;
+  const imgSizes = `${size}px`;
+  // 若服务端支持 ?w= 缩放参数则生成 srcset，否则只用原图
+  const hasSrcset = imgUrl && !imgUrl.startsWith('data:') && !imgUrl.startsWith('blob:');
+  const srcSet = hasSrcset
+    ? `${imgUrl}?w=${size} 1x, ${imgUrl}?w=${size * 2} 2x, ${imgUrl}?w=${size * 3} 3x`
+    : undefined;
 
   return (
     <div
-      style={{ position: 'relative', display: 'inline-flex', flexShrink: 0, cursor: onClick ? 'pointer' : undefined, ...style }}
+      style={{ position: 'relative', display: 'inline-flex', flexShrink: 0,
+               cursor: onClick ? 'pointer' : undefined, ...style }}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(e); } } : undefined}
     >
-      {showImg
-        ? <>
-            {/* 字母垫底：图片加载出来前透出彩色字母而非空白，加载完被图覆盖（无 opacity 切换，规避缓存图不触发 onLoad 的失效） */}
-            <div aria-hidden="true" style={{ ...baseStyle, position: 'absolute', inset: 0, background: getColor(name), color: 'var(--text-inverse)', fontSize: size * 0.42, fontWeight: 600 }}>{letter}</div>
-            <img src={mediaUrl(src)} alt={name} loading="lazy" crossOrigin="anonymous" onError={() => setErrored(true)} style={{ ...baseStyle, objectFit: 'cover', position: 'relative', zIndex: 1 }} />
-          </>
-        : <div style={{ ...baseStyle, background: getColor(name), color: 'var(--text-inverse)', fontSize: size * 0.42, fontWeight: 600, transition: 'opacity .15s' }}>{letter}</div>
-      }
+      {showImg ? (
+        <>
+          <div aria-hidden="true" style={{ ...baseStyle, position: 'absolute', inset: 0,
+            background: getColor(name), color: 'var(--text-inverse)',
+            fontSize: size * 0.42, fontWeight: 600 }}>{letter}</div>
+          <img
+            src={imgUrl}
+            srcSet={srcSet}
+            sizes={imgSizes}
+            alt={name}
+            width={size}
+            height={size}
+            loading={priority ? 'eager' : 'lazy'}
+            fetchpriority={priority ? 'high' : 'auto'}
+            decoding={priority ? 'sync' : 'async'}
+            crossOrigin="anonymous"
+            onError={() => setErrored(true)}
+            style={{ ...baseStyle, objectFit: 'cover', position: 'relative', zIndex: 1 }}
+          />
+        </>
+      ) : (
+        <div style={{ ...baseStyle, background: getColor(name), color: 'var(--text-inverse)',
+          fontSize: size * 0.42, fontWeight: 600, transition: 'opacity .15s' }}>{letter}</div>
+      )}
       {online && <span className="wc-online-dot" />}
     </div>
   );
