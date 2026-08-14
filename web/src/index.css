@@ -3582,7 +3582,15 @@ body.dark-mode .we-empty-svg { opacity: .75; }
 
 /* ── AccountSwitcher ── */
 .as-container { position:relative; width:100%; }
-.as-avatar-btn { cursor:pointer; width:100%; display:flex; justify-content:center; }
+.as-avatar-btn {
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  /* 与旧 .wc-sidebar-avatar 一致的顶部间距：头像不贴顶边，outline-offset 不被 overflow:hidden 裁切 */
+  padding: 18px 0 12px;
+  flex-shrink: 0;
+}
 /* 头像 inner — 固定尺寸的头像盒：有图时 <img> 铺满，无图/加载失败时显示居中首字母。
    原先无尺寸/背景，回退首字母时塌成"模糊的点"。outline 颜色保持内联(动态高亮)。 */
 .as-avatar-inner {
@@ -3615,6 +3623,9 @@ body.dark-mode .we-empty-svg { opacity: .75; }
 /* 桌面端(Electron)有 30px 自定义标题栏：下拉面板 top:8px 会被标题栏遮住，
    整体下移 30px 避开标题栏（web 端无标题栏，保持原 top:8px）。 */
 .electron-app .as-dropdown { top: 38px; }
+/* Electron 有标题栏 30px，sidebar 顶部已被 main-content paddingTop 下移，
+   avatar 只需保留 8px 的视觉间距（不需要完整 18px）。 */
+.electron-app .as-avatar-btn { padding-top: 8px; }
 
 /* 账号行 — 复用 wc-add-row 但微调 gap/padding 以兼容 Home.jsx 原值 */
 .wc-account-row {
