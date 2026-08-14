@@ -30,6 +30,10 @@ data class AddFriendUiState(
     /** 扫码用户的详情（加载中为 null + scannedUserLoading=true） */
     val scannedUserDetail: UserDetail? = null,
     val scannedUserLoading: Boolean = false,
+    /** 待确认发送的好友申请目标（弹申请消息对话框用） */
+    val pendingUser: SearchUser? = null,
+    /** 申请附言草稿 */
+    val requestMessage: String = "",
 )
 
 @HiltViewModel
@@ -99,6 +103,38 @@ class AddFriendViewModel @Inject constructor(
     }
 
     fun onQueryChange(v: String) = _uiState.update { it.copy(query = v, message = null) }
+
+    fun onRequestMessageChange(v: String) = _uiState.update { it.copy(requestMessage = v) }
+
+    /** 点「添加」→ 弹申请消息对话框 */
+    fun promptSendRequest(user: SearchUser) {
+        val defaultMsg = sessionManager.currentUser?.username?.let { "我是 $it" } ?: ""
+        _uiState.update { it.copy(pendingUser = user, requestMessage = defaultMsg) }
+    }
+
+    /** 对话框确认发送 */
+    fun confirmSendRequest() {
+        val user = _uiState.value.pendingUser ?: return
+        val msg = _uiState.value.requestMessage.trim()
+        _uiState.update { it.copy(pendingUser = null, requestMessage = "") }
+        viewModelScope.launch {
+            runCatching { contactRepository.sendFriendRequest(user.id, msg) }
+                .onSuccess { resp ->
+                    _uiState.update {
+                        it.copy(
+                            sentIds = it.sentIds + user.id,
+                            message = if (resp.autoAccepted) "已添加为好友" else "好友申请已发送",
+                        )
+                    }
+                }
+                .onFailure { e -> _uiState.update { it.copy(message = e.toUserMessage("发送失败")) } }
+        }
+    }
+
+    /** 取消申请对话框 */
+    fun dismissSendRequest() = _uiState.update { it.copy(pendingUser = null, requestMessage = "") }
+
+    fun sendRequest(user: SearchUser) = promptSendRequest(user)
 
     fun search() {
         val q = _uiState.value.query.trim()

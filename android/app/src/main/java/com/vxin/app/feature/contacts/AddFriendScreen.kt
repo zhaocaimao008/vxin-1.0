@@ -27,6 +27,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -115,6 +116,37 @@ fun AddFriendScreen(
             )
         },
     ) { padding ->
+        // 申请消息 Dialog
+        val pendingUser = state.pendingUser
+        if (pendingUser != null) {
+            AlertDialog(
+                onDismissRequest = viewModel::dismissSendRequest,
+                title = { Text("添加「${pendingUser.username}」") },
+                text = {
+                    Column {
+                        Text("附言（可选）", style = MaterialTheme.typography.bodySmall, color = VxinTextSecondary)
+                        Spacer(Modifier.size(8.dp))
+                        OutlinedTextField(
+                            value = state.requestMessage,
+                            onValueChange = viewModel::onRequestMessageChange,
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text("我是…", color = VxinTextSecondary) },
+                            singleLine = true,
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = viewModel::confirmSendRequest,
+                        colors = ButtonDefaults.buttonColors(containerColor = VxinGreen),
+                    ) { Text("发送申请") }
+                },
+                dismissButton = {
+                    OutlinedButton(onClick = viewModel::dismissSendRequest) { Text("取消") }
+                },
+            )
+        }
+
         Column(Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(
@@ -170,7 +202,7 @@ fun AddFriendScreen(
                         com.vxin.app.ui.components.EmptyState(icon = "🔍", title = "未找到用户", subtitle = "换个手机号 / v信号试试", modifier = Modifier.align(Alignment.Center))
                     else -> LazyColumn(Modifier.fillMaxSize()) {
                         items(state.results, key = { it.id }) { user ->
-                            SearchRow(user, sent = user.id in state.sentIds) { viewModel.sendRequest(user) }
+                            SearchRow(user, sent = user.id in state.sentIds) { viewModel.promptSendRequest(user) }
                         }
                     }
                 }

@@ -18,8 +18,8 @@ android {
         applicationId = "com.vxin.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 56
-        versionName = "8.0.3"
+        versionCode = 57
+        versionName = "8.0.4"
 
         // 默认服务器地址（运行时可在 App 内切换并持久化覆盖）
         buildConfigField("String", "DEFAULT_SERVER_URL", "\"https://dipsin.com\"")
