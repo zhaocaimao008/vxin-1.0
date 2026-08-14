@@ -2,7 +2,10 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import viteCompression from 'vite-plugin-compression';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  // desktop 模式：base='./（相对路径）适配 Electron file:// 协议
+  // web 模式：base='/'（绝对路径）适配浏览器 + Nginx
+  base: mode === 'desktop' ? './' : '/',
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '2.2.0'),
   },
@@ -114,4 +117,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
