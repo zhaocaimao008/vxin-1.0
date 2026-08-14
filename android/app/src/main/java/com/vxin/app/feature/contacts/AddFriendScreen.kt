@@ -68,19 +68,13 @@ fun AddFriendScreen(
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
-    // 华为/OPPO 等无 GMS 设备不支持 GmsBarcodeScanning，需先检测可用性，
-    // 否则 startScan() 会抛异常（无 GMS）或静默无反应。
+    // 华为/OPPO 等无 GMS 设备不支持 GmsBarcodeScanning。
+    // 注意：不在 Compose 进入时初始化 GmsBarcodeScanning.getClient()，
+    // 因为某些设备上此操作会触发 Google Play Services 更新弹窗，导致 App 切后台。
+    // 改为懒初始化：仅在用户点击「扫一扫」时才检测 GMS 可用性并启动扫码。
     val gmsAvailable = remember {
         GoogleApiAvailability.getInstance()
             .isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS
-    }
-    val scanner = remember(gmsAvailable) {
-        if (gmsAvailable) {
-            GmsBarcodeScanning.getClient(
-                context,
-                GmsBarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).build(),
-            )
-        } else null
     }
 
     // 扫码资料卡 Bottom Sheet
@@ -125,11 +119,14 @@ fun AddFriendScreen(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(
                     onClick = {
-                        val sc = scanner
-                        if (sc == null) {
-                            // 无 GMS（华为等）：扫码不可用，引导改用搜索用户名/手机号加好友
+                        if (!gmsAvailable) {
                             Toast.makeText(context, "当前设备不支持扫码，请在下方搜索用户名或手机号添加", Toast.LENGTH_LONG).show()
                         } else {
+                            // 懒初始化：仅在点击时创建扫码器，避免页面进入时触发 GMS 更新弹窗
+                            val sc = GmsBarcodeScanning.getClient(
+                                context,
+                                GmsBarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).build(),
+                            )
                             sc.startScan()
                                 .addOnSuccessListener { barcode -> barcode.rawValue?.let { viewModel.addByQrPayload(it) } }
                                 .addOnFailureListener { e ->
