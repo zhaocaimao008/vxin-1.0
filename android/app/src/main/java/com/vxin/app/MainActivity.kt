@@ -36,14 +36,6 @@ class MainActivity : ComponentActivity() {
         // 这样 Scaffold + Modifier.imePadding() 才能正确处理键盘弹出时的输入框位置。
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        // ── 截图防护：防止聊天内容出现在截图/录屏/任务缩略图中 ──────
-        // Release 构建强制保护；Debug 构建放开（方便测试）
-        if (!BuildConfig.DEBUG) {
-            window.setFlags(
-                WindowManager.LayoutParams.FLAG_SECURE,
-                WindowManager.LayoutParams.FLAG_SECURE
-            )
-        }
         // 来电通过 fullScreenIntent 拉起本 Activity 时，若设备处于锁屏/熄屏，
         // 需主动点亮屏幕并越过锁屏展示来电界面，否则用户只看到黑屏/锁屏、看不到弹窗。
         if (isCallIntent(intent)) enableShowOverLockscreen()
