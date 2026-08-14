@@ -137,28 +137,4 @@ class AddFriendViewModel @Inject constructor(
     fun sendRequest(user: SearchUser) = promptSendRequest(user)
 
     fun search() {
-        val q = _uiState.value.query.trim()
-        if (q.isEmpty() || _uiState.value.searching) return
-        _uiState.update { it.copy(searching = true, message = null) }
-        viewModelScope.launch {
-            runCatching { contactRepository.search(q) }
-                .onSuccess { list -> _uiState.update { it.copy(searching = false, results = list, searched = true) } }
-                .onFailure { e -> _uiState.update { it.copy(searching = false, message = e.toUserMessage("搜索失败")) } }
-        }
-    }
-
-    fun sendRequest(user: SearchUser) {
-        viewModelScope.launch {
-            runCatching { contactRepository.sendFriendRequest(user.id, "") }
-                .onSuccess { resp ->
-                    _uiState.update {
-                        it.copy(
-                            sentIds = it.sentIds + user.id,
-                            message = if (resp.autoAccepted) "已添加为好友" else "好友申请已发送",
-                        )
-                    }
-                }
-                .onFailure { e -> _uiState.update { it.copy(message = e.toUserMessage("发送失败")) } }
-        }
-    }
 }
