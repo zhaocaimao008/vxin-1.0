@@ -60,6 +60,7 @@ class CallManager @Inject constructor(
     private val socketManager: SocketManager,
     private val sessionManager: SessionManager,
     private val turnApi: com.vxin.app.data.api.TurnApi,
+    private val notificationHelper: com.vxin.app.core.push.NotificationHelper,
     @AppScope private val scope: CoroutineScope,
 ) {
     val eglBase: EglBase = EglBase.create()
@@ -237,6 +238,17 @@ class CallManager @Inject constructor(
                 _state.value = CallState(
                     CallStage.INCOMING, e.from, e.callerName, isVideo = e.type == "video", isCaller = false,
                 )
+                // ── 锁屏/后台来电通知 ────────────────────────────────────────
+                // socket 连着时服务端不发 FCM，须由此处补弹全屏来电通知。
+                // App 在前台时 CallHost 会渲染来电 UI，无需重复弹通知。
+                if (!com.vxin.app.core.push.MessageNotificationBridge.appForeground) {
+                    notificationHelper.showCallNotification(
+                        callId = e.from,   // callId 用 peerId 兜底（socket 路径无独立 callId）
+                        from = e.from,
+                        callerName = e.callerName,
+                        callType = e.type,
+                    )
+                }
             }
         }
         scope.launch {
