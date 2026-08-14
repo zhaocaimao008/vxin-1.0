@@ -128,7 +128,8 @@ export const AuthProvider = ({ children }) => {
       const stored = localStorage.getItem(ELECTRON_TOKEN_KEY);
       if (stored) axios.defaults.headers.common['Authorization'] = `Bearer ${stored}`;
     }
-    axios.get('/api/auth/me')
+    // timeout: 8s — 防止 Electron/弱网下请求挂起导致 loading:true 永不结束（白屏卡死）
+    axios.get('/api/auth/me', { timeout: 8000 })
       .then(r => {
         setUser(r.data);
         // 刷新"最近登录"记录中的用户信息（头像/昵称可能已更新）
