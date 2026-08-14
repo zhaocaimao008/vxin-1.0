@@ -67,7 +67,13 @@ class LoginViewModel @Inject constructor(
                 .onFailure { e ->
                     android.util.Log.e("LOGIN_DIAG", "LOGIN_ERROR type=${e.javaClass.simpleName} msg=${e.message}")
                     android.util.Log.e("LOGIN_DIAG", "LOGIN_ERROR_STACK", e)
-                    _uiState.update { it.copy(loading = false, error = e.toUserMessage("登录失败")) }
+                    // 临时诊断：显示真实异常类型（不含密码/Token）
+                    val diagMsg = when (e) {
+                        is retrofit2.HttpException -> e.toUserMessage("登录失败")
+                        is java.io.IOException -> e.toUserMessage("登录失败")
+                        else -> "[诊断] ${e.javaClass.simpleName}: ${e.message?.take(120)}"
+                    }
+                    _uiState.update { it.copy(loading = false, error = diagMsg) }
                 }
         }
     }

@@ -67,7 +67,14 @@ class RegisterViewModel @Inject constructor(
                     sessionManager.onAuthenticated(user)
                 }
                 .onFailure { e ->
-                    _uiState.update { it.copy(loading = false, error = e.toUserMessage("注册失败")) }
+                    android.util.Log.e("LOGIN_DIAG", "REGISTER_ERROR type=${e.javaClass.simpleName} msg=${e.message}")
+                    android.util.Log.e("LOGIN_DIAG", "REGISTER_ERROR_STACK", e)
+                    val diagMsg = when (e) {
+                        is retrofit2.HttpException -> e.toUserMessage("注册失败")
+                        is java.io.IOException -> e.toUserMessage("注册失败")
+                        else -> "[诊断] ${e.javaClass.simpleName}: ${e.message?.take(120)}"
+                    }
+                    _uiState.update { it.copy(loading = false, error = diagMsg) }
                 }
         }
     }
