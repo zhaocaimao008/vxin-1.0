@@ -78,18 +78,22 @@ jobs:
         run: |
           EXE=$(find artifacts -name "*.exe" | head -1)
           echo "部署: $EXE"
+          # 创建两个 updates 目录（/var/www/downloads/updates 是 CI 写入路径，
+          # /var/www/html/downloads/updates 是 Nginx 实际服务路径，两者必须同步）
           ssh -i ~/.ssh/deploy_key "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_HOST }}" \
-            "mkdir -p /var/www/downloads/updates"
+            "mkdir -p /var/www/downloads/updates && mkdir -p /var/www/html/downloads/updates"
           scp -i ~/.ssh/deploy_key "$EXE" \
             "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_HOST }}:/var/www/downloads/vxin-windows-latest-setup.exe"
-          # 关键：把带版本名的 exe 也放进 updates/，electron-updater 读 latest.yml 后按原名去 updates/ 取，
-          # 否则自动更新会 404（此前 updates/ 只有旧版 exe）。
+          # EXE 同步到两个 updates 目录
           scp -i ~/.ssh/deploy_key "$EXE" \
             "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_HOST }}:/var/www/downloads/updates/$(basename "$EXE")"
-          # latest.yml/*.blockmap 可能在 artifacts/dist 或 artifacts/release 子目录 → 用 find 定位，
-          # 否则自动更新源不会更新（旧脚本只找顶层，导致 latest.yml 停在旧版）。
+          scp -i ~/.ssh/deploy_key "$EXE" \
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_HOST }}:/var/www/html/downloads/updates/$(basename "$EXE")"
+          # latest.yml / .blockmap 同步到两个目录（Nginx 实际服务 /var/www/html/downloads/updates/）
           for f in $(find artifacts -name latest.yml -o -name '*.blockmap'); do
             scp -i ~/.ssh/deploy_key "$f" \
               "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_HOST }}:/var/www/downloads/updates/" || true
+            scp -i ~/.ssh/deploy_key "$f" \
+              "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_HOST }}:/var/www/html/downloads/updates/" || true
           done
           echo "✅ 已发布到 https://dipsin.com/downloads/vxin-windows-latest-setup.exe"
