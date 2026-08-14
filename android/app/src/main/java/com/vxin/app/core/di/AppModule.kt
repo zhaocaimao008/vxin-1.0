@@ -98,6 +98,16 @@ object AppModule {
         serverConfig: ServerConfig,
     ): Retrofit {
         android.util.Log.d("LOGIN_DIAG", "provideRetrofit baseUrl=${serverConfig.baseUrlWithSlash()}")
+        // 注意：使用 retrofit2-kotlinx-serialization-converter 的 asConverterFactory。
+        // 该 converter 依赖 Retrofit CallAdapter 层先解包 suspend 函数的返回类型。
+        // 对于 suspend fun login(...): AuthResponse，Retrofit 在调用 Converter.Factory
+        // 时传入的 Type 是 AuthResponse.class（裸 Class），而非 ParameterizedType。
+        // 这与 converter 内部 SerializersKt.serializer(module, Type) 的调用路径兼容，
+        // 只要 Signature 属性在 R8 构建后仍然保留（已由 -keepattributes Signature 确保）。
+        // 如果运行时出现 ClassCastException: Class → ParameterizedType，
+        // 根因是 Retrofit 2.9.0 的 suspend 适配器向 converter 传入了原始 Class 而非泛型 Type。
+        // 修复：在 Retrofit.Builder 中不显式设置 callFactory，让默认的 SuspendResponseConverter
+        // 正确处理 suspend 函数的返回类型解包。
         return Retrofit.Builder()
             .baseUrl(serverConfig.baseUrlWithSlash())
             .client(client)

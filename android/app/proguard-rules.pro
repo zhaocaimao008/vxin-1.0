@@ -259,3 +259,15 @@
 
 # 保留注解（sealed class 多态序列化运行时需要读 @Serializable 注解）
 -keepattributes RuntimeVisibleAnnotations,AnnotationDefault
+
+# ── 3d. Retrofit 泛型类型签名保留（修复 ClassCastException: Class → ParameterizedType）──
+# 根因：R8 删除了 Signature 属性，导致 retrofit2-kotlinx-serialization-converter 在
+# 解析 Call<T> 的泛型参数时，拿到的是裸 Class 而非 ParameterizedType。
+# 修复：保留所有 Signature（泛型签名）属性，确保反射时能拿到完整的 ParameterizedType。
+-keepattributes Signature
+# 保留 Retrofit API 接口的所有泛型信息
+-keep,allowshrinking,allowoptimization interface * {
+    @retrofit2.http.* <methods>;
+}
+# 保留 kotlinx-serialization-converter 中的反射工具类
+-keep class com.jakewharton.retrofit2.converter.kotlinx.serialization.** { *; }
