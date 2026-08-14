@@ -212,3 +212,50 @@
     static <1>$$serializer INSTANCE;
     kotlinx.serialization.descriptors.SerialDescriptor descriptor;
 }
+
+# ── 3c. kotlinx.serialization 序列化基础设施（R8 因分析不到调用路径而错误删除）─
+# 诊断证据（usage.txt）：
+#   1. SerializersKt.serializer(SerializersModule, KType) ← 被删
+#   2. SerializersKt__SerializersKt 整个类 ← 被删（含 serializerByKTypeImpl）
+#   3. SerializersKt__SerializersKt$serializerByKTypeImpl* 内部类 ← 被删
+#
+# 影响路径：
+#   AccountStore.save() → json.encodeToString<List<Account>>(list) [reified inline]
+#   → SerializersKt.serializer(SerializersModule, KType)  ← 被删 → NoSuchMethodError
+#   → toUserMessage("登录失败") → 用户看到"登录失败"
+#
+# RemoteConfig.fetchApi() → json.decodeFromString<RemoteConfigDto>(body) [reified inline]
+#   → 同路径失败，runCatching 静默吃掉，回退默认 URL（非阻断）
+#
+# 修复：保留 KType + Type 的序列化查找基础设施
+
+# 保留 SerializersKt 所有序列化入口（facade）
+-keepclassmembers class kotlinx.serialization.SerializersKt {
+    public static *** serializer(...);
+    public static *** serializerOrNull(...);
+    public static *** noCompiledSerializer(...);
+    public static *** serializersForParameters(...);
+}
+
+# 保留 SerializersKt__SerializersKt（KType 实现类）整体，包含 serializerByKTypeImpl
+-keep class kotlinx.serialization.SerializersKt__SerializersKt {
+    *;
+}
+# 保留 KType 路径中的 lambda/内部类
+-keep class kotlinx.serialization.SerializersKt__SerializersKt$* {
+    *;
+}
+
+# 保留 JVM Type (java.lang.reflect.Type) 实现类
+-keep class kotlinx.serialization.SerializersKt__SerializersJvmKt {
+    *;
+}
+
+# 保留 SerialFormat / SerializersModule 上的扩展函数入口
+-keepclassmembers class kotlinx.serialization.modules.SerializersModuleKt {
+    public static *** serializer(...);
+    public static *** serializerOrNull(...);
+}
+
+# 保留注解（sealed class 多态序列化运行时需要读 @Serializable 注解）
+-keepattributes RuntimeVisibleAnnotations,AnnotationDefault

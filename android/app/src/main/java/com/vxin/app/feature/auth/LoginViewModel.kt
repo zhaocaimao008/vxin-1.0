@@ -51,12 +51,22 @@ class LoginViewModel @Inject constructor(
         saveServerUrl()
         _uiState.update { it.copy(loading = true, error = null) }
         viewModelScope.launch {
-            runCatching { authRepository.login(s.phone, s.password) }
+            android.util.Log.d("LOGIN_DIAG", "═══ LOGIN_START ═══")
+            android.util.Log.d("LOGIN_DIAG", "phone=${s.phone.take(3)}*** (masked)")
+            android.util.Log.d("LOGIN_DIAG", "serverUrl=${s.serverUrl}")
+
+            runCatching {
+                android.util.Log.d("LOGIN_DIAG", "LOGIN_REPOSITORY_CALL")
+                authRepository.login(s.phone, s.password)
+            }
                 .onSuccess { user ->
+                    android.util.Log.d("LOGIN_DIAG", "LOGIN_SUCCESS userId=${user.id}")
                     _uiState.update { it.copy(loading = false, loggedIn = true) }
                     sessionManager.onAuthenticated(user)   // 触发全局状态切到主页
                 }
                 .onFailure { e ->
+                    android.util.Log.e("LOGIN_DIAG", "LOGIN_ERROR type=${e.javaClass.simpleName} msg=${e.message}")
+                    android.util.Log.e("LOGIN_DIAG", "LOGIN_ERROR_STACK", e)
                     _uiState.update { it.copy(loading = false, error = e.toUserMessage("登录失败")) }
                 }
         }

@@ -18,7 +18,14 @@ class AuthRepository @Inject constructor(
     private val accountStore: AccountStore,
 ) {
     suspend fun login(phone: String, password: String): User {
-        val res = api.login(LoginRequest(phone.trim(), password))
+        android.util.Log.d("LOGIN_DIAG", "LOGIN_REQUEST_OBJECT_CREATE_START")
+        val request = LoginRequest(phone.trim(), password)
+        android.util.Log.d("LOGIN_DIAG", "LOGIN_REQUEST_OBJECT_CREATED phone=${request.phone.take(3)}***")
+
+        android.util.Log.d("LOGIN_DIAG", "LOGIN_RETROFIT_CALL_START")
+        val res = api.login(request)
+        android.util.Log.d("LOGIN_DIAG", "LOGIN_RETROFIT_CALL_SUCCESS token=${res.token.take(10)}... userId=${res.user.id}")
+
         applyAuth(res.token, res.user)
         return res.user
     }

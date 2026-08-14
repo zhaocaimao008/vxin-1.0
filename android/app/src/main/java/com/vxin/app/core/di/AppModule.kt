@@ -96,11 +96,14 @@ object AppModule {
         client: OkHttpClient,
         json: Json,
         serverConfig: ServerConfig,
-    ): Retrofit = Retrofit.Builder()
-        .baseUrl(serverConfig.baseUrlWithSlash())
-        .client(client)
-        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-        .build()
+    ): Retrofit {
+        android.util.Log.d("LOGIN_DIAG", "provideRetrofit baseUrl=${serverConfig.baseUrlWithSlash()}")
+        return Retrofit.Builder()
+            .baseUrl(serverConfig.baseUrlWithSlash())
+            .client(client)
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .build()
+    }
 
     @Provides
     @Singleton
