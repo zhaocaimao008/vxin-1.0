@@ -177,3 +177,38 @@
 # ── 22. 调试信息（便于真机崩溃时 Crashlytics/Logcat 可读 Stack Trace）────────
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+
+# ── 3b. kotlinx.serialization Companion.serializer() — JetBrains 官方规则 ────
+# 根因修复：R8 删除了 @Serializable 类的 Companion.serializer() 方法，
+# 导致 Retrofit 转换器无法找到序列化器 → SerializationException → "登录失败"
+# 来源：https://github.com/Kotlin/kotlinx.serialization/blob/master/rules/common.pro
+
+# 保留所有 @Serializable 类的 Companion 对象引用
+-if @kotlinx.serialization.Serializable class **
+-keepclassmembers class <1> {
+    static <1>$Companion Companion;
+}
+
+# 保留 Companion 对象上的 serializer(...) 方法（Retrofit 通过此方法获取序列化器）
+-if @kotlinx.serialization.Serializable class ** {
+    static ** Companion;
+}
+-keepclassmembers class <2> {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+# 保留 object 类型的 @Serializable 类的 serializer()
+-if @kotlinx.serialization.Serializable class ** {
+    public static ** INSTANCE;
+}
+-keepclassmembers class <1> {
+    public static ** INSTANCE;
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+# 保留 $$serializer 生成类（compile-time 生成，包含 descriptor）
+-if @kotlinx.serialization.Serializable class **
+-keepclassmembers class <1>$$serializer {
+    static <1>$$serializer INSTANCE;
+    kotlinx.serialization.descriptors.SerialDescriptor descriptor;
+}
