@@ -2,6 +2,8 @@ import Foundation
 import Combine
 import AVFoundation
 import WebRTC
+import UIKit
+import UserNotifications
 
 enum CallStage { case idle, outgoing, incoming, connecting, connected, ended }
 
@@ -213,6 +215,12 @@ final class CallManager: NSObject, ObservableObject {
                 self.socket.emitCallResponse(to: from, accepted: false); return
             }
             self.state = CallState(stage: .incoming, peerId: from, peerName: name, isVideo: type == "video", isCaller: false)
+            // ── 锁屏/后台来电本地通知 ──────────────────────────────────────
+            // socket 连着时服务端不发 FCM，须由此处补弹本地通知。
+            // App 在前台时 CallHostView 会渲染来电 UI，无需重复弹通知。
+            if UIApplication.shared.applicationState != .active {
+                self.showIncomingCallNotification(from: from, callerName: name, callType: type)
+            }
         }.store(in: &cancellables)
 
         socket.callResponse.receive(on: DispatchQueue.main).sink { [weak self] (from, accepted) in
@@ -255,6 +263,33 @@ final class CallManager: NSObject, ObservableObject {
     }
 
     private func drainIce() {
+        pendingIce.forEach { pc?.add($0) }
+        pendingIce.removeAll()
+    }
+
+    // MARK: - 锁屏/后台来电本地通知
+    /// socket 连着时服务端不发 FCM，须由此处补弹本地通知（与 Android NotificationHelper.showCallNotification 等价）。
+    private func showIncomingCallNotification(from: String, callerName: String, callType: String) {
+        let center = UNUserNotificationCenter.current()
+        let content = UNMutableNotificationContent()
+        content.title = callerName.isEmpty ? "来电" : callerName
+        content.body = callType == "video" ? "邀请你视频通话" : "邀请你语音通话"
+        content.sound = UNNotificationSound.defaultCritical
+        content.categoryIdentifier = "INCOMING_CALL"
+        // 携带 from/callType 供通知操作使用
+        content.userInfo = ["from": from, "callType": callType, "callerName": callerName]
+
+        let request = UNNotificationRequest(
+            identifier: "incoming_call_\(from)",
+            content: content,
+            trigger: nil   // 立即触发
+        )
+        center.add(request) { error in
+            if let error = error {
+                print("[CallManager] 来电通知失败: \(error.localizedDescription)")
+            }
+        }
+    }
         pendingIce.forEach { pc?.add($0) }
         pendingIce.removeAll()
     }
