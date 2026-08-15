@@ -14,8 +14,8 @@ private enum Tok {
     static let avatarSize: CGFloat = 66
     static let iconSize: CGFloat = 22
     static let rowHeight: CGFloat = 57
-    static let green    = Color(red: 0x34/255, green: 0xB7/255, blue: 0x59/255)
-    static let greenBg  = Color(red: 0xED/255, green: 0xF8/255, blue: 0xF0/255)
+    static let green    = Color.vxinBrand
+    static let greenBg  = Color.vxinBrandMuted
     static let primary  = Color(red: 0x11/255, green: 0x11/255, blue: 0x11/255)
     static let secondary = Color(red: 0x8E/255, green: 0x8E/255, blue: 0x93/255)
     static let bg       = Color(red: 0xF5/255, green: 0xF5/255, blue: 0xF7/255)
@@ -148,6 +148,11 @@ struct ProfileView: View {
                     }
                     .buttonStyle(.plain)
                     RowDivider()
+                    NavigationLink(destination: FavoritesView()) {
+                        SettingsRow(icon: "star", title: "收藏")
+                    }
+                    .buttonStyle(.plain)
+                    RowDivider()
                     NavigationLink(destination: CallHistoryView()) {
                         SettingsRow(icon: "phone.arrow.up.right", title: "通话记录")
                     }
@@ -161,25 +166,15 @@ struct ProfileView: View {
                 .padding(.horizontal, Tok.l)
                 .padding(.bottom, Tok.m)
 
-                // ── 3. 设置 ────────────────────────────────────────
-                SectionHeader(text: "设置")
+                // ── 3. 设置（消息通知/隐私与安全/外观/登录设备/清除缓存等收拢进独立设置页）──
                 VxCard {
-                    NavigationLink(destination: NotificationSettingsView()) {
-                        SettingsRow(icon: "bell", title: "通知")
-                    }
-                    .buttonStyle(.plain)
-                    RowDivider()
-                    NavigationLink(destination: PrivacySecurityView()) {
-                        SettingsRow(icon: "checkmark.shield", title: "隐私与安全")
-                    }
-                    .buttonStyle(.plain)
-                    RowDivider()
-                    NavigationLink(destination: AppearanceSettingsView()) {
-                        SettingsRow(icon: "paintpalette", title: "外观")
+                    NavigationLink(destination: SettingsHomeView()) {
+                        SettingsRow(icon: "gearshape", title: "设置")
                     }
                     .buttonStyle(.plain)
                 }
                 .padding(.horizontal, Tok.l)
+                .padding(.top, Tok.m)
                 .padding(.bottom, Tok.m)
 
                 // ── 4. 其他 ────────────────────────────────────────

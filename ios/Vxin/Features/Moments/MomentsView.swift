@@ -202,7 +202,7 @@ struct MomentsView: View {
                 .refreshable { await vm.refresh() }
             }
         }
-        .navigationTitle("朋友圈")
+        .navigationTitle("动态")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {

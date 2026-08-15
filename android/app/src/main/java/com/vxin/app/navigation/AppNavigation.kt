@@ -125,6 +125,8 @@ private object Routes {
     const val WALLET = "wallet"
     const val SESSIONS = "sessions"
     const val FRIEND_LABELS = "friendLabels"
+    const val SETTINGS_HOME = "settingsHome"
+    const val PROFILE_EDIT = "profileEdit"
     const val PRIVACY = "privacySettings"
     const val NOTIFICATIONS = "notificationSettings"
     const val APPEARANCE = "appearanceSettings"
@@ -280,6 +282,7 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0) {
                     onCreateGroup = { navController.navigate(Routes.CREATE_GROUP) },
                     onOpenBlocked = { navController.navigate(Routes.BLOCKED) },
                     onOpenLabels = { navController.navigate(Routes.FRIEND_LABELS) },
+                    onOpenSearch = { navController.navigate(Routes.SEARCH) },
                 )
             }
             composable(Routes.FRIEND_LABELS) {
@@ -293,9 +296,27 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0) {
                     onOpenCallHistory = { navController.navigate(Routes.CALL_HISTORY) },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
                     onOpenSessions = { navController.navigate(Routes.SESSIONS) },
-                    onOpenPrivacy = { navController.navigate(Routes.PRIVACY) },
+                    onOpenFavorites = { navController.navigate(Routes.FAVORITES) },
+                    onOpenSettings = { navController.navigate(Routes.SETTINGS_HOME) },
+                    onOpenProfileEdit = { navController.navigate(Routes.PROFILE_EDIT) },
+                )
+            }
+            composable(Routes.PROFILE_EDIT) {
+                com.vxin.app.feature.profile.ProfileEditScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenMyQr = { navController.navigate(Routes.MY_QRCODE) },
+                )
+            }
+            composable(Routes.FAVORITES) {
+                com.vxin.app.feature.favorites.FavoritesScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SETTINGS_HOME) {
+                com.vxin.app.feature.settings.SettingsHomeScreen(
+                    onBack = { navController.popBackStack() },
                     onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
+                    onOpenPrivacy = { navController.navigate(Routes.PRIVACY) },
                     onOpenAppearance = { navController.navigate(Routes.APPEARANCE) },
+                    onOpenSessions = { navController.navigate(Routes.SESSIONS) },
                 )
             }
             composable(Routes.WALLET) {

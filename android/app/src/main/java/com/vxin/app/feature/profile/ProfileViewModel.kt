@@ -60,6 +60,12 @@ class ProfileViewModel @Inject constructor(
 
     fun resolveAvatarUrl(url: String?): String? = mediaUrlResolver.resolve(url)
 
+    /** 从 SessionManager 重新同步当前用户（例如从「个人资料」编辑页返回时，拉齐另一个 ViewModel 实例改过的字段）。 */
+    fun refreshUser() {
+        val latest = sessionManager.currentUser
+        if (latest != null) _uiState.update { it.copy(user = latest) }
+    }
+
     fun saveProfile(username: String, bio: String) {
         if (_uiState.value.saving) return
         _uiState.update { it.copy(saving = true, message = null) }

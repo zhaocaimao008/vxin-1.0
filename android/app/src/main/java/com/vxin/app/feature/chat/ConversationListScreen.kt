@@ -75,6 +75,7 @@ fun ConversationListScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val socketStatus by viewModel.socketStatus.collectAsStateWithLifecycle()
     var clearTarget by remember { mutableStateOf<Conversation?>(null) }
+    var filter by remember { mutableStateOf(ConvFilter.ALL) }
 
     // 从聊天页返回时刷新草稿(显示/清除「[草稿]」前缀)
     LifecycleResumeEffect(Unit) {
@@ -143,7 +144,19 @@ fun ConversationListScreen(
     ) { padding ->
         val refreshing = state.loading && state.conversations.isNotEmpty()
         val pullState = rememberPullRefreshState(refreshing = refreshing, onRefresh = { viewModel.refresh() })
-        Box(modifier = Modifier.fillMaxSize().padding(padding).pullRefresh(pullState)) {
+        val filtered = remember(state.conversations, filter) {
+            when (filter) {
+                ConvFilter.ALL -> state.conversations
+                ConvFilter.UNREAD -> state.conversations.filter { it.unreadCount > 0 || it.manuallyUnread == 1 }
+                ConvFilter.PRIVATE -> state.conversations.filter { it.type == "private" }
+                ConvFilter.GROUP -> state.conversations.filter { it.type == "group" }
+            }
+        }
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            if (state.conversations.isNotEmpty()) {
+                ConvFilterTabs(selected = filter, onSelect = { filter = it })
+            }
+            Box(modifier = Modifier.fillMaxSize().pullRefresh(pullState)) {
             when {
                 state.loading && state.conversations.isEmpty() ->
                     CircularProgressIndicator(Modifier.align(Alignment.Center))
@@ -163,8 +176,16 @@ fun ConversationListScreen(
                         modifier = Modifier.align(Alignment.Center),
                     )
 
+                filtered.isEmpty() ->
+                    com.vxin.app.ui.components.EmptyState(
+                        icon = "💬",
+                        title = "没有符合条件的会话",
+                        subtitle = "",
+                        modifier = Modifier.align(Alignment.Center),
+                    )
+
                 else -> LazyColumn(Modifier.fillMaxSize()) {
-                    items(state.conversations, key = { it.id }) { conv ->
+                    items(filtered, key = { it.id }) { conv ->
                         ConversationRow(
                             conv,
                             avatarUrl = viewModel.resolveUrl(conv.avatar),
@@ -181,6 +202,7 @@ fun ConversationListScreen(
                 }
             }
             PullRefreshIndicator(refreshing, pullState, Modifier.align(Alignment.TopCenter))
+            }
         }
     }
 
@@ -192,6 +214,39 @@ fun ConversationListScreen(
             confirmButton = { TextButton(onClick = { viewModel.clearMessages(target); clearTarget = null }) { Text("清空", color = Color(0xFFFA5151)) } },
             dismissButton = { TextButton(onClick = { clearTarget = null }) { Text("取消") } },
         )
+    }
+}
+
+/** 会话列表筛选：基于已加载的真实会话数据（type/unreadCount）做本地过滤，不发起新请求。 */
+private enum class ConvFilter(val label: String) {
+    ALL("全部"), UNREAD("未读"), PRIVATE("联系人"), GROUP("群聊"),
+}
+
+@Composable
+private fun ConvFilterTabs(selected: ConvFilter, onSelect: (ConvFilter) -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        ConvFilter.values().forEach { f ->
+            val isSelected = f == selected
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(if (isSelected) VxinBrand.copy(alpha = 0.12f) else Color.Transparent)
+                    .clickable { onSelect(f) }
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+            ) {
+                Text(
+                    f.label,
+                    color = if (isSelected) VxinBrand else VxinTextSecondary,
+                    fontSize = com.vxin.app.ui.theme.VxinTextSize.sm2,
+                    fontWeight = if (isSelected) androidx.compose.ui.text.font.FontWeight.SemiBold else androidx.compose.ui.text.font.FontWeight.Normal,
+                )
+            }
+        }
     }
 }
 

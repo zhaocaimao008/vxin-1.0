@@ -270,4 +270,151 @@ object VxinIcons {
             line { moveTo(19f, 15f); curveToRelative(1.8f, 0.5f, 3f, 1.8f, 3f, 3.3f) }
         }
     }
+
+    /** 锁（密码字段） */
+    val Lock: ImageVector by lazy {
+        stroke("Lock") {
+            line {
+                moveTo(5f, 11f); arcToRelative(2f, 2f, 0f, false, true, 2f, -2f)
+                lineTo(17f, 9f); arcToRelative(2f, 2f, 0f, false, true, 2f, 2f)
+                lineTo(19f, 19f); arcToRelative(2f, 2f, 0f, false, true, -2f, 2f)
+                lineTo(7f, 21f); arcToRelative(2f, 2f, 0f, false, true, -2f, -2f); close()
+            }
+            line { moveTo(8f, 9f); lineTo(8f, 6.5f); arcToRelative(4f, 4f, 0f, false, true, 8f, 0f); lineTo(16f, 9f) }
+            line { moveTo(12f, 14f); lineToRelative(0f, 3f) }
+        }
+    }
+
+    /** 睁眼（显示密码） */
+    val Eye: ImageVector by lazy {
+        stroke("Eye") {
+            line {
+                moveTo(1.5f, 12f)
+                curveToRelative(1.8f, -4f, 5.6f, -6.5f, 10.5f, -6.5f)
+                reflectiveCurveToRelative(8.7f, 2.5f, 10.5f, 6.5f)
+                curveToRelative(-1.8f, 4f, -5.6f, 6.5f, -10.5f, 6.5f)
+                reflectiveCurveToRelative(-8.7f, -2.5f, -10.5f, -6.5f); close()
+            }
+            line { moveTo(12f, 12f); moveToRelative(-2.6f, 0f); arcToRelative(2.6f, 2.6f, 0f, true, true, 5.2f, 0f); arcToRelative(2.6f, 2.6f, 0f, true, true, -5.2f, 0f) }
+        }
+    }
+
+    /** 闭眼（隐藏密码） */
+    val EyeOff: ImageVector by lazy {
+        stroke("EyeOff") {
+            line {
+                moveTo(3.5f, 3.5f); lineTo(20.5f, 20.5f)
+            }
+            line {
+                moveTo(6.4f, 6.6f)
+                curveToRelative(-2f, 1.2f, -3.5f, 3.1f, -4.9f, 5.4f)
+                curveToRelative(1.8f, 4f, 5.6f, 6.5f, 10.5f, 6.5f)
+                curveToRelative(1.7f, 0f, 3.2f, -0.3f, 4.6f, -0.9f)
+            }
+            line {
+                moveTo(9.9f, 5.2f)
+                curveToRelative(0.7f, -0.1f, 1.4f, -0.2f, 2.1f, -0.2f)
+                curveToRelative(4.9f, 0f, 8.7f, 2.5f, 10.5f, 6.5f)
+                curveToRelative(-0.7f, 1.5f, -1.7f, 2.9f, -2.9f, 3.9f)
+            }
+            line { moveTo(9.9f, 10f); curveToRelative(-0.5f, 0.5f, -0.9f, 1.2f, -0.9f, 2f); curveToRelative(0f, 1.4f, 1.1f, 2.6f, 2.6f, 2.6f); curveToRelative(0.8f, 0f, 1.5f, -0.4f, 2f, -0.9f) }
+        }
+    }
+
+    /** 邀请码（票据） */
+    val Ticket: ImageVector by lazy {
+        stroke("Ticket") {
+            line {
+                moveTo(3f, 8f); arcToRelative(2f, 2f, 0f, false, true, 2f, -2f)
+                lineTo(19f, 6f); arcToRelative(2f, 2f, 0f, false, true, 2f, 2f)
+                lineTo(21f, 9.5f)
+                curveToRelative(-1.1f, 0f, -2f, 0.9f, -2f, 2f); reflectiveCurveToRelative(0.9f, 2f, 2f, 2f)
+                lineTo(21f, 16f); arcToRelative(2f, 2f, 0f, false, true, -2f, 2f)
+                lineTo(5f, 18f); arcToRelative(2f, 2f, 0f, false, true, -2f, -2f)
+                lineTo(3f, 13.5f)
+                curveToRelative(1.1f, 0f, 2f, -0.9f, 2f, -2f); reflectiveCurveToRelative(-0.9f, -2f, -2f, -2f); close()
+            }
+            line { moveTo(10f, 6f); lineTo(10f, 18f) }
+        }
+    }
+
+    /** 圆内对勾（勾选框） */
+    val Check: ImageVector by lazy {
+        stroke("Check") {
+            line { moveTo(5f, 12.5f); lineTo(9.5f, 17f); lineTo(19f, 6.5f) }
+        }
+    }
+
+    /** 设置（齿轮） */
+    val Gear: ImageVector by lazy {
+        stroke("Gear") {
+            line { moveTo(12f, 12f); moveToRelative(-3.2f, 0f); arcToRelative(3.2f, 3.2f, 0f, true, true, 6.4f, 0f); arcToRelative(3.2f, 3.2f, 0f, true, true, -6.4f, 0f) }
+            line {
+                moveTo(12f, 3f); lineToRelative(0.6f, 2.3f)
+                moveTo(12f, 21f); lineToRelative(-0.6f, -2.3f)
+                moveTo(3f, 12f); lineToRelative(2.3f, -0.6f)
+                moveTo(21f, 12f); lineToRelative(-2.3f, 0.6f)
+                moveTo(5.6f, 5.6f); lineToRelative(1.7f, 1.7f)
+                moveTo(18.4f, 18.4f); lineToRelative(-1.7f, -1.7f)
+                moveTo(18.4f, 5.6f); lineToRelative(-1.7f, 1.7f)
+                moveTo(5.6f, 18.4f); lineToRelative(1.7f, -1.7f)
+            }
+        }
+    }
+
+    /** 清除缓存（垃圾桶） */
+    val Trash: ImageVector by lazy {
+        stroke("Trash") {
+            line { moveTo(4f, 7f); lineTo(20f, 7f) }
+            line { moveTo(9f, 7f); lineTo(9f, 4.5f); arcToRelative(1f, 1f, 0f, false, true, 1f, -1f); lineTo(14f, 3.5f); arcToRelative(1f, 1f, 0f, false, true, 1f, 1f); lineTo(15f, 7f) }
+            line {
+                moveTo(6f, 7f); lineTo(6.8f, 19.5f); arcToRelative(2f, 2f, 0f, false, false, 2f, 1.9f)
+                lineTo(15.2f, 21.4f); arcToRelative(2f, 2f, 0f, false, false, 2f, -1.9f); lineTo(18f, 7f)
+            }
+            line { moveTo(10f, 11f); lineTo(10f, 17f) }
+            line { moveTo(14f, 11f); lineTo(14f, 17f) }
+        }
+    }
+
+    /** 关于（信息） */
+    val Info: ImageVector by lazy {
+        stroke("Info") {
+            line { moveTo(12f, 12f); moveToRelative(-9f, 0f); arcToRelative(9f, 9f, 0f, true, true, 18f, 0f); arcToRelative(9f, 9f, 0f, true, true, -18f, 0f) }
+            line { moveTo(12f, 11f); lineTo(12f, 16.5f) }
+            line { moveTo(12f, 7.5f); lineToRelative(0.01f, 0f) }
+        }
+    }
+
+    /** 收藏（五角星） */
+    val Star: ImageVector by lazy {
+        stroke("Star") {
+            line {
+                moveTo(12f, 3f)
+                lineTo(14.6f, 8.9f); lineTo(21f, 9.6f)
+                lineTo(16.2f, 13.9f); lineTo(17.6f, 20.2f)
+                lineTo(12f, 16.9f); lineTo(6.4f, 20.2f)
+                lineTo(7.8f, 13.9f); lineTo(3f, 9.6f)
+                lineTo(9.4f, 8.9f); close()
+            }
+        }
+    }
+
+    /** 标签 */
+    val Tag: ImageVector by lazy {
+        stroke("Tag") {
+            line {
+                moveTo(3f, 12f); lineTo(3f, 5f); arcToRelative(2f, 2f, 0f, false, true, 2f, -2f)
+                lineTo(12f, 3f); lineTo(21f, 12f); lineTo(12f, 21f); lineTo(3f, 12f); close()
+            }
+            line { moveTo(7.5f, 7.5f); moveToRelative(-0.01f, 0f) }
+        }
+    }
+
+    /** 人像（昵称字段） */
+    val Person: ImageVector by lazy {
+        stroke("Person") {
+            line { moveTo(12f, 12f); moveToRelative(-3.8f, 0f); arcToRelative(3.8f, 3.8f, 0f, true, true, 7.6f, 0f); arcToRelative(3.8f, 3.8f, 0f, true, true, -7.6f, 0f) }
+            line { moveTo(5.5f, 20f); curveToRelative(0.9f, -3.3f, 3.4f, -5f, 6.5f, -5f); reflectiveCurveToRelative(5.6f, 1.7f, 6.5f, 5f) }
+        }
+    }
 }

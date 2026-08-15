@@ -2,11 +2,13 @@ import SwiftUI
 import PhotosUI
 import Kingfisher
 
-/// Profile editing page (avatar + nickname). Extracted from old ProfileView.
+/// 个人资料页：真实字段绑定（User 模型只有 username/phone/avatar/bio/wechatId/coverPhoto）。
+/// 参考图中的性别/生日/邮箱/职业/公司/所在地 当前数据模型不存在，不在此臆造，仅报告未实现。
 struct ProfileEditView: View {
     @EnvironmentObject private var session: SessionStore
     @Environment(\.dismiss) private var dismiss
     @State private var username = ""
+    @State private var bio = ""
     @State private var saving = false
     @State private var uploadingAvatar = false
     @State private var message: String?
@@ -14,7 +16,7 @@ struct ProfileEditView: View {
     private let repo = ProfileRepository.shared
 
     private enum Tok {
-        static let green = Color(red: 0x34/255, green: 0xB7/255, blue: 0x59/255)
+        static let green = Color.vxinBrand
         static let secondary = Color(red: 0x8E/255, green: 0x8E/255, blue: 0x93/255)
         static let avatarSize: CGFloat = 80
     }
@@ -43,9 +45,45 @@ struct ProfileEditView: View {
                 .listRowBackground(Color.clear)
             }
 
-            Section("昵称") {
-                TextField("请输入昵称", text: $username)
-                    .accessibilityIdentifier("edit-username-input")
+            Section {
+                HStack {
+                    Text("昵称")
+                    Spacer()
+                    TextField("请输入昵称", text: $username)
+                        .multilineTextAlignment(.trailing)
+                        .accessibilityIdentifier("edit-username-input")
+                }
+                HStack {
+                    Text("v信号")
+                    Spacer()
+                    // 后端无「修改 v信号」接口，只读展示
+                    Text(session.currentUser?.wechatId.isEmpty == false ? session.currentUser!.wechatId : "-")
+                        .foregroundColor(Tok.secondary)
+                }
+                HStack {
+                    Text("个性签名")
+                    Spacer()
+                    TextField("请输入个性签名", text: $bio)
+                        .multilineTextAlignment(.trailing)
+                        .accessibilityIdentifier("edit-bio-input")
+                }
+            }
+
+            Section {
+                NavigationLink(destination: ChangePhoneView(
+                    currentPhone: session.currentUser?.phone ?? "",
+                    onChanged: { p in
+                        if var u = session.currentUser { u.phone = p; session.updateCurrentUser(u) }
+                    })) {
+                    HStack {
+                        Text("手机号")
+                        Spacer()
+                        Text(maskedPhone(session.currentUser?.phone ?? "")).foregroundColor(Tok.secondary)
+                    }
+                }
+                NavigationLink(destination: MyQRCodeView()) {
+                    Text("我的二维码")
+                }
             }
 
             Section {
@@ -65,11 +103,12 @@ struct ProfileEditView: View {
                 .accessibilityIdentifier("edit-save-btn")
             }
         }
-        .navigationTitle("编辑资料")
+        .navigationTitle("个人资料")
         .navigationBarTitleDisplayMode(.inline)
         .toast($message)
         .onAppear {
             if username.isEmpty { username = session.currentUser?.username ?? "" }
+            if bio.isEmpty { bio = session.currentUser?.bio ?? "" }
         }
         .onChange(of: photoItem) { item in handlePhoto(item) }
         .overlay {
@@ -79,6 +118,11 @@ struct ProfileEditView: View {
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
             }
         }
+    }
+
+    private func maskedPhone(_ phone: String) -> String {
+        guard phone.count >= 7 else { return phone.isEmpty ? "未绑定" : phone }
+        return "\(phone.prefix(3))****\(phone.suffix(4))"
     }
 
     @ViewBuilder private var avatarView: some View {
@@ -101,7 +145,7 @@ struct ProfileEditView: View {
         Task {
             do {
                 var user = try await repo.updateProfile(
-                    username: username.trimmingCharacters(in: .whitespaces), bio: session.currentUser?.bio ?? ""
+                    username: username.trimmingCharacters(in: .whitespaces), bio: bio
                 )
                 if user.phone.isEmpty, let phone = session.currentUser?.phone { user.phone = phone }
                 session.updateCurrentUser(user)

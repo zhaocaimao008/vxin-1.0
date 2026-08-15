@@ -40,9 +40,9 @@ private object Tok {
     // spacing
     val XS = 4.dp;  val S = 8.dp;  val M = 12.dp
     val L = 16.dp;  val XL = 20.dp; val XXL = 24.dp
-    // colours
-    val Green     = Color(0xFF34B759)
-    val GreenBg   = Color(0xFFEDF8F0)
+    // colours（对齐全局品牌色 VxinBrand #07C160，不再各屏自定义一套绿）
+    val Green     = VxinBrand
+    val GreenBg   = VxinBrandMuted
     val Bg        = Color(0xFFF5F5F7)
     val Primary   = Color(0xFF111111)
     val Secondary = Color(0xFF8E8E93)
@@ -154,16 +154,20 @@ fun ProfileScreen(
     onOpenCallHistory: () -> Unit = {},
     onOpenWallet: () -> Unit = {},
     onOpenSessions: () -> Unit = {},
-    onOpenPrivacy: () -> Unit = {},
-    onOpenNotifications: () -> Unit = {},
-    onOpenAppearance: () -> Unit = {},
     onOpenInviteFriend: () -> Unit = {},
+    onOpenFavorites: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
+    onOpenProfileEdit: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     val user = state.user
     LaunchedEffect(Unit) { viewModel.refreshAccounts() }
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        viewModel.refreshUser()
+        onPauseOrDispose { }
+    }
 
     // update
     val updateViewModel: UpdateViewModel = hiltViewModel()
@@ -182,10 +186,6 @@ fun ProfileScreen(
     var showSwitchAccount by remember { mutableStateOf(false) }
     var versionTaps by remember { mutableStateOf(0) }
     var showBuild by remember { mutableStateOf(false) }
-
-    val avatarPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let { viewModel.uploadAvatar(it) }
-    }
 
     fun maskedPhone(phone: String?): String {
         if (phone.isNullOrBlank()) return "未绑定"
@@ -211,7 +211,7 @@ fun ProfileScreen(
                         .clip(RoundedCornerShape(Tok.cardRadius))
                         .background(Tok.CardBg)
                         .border(0.5.dp, Tok.Divider, RoundedCornerShape(Tok.cardRadius))
-                        .clickable { avatarPicker.launch("image/*") }
+                        .clickable(onClick = onOpenProfileEdit)
                         .padding(Tok.L),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -268,19 +268,16 @@ fun ProfileScreen(
                 RowDivider()
                 SettingsRow(VxinIcons.Wallet, "我的钱包", onClick = onOpenWallet)
                 RowDivider()
+                SettingsRow(VxinIcons.Star, "收藏", onClick = onOpenFavorites)
+                RowDivider()
                 SettingsRow(VxinIcons.PhoneCall, "通话记录", onClick = onOpenCallHistory)
                 RowDivider()
                 SettingsRow(VxinIcons.Devices, "登录设备管理", onClick = onOpenSessions)
             }
 
-            // ── 3. 设置 ─────────────────────────────────────────────────────
-            SectionHeader("设置")
-            VxCard(Modifier.padding(horizontal = Tok.L).padding(bottom = Tok.M)) {
-                SettingsRow(VxinIcons.Bell, "通知", onClick = onOpenNotifications)
-                RowDivider()
-                SettingsRow(VxinIcons.Shield, "隐私与安全", onClick = onOpenPrivacy)
-                RowDivider()
-                SettingsRow(VxinIcons.Palette, "外观", onClick = onOpenAppearance)
+            // ── 3. 设置（消息通知/隐私与安全/外观/登录设备/清除缓存等收拢进独立设置页）──
+            VxCard(Modifier.padding(horizontal = Tok.L).padding(top = Tok.M).padding(bottom = Tok.M)) {
+                SettingsRow(VxinIcons.Gear, "设置", onClick = onOpenSettings)
             }
 
             // ── 4. 其他 ──────────────────────────────────────────────────────
@@ -448,7 +445,7 @@ private fun AccountSwitchSheet(
 // ── ChangePhoneDialog (unchanged logic, refreshed layout) ─────────────────────
 
 @Composable
-private fun ChangePhoneDialog(
+fun ChangePhoneDialog(
     currentPhone: String,
     changing: Boolean,
     onConfirm: (String, String) -> Unit,

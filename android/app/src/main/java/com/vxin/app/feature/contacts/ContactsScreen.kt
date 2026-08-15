@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,8 +24,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import com.vxin.app.ui.VxinIcons
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -68,6 +67,7 @@ fun ContactsScreen(
     onCreateGroup: () -> Unit,
     onOpenBlocked: () -> Unit = {},
     onOpenLabels: () -> Unit = {},
+    onOpenSearch: () -> Unit = {},
     viewModel: ContactsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -85,9 +85,11 @@ fun ContactsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("通讯录") },
+                title = { Text("联系人") },
                 actions = {
-                    TextButton(onClick = onCreateGroup) { Text("群聊") }
+                    IconButton(onClick = onOpenSearch) {
+                        Icon(VxinIcons.Search, contentDescription = "搜索")
+                    }
                     IconButton(onClick = onAddFriend) {
                         Icon(VxinIcons.Add, contentDescription = "添加好友")
                     }
@@ -98,39 +100,37 @@ fun ContactsScreen(
         Box(Modifier.fillMaxSize().padding(padding)) {
             Column(Modifier.fillMaxSize()) {
                 // 新的朋友入口
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = onRequests)
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("新的朋友", Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                    if (state.requestCount > 0) {
-                        BadgedBox(badge = { Badge { Text(state.requestCount.toString()) } }) {
-                            Spacer(Modifier.width(8.dp))
-                        }
-                    }
-                    Text("›", color = VxinTextSecondary)
-                }
+                QuickEntryRow(
+                    icon = VxinIcons.UserPlus,
+                    iconBg = Color(0xFFFF9F43),
+                    label = "新的朋友",
+                    badgeCount = state.requestCount,
+                    onClick = onRequests,
+                )
+                HorizontalDivider()
+                // 群聊入口（复用现有建群逻辑，与顶部 + 号一致）
+                QuickEntryRow(
+                    icon = VxinIcons.Users,
+                    iconBg = VxinGreen,
+                    label = "群聊",
+                    onClick = onCreateGroup,
+                )
                 HorizontalDivider()
                 // 好友标签入口
-                Row(
-                    modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenLabels).padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("好友标签", Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                    Text("›", color = VxinTextSecondary)
-                }
+                QuickEntryRow(
+                    icon = VxinIcons.Tag,
+                    iconBg = Color(0xFF3E9BFF),
+                    label = "好友标签",
+                    onClick = onOpenLabels,
+                )
                 HorizontalDivider()
                 // 黑名单入口
-                Row(
-                    modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenBlocked).padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("黑名单", Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                    Text("›", color = VxinTextSecondary)
-                }
+                QuickEntryRow(
+                    icon = VxinIcons.Shield,
+                    iconBg = Color(0xFF8E8E93),
+                    label = "黑名单",
+                    onClick = onOpenBlocked,
+                )
                 HorizontalDivider()
 
                 when {
@@ -185,6 +185,52 @@ fun ContactsScreen(
             confirmButton = { TextButton(onClick = { viewModel.block(target); blockTarget = null }) { Text("加入", color = Color(0xFFFA5151)) } },
             dismissButton = { TextButton(onClick = { blockTarget = null }) { Text("取消") } },
         )
+    }
+}
+
+@Composable
+private fun QuickEntryRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconBg: Color,
+    label: String,
+    badgeCount: Int = 0,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(iconBg),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+        if (badgeCount > 0) {
+            Box(
+                modifier = Modifier
+                    .size(20.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFFA5151)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    if (badgeCount > 99) "99+" else badgeCount.toString(),
+                    color = Color.White,
+                    fontSize = com.vxin.app.ui.theme.VxinTextSize.xs2,
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+        }
+        Icon(VxinIcons.ChevronRight, contentDescription = null, tint = VxinTextSecondary.copy(alpha = 0.6f), modifier = Modifier.size(16.dp))
     }
 }
 

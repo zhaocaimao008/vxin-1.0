@@ -71,7 +71,8 @@ private struct ContactsTab: View {
                 onRequests:  { path.append(ContactRoute.requests) },
                 onCreateGroup: { path.append(ContactRoute.createGroup) },
                 onOpenBlocked: { path.append(ContactRoute.blocked) },
-                onOpenLabels:  { path.append(ContactRoute.labels) }
+                onOpenLabels:  { path.append(ContactRoute.labels) },
+                onOpenSearch:  { path.append(SearchRoute.search) }
             )
             .navigationDestination(for: Conversation.self) { conv in
                 ChatView(
@@ -93,6 +94,15 @@ private struct ContactsTab: View {
                     }
                 }
             }
+            .navigationDestination(for: SearchRoute.self) { _ in
+                SearchView(onOpenResult: { r in
+                    var conv = Conversation(id: r.conversationId, type: r.convType, name: r.convName)
+                    if let uid = r.otherUserId, !uid.isEmpty {
+                        conv.otherUser = Conversation.OtherUser(id: uid, username: r.convName)
+                    }
+                    path.append(conv)
+                })
+            }
             .navigationDestination(for: ContactRoute.self) { route in
                 switch route {
                 case .contacts:
@@ -102,7 +112,8 @@ private struct ContactsTab: View {
                         onRequests:  { path.append(ContactRoute.requests) },
                         onCreateGroup: { path.append(ContactRoute.createGroup) },
                         onOpenBlocked: { path.append(ContactRoute.blocked) },
-                        onOpenLabels:  { path.append(ContactRoute.labels) }
+                        onOpenLabels:  { path.append(ContactRoute.labels) },
+                        onOpenSearch:  { path.append(SearchRoute.search) }
                     )
                 case .addFriend:  AddFriendView()
                 case .requests:   FriendRequestsView()

@@ -2,11 +2,11 @@ package com.vxin.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// v信 品牌色（对齐 Web 端 --brand-500 #16C55B）
-val VxinBrand = Color(0xFF16C55B)          // 主品牌色 v信绿
-val VxinBrandLight = Color(0xFF13B552)     // 渐变浅端 / hover
-val VxinBrandDark = Color(0xFF10A64A)      // 渐变深端 / 按下态
-val VxinBrandMuted = Color(0xFFEAF8EF)     // 主色浅底
+// v信 品牌色（对齐 34 图 UI 规范 / Web 端 --brand-500 #07C160）
+val VxinBrand = Color(0xFF07C160)          // 主品牌色 v信绿
+val VxinBrandLight = Color(0xFF1CCF71)     // 渐变浅端 / hover
+val VxinBrandDark = Color(0xFF06A852)      // 渐变深端 / 按下态
+val VxinBrandMuted = Color(0xFFE6F9EF)     // 主色浅底
 // 兼容旧引用名（各 Screen 无需改动）
 val VxinGreen = VxinBrand
 val VxinGreenDark = VxinBrandDark
@@ -17,13 +17,13 @@ val VxinTextSecondary = Color(0xFF8A8F98)  // 对齐 web --text-secondary #8A8F9
 val VxinError = Color(0xFFFF4D4F)          // 对齐 web --vx-danger #FF4D4F
 
 // 语义色
-val VxinSuccess = Color(0xFF16C55B)
-val VxinSuccessDark = Color(0xFF10A64A)
+val VxinSuccess = VxinBrand
+val VxinSuccessDark = VxinBrandDark
 // 支付/转账
-val VxinPay = Color(0xFF16C55B)
-val VxinPayDark = Color(0xFF10A64A)
-val VxinPayGradStart = Color(0xFF13B552)
-val VxinPayGradEnd = Color(0xFF16C55B)
+val VxinPay = VxinBrand
+val VxinPayDark = VxinBrandDark
+val VxinPayGradStart = VxinBrandLight
+val VxinPayGradEnd = VxinBrand
 
 // 聊天气泡：我的=浅绿 #CFF3D9；对方=白 + 深字（对齐 web 新气泡色）
 val VxinBubbleMine = Color(0xFFCFF3D9)     // 我方气泡：浅绿（对齐 web #CFF3D9）

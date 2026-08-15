@@ -5,6 +5,7 @@ struct ConversationListView: View {
     @State private var path = NavigationPath()
     @State private var clearTarget: Conversation?
     @State private var showMentions = false          // @我消息聚合全屏弹窗
+    @State private var filter: ConvFilter = .all
     private let myId: String
 
     init(myId: String) {
@@ -101,34 +102,44 @@ struct ConversationListView: View {
                 subtitle: "去「通讯录」找好友开始聊天吧"
             )
         } else {
-            List(vm.conversations) { conv in
-                NavigationLink(value: conv) {
-                    ConversationRow(conversation: conv, draft: vm.drafts[conv.id] ?? "")
-                }
-                .accessibilityIdentifier("conv-item-\(conv.id)")
-                .listRowBackground(Group {
-                    if conv.pinned == 1 {
-                        // 置顶：左侧品牌绿细线（对齐 Web/Android）
-                        HStack(spacing: 0) {
-                            Rectangle().fill(Color.vxinBrand.opacity(0.7)).frame(width: 3)
-                            Color.vxinBrand.opacity(0.04)
+            let filtered = filteredConversations
+            List {
+                if filtered.isEmpty {
+                    VxinEmptyState(systemImage: "bubble.left.and.bubble.right", title: "没有符合条件的会话", subtitle: "")
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                } else {
+                    ForEach(filtered) { conv in
+                        NavigationLink(value: conv) {
+                            ConversationRow(conversation: conv, draft: vm.drafts[conv.id] ?? "")
                         }
-                    } else {
-                        Color.clear
+                        .accessibilityIdentifier("conv-item-\(conv.id)")
+                        .listRowBackground(Group {
+                            if conv.pinned == 1 {
+                                // 置顶：左侧品牌绿细线（对齐 Web/Android）
+                                HStack(spacing: 0) {
+                                    Rectangle().fill(Color.vxinBrand.opacity(0.7)).frame(width: 3)
+                                    Color.vxinBrand.opacity(0.04)
+                                }
+                            } else {
+                                Color.clear
+                            }
+                        })
+                        .contextMenu {
+                            if conv.unreadCount > 0 {
+                                Button("标为已读") { vm.markRead(conv) }
+                            } else {
+                                Button("标为未读") { vm.markUnread(conv) }
+                            }
+                            Button(conv.pinned == 1 ? "取消置顶" : "置顶") { vm.togglePin(conv) }
+                            Button(conv.muted == 1 ? "取消免打扰" : "消息免打扰") { vm.toggleMute(conv) }
+                            Button("清空聊天记录", role: .destructive) { clearTarget = conv }
+                        }
                     }
-                })
-                .contextMenu {
-                    if conv.unreadCount > 0 {
-                        Button("标为已读") { vm.markRead(conv) }
-                    } else {
-                        Button("标为未读") { vm.markUnread(conv) }
-                    }
-                    Button(conv.pinned == 1 ? "取消置顶" : "置顶") { vm.togglePin(conv) }
-                    Button(conv.muted == 1 ? "取消免打扰" : "消息免打扰") { vm.toggleMute(conv) }
-                    Button("清空聊天记录", role: .destructive) { clearTarget = conv }
                 }
             }
             .listStyle(.plain)
+            .safeAreaInset(edge: .top, spacing: 0) { ConvFilterTabs(selected: $filter) }
             .onAppear { vm.refreshDrafts() }   // 从聊天页返回时刷新「[草稿]」前缀
             .refreshable { await vm.refresh() }
             .alert("清空聊天记录", isPresented: .constant(clearTarget != nil)) {
@@ -140,12 +151,50 @@ struct ConversationListView: View {
         }
     }
 
+    /// 会话列表筛选：基于已加载的真实会话数据（type/unreadCount）做本地过滤，不发起新请求。
+    private var filteredConversations: [Conversation] {
+        switch filter {
+        case .all: return vm.conversations
+        case .unread: return vm.conversations.filter { $0.unreadCount > 0 || $0.manuallyUnread == 1 }
+        case .privateChat: return vm.conversations.filter { $0.type == "private" }
+        case .group: return vm.conversations.filter { $0.type == "group" }
+        }
+    }
+
     private var statusLabel: String {
         switch vm.socketStatus {
         case .connected: return "已连接"
         case .connecting: return "连接中…"
         case .disconnected: return "未连接"
         }
+    }
+}
+
+private enum ConvFilter: String, CaseIterable {
+    case all = "全部", unread = "未读", privateChat = "联系人", group = "群聊"
+}
+
+private struct ConvFilterTabs: View {
+    @Binding var selected: ConvFilter
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(ConvFilter.allCases, id: \.self) { f in
+                let isSelected = f == selected
+                Text(f.rawValue)
+                    .font(.footnote.weight(isSelected ? .semibold : .regular))
+                    .foregroundColor(isSelected ? .vxinBrand : .vxinTextSecondary)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(isSelected ? Color.vxinBrand.opacity(0.12) : Color.clear)
+                    .clipShape(Capsule())
+                    .onTapGesture { selected = f }
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Color(.systemBackground))
     }
 }
 

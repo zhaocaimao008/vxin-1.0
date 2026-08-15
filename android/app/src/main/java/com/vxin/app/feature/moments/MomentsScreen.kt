@@ -99,17 +99,17 @@ fun MomentsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("朋友圈") },
+                title = { Text("动态") },
                 navigationIcon = { onBack?.let { cb -> IconButton(onClick = cb) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回") } } },
                 actions = {
                     // 互动通知入口：右上角铃铛 + 未读角标
                     IconButton(onClick = { viewModel.openNotif() }) {
                         BadgedBox(badge = {
                             if (state.notifUnread > 0) Badge { Text(if (state.notifUnread > 99) "99+" else state.notifUnread.toString()) }
-                        }) { Text("🔔", fontSize = com.vxin.app.ui.theme.VxinTextSize.lg) }
+                        }) { Icon(com.vxin.app.ui.VxinIcons.Bell, contentDescription = "互动通知") }
                     }
                     IconButton(onClick = { viewModel.openSettings() }) { Text("⚙️", fontSize = com.vxin.app.ui.theme.VxinTextSize.lg) }
-                    IconButton(onClick = onCompose) { Text("📷", fontSize = com.vxin.app.ui.theme.VxinTextSize.xl) }
+                    IconButton(onClick = onCompose) { Icon(com.vxin.app.ui.VxinIcons.Moments, contentDescription = "发布动态") }
                 },
             )
         },
