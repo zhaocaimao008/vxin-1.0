@@ -77,23 +77,29 @@ function getOrCreateFileHelper(myId) {
 
 // ── 群聊：创建（io 由 controller 传入用于广播）──────────────────
 function createGroup(io, ownerId, { name, memberIds }) {
-  if (!name || !memberIds?.length) throw badRequest('参数缺失');
+  memberIds = Array.isArray(memberIds) ? memberIds : [];
+  // 允许零成员建群（没有好友/暂不拉人时先建群，之后靠邀请链接/群二维码拉人）——
+  // 之前这里强制要求至少 1 个 memberIds，导致零好友账号连群都建不了。
+  if (!name) throw badRequest('参数缺失');
   if (typeof name !== 'string' || name.trim().length < 1 || name.trim().length > 50)
     throw badRequest('群名称 1-50 字符');
   if (memberIds.length > config.limits.maxGroupMembers)
     throw badRequest(`单次邀请成员数不能超过 ${config.limits.maxGroupMembers}`);
   // 过滤：只允许添加确实存在的联系人（防止注入不存在的 userId 产生幽灵成员）
-  const ph = memberIds.map(() => '?').join(',');
-  const validSet = new Set(
-    db.prepare(`SELECT contact_id FROM contacts WHERE user_id=? AND contact_id IN (${ph})`)
-      .all(ownerId, ...memberIds).map(r => r.contact_id)
-  );
-  // 隐私保护：开启「好友不能直接邀请我进群」的用户，建群时不会被直接拉入
-  const protectedSet = new Set(
-    db.prepare(`SELECT user_id FROM user_settings WHERE no_direct_group_invite=1 AND user_id IN (${ph})`)
-      .all(...memberIds).map(r => r.user_id)
-  );
-  const validMemberIds = memberIds.filter(id => validSet.has(id) && !protectedSet.has(id));
+  let validMemberIds = [];
+  if (memberIds.length) {
+    const ph = memberIds.map(() => '?').join(',');
+    const validSet = new Set(
+      db.prepare(`SELECT contact_id FROM contacts WHERE user_id=? AND contact_id IN (${ph})`)
+        .all(ownerId, ...memberIds).map(r => r.contact_id)
+    );
+    // 隐私保护：开启「好友不能直接邀请我进群」的用户，建群时不会被直接拉入
+    const protectedSet = new Set(
+      db.prepare(`SELECT user_id FROM user_settings WHERE no_direct_group_invite=1 AND user_id IN (${ph})`)
+        .all(...memberIds).map(r => r.user_id)
+    );
+    validMemberIds = memberIds.filter(id => validSet.has(id) && !protectedSet.has(id));
+  }
 
   // BUG-2: 限制每人最多创建 1000 个群
   const userGroupCount = db.prepare(

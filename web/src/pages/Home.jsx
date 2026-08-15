@@ -121,7 +121,7 @@ function CreateGroupModal({ onClose, onCreated }) {
   const create = async () => {
     if (loading) return; // 防连点重复建群
     if (!name.trim()) { setError('请输入群名称'); return; }
-    if (selected.size === 0) { setError('请至少选择一位成员'); return; }
+    // 允许零成员建群（还没有好友时先建群，之后用群二维码/邀请链接拉人）
     setLoading(true); setError('');
     try {
       const { data } = await axios.post('/api/messages/conversation/group', { name: name.trim(), memberIds: [...selected] });
@@ -210,7 +210,7 @@ function CreateGroupModal({ onClose, onCreated }) {
         <div className="cgm-contact-list">
           {filtered.length === 0 && (
             <div className="cgm-empty">
-              {contacts.length === 0 ? '暂无联系人' : '未找到相关联系人'}
+              {contacts.length === 0 ? '暂无联系人，可先建群，之后用群二维码/邀请链接拉人' : '未找到相关联系人'}
             </div>
           )}
           {filtered.map(c => {
@@ -233,7 +233,7 @@ function CreateGroupModal({ onClose, onCreated }) {
               className="cgm-cancel">
               取消
             </button>
-            <button onClick={create} disabled={loading || selected.size === 0}
+            <button onClick={create} disabled={loading || !name.trim()}
               data-testid="group-create-btn"
               className="cgm-create">
               {loading ? '创建中…' : `创建群聊${selected.size > 0 ? `（${selected.size}人）` : ''}`}

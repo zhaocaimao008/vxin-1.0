@@ -22,7 +22,9 @@ data class CreateGroupUiState(
     val creating: Boolean = false,
     val error: String? = null,
 ) {
-    val canCreate: Boolean get() = selected.isNotEmpty() && !creating
+    // 允许零成员建群（没有好友时先建群，之后用邀请链接/群二维码拉人）；
+    // 零成员时群名不能靠"拼成员名"兜底，所以要求显式填了名字。
+    val canCreate: Boolean get() = !creating && (selected.isNotEmpty() || name.isNotBlank())
 }
 
 @HiltViewModel

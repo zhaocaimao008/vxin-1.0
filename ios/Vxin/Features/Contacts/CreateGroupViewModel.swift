@@ -11,7 +11,9 @@ final class CreateGroupViewModel: ObservableObject {
 
     private let repo = ContactRepository.shared
 
-    var canCreate: Bool { !selected.isEmpty && !creating }
+    // 允许零成员建群（没有好友时先建群，之后用邀请链接/群二维码拉人）；
+    // 零成员时群名不能靠"拼成员名"兜底，所以要求显式填了名字。
+    var canCreate: Bool { !creating && (!selected.isEmpty || !name.trimmingCharacters(in: .whitespaces).isEmpty) }
 
     func load() async {
         loading = true
