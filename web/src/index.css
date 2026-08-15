@@ -436,6 +436,18 @@ body.dark-mode .wc-search:focus-within { background: rgba(255,255,255,.12); }
 
 .wc-list { flex: 1; overflow: hidden; contain: layout paint; }
 
+/* 会话筛选 Tab（全部/未读/联系人/群聊） */
+.wc-conv-filter-tabs { display: flex; gap: 4px; padding: 6px 12px; flex-shrink: 0; }
+.wc-conv-filter-tab {
+  border: none; background: transparent; cursor: pointer;
+  padding: 6px 14px; border-radius: 999px;
+  font-size: var(--text-sm2); color: var(--text-secondary);
+  transition: background 120ms, color 120ms;
+}
+.wc-conv-filter-tab:hover { background: var(--bg-hover); }
+.wc-conv-filter-tab.active { background: var(--color-primary-muted); color: var(--color-primary); font-weight: 600; }
+body.dark-mode .wc-conv-filter-tab.active { background: rgba(var(--color-primary-rgb), .18); }
+
 /* Icon button */
 .wc-icon-btn {
   width: 28px;

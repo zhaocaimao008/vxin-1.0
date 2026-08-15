@@ -62,6 +62,10 @@ const electronAPI = {
   // 系统信息
   getPlatform:      ()    => ipcRenderer.invoke('system:getPlatform'),
 
+  // 开机自动启动：与系统托盘菜单的「开机启动」checkbox 共用同一份主进程状态
+  getAutoLaunch:    ()        => ipcRenderer.invoke('system:getAutoLaunch'),
+  setAutoLaunch:    (enabled) => ipcRenderer.invoke('system:setAutoLaunch', enabled),
+
   // 更新：用户确认后调用安装 / 手动触发检查
   installUpdate:    ()    => ipcRenderer.invoke('update:install'),
   checkUpdate:      ()    => ipcRenderer.invoke('update:check'),

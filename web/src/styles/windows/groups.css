@@ -82,7 +82,7 @@
   border: none; cursor: pointer;
   position: relative; transition: background 120ms;
 }
-.electron-app .gi-toggle[data-on="true"] { background: #16C55B; }
+.electron-app .gi-toggle[data-on="true"] { background: #07C160; }
 .electron-app .gi-toggle-thumb {
   position: absolute; top: 3px; left: 3px;
   width: 16px; height: 16px;
@@ -97,7 +97,7 @@
   border-radius: 4px; font-weight: 500;
 }
 .electron-app .gi-badge-owner { background: rgba(250,173,20,.12); color: #B37400; }
-.electron-app .gi-badge-admin { background: #EAF8EF; color: #16C55B; }
+.electron-app .gi-badge-admin { background: #EAF8EF; color: #07C160; }
 
 /* Member item */
 .electron-app .gi-mi {
@@ -111,7 +111,7 @@
   font-size: 14px; font-weight: 500; color: #1F2329;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.electron-app .gi-search-hl { color: #16C55B; }
+.electron-app .gi-search-hl { color: #07C160; }
 
 /* Group buttons */
 .electron-app .gi-btn-edit {
@@ -130,11 +130,11 @@
 .electron-app .gi-btn-cancel { color: #8A8F98; font-size: 13px; cursor: pointer; }
 .electron-app .gi-btn-save {
   height: 28px; padding: 0 12px;
-  background: #16C55B; color: #fff;
+  background: #07C160; color: #fff;
   border-radius: 6px; font-size: 13px;
   cursor: pointer; transition: background 120ms;
 }
-.electron-app .gi-btn-save:hover { background: #13B552; }
+.electron-app .gi-btn-save:hover { background: #06A652; }
 .electron-app .gi-btn-name {
   color: #8A8F98; font-size: 14px;
   cursor: pointer; padding: 2px 4px;
@@ -156,7 +156,7 @@
 .electron-app .gi-btn-kick:hover { background: rgba(255,77,79,.12); }
 .electron-app .gi-name-edit {
   flex: 1; height: 32px; padding: 0 10px;
-  border: 1.5px solid #16C55B;
+  border: 1.5px solid #07C160;
   border-radius: 6px; font-size: 14px; color: #1F2329;
   background: #fff;
 }
@@ -168,7 +168,7 @@
   resize: vertical; line-height: 1.6;
 }
 .electron-app .gi-ann-textarea:focus {
-  border-color: #16C55B; background: #fff; outline: none;
+  border-color: #07C160; background: #fff; outline: none;
 }
 .electron-app .gi-ann-bar {
   display: flex; justify-content: flex-end;
@@ -185,7 +185,7 @@
   border: 2px solid #EAECF0;
   border-radius: 50%; animation: vx-spin 0.7s linear infinite;
 }
-.electron-app .gi-spinner-green { border-top-color: #16C55B; }
+.electron-app .gi-spinner-green { border-top-color: #07C160; }
 
 /* Dark mode */
 body.dark-mode .electron-app .gi-panel { background: #1B1E22; border-left-color: #32363D; }

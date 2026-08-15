@@ -337,6 +337,9 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
     } catch { /* optimistic UI already applied; ignore mark-unread failure */ }
   };
 
+  // 会话筛选：全部/未读/联系人/群聊——基于已加载的真实会话数据（type/unread）本地过滤，不发起新请求。
+  const [convFilter, setConvFilter] = useState('all');
+
   // Merge unread counts into conversation objects so ConvRow gets them via item reference
   const filtered = useMemo(() => {
     const q = searchQuery.toLowerCase();
@@ -345,8 +348,14 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
       .map(c => {
         const u = unread[c.id] || 0;
         return c._unread === u ? c : { ...c, _unread: u };
+      })
+      .filter(c => {
+        if (convFilter === 'unread') return c._unread > 0 || c.manually_unread;
+        if (convFilter === 'private') return c.type !== 'group';
+        if (convFilter === 'group') return c.type === 'group';
+        return true;
       });
-  }, [conversations, searchQuery, unread]);
+  }, [conversations, searchQuery, unread, convFilter]);
 
   // Stable itemData - only changes when filtered or callbacks change
   const listData = useMemo(() => ({
@@ -382,6 +391,22 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
           </svg>
           @我的消息
         </button>
+      )}
+      {!searchQuery && (
+        <div className="wc-conv-filter-tabs" role="tablist" aria-label="会话筛选">
+          {[
+            { key: 'all', label: '全部' },
+            { key: 'unread', label: '未读' },
+            { key: 'private', label: '联系人' },
+            { key: 'group', label: '群聊' },
+          ].map(f => (
+            <button key={f.key} type="button" role="tab" aria-selected={convFilter === f.key}
+              className={`wc-conv-filter-tab${convFilter === f.key ? ' active' : ''}`}
+              onClick={() => setConvFilter(f.key)}>
+              {f.label}
+            </button>
+          ))}
+        </div>
       )}
       <div className="wc-list" style={{ flex: 1 }}>
         {!loaded && conversations.length === 0 ? (

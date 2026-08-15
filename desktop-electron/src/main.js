@@ -778,6 +778,15 @@ function setupIPC() {
   ipcMain.handle('window:close',       () => mainWindow?.close());
   ipcMain.handle('window:isMaximized', () => mainWindow?.isMaximized() ?? false);
 
+  // 开机自动启动：复用系统托盘菜单已有的同一份 store 状态，供设置页读写
+  ipcMain.handle('system:getAutoLaunch', () => !!store.get('autoLaunch'));
+  ipcMain.handle('system:setAutoLaunch', (_e, enabled) => {
+    const on = !!enabled;
+    store.set('autoLaunch', on);
+    app.setLoginItemSettings({ openAtLogin: on });
+    return on;
+  });
+
   // 文件下载：渲染进程请求 → 主进程 downloadURL（配合 setupSecurity 的 will-download 落盘+打开）
   ipcMain.handle('file:download', (_e, payload) => {
     if (!isTrustedSender(_e)) return;

@@ -19,6 +19,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
   const [showPwd, setShowPwd] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   // 是否需要邀请码由后台开关决定（GET /api/config）。默认 true，避免加载前误放行 UI。
   const [inviteRequired, setInviteRequired] = useState(true);
   const { login } = useAuth();
@@ -47,6 +48,9 @@ export default function Register() {
     }
     if (inviteRequired && (!form.inviteCode || !/^\d{6}$/.test(form.inviteCode))) {
       setError('邀请码必须是6位数字'); setLoading(false); return;
+    }
+    if (!agreed) {
+      setError('请先阅读并同意用户协议和隐私政策'); setLoading(false); return;
     }
 
     try {
@@ -85,26 +89,34 @@ export default function Register() {
 
   return (
     <div className="auth-page">
-      <div className="auth-bg-circle auth-bg-circle-1" />
-      <div className="auth-bg-circle auth-bg-circle-2" />
-      <div className="auth-bg-circle auth-bg-circle-3" />
-
-      <div className="auth-container" style={{ width: 400 }}>
-        <div className="auth-brand">
-          <div className="auth-brand-icon">
-            <svg viewBox="0 0 46 46" fill="none" aria-hidden="true">
-              <path
-                d="M8 11 L23 35 L38 11"
-                stroke="white"
-                strokeWidth="7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
-            </svg>
+      <div className="auth-split">
+        <div className="auth-split-left">
+          <div className="auth-brand">
+            <div className="auth-brand-icon">
+              <svg viewBox="0 0 46 46" fill="none" aria-hidden="true">
+                <path
+                  d="M8 11 L23 35 L38 11"
+                  stroke="white"
+                  strokeWidth="7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+              </svg>
+            </div>
+            <h1 className="auth-brand-name auth-brand-name--brand">v信</h1>
+            <p className="auth-brand-desc">连接世界 · 沟通无限</p>
           </div>
-          <h1 className="auth-brand-name">创建账号</h1>
-          <p className="auth-brand-desc">注册 v信，开始畅聊</p>
+        </div>
+        <div className="auth-split-right">
+      <div className="auth-container">
+        <h1 className="auth-brand-name" style={{ fontSize: 22, textAlign: 'left', marginBottom: 4 }}>欢迎注册 v信</h1>
+        <p className="auth-brand-desc" style={{ textAlign: 'left', marginBottom: 20 }}>安全连接每一刻，畅享沟通新体验</p>
+
+        {/* 注册方式：当前仅「手机注册」有真实后端支持（/api/auth/register 仅按手机号注册）。
+            参考图上的「v信注册」没有对应后端能力，未实现，避免伪造入口。 */}
+        <div className="auth-tabs">
+          <span className="auth-tab active">手机注册</span>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
@@ -134,6 +146,7 @@ export default function Register() {
                   onBlur={() => setFocusedField(null)}
                   required
                 />
+                {f.key === 'phone' && <span className="auth-field-cc">+86</span>}
                 {f.key === 'password' && (
                   <button type="button" className="auth-pwd-toggle" onClick={() => setShowPwd(v => !v)} aria-label={showPwd ? '隐藏密码' : '显示密码'}>
                     {showPwd ? (
@@ -163,20 +176,31 @@ export default function Register() {
             </div>
           )}
 
-          <button type="submit" data-testid="register-submit-btn" className="auth-submit" disabled={loading || !form.username || !form.phone || !form.password || (inviteRequired && !form.inviteCode)}>
-            {loading ? <span className="auth-spinner" /> : '注册账号'}
+          <button type="submit" data-testid="register-submit-btn" className="auth-submit" disabled={loading || !form.username || !form.phone || !form.password || (inviteRequired && !form.inviteCode) || !agreed}>
+            {loading ? <span className="auth-spinner" /> : '注册'}
           </button>
 
-          {/* 协议说明 */}
-          <p className="auth-agreement">
-            注册即表示同意 <a href="#" onClick={e => e.preventDefault()}>《服务条款》</a> 和{' '}
-            <a href="#" onClick={e => e.preventDefault()}>《隐私政策》</a>
-          </p>
+          {/* 用户协议：真实勾选状态，未勾选禁止提交；协议/隐私政策暂无落地页，链接点击不跳转 */}
+          <div className="auth-agreement-row">
+            <input
+              type="checkbox"
+              className="auth-agreement-box"
+              data-testid="register-agreement-checkbox"
+              checked={agreed}
+              onChange={e => setAgreed(e.target.checked)}
+            />
+            <p className="auth-agreement">
+              我已阅读并同意 <a href="#" onClick={e => e.preventDefault()}>《用户协议》</a> 和{' '}
+              <a href="#" onClick={e => e.preventDefault()}>《隐私政策》</a>
+            </p>
+          </div>
         </form>
 
         <p className="auth-footer">
-          已有账号？<Link to="/login" className="auth-link">登录</Link>
+          已有账号？<Link to="/login" className="auth-link">立即登录</Link>
         </p>
+      </div>
+        </div>
       </div>
     </div>
   );

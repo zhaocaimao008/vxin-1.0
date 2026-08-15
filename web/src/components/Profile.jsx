@@ -1048,6 +1048,78 @@ function ServerSettings({ onBack }) {
   );
 }
 
+/* ── 通用设置：开机自动启动（仅桌面端，真实 IPC）+ 清除缓存（真实 Cache Storage）+ 关于 v信 ── */
+function GeneralSettings({ onBack }) {
+  const isElectron = !!window.__ELECTRON_CONFIG__;
+  const [autoLaunch, setAutoLaunchState] = useState(false);
+  const [cacheBytes, setCacheBytes] = useState(null);
+  const [clearing, setClearing] = useState(false);
+
+  const refreshCacheSize = useCallback(async () => {
+    try {
+      if (navigator.storage?.estimate) {
+        const { usage } = await navigator.storage.estimate();
+        setCacheBytes(usage ?? 0);
+      }
+    } catch { /* 部分浏览器/环境不支持 estimate()，静默降级为不显示大小 */ }
+  }, []);
+
+  useEffect(() => {
+    if (isElectron) window.electronAPI?.getAutoLaunch?.().then(v => setAutoLaunchState(!!v));
+    refreshCacheSize();
+  }, [isElectron, refreshCacheSize]);
+
+  const toggleAutoLaunch = async (next) => {
+    setAutoLaunchState(next);
+    try { await window.electronAPI?.setAutoLaunch?.(next); } catch { /* ignore */ }
+  };
+
+  const clearCache = async () => {
+    if (!await showConfirm('将清除本地图片等缓存，不影响服务器上的聊天记录。')) return;
+    setClearing(true);
+    try {
+      if (window.caches) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      }
+    } catch { /* ignore */ }
+    await refreshCacheSize();
+    setClearing(false);
+  };
+
+  const formatBytes = (n) => {
+    if (n == null) return '';
+    const mb = n / 1024 / 1024;
+    return mb < 0.1 ? '0 MB' : `${mb.toFixed(1)} MB`;
+  };
+
+  return (
+    <PageBg>
+      <PageHeader title="通用设置" onBack={onBack} />
+      {isElectron && (
+        <div className="wc-section-pad">
+          <Card>
+            <CRow icon={<IcoDesktop />} bg="var(--icon-bg-neutral)" label="开机自动启动"
+              right={<Toggle checked={autoLaunch} onChange={toggleAutoLaunch} />} />
+          </Card>
+        </div>
+      )}
+      <div className="wc-section-pad">
+        <Card>
+          <CRow icon={<Ico d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>}
+            bg="var(--icon-bg-neutral)" label="清除缓存"
+            desc={clearing ? '清除中…' : undefined}
+            value={!clearing ? formatBytes(cacheBytes) : undefined}
+            onClick={clearing ? undefined : clearCache} />
+          <CRow icon={<Ico d="M11 7h2v2h-2V7zm0 4h2v6h-2v-6zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>}
+            bg="var(--icon-bg-neutral)" label="关于 v信"
+            value={isElectron ? (window.__ELECTRON_CONFIG__?.appVersion || '') : undefined} />
+        </Card>
+      </div>
+    </PageBg>
+  );
+}
+
 /* ── 快捷键设置（仅桌面端） ── */
 function ShortcutSettings({ onBack }) {
   // 快捷键定义：key = store 里的键名，label = 显示名，desc = 功能说明
@@ -1193,6 +1265,7 @@ export default function Profile({ isMobile = false }) {
   if (subPage === 'privacy')       return <PrivacySettings user={user} onBack={() => setSubPage(null)} />;
   if (subPage === 'server')        return <ServerSettings onBack={() => setSubPage(null)} />;
   if (subPage === 'shortcuts')     return <ShortcutSettings onBack={() => setSubPage(null)} />;
+  if (subPage === 'general')       return <GeneralSettings onBack={() => setSubPage(null)} />;
 
   return (
     <PageBg>
@@ -1237,6 +1310,14 @@ export default function Profile({ isMobile = false }) {
             bg="var(--icon-bg-wallet)" label="钱包" desc="金币余额与交易记录" onClick={() => setSubPage('wallet')} />
           <CRow icon={<Ico d="M16 11a4 4 0 10-4-4 4 4 0 004 4zm0 2c-3 0-8 1.5-8 4.5V20h12v-1a5.8 5.8 0 00-.3-1.8M6 8V5M4.5 6.5h3" />}
             bg="var(--icon-bg-invite)" label="邀请好友" desc="我的专属邀请码与邀请战绩" onClick={() => setSubPage('invite')} />
+        </Card>
+      </div>
+
+      {/* ── 通用 ── */}
+      <SLabel>通用</SLabel>
+      <div className="wc-section-pad">
+        <Card>
+          <CRow icon={<IcoDesktop />} bg="var(--icon-bg-neutral)" label="通用设置" desc="开机启动、缓存、版本信息" onClick={() => setSubPage('general')} />
         </Card>
       </div>
 

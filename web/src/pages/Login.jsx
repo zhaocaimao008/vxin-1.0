@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { useI18n, SUPPORTED_LANGS } from '../contexts/I18nContext';
 import { timeoutSignal } from '../utils/config';
 import { saveCred, loadCred, removeCred, lastRememberedPhone } from '../utils/rememberedCreds';
 import '../styles/login.css';
@@ -20,7 +21,12 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
   const [showPwd, setShowPwd] = useState(false);
+  // 《用户协议》《隐私政策》暂无落地页，链接点击不跳转（与 Register 现状一致）；
+  // 勾选框本身是真实交互状态，未勾选禁止提交。
+  const [agreed, setAgreed] = useState(false);
   const { login, accounts, removeAccount, maxAccounts } = useAuth();
+  const { lang, setLang } = useI18n();
+  const [showLangMenu, setShowLangMenu] = useState(false);
   const navigate = useNavigate();
 
   // 点击「最近登录」某账户：回填手机号，并在存有记住密码时一并回填密码 + 勾选记住。
@@ -79,29 +85,52 @@ export default function Login() {
 
   return (
     <div className="auth-page">
-      {/* 装饰性背景圆 */}
-      <div className="auth-bg-circle auth-bg-circle-1" />
-      <div className="auth-bg-circle auth-bg-circle-2" />
-      <div className="auth-bg-circle auth-bg-circle-3" />
-
-      <div className="auth-container">
-        {/* Logo区域 */}
-        <div className="auth-brand">
-          <div className="auth-brand-icon">
-            {/* V信品牌图标 — 简洁V字 */}
-            <svg viewBox="0 0 46 46" fill="none" aria-hidden="true">
-              <path
-                d="M8 11 L23 35 L38 11"
-                stroke="white"
-                strokeWidth="7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
-            </svg>
+      {/* 语言切换：真实 i18n（useI18n），不是装饰 */}
+      <div className="auth-lang-switch">
+        <button type="button" className="auth-lang-btn" onClick={() => setShowLangMenu(v => !v)}>
+          {SUPPORTED_LANGS.find(l => l.code === lang)?.name || '简体中文'}
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+        </button>
+        {showLangMenu && (
+          <div className="auth-lang-menu" role="menu">
+            {SUPPORTED_LANGS.map(l => (
+              <button key={l.code} type="button" role="menuitem"
+                className={`auth-lang-item${l.code === lang ? ' active' : ''}`}
+                onClick={() => { setLang(l.code); setShowLangMenu(false); }}>
+                {l.name}
+              </button>
+            ))}
           </div>
-          <h1 className="auth-brand-name auth-brand-name--brand">v信</h1>
-          <p className="auth-brand-desc">安全 · 私密 · 畅聊</p>
+        )}
+      </div>
+      <div className="auth-split">
+        <div className="auth-split-left">
+          <div className="auth-brand">
+            <div className="auth-brand-icon">
+              {/* V信品牌图标 — 简洁V字（项目暂无独立 Logo 图片资源，沿用既有品牌渐变徽章方案） */}
+              <svg viewBox="0 0 46 46" fill="none" aria-hidden="true">
+                <path
+                  d="M8 11 L23 35 L38 11"
+                  stroke="white"
+                  strokeWidth="7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+              </svg>
+            </div>
+            <h1 className="auth-brand-name auth-brand-name--brand">v信</h1>
+            <p className="auth-brand-desc">连接世界 · 沟通无限</p>
+          </div>
+        </div>
+        <div className="auth-split-right">
+      <div className="auth-container">
+        <h1 className="auth-brand-name" style={{ fontSize: 22, textAlign: 'left', marginBottom: 4 }}>欢迎登录 v信</h1>
+        <p className="auth-brand-desc" style={{ textAlign: 'left', marginBottom: 20 }}>安全连接每一刻，畅享沟通新体验</p>
+        {/* 登录方式：当前仅「手机登录」有真实后端支持（/api/auth/login 仅按手机号查询）。
+            参考图上的「v信登录」（按 v信号登录）没有对应后端能力，未实现，避免伪造入口。 */}
+        <div className="auth-tabs">
+          <span className="auth-tab active">手机登录</span>
         </div>
 
         {/* 最近登录：点击回填手机号；若曾记住密码则一并回填密码并自动勾选「记住密码」 */}
@@ -162,6 +191,7 @@ export default function Login() {
                 onBlur={() => setFocusedField(null)}
                 required
               />
+              <span className="auth-field-cc">+86</span>
             </div>
           </div>
 
@@ -225,17 +255,32 @@ export default function Login() {
             <Link to="/forgot-password" className="auth-link" style={{ fontSize: 'var(--text-sm2)' }}>忘记密码？</Link>
           </div>
 
-          <button type="submit" className="auth-submit" data-testid="login-submit-btn" disabled={loading || !phone || !password}>
+          <button type="submit" className="auth-submit" data-testid="login-submit-btn" disabled={loading || !phone || !password || !agreed}>
             {loading ? (
               <span className="auth-spinner" />
             ) : (
               '登录'
             )}
           </button>
+
+          {/* 用户协议：真实勾选状态，未勾选禁止提交；协议/隐私政策暂无落地页，链接点击不跳转 */}
+          <div className="auth-agreement-row">
+            <input
+              type="checkbox"
+              className="auth-agreement-box"
+              data-testid="login-agreement-checkbox"
+              checked={agreed}
+              onChange={e => setAgreed(e.target.checked)}
+            />
+            <p className="auth-agreement">
+              我已阅读并同意 <a href="#" onClick={e => e.preventDefault()}>《用户协议》</a> 和{' '}
+              <a href="#" onClick={e => e.preventDefault()}>《隐私政策》</a>
+            </p>
+          </div>
         </form>
 
         <p className="auth-footer">
-          还没有账号？<Link to="/register" className="auth-link">注册新账号</Link>
+          还没有账号？<Link to="/register" className="auth-link">立即注册</Link>
         </p>
 
         {/* 下载客户端 — 仅网页端显示 */}
@@ -298,6 +343,16 @@ export default function Login() {
           </div>
         )}
       </div>
+        </div>
+      </div>
+      {!isElectron && (
+        <div className="auth-page-footer">
+          © {new Date().getFullYear()} v信. 保留所有权利。{' '}
+          <a href="#" onClick={e => e.preventDefault()}>用户协议</a>{' | '}
+          <a href="#" onClick={e => e.preventDefault()}>隐私政策</a>{' | '}
+          <a href="#" onClick={e => e.preventDefault()}>帮助中心</a>
+        </div>
+      )}
     </div>
   );
 }

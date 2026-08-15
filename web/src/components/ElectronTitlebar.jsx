@@ -71,7 +71,7 @@ export default function ElectronTitlebar() {
         {/* v信 品牌图标 — 与 auth-brand-icon 相同的 V 形 */}
         <div style={{
           width: 18, height: 18, flexShrink: 0,
-          background: 'linear-gradient(135deg,#16C55B,#0DA84C)',
+          background: 'linear-gradient(135deg,#07C160,#058A44)',
           borderRadius: 4,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>

@@ -3,12 +3,12 @@
    All other windows/*.css files inherit these tokens.
 ================================================================ */
 .electron-app {
-  /* ── Primary ── */
-  --vx-primary:        #16C55B;
-  --vx-primary-hover:  #13B552;
-  --vx-primary-active: #10A64A;
-  --vx-primary-soft:   #EAF8EF;
-  --vx-primary-rgb:    22, 197, 91;
+  /* ── Primary（对齐 34 图 UI 规范 / Web design-tokens.css --brand-500）── */
+  --vx-primary:        #07C160;
+  --vx-primary-hover:  #06A652;
+  --vx-primary-active: #058A44;
+  --vx-primary-soft:   #E8F8EF;
+  --vx-primary-rgb:    7, 193, 96;
 
   /* ── Backgrounds ── */
   --vx-bg:           #F7F8FA;
@@ -34,7 +34,7 @@
   --vx-danger:  #FF4D4F;
   --vx-warning: #FAAD14;
   --vx-info:    #1677FF;
-  --vx-success: #16C55B;
+  --vx-success: #07C160;
 
   /* ── Radius ── */
   --vx-r-xs: 4px;
@@ -62,7 +62,7 @@ body.dark-mode .electron-app {
 
   --vx-surface:        #202327;
   --vx-surface-hover:  #292D32;
-  --vx-surface-active: rgba(22,197,91,.14);
+  --vx-surface-active: rgba(7,193,96,.14);
   --vx-surface-raised: #252830;
 
   --vx-text-primary:   #F2F3F5;
@@ -72,7 +72,7 @@ body.dark-mode .electron-app {
   --vx-border:       #32363D;
   --vx-border-light: #292D33;
 
-  --vx-primary-soft: rgba(22,197,91,.13);
+  --vx-primary-soft: rgba(7,193,96,.13);
 
   --vx-shadow-sm:     0 2px 10px rgba(0,0,0,.18);
   --vx-shadow-md:     0 8px 28px rgba(0,0,0,.30);

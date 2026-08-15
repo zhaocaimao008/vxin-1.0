@@ -57,7 +57,7 @@ function WcEmpty() {
       </svg>
       <div className="we-empty-text">
         <h3 className="we-empty-title">欢迎使用 v信</h3>
-        <p className="we-empty-hint">开始聊天吧</p>
+        <p className="we-empty-hint">安全连接每一刻，畅享沟通新体验</p>
       </div>
     </div>
   );
@@ -66,6 +66,8 @@ function WcEmpty() {
 /* ── SVG Icons ── */
 import { IcoAdd, IcoSearch, visibleTabs, TABS, desktopVisibleTabs } from '../components/TabIcons';
 import { ModalSkeleton } from '../components/ModalSkeleton';
+
+const isElectron = !!window.__ELECTRON_CONFIG__;
 
 /* ── 左上角头像 — 点击展开账号切换/添加下拉面板 ── */
 
@@ -743,7 +745,11 @@ export default function Home() {
 
       {/* 左侧导航栏 */}
       <div className="wc-sidebar">
-        <AccountSwitcher />
+        {isElectron && (
+          <div className="wc-sidebar-logo" aria-hidden="true">
+            <svg viewBox="0 0 46 46" fill="none"><path d="M8 11 L23 35 L38 11" stroke="#07C160" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>
+          </div>
+        )}
         {/* Tab 按钮紧跟头像，不用 spacer 下推，防止小屏被裁切 */}
         <div className="wc-sidebar-btns" role="tablist" aria-label="主导航">
           {desktopVisibleTabs(features).map(({ key, Icon, label }) => {
@@ -755,12 +761,8 @@ export default function Home() {
                 onClick={() => handleTabChange(key)} title={label}
                 role="tab" tabIndex={0} aria-selected={tab === key} aria-label={label}
                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleTabChange(key); } }}>
-                {/* 「我的」tab 显示真实用户头像，其余 tab 显示 SVG 图标 */}
                 <div className="icon">
-                  {key === 'me'
-                    ? <Avatar src={user?.avatar} name={user?.username || '?'} size={24} style={{ borderRadius: 6 }} />
-                    : <Icon />
-                  }
+                  <Icon />
                 </div>
                 <span className="wc-sidebar-label">{label}</span>
                 {count > 0 && (
@@ -770,6 +772,7 @@ export default function Home() {
             );
           })}
         </div>
+        <AccountSwitcher />
       </div>
 
       {/* 主内容区 */}
