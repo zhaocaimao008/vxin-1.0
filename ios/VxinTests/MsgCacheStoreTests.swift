@@ -89,20 +89,27 @@ final class MsgCacheStoreTests: XCTestCase {
 
     // MARK: - FileManager IO 往返
 
+    /// save/remove/clear 是异步落盘（ioQueue.async，不阻塞主线程，见 MsgCacheStore 注释）。
+    /// 用同一串行队列的 sync{} 作屏障：排在异步写入之后入队，返回时即代表写入已完成。
+    private func drain() { store.ioQueue.sync {} }
+
     func testSaveLoadRoundTrip() {
         store.save("c1", [m(2), m(1), m(3)])
+        drain()
         XCTAssertEqual(ids(store.load("c1")), [1, 2, 3])
     }
 
     func testSaveEmptyDeletesFile() {
         store.save("c1", [m(1)])
         store.save("c1", [])
+        drain()
         XCTAssertTrue(store.load("c1").isEmpty)
     }
 
     func testRemoveSingle() {
         store.save("c1", [m(1), m(2), m(3)])
         store.remove("c1", "2")
+        drain()
         XCTAssertEqual(ids(store.load("c1")), [1, 3])
     }
 
@@ -110,6 +117,7 @@ final class MsgCacheStoreTests: XCTestCase {
         store.save("c1", [m(1)])
         store.save("c2", [m(9)])
         store.clear("c1")
+        drain()
         XCTAssertTrue(store.load("c1").isEmpty)
         XCTAssertEqual(ids(store.load("c2")), [9])
     }
@@ -118,6 +126,7 @@ final class MsgCacheStoreTests: XCTestCase {
         store.save("c1", [m(1)])
         store.save("c2", [m(9)])
         store.clear()
+        drain()
         XCTAssertTrue(store.load("c1").isEmpty)
         XCTAssertTrue(store.load("c2").isEmpty)
     }
@@ -125,5 +134,6 @@ final class MsgCacheStoreTests: XCTestCase {
     func testEmptyConvIdSafe() {
         XCTAssertTrue(store.load("").isEmpty)
         store.save("", [m(1)])   // 不崩溃即可
+        drain()
     }
 }

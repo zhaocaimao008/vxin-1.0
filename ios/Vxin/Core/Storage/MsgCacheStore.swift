@@ -19,8 +19,9 @@ final class MsgCacheStore {
 
     private let fm = FileManager.default
     private let dir: URL
-    // I3: 专用串行队列，所有文件 IO 在后台线程执行，绝不阻塞主线程
-    private let ioQueue = DispatchQueue(label: "com.vxin.msgcache", qos: .utility)
+    // I3: 专用串行队列，所有文件 IO 在后台线程执行，绝不阻塞主线程。
+    // 非 private：测试用它做同步屏障（ioQueue.sync {}）等待异步写入落盘，业务代码不应直接使用。
+    let ioQueue = DispatchQueue(label: "com.vxin.msgcache", qos: .utility)
 
     /// 允许测试注入独立目录，避免污染真实缓存。
     init(directory: URL? = nil) {
