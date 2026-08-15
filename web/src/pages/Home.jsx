@@ -781,6 +781,14 @@ export default function Home() {
       {/* 主内容区 */}
       <div className="wc-main">
 
+        {/* 设置：Web 桌面浏览器用两栏布局占满整个主内容区（跳过搜索顶栏 + 独立聊天区，
+            对齐 Web设置页.jpg / Web个人资料页.jpg）；Electron/移动端不受影响，走下面原有结构 */}
+        {tab === 'me' && !isElectron && !isMobile ? (
+          <div className="wc-settings-full">
+            <Profile isMobile={false} />
+          </div>
+        ) : (
+        <>
         {/* 面板区（固定顶栏 + 内容） */}
         {(!isMobile || showPanel) && (
           <div className="wc-panel">
@@ -834,6 +842,8 @@ export default function Home() {
               : <WcEmpty />
             }
           </div>
+        )}
+        </>
         )}
       </div>
 

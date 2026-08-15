@@ -55,7 +55,8 @@ function PageBg({ children }) {
 function PageHeader({ title, onBack, right }) {
   return (
     <div className="wc-page-header">
-      <button className="wc-page-header-back" onClick={onBack}>‹ 返回</button>
+      {/* 内嵌进两栏设置面板时不传 onBack：没有"返回"这个概念（换点别的导航项即可），隐藏按钮 */}
+      {onBack && <button className="wc-page-header-back" onClick={onBack}>‹ 返回</button>}
       <span className="wc-page-header-title">{title}</span>
       <div className="wc-page-header-right">{right}</div>
     </div>
@@ -1113,10 +1114,86 @@ function GeneralSettings({ onBack }) {
             onClick={clearing ? undefined : clearCache} />
           <CRow icon={<Ico d="M11 7h2v2h-2V7zm0 4h2v6h-2v-6zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>}
             bg="var(--icon-bg-neutral)" label="关于 v信"
-            value={isElectron ? (window.__ELECTRON_CONFIG__?.appVersion || '') : undefined} />
+            value={isElectron ? (window.__ELECTRON_CONFIG__?.appVersion || '') : __APP_VERSION__} />
         </Card>
       </div>
     </PageBg>
+  );
+}
+
+/* ── 关于 v信（独立导航项，与「通用设置」里的版本号同一个真实来源） ── */
+function AboutPanel({ onBack }) {
+  const isElectron = !!window.__ELECTRON_CONFIG__;
+  const version = isElectron ? (window.__ELECTRON_CONFIG__?.appVersion || '') : __APP_VERSION__;
+  return (
+    <PageBg>
+      <PageHeader title="关于 v信" onBack={onBack} />
+      <div className="wc-section-pad">
+        <Card>
+          <CRow label="版本" value={`v${version}`} />
+        </Card>
+      </div>
+      <div style={{ textAlign: 'center', padding: '16px 0 24px', color: 'var(--text-tertiary)', fontSize: 'var(--text-sm)' }}>
+        © {new Date().getFullYear()} v信. 保留所有权利。
+      </div>
+    </PageBg>
+  );
+}
+
+/* ── 账号与安全（组合已有的手机号/设备管理/退出登录，不新增业务逻辑） ── */
+function AccountSecurityPanel({ user, navigateTo, logout, onBack }) {
+  return (
+    <PageBg>
+      <PageHeader title="账号与安全" onBack={onBack} />
+      <div className="wc-section-pad">
+        <Card>
+          <CRow icon={<IcoDesktop />} bg="var(--icon-bg-neutral)" label="手机号" value={user?.phone || '未绑定'} onClick={() => navigateTo('change-phone')} />
+          <CRow icon={<IcoDesktop />} bg="var(--icon-bg-neutral)" label="设备管理" desc="查看同时登录的设备" onClick={() => navigateTo('devices')} />
+        </Card>
+      </div>
+      <div className="wc-logout-div">
+        <button className="wc-logout-btn" onClick={() => doLogout(logout)}>退出登录</button>
+      </div>
+    </PageBg>
+  );
+}
+
+/* ── Web 桌面端设置两栏壳：左侧分类导航 + 右侧内容，复用已有子页面组件，不复制业务逻辑 ── */
+function WebSettingsShell({ user, updateUser, navigateTo, logout }) {
+  // 默认选中「账号与安全」，对齐 Web设置页.jpg 从左侧「设置」rail 进入时的默认态
+  const [section, setSection] = useState('account');
+
+  const NAV = [
+    { key: 'profile',       label: '个人资料', icon: <IcoDesktop /> },
+    { key: 'account',       label: '账号与安全', icon: <IcoShield /> },
+    { key: 'privacy',       label: '隐私设置', icon: <IcoShield /> },
+    { key: 'notifications', label: '通知设置', icon: <IcoBell /> },
+    { key: 'general',       label: '通用设置', icon: <IcoDesktop /> },
+    { key: 'about',         label: '关于 v信', icon: <IcoServer /> },
+  ];
+
+  return (
+    <div className="wc-settings-shell">
+      <div className="wc-settings-nav">
+        <div className="wc-settings-nav-title">设置</div>
+        {NAV.map(item => (
+          <button key={item.key} type="button"
+            className={`wc-settings-nav-item${section === item.key ? ' active' : ''}`}
+            onClick={() => setSection(item.key)}>
+            <span className="wc-settings-nav-icon">{item.icon}</span>
+            {item.label}
+          </button>
+        ))}
+      </div>
+      <div className="wc-settings-content">
+        {section === 'profile'       && <ProfileDetail user={user} updateUser={updateUser} navigateTo={navigateTo} />}
+        {section === 'account'       && <AccountSecurityPanel user={user} navigateTo={navigateTo} logout={logout} />}
+        {section === 'privacy'       && <PrivacySettings user={user} />}
+        {section === 'notifications' && <NotificationSettings />}
+        {section === 'general'       && <GeneralSettings />}
+        {section === 'about'         && <AboutPanel />}
+      </div>
+    </div>
   );
 }
 
@@ -1266,6 +1343,12 @@ export default function Profile({ isMobile = false }) {
   if (subPage === 'server')        return <ServerSettings onBack={() => setSubPage(null)} />;
   if (subPage === 'shortcuts')     return <ShortcutSettings onBack={() => setSubPage(null)} />;
   if (subPage === 'general')       return <GeneralSettings onBack={() => setSubPage(null)} />;
+
+  // Web 桌面浏览器：两栏设置布局（左侧分类导航 + 右侧内容），对齐 Web设置页.jpg / Web个人资料页.jpg。
+  // Electron 和移动端不受影响，继续走下面原有的单栏卡片列表（对齐各自的参考图）。
+  if (!window.__ELECTRON_CONFIG__ && !isMobile) {
+    return <WebSettingsShell user={user} updateUser={updateUser} navigateTo={setSubPage} logout={logout} />;
+  }
 
   return (
     <PageBg>

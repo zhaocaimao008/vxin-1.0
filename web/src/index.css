@@ -3237,6 +3237,32 @@ body.dark-mode .wc-msg-time span { background: rgba(255,255,255,.08); }
 .wc-page-header { display: flex; align-items: center; height: 50px; padding: 0 14px; flex-shrink: 0; background: var(--bg-panel-header); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: var(--z-sticky); }
 .wc-page-header-back { color: var(--green); font-size: var(--text-md); padding: 4px 0; min-width: 44px; text-align: left; line-height: var(--lh-none); }
 .wc-page-header-title { flex: 1; text-align: center; font-size: var(--text-lg); font-weight: var(--font-semibold); color: var(--text-primary); }
+
+/* ── Web 桌面端设置两栏布局（对齐 Web设置页.jpg / Web个人资料页.jpg）──
+   .wc-settings-full 占满 .wc-main 里原本"面板+聊天区"合计的宽度（设置页不需要会话列表/搜索顶栏）*/
+.wc-settings-full { flex: 1; display: flex; overflow: hidden; background: var(--bg-panel); }
+.wc-settings-shell { display: flex; height: 100%; width: 100%; }
+.wc-settings-nav {
+  flex: 0 0 220px; width: 220px; height: 100%; overflow-y: auto;
+  background: var(--bg-panel); border-right: 1px solid var(--border-color);
+  padding: 12px 8px;
+}
+.wc-settings-nav-title { font-size: var(--text-xl); font-weight: var(--font-semibold); color: var(--text-primary); padding: 8px 10px 16px; }
+.wc-settings-nav-item {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 10px 10px; border-radius: var(--radius-md); margin-bottom: 2px;
+  font-size: var(--text-base); color: var(--text-primary); text-align: left;
+  background: transparent; border: none; cursor: pointer;
+  transition: background 120ms;
+}
+.wc-settings-nav-item:hover { background: var(--bg-hover); }
+.wc-settings-nav-item.active { background: var(--color-primary-muted); color: var(--color-primary); font-weight: var(--font-semibold); }
+.wc-settings-nav-icon { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; flex-shrink: 0; }
+.wc-settings-nav-icon svg { width: 18px; height: 18px; fill: currentColor; }
+.wc-settings-content { flex: 1; min-width: 0; height: 100%; overflow: hidden; }
+/* 内嵌进右栏的子页面：标题左对齐、无返回按钮，视觉上是本栏的一级标题而非弹层 */
+.wc-settings-content .wc-page-header { position: static; border-bottom: none; height: auto; padding: 20px 24px 8px; }
+.wc-settings-content .wc-page-header-title { text-align: left; font-size: var(--text-2xl, 20px); }
 .wc-page-header-right { min-width: 44px; display: flex; justify-content: flex-end; }
 .wc-page-header-right .wc-save-btn { color: var(--green); font-size: var(--text-md); font-weight: var(--font-semibold); }
 .wc-page-header-right .wc-save-btn:disabled { opacity: .5; }
