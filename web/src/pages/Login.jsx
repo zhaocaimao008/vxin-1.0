@@ -85,6 +85,20 @@ export default function Login() {
 
   return (
     <div className="auth-page">
+      {/* 顶部品牌角标（纯视觉，与右上角语言切换同排） */}
+      <div className="auth-top-logo">
+        <span className="auth-top-logo-icon" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none">
+            <path d="M12.5 4C6.7 4 2 7.9 2 12.7c0 2.7 1.5 5.1 3.9 6.7-.2.9-.7 2.4-.8 2.8-.1.3.1.4.3.3.5-.2 2.4-1.3 3.3-1.9.9.2 1.8.4 2.8.4 5.8 0 10.5-3.9 10.5-8.7C22 7.9 17.3 4 11.5 4h1z" fill="#3AC756"/>
+            <circle cx="8.6" cy="11.4" r="1.15" fill="#fff"/>
+            <circle cx="14.4" cy="11.4" r="1.15" fill="#fff"/>
+            <path d="M20.7 11.3c-4.8 0-8.7 3.3-8.7 7.3 0 1.9 1 3.6 2.5 4.9l-.6 2.1c-.1.3.1.4.3.3l2.5-1.4c1.2.4 2 .5 2.7.5.4 0 .8 0 1.2-.1 4.4-.5 7.7-3.7 7.7-7.4.1-4-3.8-6.2-7.6-6.2z" fill="#3AC756" opacity=".92"/>
+            <circle cx="18.1" cy="18.3" r="1" fill="#fff"/>
+            <circle cx="22.7" cy="18.3" r="1" fill="#fff"/>
+          </svg>
+        </span>
+        <span className="auth-top-logo-text">v信</span>
+      </div>
       {/* 语言切换：真实 i18n（useI18n），不是装饰 */}
       <div className="auth-lang-switch">
         <button type="button" className="auth-lang-btn" onClick={() => setShowLangMenu(v => !v)}>
@@ -105,18 +119,17 @@ export default function Login() {
       </div>
       <div className="auth-split">
         <div className="auth-split-left">
+          <div className="auth-split-left-dots" aria-hidden="true" />
           <div className="auth-brand">
             <div className="auth-brand-icon">
-              {/* V信品牌图标 — 简洁V字（项目暂无独立 Logo 图片资源，沿用既有品牌渐变徽章方案） */}
-              <svg viewBox="0 0 46 46" fill="none" aria-hidden="true">
-                <path
-                  d="M8 11 L23 35 L38 11"
-                  stroke="white"
-                  strokeWidth="7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  fill="none"
-                />
+              {/* v信品牌图标 — 双气泡样式，与参考图/客户端一致 */}
+              <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                <path d="M12.5 4C6.7 4 2 7.9 2 12.7c0 2.7 1.5 5.1 3.9 6.7-.2.9-.7 2.4-.8 2.8-.1.3.1.4.3.3.5-.2 2.4-1.3 3.3-1.9.9.2 1.8.4 2.8.4 5.8 0 10.5-3.9 10.5-8.7C22 7.9 17.3 4 11.5 4h1z" fill="#fff"/>
+                <circle cx="8.6" cy="11.4" r="1.3" fill="#07C160"/>
+                <circle cx="14.4" cy="11.4" r="1.3" fill="#07C160"/>
+                <path d="M20.7 11.3c-4.8 0-8.7 3.3-8.7 7.3 0 1.9 1 3.6 2.5 4.9l-.6 2.1c-.1.3.1.4.3.3l2.5-1.4c1.2.4 2 .5 2.7.5.4 0 .8 0 1.2-.1 4.4-.5 7.7-3.7 7.7-7.4.1-4-3.8-6.2-7.6-6.2z" fill="#fff" opacity=".92"/>
+                <circle cx="18.1" cy="18.3" r="1.1" fill="#07C160"/>
+                <circle cx="22.7" cy="18.3" r="1.1" fill="#07C160"/>
               </svg>
             </div>
             <h1 className="auth-brand-name auth-brand-name--brand">v信</h1>
@@ -125,12 +138,14 @@ export default function Login() {
         </div>
         <div className="auth-split-right">
       <div className="auth-container">
-        <h1 className="auth-brand-name" style={{ fontSize: 22, textAlign: 'left', marginBottom: 4 }}>欢迎登录 v信</h1>
-        <p className="auth-brand-desc" style={{ textAlign: 'left', marginBottom: 20 }}>安全连接每一刻，畅享沟通新体验</p>
+        <h1 className="auth-brand-name" style={{ fontSize: 24, textAlign: 'center', marginBottom: 6 }}>欢迎登录 <span style={{ color: 'var(--color-primary, #07C160)' }}>v信</span></h1>
+        <p className="auth-brand-desc" style={{ textAlign: 'center', marginBottom: 24 }}>安全连接每一刻，畅享沟通新体验</p>
         {/* 登录方式：当前仅「手机登录」有真实后端支持（/api/auth/login 仅按手机号查询）。
-            参考图上的「v信登录」（按 v信号登录）没有对应后端能力，未实现，避免伪造入口。 */}
+            参考图上的「v信登录」（按 v信号登录）没有对应后端能力 —— 为对齐参考图布局保留第二个
+            Tab 的视觉位置，但设为禁用态、不可点击、不触发任何逻辑，避免伪造未实现的功能。 */}
         <div className="auth-tabs">
           <span className="auth-tab active">手机登录</span>
+          <span className="auth-tab disabled" aria-disabled="true" title="暂未开放">v信登录</span>
         </div>
 
         {/* 最近登录：点击回填手机号；若曾记住密码则一并回填密码并自动勾选「记住密码」 */}
@@ -191,7 +206,10 @@ export default function Login() {
                 onBlur={() => setFocusedField(null)}
                 required
               />
-              <span className="auth-field-cc">+86</span>
+              <span className="auth-field-cc">
+                +86
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M7 10l5 5 5-5z"/></svg>
+              </span>
             </div>
           </div>
 
