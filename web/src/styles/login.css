@@ -1,6 +1,12 @@
 /* ================================================================
    V信 登录/注册页 — 34图 UI 规范：左右分屏（左品牌插画 / 右表单卡片）
    同时影响 Web / Electron（登录页本就 Web+Windows 共用）
+
+   登录页始终使用浅色（对齐参考图，参考图无深色版本）：
+   本文件所有颜色均为字面量，不引用共享 design-token 变量，
+   避免系统 prefers-color-scheme:dark 或 body.dark-mode 通过
+   共享变量级联渗透进登录页，导致未登录访客默认看到走样的旧深色版。
+   深色模式仅作用于登录后的应用内界面（index.css 等），不覆盖本文件。
 ================================================================ */
 
 .auth-page {
@@ -9,7 +15,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--bg-app, #F7F8FA);
+  background: #F7F8FA;
   position: relative;
   overflow-x: hidden;
   overflow-y: auto;
@@ -20,7 +26,6 @@
 /* Electron — 标题栏已占用高度 */
 .electron-app .auth-page { min-height: 100%; height: 100%; }
 
-body.dark-mode .auth-page { background: #0C1310; }
 
 /* ── 旧背景圆（不再使用，JSX 仍引用，保持不可见） ── */
 .auth-bg-circle { display: none !important; }
@@ -33,15 +38,14 @@ body.dark-mode .auth-page { background: #0C1310; }
 .electron-app .auth-top-logo { display: none; }
 .auth-top-logo-icon { width: 26px; height: 26px; display: flex; }
 .auth-top-logo-icon svg { width: 100%; height: 100%; }
-.auth-top-logo-text { font-size: 18px; font-weight: 700; color: var(--text-title, #111); letter-spacing: -0.3px; }
-body.dark-mode .auth-top-logo-text { color: #F2F3F5; }
+.auth-top-logo-text { font-size: 18px; font-weight: 700; color: #111; letter-spacing: -0.3px; }
 
 /* ── 分屏容器 ── */
 .auth-split {
   position: relative;
   z-index: 1;
-  width: 100%;
-  max-width: 1100px;
+  width: 92%;
+  max-width: 1440px;
   min-height: 640px;
   display: flex;
   background: #fff;
@@ -50,7 +54,6 @@ body.dark-mode .auth-top-logo-text { color: #F2F3F5; }
   box-shadow: 0 20px 60px rgba(0,0,0,.10), 0 2px 8px rgba(0,0,0,.05);
   animation: authIn 0.32s cubic-bezier(.22,.68,0,1.2) both;
 }
-body.dark-mode .auth-split { background: #17201A; box-shadow: 0 20px 60px rgba(0,0,0,.45); }
 @keyframes authIn {
   from { opacity: 0; transform: translateY(16px) scale(.98); }
   to   { opacity: 1; transform: translateY(0)  scale(1);    }
@@ -70,12 +73,6 @@ body.dark-mode .auth-split { background: #17201A; box-shadow: 0 20px 60px rgba(0
     radial-gradient(circle at 85% 85%, rgba(7,193,96,.04) 0%, transparent 50%),
     linear-gradient(160deg, #FBFCFB 0%, #F7FAF8 100%);
   overflow: hidden;
-}
-body.dark-mode .auth-split-left {
-  background:
-    radial-gradient(circle at 20% 15%, rgba(7,193,96,.16) 0%, transparent 55%),
-    radial-gradient(circle at 85% 85%, rgba(7,193,96,.10) 0%, transparent 50%),
-    linear-gradient(160deg, #0E1712 0%, #0A100D 100%);
 }
 /* 装饰波浪线（伪元素，纯 CSS，不引外部图片） */
 .auth-split-left::before {
@@ -106,7 +103,6 @@ body.dark-mode .auth-split-left {
   -webkit-mask-image: radial-gradient(ellipse 100% 90% at 15% 85%, #000 0%, #000 35%, transparent 72%);
   mask-image: radial-gradient(ellipse 100% 90% at 15% 85%, #000 0%, #000 35%, transparent 72%);
 }
-body.dark-mode .auth-split-left-dots { background-image: radial-gradient(circle, rgba(7,193,96,.28) 1.4px, transparent 1.6px); }
 
 /* 右侧表单栏：滚动承载 .auth-container */
 .auth-split-right {
@@ -156,19 +152,17 @@ body.dark-mode .auth-split-left-dots { background-image: radial-gradient(circle,
 .auth-brand-name {
   font-size: 30px;
   font-weight: 700;
-  color: var(--text-title, #111);
+  color: #111;
   margin-bottom: 8px;
   letter-spacing: -0.5px;
   line-height: 1.1;
 }
-body.dark-mode .auth-brand-name { color: #F2F3F5; }
 .auth-brand-name--brand { font-size: 30px; }
 .auth-brand-desc {
   font-size: 14px;
-  color: var(--text-secondary, #888);
+  color: #888;
   letter-spacing: .3px;
 }
-body.dark-mode .auth-brand-desc { color: #A9AFB7; }
 
 /* ── 登录方式 Tab（当前仅"手机登录/手机注册"真实可用，不伪造第二个入口） ── */
 .auth-tabs {
@@ -179,48 +173,47 @@ body.dark-mode .auth-brand-desc { color: #A9AFB7; }
 .auth-tab {
   font-size: 16px;
   font-weight: 600;
-  color: var(--text-title, #111);
+  color: #111;
   padding-bottom: 8px;
   position: relative;
 }
-.auth-tab.active { color: var(--color-primary, #07C160); }
+.auth-tab.active { color: #07C160; }
 .auth-tab.active::after {
   content: '';
   position: absolute;
   left: 0; bottom: 0;
   width: 32px; height: 2px;
-  background: var(--color-primary, #07C160);
+  background: #07C160;
   border-radius: 1px;
 }
 /* 视觉占位、非真实功能：无对应后端，禁止点击/无交互反馈 */
-.auth-tab.disabled { color: var(--text-muted, #B0B4BB); cursor: default; user-select: none; pointer-events: none; }
+.auth-tab.disabled { color: #B0B4BB; cursor: default; user-select: none; pointer-events: none; }
 
 /* ── 最近登录 ── */
 .auth-accounts {
-  background: var(--bg-card-hover, #F7F8FA);
+  background: #F7F8FA;
   border-radius: 14px;
   margin-bottom: 16px;
   overflow: hidden;
-  border: 1px solid var(--border-default, #E3E7EE);
+  border: 1px solid #E3E7EE;
 }
-body.dark-mode .auth-accounts { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.08); }
 .auth-accounts-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 10px 16px;
-  border-bottom: 1px solid var(--border-subtle, rgba(0,0,0,.04));
+  border-bottom: 1px solid rgba(0,0,0,.04);
 }
-.auth-accounts-title { font-size: 11px; color: var(--text-muted, #9AA3B0); font-weight: 600; letter-spacing: .8px; text-transform: uppercase; }
-.auth-accounts-count  { font-size: 11px; color: var(--text-muted, #9AA3B0); }
-.auth-account-row { display: flex; align-items: center; border-bottom: 1px solid var(--border-subtle, rgba(0,0,0,.04)); }
+.auth-accounts-title { font-size: 11px; color: #9AA3B0; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; }
+.auth-accounts-count  { font-size: 11px; color: #9AA3B0; }
+.auth-account-row { display: flex; align-items: center; border-bottom: 1px solid rgba(0,0,0,.04); }
 .auth-account-row:last-child { border-bottom: none; }
 .auth-account-btn {
   flex: 1; display: flex; align-items: center; gap: 12px;
   padding: 11px 16px; text-align: left; cursor: pointer;
   transition: background 120ms ease; min-width: 0;
 }
-.auth-account-btn:hover { background: var(--color-primary-muted, #E8F8EF); }
+.auth-account-btn:hover { background: #E8F8EF; }
 .auth-account-avatar {
   width: 36px; height: 36px;
   border-radius: 10px;
@@ -231,14 +224,14 @@ body.dark-mode .auth-accounts { background: rgba(255,255,255,.04); border-color:
   flex-shrink: 0;
 }
 .auth-account-info { min-width: 0; flex: 1; }
-.auth-account-name { display: block; font-size: 14px; color: var(--text-primary, #1A1A1A); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.auth-account-id   { display: block; font-size: 11px; color: var(--text-muted, #9AA3B0); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auth-account-name { display: block; font-size: 14px; color: #1A1A1A; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auth-account-id   { display: block; font-size: 11px; color: #9AA3B0; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .auth-account-remove {
   width: 40px; height: 44px; display: flex; align-items: center; justify-content: center;
-  color: var(--text-muted, #9AA3B0); font-size: 13px; cursor: pointer;
+  color: #9AA3B0; font-size: 13px; cursor: pointer;
   transition: color 120ms; flex-shrink: 0;
 }
-.auth-account-remove:hover { color: var(--color-danger, #F53F3F); }
+.auth-account-remove:hover { color: #F53F3F; }
 
 /* ── 表单（不再是独立玻璃卡片，直接置于右栏） ── */
 .auth-form { }
@@ -262,60 +255,55 @@ body.dark-mode .auth-accounts { background: rgba(255,255,255,.04); border-color:
   gap: 10px;
   height: 50px;
   padding: 0 14px;
-  background: var(--bg-input, #F7F8FA);
-  border: 1.5px solid var(--border-default, #E3E7EE);
+  background: #F7F8FA;
+  border: 1.5px solid #E3E7EE;
   border-radius: 12px;
   box-sizing: border-box;
   transition: border-color 120ms, background 120ms;
 }
-body.dark-mode .auth-field-input-wrap { background: rgba(255,255,255,.04); }
-.auth-field.focused .auth-field-input-wrap { border-color: var(--color-primary, #07C160); background: #fff; }
-body.dark-mode .auth-field.focused .auth-field-input-wrap { background: rgba(255,255,255,.06); }
+.auth-field.focused .auth-field-input-wrap { border-color: #07C160; background: #fff; }
 .auth-field-icon {
   width: 18px; height: 18px;
-  color: var(--text-muted, #9AA3B0);
+  color: #9AA3B0;
   flex-shrink: 0;
   transition: color 120ms;
 }
-.auth-field.focused .auth-field-icon { color: var(--color-primary, #07C160); }
+.auth-field.focused .auth-field-icon { color: #07C160; }
 .auth-field-input {
   flex: 1;
   font-size: 15px;
-  color: var(--text-primary, #1A1A1A);
+  color: #1A1A1A;
   background: transparent;
   border: none; outline: none;
   min-width: 0;
   font-family: inherit;
-  caret-color: var(--color-primary, #07C160);
+  caret-color: #07C160;
 }
-.auth-field-input::placeholder { color: var(--text-muted, #B0B4BB); }
-body.dark-mode .auth-field-input { color: #F2F3F5; }
-body.dark-mode .auth-field-input-wrap { border-color: #32363D; }
+.auth-field-input::placeholder { color: #B0B4BB; }
 
 /* 手机号国家区号（静态展示，当前仅支持中国区号，非可切换下拉） */
 .auth-field-cc {
   display: flex; align-items: center; gap: 3px;
-  font-size: 14px; color: var(--text-secondary, #888);
-  flex-shrink: 0; padding-left: 8px; border-left: 1px solid var(--border-default, #E3E7EE);
+  font-size: 14px; color: #888;
+  flex-shrink: 0; padding-left: 8px; border-left: 1px solid #E3E7EE;
 }
-body.dark-mode .auth-field-cc { border-color: #32363D; color: #A9AFB7; }
 
 /* 密码显示切换 */
 .auth-pwd-toggle {
   background: none; border: none; cursor: pointer; padding: 0;
-  color: var(--text-muted, #9AA3B0); display: flex; align-items: center;
+  color: #9AA3B0; display: flex; align-items: center;
   flex-shrink: 0; transition: color 120ms;
 }
-.auth-pwd-toggle:hover { color: var(--text-secondary, #888); }
+.auth-pwd-toggle:hover { color: #888; }
 
 /* ── 错误提示 ── */
 .auth-error {
   display: flex; align-items: center; gap: 8px;
   padding: 10px 14px;
-  background: var(--color-danger-light, #FFF0F0);
+  background: #FFF0F0;
   border: 1px solid rgba(245,63,63,.22);
   border-radius: 10px;
-  color: var(--color-danger, #F53F3F);
+  color: #F53F3F;
   font-size: 13px;
   margin-bottom: 14px;
   animation: authErrIn .18s ease;
@@ -333,17 +321,17 @@ body.dark-mode .auth-field-cc { border-color: #32363D; color: #A9AFB7; }
 }
 .auth-remember {
   display: flex; align-items: center; gap: 7px;
-  font-size: 13px; color: var(--text-secondary, #888);
+  font-size: 13px; color: #888;
   cursor: pointer; user-select: none; transition: color 120ms;
 }
-.auth-remember:hover { color: var(--text-primary, #1A1A1A); }
+.auth-remember:hover { color: #1A1A1A; }
 .auth-remember-box { flex-shrink: 0; }
 
 /* ── 登录/注册按钮 ── */
 .auth-submit {
   width: 100%;
   height: 48px;
-  background: linear-gradient(135deg, #07C160 0%, #06A652 100%);
+  background: #07C160;
   color: #fff;
   border-radius: 24px;
   font-size: 15px;
@@ -362,7 +350,7 @@ body.dark-mode .auth-field-cc { border-color: #32363D; color: #A9AFB7; }
 }
 .auth-submit:active:not(:disabled) { transform: translateY(0); }
 .auth-submit:disabled {
-  background: var(--border-medium, #C9CDD6);
+  background: #C9CDD6;
   box-shadow: none;
   cursor: not-allowed;
   color: #fff;
@@ -385,44 +373,10 @@ body.dark-mode .auth-field-cc { border-color: #32363D; color: #A9AFB7; }
   text-align: center;
   margin-top: 20px;
   font-size: 13px;
-  color: var(--text-secondary, #888);
+  color: #888;
 }
-body.dark-mode .auth-footer { color: #A9AFB7; }
-.auth-link { color: var(--color-primary, #07C160); font-weight: 500; text-decoration: none; transition: color 120ms; }
-.auth-link:hover { color: var(--color-primary-hover, #06A652); text-decoration: none; }
-
-/* ── 下载区 ── */
-.auth-download {
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border-subtle, rgba(0,0,0,.06));
-  text-align: center;
-}
-body.dark-mode .auth-download { border-color: rgba(255,255,255,.08); }
-.auth-download-label {
-  font-size: 11px;
-  color: var(--text-muted, #9AA3B0);
-  margin-bottom: 12px;
-  letter-spacing: .8px;
-  text-transform: uppercase;
-}
-.auth-download-row { display: flex; gap: 10px; justify-content: center; }
-.auth-download-btn {
-  display: inline-flex; align-items: center; gap: 7px;
-  padding: 9px 18px;
-  border-radius: 8px;
-  background: var(--bg-card-hover, #F7F8FA);
-  color: var(--text-secondary, #888);
-  font-size: 13px; font-weight: 500;
-  text-decoration: none;
-  border: 1px solid var(--border-default, #E3E7EE);
-  transition: background 120ms, border-color 120ms, color 120ms;
-}
-.auth-download-btn:hover {
-  background: var(--color-primary-muted, #E8F8EF);
-  border-color: var(--color-primary, #07C160);
-  color: var(--text-primary, #1A1A1A);
-}
+.auth-link { color: #07C160; font-weight: 500; text-decoration: none; transition: color 120ms; }
+.auth-link:hover { color: #06A652; text-decoration: none; }
 
 /* ── 用户协议：真实可勾选（对齐 34 图，未勾选禁止提交），链接暂无落地页故不跳转 ── */
 .auth-agreement-row {
@@ -437,18 +391,16 @@ body.dark-mode .auth-download { border-color: rgba(255,255,255,.08); }
   appearance: none; -webkit-appearance: none;
   width: 16px; height: 16px;
   border-radius: 50%;
-  border: 1.5px solid var(--border-medium, #C9CDD6);
+  border: 1.5px solid #C9CDD6;
   background: #fff;
   cursor: pointer;
   position: relative;
   transition: background 120ms, border-color 120ms;
 }
-body.dark-mode .auth-remember-box,
-body.dark-mode .auth-agreement-box { background: transparent; border-color: #454B54; }
 .auth-remember-box:checked,
 .auth-agreement-box:checked {
-  background: var(--color-primary, #07C160);
-  border-color: var(--color-primary, #07C160);
+  background: #07C160;
+  border-color: #07C160;
 }
 .auth-remember-box:checked::after,
 .auth-agreement-box:checked::after {
@@ -462,45 +414,44 @@ body.dark-mode .auth-agreement-box { background: transparent; border-color: #454
 }
 .auth-agreement {
   font-size: 12px;
-  color: var(--text-muted, #9AA3B0);
+  color: #9AA3B0;
   line-height: 1.6;
   margin: 0;
 }
-body.dark-mode .auth-agreement { color: #737A84; }
-.auth-agreement a { color: var(--text-secondary, #888); text-decoration: none; }
-.auth-agreement a:hover { color: var(--color-primary, #07C160); }
+.auth-agreement a { color: #888; text-decoration: none; }
+.auth-agreement a:hover { color: #07C160; }
 
 /* ── 服务器切换（Electron）── */
 .auth-server { margin-top: 20px; text-align: center; }
 .auth-server-toggle {
   background: none; border: none;
-  color: var(--text-muted, #9AA3B0); font-size: 12px;
+  color: #9AA3B0; font-size: 12px;
   cursor: pointer; padding: 6px 10px;
   border-radius: 6px;
   transition: color 120ms, background 120ms;
 }
-.auth-server-toggle:hover { color: var(--text-secondary, #888); background: var(--bg-card-hover, #F7F8FA); }
+.auth-server-toggle:hover { color: #888; background: #F7F8FA; }
 .auth-server-panel {
-  background: var(--bg-card-hover, #F7F8FA);
-  border: 1px solid var(--border-default, #E3E7EE);
+  background: #F7F8FA;
+  border: 1px solid #E3E7EE;
   border-radius: 12px;
   padding: 16px;
   text-align: left;
   animation: authIn .2s ease;
 }
-.auth-server-title { font-size: 12px; color: var(--text-secondary, #888); margin-bottom: 8px; }
+.auth-server-title { font-size: 12px; color: #888; margin-bottom: 8px; }
 .auth-server-input {
   width: 100%; box-sizing: border-box;
   padding: 10px 12px;
   font-size: 13px;
   background: #fff;
-  border: 1.5px solid var(--border-default, #E3E7EE);
+  border: 1.5px solid #E3E7EE;
   border-radius: 8px;
-  color: var(--text-primary, #1A1A1A); outline: none;
+  color: #1A1A1A; outline: none;
   font-family: inherit;
 }
-.auth-server-input:focus { border-color: var(--color-primary, #07C160); }
-.auth-server-input::placeholder { color: var(--text-muted, #B0B4BB); }
+.auth-server-input:focus { border-color: #07C160; }
+.auth-server-input::placeholder { color: #B0B4BB; }
 .auth-server-result { font-size: 12px; margin-top: 6px; }
 .auth-server-btns { display: flex; gap: 8px; margin-top: 12px; }
 .auth-server-btn {
@@ -511,57 +462,56 @@ body.dark-mode .auth-agreement { color: #737A84; }
   transition: opacity 120ms;
 }
 .auth-server-btn:hover { opacity: .85; }
-.auth-server-btn.ghost { background: var(--bg-card-hover, #F7F8FA); color: var(--text-primary, #1A1A1A); border: 1px solid var(--border-default, #E3E7EE); }
-.auth-server-btn.primary { background: var(--color-primary, #07C160); color: #fff; }
+.auth-server-btn.ghost { background: #F7F8FA; color: #1A1A1A; border: 1px solid #E3E7EE; }
+.auth-server-btn.primary { background: #07C160; color: #fff; }
 .auth-server-cancel {
   display: block; width: 100%;
   margin-top: 8px; background: none; border: none;
-  color: var(--text-muted, #9AA3B0); font-size: 12px;
+  color: #9AA3B0; font-size: 12px;
   cursor: pointer; padding: 6px;
   transition: color 120ms;
 }
-.auth-server-cancel:hover { color: var(--text-secondary, #888); }
+.auth-server-cancel:hover { color: #888; }
 
 /* ── 语言切换（页面右上角，真实 i18n） ── */
 .auth-lang-switch { position: absolute; top: 20px; right: 24px; z-index: 5; }
 .auth-lang-btn {
   display: inline-flex; align-items: center; gap: 4px;
   background: none; border: none; cursor: pointer;
-  font-size: 13px; color: var(--text-secondary, #888);
+  font-size: 13px; color: #888;
   padding: 6px 8px; border-radius: 6px;
 }
-.auth-lang-btn:hover { background: var(--bg-card-hover, #F7F8FA); color: var(--text-primary, #1A1A1A); }
+.auth-lang-btn:hover { background: #F7F8FA; color: #1A1A1A; }
 .auth-lang-menu {
   position: absolute; top: calc(100% + 4px); right: 0;
-  background: #fff; border: 1px solid var(--border-default, #E3E7EE);
+  background: #fff; border: 1px solid #E3E7EE;
   border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.10);
   overflow: hidden; min-width: 120px;
 }
-body.dark-mode .auth-lang-menu { background: #17201A; border-color: #32363D; }
 .auth-lang-item {
   display: block; width: 100%; text-align: left;
   padding: 9px 14px; background: none; border: none; cursor: pointer;
-  font-size: 13px; color: var(--text-primary, #1A1A1A);
+  font-size: 13px; color: #1A1A1A;
 }
-.auth-lang-item:hover { background: var(--color-primary-muted, #E8F8EF); }
-.auth-lang-item.active { color: var(--color-primary, #07C160); font-weight: 600; }
+.auth-lang-item:hover { background: #E8F8EF; }
+.auth-lang-item.active { color: #07C160; font-weight: 600; }
 
 /* ── 页脚（仅 Web，Electron 无浏览器地址栏概念，隐藏） ── */
 .auth-page-footer {
   position: relative; z-index: 1;
   text-align: center; margin-top: 20px;
-  font-size: 12px; color: var(--text-muted, #9AA3B0);
+  font-size: 12px; color: #9AA3B0;
 }
-.auth-page-footer a { color: var(--text-muted, #9AA3B0); text-decoration: none; margin: 0 2px; }
-.auth-page-footer a:hover { color: var(--color-primary, #07C160); }
+.auth-page-footer a { color: #9AA3B0; text-decoration: none; margin: 0 2px; }
+.auth-page-footer a:hover { color: #07C160; }
 
 /* ── auth-note (邀请码说明) ── */
 .auth-note {
   display: flex; align-items: flex-start; gap: 8px;
   margin-bottom: 16px; padding: 10px 14px;
-  background: var(--color-primary-muted, #E8F8EF);
+  background: #E8F8EF;
   border: 1px solid rgba(7,193,96,.22);
   border-radius: 10px;
   font-size: 13px; line-height: 1.6;
-  color: var(--text-secondary, #888);
+  color: #888;
 }
