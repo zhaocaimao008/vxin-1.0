@@ -5,11 +5,9 @@ import Kingfisher
 // MARK: - Design Tokens
 
 private enum Tok {
-    enum Sp {
-        static let xs: CGFloat = 4;  static let s: CGFloat = 8
-        static let m: CGFloat = 12;  static let l: CGFloat = 16
-        static let xl: CGFloat = 20; static let xxl: CGFloat = 24
-    }
+    static let xs: CGFloat = 4;  static let s: CGFloat = 8
+    static let m: CGFloat = 12;  static let l: CGFloat = 16
+    static let xl: CGFloat = 20; static let xxl: CGFloat = 24
     static let cardRadius: CGFloat = 18
     static let avatarSize: CGFloat = 66
     static let iconSize: CGFloat = 22
