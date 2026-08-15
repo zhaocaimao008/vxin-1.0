@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import '../styles/login.css';
 
 export default function ForgotPassword() {
   const [form, setForm] = useState({ phone: '', inviteCode: '', newPassword: '', confirmPassword: '' });
@@ -101,9 +102,15 @@ export default function ForgotPassword() {
       <div className="auth-container" style={{ width: 400 }}>
         <div className="auth-brand">
           <div className="auth-brand-icon">
-            <svg viewBox="0 0 40 40" width="38" height="38" fill="none">
-              <path d="M5 7a3 3 0 013-3h16a3 3 0 013 3v12a3 3 0 01-3 3H14l-5 5V7z" fill="rgba(255,255,255,.3)"/>
-              <path d="M17 15a3 3 0 013-3h11a3 3 0 013 3v10a3 3 0 01-3 3h-3v4l-5-4h-3a3 3 0 01-3-3V15z" fill="white"/>
+            <svg viewBox="0 0 46 46" fill="none" aria-hidden="true">
+              <path
+                d="M8 11 L23 35 L38 11"
+                stroke="white"
+                strokeWidth="7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
             </svg>
           </div>
           <h1 className="auth-brand-name">忘记密码</h1>

@@ -3,6 +3,7 @@ import axios from 'axios';
 import Avatar from './Avatar';
 import ImagePreview from './ImagePreview';
 import { useAuth } from '../contexts/AuthContext';
+import { mediaUrl } from '../utils/url';
 import { showToast, showConfirm } from '../utils/toast';
 import { getAspect, rememberAspect } from '../utils/imgDimCache';
 import { linkify } from '../utils/linkify';
@@ -95,7 +96,7 @@ const MomentCard = memo(function MomentCard({ m, meId, onLike, onComment, onDele
               const aspect = getAspect(single);
               return (
                 <div className="wc-moment-images single">
-                  <img loading="lazy" src={single} alt="图片"
+                  <img loading="lazy" src={mediaUrl(single)} alt="图片"
                     className="wc-moment-single-img"
                     style={aspect ? { aspectRatio: String(aspect) } : undefined}
                     role="button" tabIndex={0} aria-label="查看大图"
@@ -109,7 +110,7 @@ const MomentCard = memo(function MomentCard({ m, meId, onLike, onComment, onDele
           ) : (
             <div className="wc-moment-images" style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
               {m.images.map((src, i) => (
-                <img loading="lazy" key={src || i} src={src} alt={`图片 ${i + 1}`} style={{ cursor: 'zoom-in' }}
+                <img loading="lazy" key={src || i} src={mediaUrl(src)} alt={`图片 ${i + 1}`} style={{ cursor: 'zoom-in' }}
                   role="button" tabIndex={0} aria-label={`查看第 ${i + 1} 张大图`}
                   onLoad={e => e.currentTarget.classList.add('loaded')}
                   onError={e => { e.currentTarget.classList.add('loaded'); e.currentTarget.style.display = 'none'; }}

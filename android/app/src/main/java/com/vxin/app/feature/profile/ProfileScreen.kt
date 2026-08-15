@@ -3,65 +3,148 @@ package com.vxin.app.feature.profile
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import androidx.compose.material3.Icon
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import com.vxin.app.ui.VxinIcons
-import com.vxin.app.ui.theme.VxinBrand
-import com.vxin.app.ui.theme.VxinBrandLight
-import com.vxin.app.ui.theme.VxinTeal
-import com.vxin.app.ui.components.InitialAvatar
-import com.vxin.app.ui.theme.VxinGreen
-import com.vxin.app.ui.theme.VxinTextSecondary
 import com.vxin.app.feature.update.UpdateCheckDialog
 import com.vxin.app.feature.update.UpdateViewModel
+import com.vxin.app.ui.VxinIcons
+import com.vxin.app.ui.components.InitialAvatar
+import com.vxin.app.ui.theme.*
+
+// ── Design tokens ─────────────────────────────────────────────────────────────
+
+private object Tok {
+    // spacing
+    val XS = 4.dp;  val S = 8.dp;  val M = 12.dp
+    val L = 16.dp;  val XL = 20.dp; val XXL = 24.dp
+    // colours
+    val Green     = Color(0xFF34B759)
+    val GreenBg   = Color(0xFFEDF8F0)
+    val Bg        = Color(0xFFF5F5F7)
+    val Primary   = Color(0xFF111111)
+    val Secondary = Color(0xFF8E8E93)
+    val Divider   = Color(0xFFE9E9EC)
+    val CardBg    = Color.White
+    val IconGray  = Color(0xFF2C2C2E)
+    val Red       = Color(0xFFFF3B30)
+    // shape
+    val cardRadius = 16.dp
+    val avatarRadius = 14.dp
+    // sizes
+    val avatarSize = 66.dp
+    val iconSize = 22.dp
+    val rowHeight = 56.dp
+}
+
+// ── Shared components ──────────────────────────────────────────────────────────
+
+@Composable
+private fun VxCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(Tok.cardRadius))
+            .background(Tok.CardBg)
+            .border(0.5.dp, Tok.Divider, RoundedCornerShape(Tok.cardRadius)),
+        content = content,
+    )
+}
+
+@Composable
+private fun SectionHeader(text: String) {
+    Text(
+        text = text,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = Tok.XL, top = Tok.XL, bottom = Tok.S),
+        color = Tok.Secondary,
+        fontSize = 14.sp,
+        fontWeight = FontWeight.Medium,
+    )
+}
+
+@Composable
+private fun RowDivider() {
+    HorizontalDivider(
+        modifier = Modifier.padding(start = Tok.L + Tok.XXL + Tok.M),
+        thickness = 0.5.dp,
+        color = Tok.Divider,
+    )
+}
+
+@Composable
+private fun SettingsRow(
+    icon: ImageVector,
+    title: String,
+    trailing: String? = null,
+    iconColor: Color = Tok.IconGray,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(Tok.rowHeight)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = rememberRipple(bounded = true),
+                onClick = onClick,
+            )
+            .padding(horizontal = Tok.L),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(modifier = Modifier.size(Tok.XXL), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = title, tint = iconColor, modifier = Modifier.size(Tok.iconSize))
+        }
+        Spacer(Modifier.width(Tok.M))
+        Text(
+            text = title,
+            modifier = Modifier.weight(1f),
+            fontSize = 16.5.sp,
+            color = Tok.Primary,
+        )
+        if (trailing != null) {
+            Text(
+                text = trailing,
+                fontSize = 15.sp,
+                color = Tok.Secondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(end = Tok.S),
+            )
+        }
+        Icon(
+            VxinIcons.ChevronRight,
+            contentDescription = null,
+            tint = Tok.Secondary.copy(alpha = 0.6f),
+            modifier = Modifier.size(16.dp),
+        )
+    }
+}
+
+// ── ProfileScreen ──────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,219 +157,296 @@ fun ProfileScreen(
     onOpenPrivacy: () -> Unit = {},
     onOpenNotifications: () -> Unit = {},
     onOpenAppearance: () -> Unit = {},
+    onOpenInviteFriend: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     val user = state.user
-    androidx.compose.runtime.LaunchedEffect(Unit) { viewModel.refreshAccounts() }
+    LaunchedEffect(Unit) { viewModel.refreshAccounts() }
 
-    var username by remember(user?.id) { mutableStateOf(user?.username ?: "") }
-    var inviteCopied by remember { mutableStateOf(false) }
-    val clipboard = LocalClipboardManager.current
-    var showChangePhoneDialog by remember { mutableStateOf(false) }  // 换绑手机号弹窗
-
-    // 更新相关
+    // update
     val updateViewModel: UpdateViewModel = hiltViewModel()
     val updateState by updateViewModel.uiState.collectAsStateWithLifecycle()
     val silentResult by updateViewModel.silentResult.collectAsStateWithLifecycle()
     var showUpdateDialog by remember { mutableStateOf(false) }
-
-    // 启动时静默检查一次
     LaunchedEffect(Unit) { updateViewModel.silentCheck() }
-
-    // 静默检查到新版后自动弹出对话框（只弹一次）
     LaunchedEffect(silentResult) {
         if (silentResult is com.vxin.app.feature.update.SilentCheckResult.HasUpdate) {
-            showUpdateDialog = true
-            updateViewModel.openDialog()   // 同步把 uiState 推到 Available，否则弹窗空白
+            showUpdateDialog = true; updateViewModel.openDialog()
         }
     }
+
+    var showChangePhoneDialog by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
+    var showSwitchAccount by remember { mutableStateOf(false) }
+    var versionTaps by remember { mutableStateOf(0) }
+    var showBuild by remember { mutableStateOf(false) }
 
     val avatarPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { viewModel.uploadAvatar(it) }
     }
 
-    Scaffold(topBar = { TopAppBar(title = { Text("我") }) }) { padding ->
+    fun maskedPhone(phone: String?): String {
+        if (phone.isNullOrBlank()) return "未绑定"
+        return if (phone.length >= 7) "${phone.take(3)}****${phone.takeLast(4)}" else phone
+    }
+
+    Scaffold(
+        containerColor = Tok.Bg,
+        topBar = {},   // no top bar — page has no title per spec
+    ) { padding ->
         Column(
-            Modifier.fillMaxSize().padding(padding).padding(16.dp).verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState()),
         ) {
-            // 个人信息 Hero 卡片：品牌绿渐变横幅（对齐 Web pf-hero）
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(com.vxin.app.ui.theme.VxinRadius.card))
-                    .background(Brush.linearGradient(listOf(VxinBrandLight, VxinBrand, VxinTeal)))
-                    .padding(20.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(contentAlignment = Alignment.Center) {
+
+            // ── 1. Profile header card ────────────────────────────────────────
+            Box(Modifier.padding(horizontal = Tok.L, vertical = Tok.XXL)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(Tok.cardRadius))
+                        .background(Tok.CardBg)
+                        .border(0.5.dp, Tok.Divider, RoundedCornerShape(Tok.cardRadius))
+                        .clickable { avatarPicker.launch("image/*") }
+                        .padding(Tok.L),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // avatar
                     val avatarUrl = viewModel.resolveAvatarUrl(user?.avatar)
                     if (!user?.avatar.isNullOrBlank()) {
                         AsyncImage(
                             model = avatarUrl,
                             contentDescription = "头像",
-                            modifier = Modifier.size(68.dp).clip(RoundedCornerShape(com.vxin.app.ui.theme.VxinRadius.avatar)).clickable { avatarPicker.launch("image/*") },
+                            modifier = Modifier
+                                .size(Tok.avatarSize)
+                                .clip(RoundedCornerShape(Tok.avatarRadius)),
                         )
                     } else {
-                        Box(Modifier.clickable { avatarPicker.launch("image/*") }) {
-                            InitialAvatar(name = user?.username ?: "?", size = 68.dp)
-                        }
-                    }
-                    if (state.uploadingAvatar) CircularProgressIndicator(Modifier.size(24.dp), color = Color.White)
-                }
-                Spacer(Modifier.width(16.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        user?.username?.ifBlank { "未设置昵称" } ?: "未登录",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = Color.White,
-                    )
-                    Spacer(Modifier.size(6.dp))
-                    user?.wechat_id?.takeIf { it.isNotBlank() }?.let {
-                        Text("v信号: $it", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodySmall)
-                    }
-                    user?.phone?.takeIf { it.isNotBlank() }?.let {
-                        Text(
-                            "手机号: $it",
-                            color = Color.White.copy(alpha = 0.85f),
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.clickable { showChangePhoneDialog = true },
+                        InitialAvatar(
+                            name = user?.username ?: "?",
+                            size = Tok.avatarSize,
                         )
                     }
-                }
-                // 我的二维码入口：自绘品牌二维码图标（白色，浮于渐变上）
-                IconButton(onClick = onOpenMyQr, modifier = Modifier.testTag("profile-my-qr")) {
-                    Icon(VxinIcons.QrCode, contentDescription = "我的二维码", tint = Color.White)
-                }
-            }
-
-            Spacer(Modifier.size(24.dp))
-
-            OutlinedTextField(
-                value = username, onValueChange = { username = it },
-                label = { Text("昵称") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.size(12.dp))
-            Button(
-                onClick = { viewModel.saveProfile(username, user?.bio ?: "") },
-                enabled = !state.saving && username.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(containerColor = VxinGreen),
-                modifier = Modifier.fillMaxWidth(),
-            ) { if (state.saving) CircularProgressIndicator(Modifier.size(20.dp), color = androidx.compose.ui.graphics.Color.White, strokeWidth = 2.dp) else Text("保存资料") }
-
-            state.message?.let {
-                Spacer(Modifier.size(8.dp))
-                Text(it, color = VxinGreen, style = MaterialTheme.typography.bodySmall)
-            }
-
-            // ── 邀请好友（专属邀请码 + 裂变战绩）──
-            state.invite?.let { inv ->
-                Spacer(Modifier.size(24.dp))
-                HorizontalDivider()
-                Text("邀请好友", Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp), color = VxinTextSecondary, style = MaterialTheme.typography.bodySmall)
-                Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("我的邀请码：${inv.code.ifBlank { "—" }}", color = VxinGreen, style = MaterialTheme.typography.bodyLarge)
-                        Text("已成功邀请 ${inv.invitedCount} 人", color = VxinTextSecondary, style = MaterialTheme.typography.bodySmall)
+                    if (state.uploadingAvatar) {
+                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Tok.Green)
                     }
-                    TextButton(
-                        onClick = {
-                            if (inv.code.isNotBlank()) { clipboard.setText(AnnotatedString(inv.code)); inviteCopied = true }
-                        },
-                    ) { Text(if (inviteCopied) "已复制" else "复制", color = VxinGreen) }
+                    Spacer(Modifier.width(Tok.M))
+                    // name + id
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            user?.username?.ifBlank { "未设置昵称" } ?: "未登录",
+                            fontSize = 21.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Tok.Primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        user?.wechat_id?.takeIf { it.isNotBlank() }?.let {
+                            Spacer(Modifier.height(Tok.XS))
+                            Text("V信号：$it", fontSize = 14.sp, color = Tok.Secondary, maxLines = 1)
+                        }
+                    }
+                    // QR — independent click
+                    IconButton(
+                        onClick = onOpenMyQr,
+                        modifier = Modifier.testTag("profile-my-qr"),
+                    ) {
+                        Icon(VxinIcons.QrCode, contentDescription = "我的二维码", tint = Tok.Green, modifier = Modifier.size(22.dp))
+                    }
+                    Icon(VxinIcons.ChevronRight, contentDescription = null, tint = Tok.Secondary.copy(alpha = 0.6f), modifier = Modifier.size(16.dp))
                 }
             }
 
-            Spacer(Modifier.size(24.dp))
-            HorizontalDivider()
+            // ── 2. 账户与服务 ──────────────────────────────────────────────────
+            SectionHeader("账户与服务")
+            VxCard(Modifier.padding(horizontal = Tok.L).padding(bottom = Tok.M)) {
+                SettingsRow(VxinIcons.Phone, "手机号", trailing = maskedPhone(user?.phone), onClick = { showChangePhoneDialog = true })
+                RowDivider()
+                SettingsRow(VxinIcons.Wallet, "我的钱包", onClick = onOpenWallet)
+                RowDivider()
+                SettingsRow(VxinIcons.PhoneCall, "通话记录", onClick = onOpenCallHistory)
+                RowDivider()
+                SettingsRow(VxinIcons.Devices, "登录设备管理", onClick = onOpenSessions)
+            }
 
-            // ── 账号切换 ──
-            Text("账号", Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp), color = VxinTextSecondary, style = MaterialTheme.typography.bodySmall)
-            accounts.forEach { acc ->
-                val isActive = acc.id == viewModel.activeAccountId
-                Row(
-                    Modifier.fillMaxWidth().clickable(enabled = !isActive) { viewModel.switchAccount(acc.id) }.padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+            // ── 3. 设置 ─────────────────────────────────────────────────────
+            SectionHeader("设置")
+            VxCard(Modifier.padding(horizontal = Tok.L).padding(bottom = Tok.M)) {
+                SettingsRow(VxinIcons.Bell, "通知", onClick = onOpenNotifications)
+                RowDivider()
+                SettingsRow(VxinIcons.Shield, "隐私与安全", onClick = onOpenPrivacy)
+                RowDivider()
+                SettingsRow(VxinIcons.Palette, "外观", onClick = onOpenAppearance)
+            }
+
+            // ── 4. 其他 ──────────────────────────────────────────────────────
+            SectionHeader("其他")
+            VxCard(Modifier.padding(horizontal = Tok.L).padding(bottom = Tok.M)) {
+                SettingsRow(VxinIcons.UserPlus, "邀请好友", onClick = onOpenInviteFriend)
+                RowDivider()
+                val switchTrailing = "${user?.username?.ifBlank { "当前" } ?: "当前"} · 当前"
+                SettingsRow(VxinIcons.Users, "切换账号", trailing = switchTrailing, onClick = { showSwitchAccount = true })
+            }
+
+            // ── 5. 退出登录 ───────────────────────────────────────────────────
+            VxCard(Modifier.padding(horizontal = Tok.L).padding(bottom = Tok.M)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = rememberRipple(bounded = true),
+                        ) { showLogoutDialog = true },
+                    contentAlignment = Alignment.Center,
                 ) {
-                    InitialAvatar(name = acc.username.ifBlank { "?" }, size = 36.dp, avatarUrl = viewModel.resolveAvatarUrl(acc.avatar))
-                    Spacer(Modifier.size(10.dp))
-                    Text(acc.username.ifBlank { "未命名" }, Modifier.weight(1f))
-                    if (isActive) Text("当前", color = VxinGreen, style = MaterialTheme.typography.bodySmall)
-                    else TextButton(onClick = { viewModel.removeAccount(acc.id) }) { Text("移除", color = androidx.compose.ui.graphics.Color(0xFFFA5151)) }
+                    Text("退出登录", color = Tok.Red, fontSize = 16.5.sp)
                 }
             }
-            OutlinedButton(onClick = onAddAccount, modifier = Modifier.fillMaxWidth()) { Text("添加账号") }
 
-            Spacer(Modifier.size(12.dp))
-            HorizontalDivider()
-            Spacer(Modifier.size(12.dp))
-
-            // 朋友圈 / 收藏 已是底部 Tab，移除「我」页内重复入口（四端一致）
-            OutlinedButton(onClick = onOpenWallet, modifier = Modifier.fillMaxWidth().testTag("profile-wallet")) { Text("我的钱包") }
-            Spacer(Modifier.size(12.dp))
-            OutlinedButton(onClick = onOpenCallHistory, modifier = Modifier.fillMaxWidth().testTag("profile-call-history")) { Text("通话记录") }
-            Spacer(Modifier.size(12.dp))
-            OutlinedButton(onClick = onOpenSessions, modifier = Modifier.fillMaxWidth().testTag("profile-sessions")) { Text("登录设备管理") }
-            Spacer(Modifier.size(12.dp))
-            OutlinedButton(onClick = onOpenPrivacy, modifier = Modifier.fillMaxWidth().testTag("profile-privacy")) { Text("隐私与安全") }
-            Spacer(Modifier.size(12.dp))
-            OutlinedButton(onClick = onOpenNotifications, modifier = Modifier.fillMaxWidth().testTag("profile-notifications")) { Text("通知") }
-            Spacer(Modifier.size(12.dp))
-            OutlinedButton(onClick = onOpenAppearance, modifier = Modifier.fillMaxWidth().testTag("profile-appearance")) { Text("外观") }
-            Spacer(Modifier.size(12.dp))
-            OutlinedButton(
-                onClick = {
-                    showUpdateDialog = true
-                    updateViewModel.openDialog()   // 秒展示已缓存新版 or 发起检查，修复空白弹窗
-                },
-                modifier = Modifier.fillMaxWidth().testTag("profile-check-update"),
-            ) {
-                if (silentResult is com.vxin.app.feature.update.SilentCheckResult.HasUpdate) {
-                    Text("检查更新 ● 新版本可用", color = VxinGreen)
-                } else {
-                    Text("检查更新")
-                }
-            }
-            Spacer(Modifier.size(12.dp))
-            Button(
-                onClick = viewModel::logout,
-                colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color(0xFFFA5151)),
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("退出登录") }
-            Spacer(Modifier.size(16.dp))
+            // ── 6. 版本号 ─────────────────────────────────────────────────────
             Text(
-                "v信 v${com.vxin.app.BuildConfig.VERSION_NAME} (${com.vxin.app.BuildConfig.VERSION_CODE})",
-                style = MaterialTheme.typography.bodySmall,
-                color = VxinTextSecondary,
+                text = if (showBuild)
+                    "V信 ${com.vxin.app.BuildConfig.VERSION_NAME} (${com.vxin.app.BuildConfig.VERSION_CODE})"
+                else
+                    "V信 ${com.vxin.app.BuildConfig.VERSION_NAME}",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = Tok.XXL)
+                    .clickable {
+                        versionTaps++
+                        if (versionTaps >= 5) showBuild = true
+                    },
+                fontSize = 13.sp,
+                color = Tok.Secondary,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
         }
     }
 
-    // 更新弹窗
+    // ── Dialogs ───────────────────────────────────────────────────────────────
+
     if (showUpdateDialog) {
-        UpdateCheckDialog(
-            viewModel = updateViewModel,
-            onDismiss = { showUpdateDialog = false },
-        )
+        UpdateCheckDialog(viewModel = updateViewModel, onDismiss = { showUpdateDialog = false })
     }
 
-    // 换绑手机号弹窗
     if (showChangePhoneDialog) {
         ChangePhoneDialog(
             currentPhone = user?.phone.orEmpty(),
             changing = state.changingPhone,
-            onConfirm = { newPhone, password ->
-                viewModel.changePhone(newPhone, password)
-                showChangePhoneDialog = false
-            },
+            onConfirm = { newPhone, password -> viewModel.changePhone(newPhone, password); showChangePhoneDialog = false },
             onDismiss = { showChangePhoneDialog = false },
+        )
+    }
+
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("退出登录") },
+            text = { Text("确认退出当前账号？") },
+            confirmButton = {
+                TextButton(onClick = { showLogoutDialog = false; viewModel.logout() }) {
+                    Text("退出", color = Tok.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) { Text("取消") }
+            },
+        )
+    }
+
+    if (showSwitchAccount) {
+        AccountSwitchSheet(
+            accounts = accounts,
+            activeId = viewModel.activeAccountId,
+            onSwitch = { id -> viewModel.switchAccount(id); showSwitchAccount = false },
+            onRemove = { id -> viewModel.removeAccount(id) },
+            onAddAccount = { showSwitchAccount = false; onAddAccount() },
+            onDismiss = { showSwitchAccount = false },
         )
     }
 }
 
-/** 换绑手机号弹窗：输入新手机号 + 登录密码验证。 */
+// ── Account switch bottom sheet ────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AccountSwitchSheet(
+    accounts: List<com.vxin.app.data.model.Account>,
+    activeId: String?,
+    onSwitch: (String) -> Unit,
+    onRemove: (String) -> Unit,
+    onAddAccount: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Color.White) {
+        Text(
+            "切换账号",
+            Modifier.fillMaxWidth().padding(horizontal = Tok.L, vertical = Tok.M),
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 17.sp,
+        )
+        HorizontalDivider(color = Tok.Divider, thickness = 0.5.dp)
+        accounts.forEach { acc ->
+            val isCurrent = acc.id == activeId
+            Row(
+                Modifier.fillMaxWidth()
+                    .height(Tok.rowHeight)
+                    .clickable(enabled = !isCurrent) { onSwitch(acc.id) }
+                    .padding(horizontal = Tok.L),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                InitialAvatar(name = acc.username.ifBlank { "?" }, size = 40.dp)
+                Spacer(Modifier.width(Tok.M))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        acc.username.ifBlank { "未命名" },
+                        fontSize = 15.sp,
+                        color = Tok.Primary,
+                        maxLines = 1,
+                    )
+                }
+                if (isCurrent) {
+                    Text(
+                        "当前",
+                        fontSize = 13.sp,
+                        color = Tok.Green,
+                        modifier = Modifier
+                            .background(Tok.GreenBg, RoundedCornerShape(50))
+                            .padding(horizontal = Tok.S, vertical = Tok.XS),
+                    )
+                } else {
+                    TextButton(onClick = { onRemove(acc.id) }) {
+                        Text("移除", color = Tok.Red, fontSize = 14.sp)
+                    }
+                }
+            }
+            HorizontalDivider(Modifier.padding(start = Tok.L + 40.dp + Tok.M), color = Tok.Divider, thickness = 0.5.dp)
+        }
+        // Add account row
+        Row(
+            Modifier.fillMaxWidth()
+                .height(Tok.rowHeight)
+                .clickable { onAddAccount() }
+                .padding(horizontal = Tok.L),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+                Icon(VxinIcons.Add, contentDescription = null, tint = Tok.Green)
+            }
+            Spacer(Modifier.width(Tok.M))
+            Text("添加账号", fontSize = 15.sp, color = Tok.Green)
+        }
+        Spacer(Modifier.height(Tok.XXL))
+    }
+}
+
+// ── ChangePhoneDialog (unchanged logic, refreshed layout) ─────────────────────
+
 @Composable
 private fun ChangePhoneDialog(
     currentPhone: String,
@@ -305,24 +465,19 @@ private fun ChangePhoneDialog(
         text = {
             Column {
                 if (currentPhone.isNotBlank()) {
-                    Text("当前手机号：$currentPhone", color = VxinTextSecondary, style = MaterialTheme.typography.bodySmall)
-                    Spacer(Modifier.size(8.dp))
+                    Text("当前：$currentPhone", color = Tok.Secondary, style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.size(Tok.S))
                 }
                 OutlinedTextField(
                     value = newPhone,
                     onValueChange = { newPhone = it.filter { c -> c.isDigit() || c == '+' }.take(16) },
-                    label = { Text("新手机号") },
-                    singleLine = true,
-                    enabled = !changing,
-                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("新手机号") }, singleLine = true,
+                    enabled = !changing, modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(Modifier.size(8.dp))
+                Spacer(Modifier.size(Tok.S))
                 OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("登录密码") },
-                    singleLine = true,
-                    enabled = !changing,
+                    value = password, onValueChange = { password = it },
+                    label = { Text("登录密码") }, singleLine = true, enabled = !changing,
                     visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         TextButton(onClick = { showPassword = !showPassword }) {
@@ -334,16 +489,11 @@ private fun ChangePhoneDialog(
             }
         },
         confirmButton = {
-            TextButton(
-                onClick = { onConfirm(newPhone.trim(), password) },
-                enabled = valid && !changing,
-            ) {
+            TextButton(onClick = { onConfirm(newPhone.trim(), password) }, enabled = valid && !changing) {
                 if (changing) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                else Text("确认换绑", color = VxinGreen)
+                else Text("确认换绑", color = Tok.Green)
             }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !changing) { Text("取消") }
-        },
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !changing) { Text("取消") } },
     )
 }

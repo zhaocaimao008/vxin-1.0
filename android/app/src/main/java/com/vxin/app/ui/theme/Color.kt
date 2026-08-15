@@ -2,39 +2,47 @@ package com.vxin.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// v信 品牌色（对齐 Web 端 --brand-500 #07C160）
-val VxinBrand = Color(0xFF07C160)          // 主品牌色 v信绿（brand-500）
-val VxinBrandLight = Color(0xFF2BB86E)     // brand-400 渐变浅端
-val VxinBrandDark = Color(0xFF06A652)      // brand-600 渐变深端 / 按下态
-val VxinBrandMuted = Color(0xFFE8F8EF)     // brand-50 主色浅底
-// 兼容旧引用名（各 Screen 无需改动）：统一指向 v信绿
+// v信 品牌色（对齐 Web 端 --brand-500 #16C55B）
+val VxinBrand = Color(0xFF16C55B)          // 主品牌色 v信绿
+val VxinBrandLight = Color(0xFF13B552)     // 渐变浅端 / hover
+val VxinBrandDark = Color(0xFF10A64A)      // 渐变深端 / 按下态
+val VxinBrandMuted = Color(0xFFEAF8EF)     // 主色浅底
+// 兼容旧引用名（各 Screen 无需改动）
 val VxinGreen = VxinBrand
 val VxinGreenDark = VxinBrandDark
-// VxinTeal：原青碧辅色（#17B8A6），已统一为品牌绿，保留别名防止编译报错
 val VxinTeal = VxinBrand
-val VxinBg = Color(0xFFF5F5F5)             // 辅助浅灰，对齐 web #F5F5F5
-val VxinTextPrimary = Color(0xFF1A1A1A)    // 正文近黑，对齐 web --text-primary
-val VxinTextSecondary = Color(0xFF888888)  // 辅助中性灰，对齐 web --text-secondary
-val VxinError = Color(0xFFFA5151)
+val VxinBg = Color(0xFFF7F8FA)             // 对齐 web --bg-app #F7F8FA
+val VxinTextPrimary = Color(0xFF1F2329)    // 对齐 web --text-primary #1F2329
+val VxinTextSecondary = Color(0xFF8A8F98)  // 对齐 web --text-secondary #8A8F98
+val VxinError = Color(0xFFFF4D4F)          // 对齐 web --vx-danger #FF4D4F
 
 // 语义色
-val VxinSuccess = Color(0xFF00B42A)        // 成功/正向
-val VxinSuccessDark = Color(0xFF059C4B)    // 成功按下态
-// 支付/转账金钱主题（对齐 v信绿主色）
-val VxinPay = Color(0xFF07C160)
-val VxinPayDark = Color(0xFF06A652)
-val VxinPayGradStart = Color(0xFF2BB86E)   // 渐变起端（浅绿）
-val VxinPayGradEnd = Color(0xFF07C160)     // 渐变终端
+val VxinSuccess = Color(0xFF16C55B)
+val VxinSuccessDark = Color(0xFF10A64A)
+// 支付/转账
+val VxinPay = Color(0xFF16C55B)
+val VxinPayDark = Color(0xFF10A64A)
+val VxinPayGradStart = Color(0xFF13B552)
+val VxinPayGradEnd = Color(0xFF16C55B)
 
-// 聊天气泡：我的=v信绿 + 白字；对方=白 + 深字
-val VxinBubbleMine = VxinBrand             // 我方气泡主色
-val VxinBubbleMineText = Color(0xFFFFFFFF) // 白字，对比度充足（WCAG AA）
-val VxinBubbleText = Color(0xFF1A1A1A)
-val VxinBubbleOtherDark = Color(0xFF26262A)   // 暗色下对方气泡
-val VxinBubbleTextDark = Color(0xFFE5E5E5)    // 暗色下对方气泡文字
+// 聊天气泡：我的=浅绿 #CFF3D9；对方=白 + 深字（对齐 web 新气泡色）
+val VxinBubbleMine = Color(0xFFCFF3D9)     // 我方气泡：浅绿（对齐 web #CFF3D9）
+val VxinBubbleMineText = Color(0xFF1F2329) // 深色文字（浅绿底色下深色字）
+val VxinBubbleText = Color(0xFF1F2329)
+val VxinBubbleOtherDark = Color(0xFF252830)   // 暗色下对方气泡
+val VxinBubbleTextDark = Color(0xFFD8DCE3)    // 暗色下对方气泡文字
 
-// 深色模式壳层（v信黑 #111111）
-val VxinBgDark = Color(0xFF111111)            // 深色背景
-val VxinSurfaceDark = Color(0xFF1E1E1E)       // 深色卡面/顶栏
-val VxinTextPrimaryDark = Color(0xFFE5E5E5)   // 深色正文
-val VxinTextSecondaryDark = Color(0xFF9A9A9A) // 深色辅助文字
+// 深色模式
+val VxinBgDark = Color(0xFF15171A)            // 对齐 web --vx-bg dark
+val VxinSurfaceDark = Color(0xFF202327)       // 对齐 web --vx-surface dark
+val VxinTextPrimaryDark = Color(0xFFF2F3F5)   // 对齐 web --vx-text-primary dark
+val VxinTextSecondaryDark = Color(0xFFA9AFB7) // 对齐 web --vx-text-secondary dark
+
+
+// 「我的」页面新增语义色（对齐改版设计 tokens）
+val VxinGreen34   = Color(0xFF34B759)   // spec #34B759
+val VxinGreenBg   = Color(0xFFEDF8F0)   // spec #EDF8F0
+val VxinPageBg    = Color(0xFFF5F5F7)   // spec #F5F5F7
+val VxinDivider   = Color(0xFFE9E9EC)   // spec #E9E9EC
+val VxinIconGray  = Color(0xFF2C2C2E)   // spec #2C2C2E
+val VxinRedLogout = Color(0xFFFF3B30)   // spec #FF3B30

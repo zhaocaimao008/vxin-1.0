@@ -8,6 +8,7 @@ import App from './App';
 import './design-tokens.css';
 import './index.css';
 import './mobile-adapt.css';
+import './ui-refresh.css';
 import { loadRemoteConfig, getConfig } from './utils/config';
 import { initWebVitals } from './utils/webVitals';
 import { initImageOptimizer } from './utils/imageOptimizer';

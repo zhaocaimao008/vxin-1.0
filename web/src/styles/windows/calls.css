@@ -1,0 +1,171 @@
+/* ================================================================
+   Windows Call Modal UI — voice, video, incoming
+   Only visual overrides; zero business logic touched.
+   All scoped under .electron-app
+================================================================ */
+
+/* ── Voice call background ── */
+.electron-app .cm-voice-bg {
+  border-radius: 0;
+}
+
+/* ── Voice content wrapper ── */
+.electron-app .cm-voice-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px 24px;
+  gap: 0;
+}
+
+/* Caller name */
+.electron-app .cm-voice-name {
+  font-size: 24px;
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
+  text-shadow: 0 1px 6px rgba(0,0,0,.4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 280px;
+  margin-top: 16px;
+}
+
+/* Call status */
+.electron-app .cm-voice-status {
+  font-size: 14px;
+  color: rgba(255,255,255,.75);
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* Incoming description */
+.electron-app .cm-incoming-desc {
+  font-size: 15px;
+  color: rgba(255,255,255,.8);
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* Bottom control bar */
+.electron-app .cm-voice-bottom,
+.electron-app .cm-controls-bottom {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 24px 32px 36px;
+  background: linear-gradient(to top, rgba(0,0,0,.6), transparent);
+}
+
+/* Button rows */
+.electron-app .cm-btn-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 16px;
+}
+.electron-app .cm-btn-row:first-child { margin-top: 0; }
+
+/* Circle button */
+.electron-app .cm-circle-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+}
+.electron-app .cm-circle-btn-disc {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 120ms, transform 80ms;
+}
+.electron-app .cm-circle-btn:hover .cm-circle-btn-disc { opacity: 0.85; }
+.electron-app .cm-circle-btn:active .cm-circle-btn-disc { transform: scale(0.95); }
+.electron-app .cm-circle-btn-icon { display: flex; align-items: center; justify-content: center; }
+
+/* Minimize button */
+.electron-app .cm-minimize-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.18);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 120ms;
+  border: none;
+  color: #fff;
+}
+.electron-app .cm-minimize-btn:hover { background: rgba(255,255,255,.28); }
+
+/* Ended overlay */
+.electron-app .cm-ended-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.5);
+  z-index: 10;
+}
+.electron-app .cm-ended-text {
+  font-size: 16px; font-weight: 500; color: #fff;
+  background: rgba(0,0,0,.5);
+  padding: 10px 20px; border-radius: 10px;
+}
+
+/* Mini bubble (minimized call) */
+.electron-app .cm-bubble {
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(0,0,0,.35);
+}
+.electron-app .cm-mini-hangup {
+  background: #FF4D4F !important;
+  border-radius: 50%;
+}
+.electron-app .cm-mini-hangup:hover { background: #E63234 !important; }
+.electron-app .cm-bubble-audio-label {
+  font-size: 12px;
+  color: rgba(255,255,255,.8);
+}
+.electron-app .cm-bubble-timer {
+  font-size: 13px;
+  color: rgba(255,255,255,.9);
+  font-weight: 500;
+}
+
+/* PiP border */
+.electron-app .cm-pip {
+  border: 2px solid rgba(255,255,255,.25);
+  border-radius: 10px;
+}
+
+/* Video top info bar */
+.electron-app .cm-video-name-text {
+  font-size: 17px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,.5);
+}
+.electron-app .cm-video-status {
+  font-size: 13px;
+  color: rgba(255,255,255,.75);
+}
+
+/* Incoming center */
+.electron-app .cm-incoming-name {
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 6px rgba(0,0,0,.4);
+  margin-top: 12px;
+}
+
+/* Media error bar */
+.electron-app .cm-media-error {
+  font-size: 13px;
+  padding: 8px 16px;
+}

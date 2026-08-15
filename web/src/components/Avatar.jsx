@@ -1,18 +1,18 @@
 import React, { memo, useState } from 'react';
 import { mediaUrl } from '../utils/url';
 
-// 无头像时的字母头像配色：多彩调色盘，按名字 hash 稳定取色，去掉"整页灰"
+// 无头像时的字母头像配色：多彩调色盘，按名字 hash 稳定取色
 const COLORS = [
-  'var(--color-primary)', // v信绿(主)——跟随品牌主色 token，暗色自动切换
-  '#17B8A6', // 青碧(辅)
-  '#5B7BF0', // 靛蓝
-  '#9B7BF5', // 薰衣草紫
-  '#F0A020', // 琥珀
-  '#FF7A93', // 珊瑚粉
-  '#13C2C2', // 青
-  '#7C6BF7', // 蓝紫
-  '#E8619D', // 品红
-  '#38C0A8', // 薄荷
+  'var(--color-primary)',
+  '#17B8A6',
+  '#5B7BF0',
+  '#9B7BF5',
+  '#F0A020',
+  '#FF7A93',
+  '#13C2C2',
+  '#7C6BF7',
+  '#E8619D',
+  '#38C0A8',
 ];
 
 export function getColor(name) {
@@ -24,9 +24,11 @@ export function getColor(name) {
 export default memo(function Avatar({ src, name = '', size = 40, style = {}, online = false,
   className: _className = '', onClick, priority = false }) {
   const radius = Math.max(3, Math.round(size * 0.13));
-  const baseStyle = { width: size, height: size, borderRadius: radius, overflow: 'hidden',
+  const baseStyle = {
+    width: size, height: size, borderRadius: radius, overflow: 'hidden',
     flexShrink: 0, display: 'inline-flex', alignItems: 'center',
-    justifyContent: 'center', position: 'relative', ...style };
+    justifyContent: 'center', position: 'relative', ...style,
+  };
   const letter = (name || '?')[0].toUpperCase();
 
   const [errored, setErrored] = useState(false);
@@ -34,15 +36,9 @@ export default memo(function Avatar({ src, name = '', size = 40, style = {}, onl
   if (src !== prevSrc) { setPrevSrc(src); setErrored(false); }
   const showImg = src && !errored;
 
-  // srcset：根据设备像素比提供 1x/2x/3x 版本（节省移动端带宽 50-70%）
-  // sizes：告知浏览器实际显示尺寸（单位 px × dpr），精确选取最优分辨率
+  // mediaUrl 已在 Electron 下附加 token，直接用原图 URL，不加 srcset ?w= 参数
+  // （服务端不支持按宽缩放，?w= 会 404 导致裂图）
   const imgUrl = showImg ? mediaUrl(src) : null;
-  const imgSizes = `${size}px`;
-  // 若服务端支持 ?w= 缩放参数则生成 srcset，否则只用原图
-  const hasSrcset = imgUrl && !imgUrl.startsWith('data:') && !imgUrl.startsWith('blob:');
-  const srcSet = hasSrcset
-    ? `${imgUrl}?w=${size} 1x, ${imgUrl}?w=${size * 2} 2x, ${imgUrl}?w=${size * 3} 3x`
-    : undefined;
 
   return (
     <div
@@ -55,29 +51,28 @@ export default memo(function Avatar({ src, name = '', size = 40, style = {}, onl
     >
       {showImg ? (
         <>
+          {/* 底层字母兜底：图片加载中/加载失败时可见 */}
           <div aria-hidden="true" style={{ ...baseStyle, position: 'absolute', inset: 0,
             background: getColor(name), color: 'var(--text-inverse)',
             fontSize: size * 0.42, fontWeight: 600 }}>{letter}</div>
           <img
             src={imgUrl}
-            srcSet={srcSet}
-            sizes={imgSizes}
             alt={name}
             width={size}
             height={size}
             loading={priority ? 'eager' : 'lazy'}
             fetchPriority={priority ? 'high' : 'auto'}
-            decoding={priority ? 'sync' : 'async'}
-            crossOrigin="anonymous"
+            decoding="async"
             onError={() => setErrored(true)}
             style={{ ...baseStyle, objectFit: 'cover', position: 'relative', zIndex: 1 }}
           />
         </>
       ) : (
         <div style={{ ...baseStyle, background: getColor(name), color: 'var(--text-inverse)',
-          fontSize: size * 0.42, fontWeight: 600, transition: 'opacity .15s' }}>{letter}</div>
+          fontSize: size * 0.42, fontWeight: 600 }}>{letter}</div>
       )}
       {online && <span className="wc-online-dot" />}
     </div>
   );
 });
+

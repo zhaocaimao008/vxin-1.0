@@ -1,0 +1,557 @@
+/* ================================================================
+   Windows Base Components — buttons, inputs, modals, menus, toasts
+   All scoped under .electron-app
+================================================================ */
+
+/* ── Buttons ── */
+.electron-app .wc-confirm-ok,
+.electron-app .lt-save-btn,
+.electron-app .lt-create-btn,
+.electron-app .cgm-create,
+.electron-app .cl-add-btn,
+.electron-app .up-btn-primary,
+.electron-app .req-accept {
+  height: 36px;
+  padding: 0 16px;
+  background: #16C55B;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--vx-transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.electron-app .wc-confirm-ok:hover,
+.electron-app .lt-save-btn:hover,
+.electron-app .lt-create-btn:hover,
+.electron-app .cgm-create:hover,
+.electron-app .cl-add-btn:hover,
+.electron-app .up-btn-primary:hover,
+.electron-app .req-accept:hover { background: #13B552; }
+.electron-app .wc-confirm-ok:active,
+.electron-app .lt-save-btn:active,
+.electron-app .cgm-create:active,
+.electron-app .up-btn-primary:active { background: #10A64A; }
+.electron-app .wc-confirm-ok:disabled,
+.electron-app .lt-save-btn:disabled,
+.electron-app .cgm-create:disabled,
+.electron-app .up-btn-primary:disabled { background: #C9CDD4; cursor: not-allowed; }
+
+.electron-app .up-btn-primary.up-btn-full { width: 100%; }
+
+/* Secondary button */
+.electron-app .wc-confirm-cancel,
+.electron-app .up-btn-ghost,
+.electron-app .cgm-cancel,
+.electron-app .req-reject {
+  height: 36px;
+  padding: 0 16px;
+  background: #fff;
+  color: #1F2329;
+  border: 1px solid #EAECF0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background var(--vx-transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.electron-app .wc-confirm-cancel:hover,
+.electron-app .up-btn-ghost:hover,
+.electron-app .cgm-cancel:hover,
+.electron-app .req-reject:hover { background: #F7F8FA; }
+
+/* Save button (text-style green) */
+.electron-app .wc-save-btn { color: #16C55B; font-size: 15px; font-weight: 600; }
+.electron-app .wc-save-btn:disabled { opacity: 0.5; }
+
+/* ── Switch ── */
+.electron-app .wc-switch {
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: #D7DADF;
+  border: none;
+  position: relative;
+  cursor: pointer;
+  transition: background var(--vx-transition);
+  flex-shrink: 0;
+}
+.electron-app .wc-switch span {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform var(--vx-transition);
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.electron-app .wc-switch.on { background: #16C55B; }
+.electron-app .wc-switch.on span { transform: translateX(18px); }
+.electron-app .wc-switch:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Inputs ── */
+.electron-app .lt-edit-input,
+.electron-app .cgm-name-input,
+.electron-app .up-remark-input,
+.electron-app .up-verify-input,
+.electron-app .afm-search-input,
+.electron-app .wc-add-form-input,
+.electron-app .gi-name-edit {
+  height: 38px;
+  padding: 0 12px;
+  background: #F7F8FA;
+  border: 1px solid #EAECF0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1F2329;
+  transition: border-color var(--vx-transition), background var(--vx-transition);
+  width: 100%;
+  box-sizing: border-box;
+}
+.electron-app .lt-edit-input:focus,
+.electron-app .cgm-name-input:focus,
+.electron-app .up-remark-input:focus,
+.electron-app .up-verify-input:focus,
+.electron-app .afm-search-input:focus,
+.electron-app .wc-add-form-input:focus,
+.electron-app .gi-name-edit:focus {
+  background: #fff;
+  border-color: #16C55B;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(22,197,91,.12);
+}
+.electron-app .lt-edit-input::placeholder,
+.electron-app .cgm-name-input::placeholder,
+.electron-app .up-remark-input::placeholder,
+.electron-app .gi-name-edit::placeholder { color: #B0B4BB; }
+
+/* ── Toast ── */
+.electron-app .wc-toast {
+  border-radius: 8px;
+  font-size: 13px;
+  padding: 8px 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+}
+.electron-app .wc-toast.success { background: rgba(22,197,91,.9); }
+.electron-app .wc-toast.error   { background: rgba(255,77,79,.9); }
+
+/* ── Confirm dialog ── */
+.electron-app .wc-confirm-overlay {
+  background: rgba(0,0,0,.35);
+}
+.electron-app .wc-confirm-box {
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0,0,0,.14);
+  background: #fff;
+  width: 420px;
+  max-width: 92vw;
+  padding: 24px;
+}
+.electron-app .wc-confirm-msg {
+  font-size: 15px;
+  color: #1F2329;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+.electron-app .wc-confirm-btns {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.electron-app .wc-confirm-cancel { min-width: 80px; }
+.electron-app .wc-confirm-ok { min-width: 80px; }
+
+/* ── Modal base ── */
+.electron-app .wc-modal {
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0,0,0,.14);
+  background: #fff;
+  border: none;
+}
+.electron-app .wc-modal-overlay { background: rgba(0,0,0,.35); }
+.electron-app .wc-modal-header {
+  height: 52px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #EAECF0;
+}
+.electron-app .wc-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1F2329;
+}
+.electron-app .wc-modal-close {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: #8A8F98;
+  cursor: pointer;
+  transition: background var(--vx-transition);
+}
+.electron-app .wc-modal-close:hover { background: #F3F5F7; color: #1F2329; }
+.electron-app .wc-modal-body { padding: 16px; }
+
+/* ── Page layout (Profile sub-pages) ── */
+.electron-app .wc-page-bg { background: #F7F8FA; }
+.electron-app .wc-page-header {
+  height: 56px;
+  background: #fff;
+  border-bottom: 1px solid #EAECF0;
+  padding: 0 16px;
+}
+.electron-app .wc-page-header-back { color: #16C55B; font-size: 15px; }
+.electron-app .wc-page-header-title { font-size: 16px; font-weight: 600; color: #1F2329; }
+
+/* ── Settings card / row ── */
+.electron-app .wc-card {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #EAECF0;
+  box-shadow: none;
+  overflow: hidden;
+}
+.electron-app .wc-crow {
+  padding: 14px 16px;
+  border-bottom: 1px solid #F0F1F2;
+  transition: background var(--vx-transition);
+}
+.electron-app .wc-crow:last-child { border-bottom: none; }
+.electron-app .wc-crow-clickable:hover { background: #F3F5F7; }
+.electron-app .wc-crow-icon { width: 32px; height: 32px; border-radius: 8px; }
+.electron-app .wc-crow-label { font-size: 14px; font-weight: 500; color: #1F2329; }
+.electron-app .wc-crow-desc { font-size: 12px; color: #8A8F98; margin-top: 2px; }
+.electron-app .wc-crow-value { font-size: 13px; color: #8A8F98; }
+.electron-app .wc-section-pad { padding: 0 16px; }
+.electron-app .wc-slabel {
+  padding: 12px 16px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #8A8F98;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+/* ── Chevron & icons ── */
+.electron-app .wc-chevron { width: 16px; height: 16px; fill: #B0B4BB; }
+.electron-app .wc-ico { width: 20px; height: 20px; fill: currentColor; }
+
+/* ── Empty state ── */
+.electron-app .wc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #8A8F98;
+  font-size: 14px;
+  text-align: center;
+}
+.electron-app .wc-empty svg { fill: #D5D8DC; }
+.electron-app .wc-empty p { color: #8A8F98; margin-top: 8px; font-size: 13px; }
+.electron-app .wc-loading {
+  display: flex; align-items: center; justify-content: center;
+  padding: 32px;
+  color: #8A8F98;
+  font-size: 13px;
+}
+
+/* ── Focus ring ── */
+.electron-app :focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(22,197,91,.2);
+}
+
+/* ── Dark mode base ── */
+body.dark-mode .electron-app .wc-confirm-box { background: #202327; }
+body.dark-mode .electron-app .wc-confirm-msg { color: #F2F3F5; }
+body.dark-mode .electron-app .wc-confirm-cancel { background: #292D32; border-color: #32363D; color: #F2F3F5; }
+body.dark-mode .electron-app .wc-modal { background: #202327; }
+body.dark-mode .electron-app .wc-modal-header { border-bottom-color: #32363D; }
+body.dark-mode .electron-app .wc-modal-title { color: #F2F3F5; }
+body.dark-mode .electron-app .wc-modal-close { color: #A9AFB7; }
+body.dark-mode .electron-app .wc-modal-close:hover { background: rgba(255,255,255,.08); color: #F2F3F5; }
+body.dark-mode .electron-app .wc-card { background: #202327; border-color: #32363D; }
+body.dark-mode .electron-app .wc-crow { border-bottom-color: #292D33; }
+body.dark-mode .electron-app .wc-crow-clickable:hover { background: rgba(255,255,255,.06); }
+body.dark-mode .electron-app .wc-crow-label { color: #F2F3F5; }
+body.dark-mode .electron-app .wc-crow-value { color: #A9AFB7; }
+body.dark-mode .electron-app .wc-page-bg { background: #15171A; }
+body.dark-mode .electron-app .wc-page-header { background: #1B1E22; border-bottom-color: #32363D; }
+body.dark-mode .electron-app .wc-page-header-title { color: #F2F3F5; }
+body.dark-mode .electron-app .lt-edit-input,
+body.dark-mode .electron-app .cgm-name-input,
+body.dark-mode .electron-app .up-remark-input,
+body.dark-mode .electron-app .up-verify-input,
+body.dark-mode .electron-app .gi-name-edit {
+  background: #292D32; border-color: #32363D; color: #F2F3F5;
+}
+body.dark-mode .electron-app .wc-switch { background: #3A3F47; }
+body.dark-mode .electron-app .wc-switch.on { background: #16C55B; }
+
+/* ── Final QA Polish — targeted fixes from code audit ── */
+
+/* Fix: chat header name overflow ellipsis */
+.electron-app .wc-chat-header-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+}
+
+/* Fix: header sub (status) — smaller gap since header is now 58px */
+.electron-app .wc-chat-header-sub {
+  font-size: 12px;
+  margin-top: 1px;
+}
+
+/* Fix: message padding — tighter left on narrow windows */
+.electron-app .wc-messages {
+  padding: 12px 20px;
+}
+.electron-app .wc-messages-virt {
+  padding: 0;
+}
+
+/* Fix: consecutive message spacing */
+.electron-app .wc-msg-row {
+  margin-bottom: 4px;
+}
+.electron-app .wc-msg-row:not(.consecutive) {
+  margin-top: 8px;
+}
+
+/* Fix: bubble max-width — 58% on desktop is better than 60% */
+.electron-app .wc-msg-body {
+  max-width: 58%;
+}
+
+/* Fix: self bubble color — slightly warmer, less saturated */
+.electron-app .wc-msg-row.mine .wc-msg-bubble {
+  background: #D6F3E3;
+}
+
+/* Fix: other bubble lighter border */
+.electron-app .wc-msg-row:not(.mine) .wc-msg-bubble {
+  background: #FFFFFF;
+  border-color: #E8EAED;
+}
+
+/* Fix: file card width consistency */
+.electron-app .wc-msg-file {
+  min-width: 200px;
+  max-width: 260px;
+}
+
+/* Fix: voice message consistent height */
+.electron-app .wc-voice-msg {
+  height: 42px;
+  min-width: 100px;
+  max-width: 220px;
+  display: flex;
+  align-items: center;
+}
+
+/* Fix: image message max — prevent huge images */
+.electron-app .wc-msg-img {
+  max-width: 260px;
+  max-height: 260px;
+  border-radius: 8px;
+  object-fit: cover;
+  display: block;
+}
+
+/* Fix: toolbar - no top border between toolbar and textarea */
+.electron-app .wc-input-toolbar {
+  border-bottom: none;
+}
+
+/* Fix: send button disabled — readable text */
+.electron-app .wc-send-btn:disabled {
+  opacity: 1;
+  background: #E8EAED;
+  color: #B0B4BB;
+}
+
+/* Fix: modal body padding consistency */
+.electron-app .wc-modal-body {
+  padding: 16px;
+}
+
+/* Fix: confirm dialog button row spacing */
+.electron-app .wc-confirm-btns {
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Fix: context menu z-index — ensure it's always on top */
+.electron-app .wc-ctx-menu {
+  z-index: 10000;
+}
+
+/* Fix: home add dropdown z-index */
+.electron-app .home-add-dropdown {
+  z-index: 10000;
+}
+
+/* Fix: emoji panel z-index */
+.electron-app .wc-emoji-panel,
+.electron-app .ep-container {
+  z-index: 9999;
+}
+
+/* Fix: toast should be above modals */
+.electron-app .wc-toast-wrap {
+  z-index: 11000;
+}
+
+/* Fix: panel topbar — consistent with chat header */
+.electron-app .wc-panel-topbar {
+  flex-shrink: 0;
+}
+
+/* Fix: scrollbar in wc-panel-content needs to stay contained */
+.electron-app .wc-panel-content {
+  overflow: hidden;
+}
+
+/* Fix: message area background — subtle not harsh */
+.electron-app .wc-messages,
+.electron-app .wc-messages-virt {
+  background: #F5F6F8;
+}
+
+/* Fix: time divider — center align properly */
+.electron-app .wc-msg-time-sep {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Fix: badge border color matches active background */
+.electron-app .wc-chat-item.active .wc-chat-item-badge {
+  border-color: #DCF4E6;
+}
+
+/* Fix: unread dot size and border */
+.electron-app .wc-chat-item-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #16C55B;
+  border: 1.5px solid #FAFBFC;
+}
+.electron-app .wc-chat-item.active .wc-chat-item-unread-dot {
+  border-color: #EAF8EF;
+}
+
+/* Fix: contact item consistent line-height */
+.electron-app .wc-contact-item-name {
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.electron-app .wc-contact-item-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Fix: profile hero avatar wrap needs relative positioning for edit overlay */
+.electron-app .pf-avatar-wrap {
+  position: relative;
+}
+
+/* Fix: settings entry text overflow */
+.electron-app .wc-crow-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Fix: gi-panel needs proper overflow so members scroll */
+.electron-app .gi-panel {
+  overflow: hidden;
+}
+.electron-app .gi-body {
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Fix: ann preview text overflow */
+.electron-app .gi-ann-preview {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Fix: moments text overflow */
+.electron-app .wc-moment-text {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Fix: global search row name overflow */
+.electron-app .gs-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.electron-app .gs-msg-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Fix: add friend result name overflow */
+.electron-app .afm-result-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Fix: friend request name overflow */
+.electron-app .req-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Dark mode fixes */
+body.dark-mode .electron-app .wc-messages,
+body.dark-mode .electron-app .wc-messages-virt { background: #0F1115; }
+body.dark-mode .electron-app .wc-msg-row.mine .wc-msg-bubble {
+  background: rgba(22,197,91,.20);
+  color: #E8EBF0;
+}
+body.dark-mode .electron-app .wc-msg-row:not(.mine) .wc-msg-bubble {
+  background: #252830;
+  border-color: #32363D;
+  color: #D8DCE3;
+}
+body.dark-mode .electron-app .wc-send-btn:disabled {
+  background: #2A2D34;
+  color: #5A5E66;
+}
+body.dark-mode .electron-app .wc-confirm-cancel {
+  background: #292D32;
+  border-color: #32363D;
+  color: #D0D3D8;
+}
+body.dark-mode .electron-app .wc-ctx-menu {
+  background: #252830;
+  border-color: #32363D;
+}
+body.dark-mode .electron-app .wc-ctx-item { color: #D0D3D8; }
+body.dark-mode .electron-app .wc-ctx-item:hover { background: rgba(255,255,255,.07); }
+body.dark-mode .electron-app .wc-chat-item-unread-dot { border-color: #1B1E22; }
+body.dark-mode .electron-app .wc-chat-item.active .wc-chat-item-unread-dot {
+  border-color: rgba(22,197,91,.14);
+}

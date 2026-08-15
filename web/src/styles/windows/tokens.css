@@ -1,0 +1,80 @@
+/* ================================================================
+   Windows Design Tokens — scoped under .electron-app
+   All other windows/*.css files inherit these tokens.
+================================================================ */
+.electron-app {
+  /* ── Primary ── */
+  --vx-primary:        #16C55B;
+  --vx-primary-hover:  #13B552;
+  --vx-primary-active: #10A64A;
+  --vx-primary-soft:   #EAF8EF;
+  --vx-primary-rgb:    22, 197, 91;
+
+  /* ── Backgrounds ── */
+  --vx-bg:           #F7F8FA;
+  --vx-bg-secondary: #FAFBFC;
+
+  /* ── Surfaces ── */
+  --vx-surface:        #FFFFFF;
+  --vx-surface-hover:  #F3F5F7;
+  --vx-surface-active: #EAF8EF;
+  --vx-surface-raised: #FFFFFF;
+
+  /* ── Text ── */
+  --vx-text-primary:   #1F2329;
+  --vx-text-secondary: #8A8F98;
+  --vx-text-muted:     #B0B4BB;
+  --vx-text-inverse:   #FFFFFF;
+
+  /* ── Borders ── */
+  --vx-border:       #EAECF0;
+  --vx-border-light: #F0F1F2;
+
+  /* ── Semantic ── */
+  --vx-danger:  #FF4D4F;
+  --vx-warning: #FAAD14;
+  --vx-info:    #1677FF;
+  --vx-success: #16C55B;
+
+  /* ── Radius ── */
+  --vx-r-xs: 4px;
+  --vx-r-sm: 6px;
+  --vx-r-md: 8px;
+  --vx-r-lg: 12px;
+
+  /* ── Shadows ── */
+  --vx-shadow-sm:     0 2px 10px rgba(0,0,0,.04);
+  --vx-shadow-md:     0 8px 28px rgba(0,0,0,.08);
+  --vx-shadow-dialog: 0 16px 48px rgba(0,0,0,.14);
+
+  /* ── Layout ── */
+  --vx-nav-width:  72px;
+  --vx-list-width: 330px;
+
+  /* ── Motion ── */
+  --vx-transition: 120ms ease;
+}
+
+/* ── Dark mode token overrides ── */
+body.dark-mode .electron-app {
+  --vx-bg:           #15171A;
+  --vx-bg-secondary: #1B1E22;
+
+  --vx-surface:        #202327;
+  --vx-surface-hover:  #292D32;
+  --vx-surface-active: rgba(22,197,91,.14);
+  --vx-surface-raised: #252830;
+
+  --vx-text-primary:   #F2F3F5;
+  --vx-text-secondary: #A9AFB7;
+  --vx-text-muted:     #737A84;
+
+  --vx-border:       #32363D;
+  --vx-border-light: #292D33;
+
+  --vx-primary-soft: rgba(22,197,91,.13);
+
+  --vx-shadow-sm:     0 2px 10px rgba(0,0,0,.18);
+  --vx-shadow-md:     0 8px 28px rgba(0,0,0,.30);
+  --vx-shadow-dialog: 0 16px 48px rgba(0,0,0,.40);
+}

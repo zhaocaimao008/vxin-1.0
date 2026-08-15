@@ -417,7 +417,7 @@ function createWindow() {
     minWidth: 900,
     minHeight: 600,
     title: 'v信',
-    icon: path.join(__dirname, '../assets/icon.png'),
+    icon: path.join(__dirname, process.platform === 'win32' ? '../assets/icon.ico' : '../assets/icon.png'),
     frame: false,
     titleBarStyle: 'hidden',
     // 高 DPI 适配：以内容区尺寸为准计算窗口尺寸，避免 Windows 125%/150% 缩放下
@@ -671,7 +671,9 @@ function setupAutoUpdater() {
 
 // ── 系统托盘 ───────────────────────────────────────────────
 function createTray() {
-  const iconPath = path.join(__dirname, '../assets/icon.png');
+  // Windows 用 .ico（多尺寸，系统按 DPI 自动选最佳），其他平台用 .png
+  const iconFile = process.platform === 'win32' ? 'icon.ico' : 'icon.png';
+  const iconPath = path.join(__dirname, '../assets', iconFile);
   let trayIcon = nativeImage.createFromPath(iconPath);
   // 图标缺失/损坏时 createFromPath 返回空图，new Tray(空图) 在部分平台会抛异常导致
   // 启动崩溃。空图则退回一个 1x1 占位图，保证托盘可创建、应用能正常起。

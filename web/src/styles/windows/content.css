@@ -1,0 +1,361 @@
+/* ================================================================
+   Windows Collections, Search, Profile, Settings
+   All scoped under .electron-app
+================================================================ */
+
+/* ── Collections page ── */
+.electron-app .wc-collections-wrap {
+  display: flex; height: 100%; background: #fff;
+}
+
+/* ── Global Search ── */
+.electron-app .gs-scroll {
+  flex: 1; overflow-y: auto;
+  background: #FAFBFC;
+}
+.electron-app .gs-searching {
+  text-align: center; padding: 20px;
+  font-size: 13px; color: #8A8F98;
+}
+.electron-app .gs-cat {
+  padding: 10px 16px 4px;
+  font-size: 11px; font-weight: 600;
+  color: #B0B4BB; letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.electron-app .gs-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; cursor: pointer;
+  border-bottom: 1px solid #F0F1F2;
+  transition: background 120ms;
+}
+.electron-app .gs-row:hover { background: #F3F5F7; }
+.electron-app .gs-row img,
+.electron-app .gs-row .avatar-initials { border-radius: 10px; }
+.electron-app .gs-info { flex: 1; min-width: 0; }
+.electron-app .gs-name {
+  font-size: 14px; font-weight: 500; color: #1F2329;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.electron-app .gs-sub {
+  font-size: 12px; color: #8A8F98;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.electron-app .gs-highlight,
+.electron-app span.gs-highlight { color: #16C55B; font-weight: 500; }
+.electron-app .gs-msg-meta {
+  font-size: 12px; color: #8A8F98; margin-bottom: 2px;
+  display: flex; align-items: center; gap: 6px;
+}
+.electron-app .gs-msg-text {
+  font-size: 13px; color: #1F2329;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.electron-app .gs-filehelper-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: #EAF8EF;
+  display: flex; align-items: center; justify-content: center;
+}
+.electron-app .gs-network-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; cursor: pointer;
+  border-top: 1px solid #EAECF0;
+  font-size: 13px; color: #8A8F98;
+  transition: background 120ms;
+}
+.electron-app .gs-network-row:hover { background: #F3F5F7; }
+.electron-app .gs-network-icon { flex-shrink: 0; }
+
+/* ── Profile / Settings page ── */
+.electron-app .pf-hero {
+  position: relative;
+  height: 180px; overflow: hidden;
+  flex-shrink: 0;
+}
+.electron-app .pf-hero-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, #16C55B 0%, #0A9C48 100%);
+}
+.electron-app .pf-hero-bg::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.08);
+}
+.electron-app .pf-hero-qr {
+  position: absolute; top: 12px; right: 12px; z-index: 2;
+  width: 32px; height: 32px;
+  background: rgba(255,255,255,.18);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; cursor: pointer;
+  transition: background 120ms;
+}
+.electron-app .pf-hero-qr:hover { background: rgba(255,255,255,.30); }
+.electron-app .pf-hero-inner {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 16px 20px 14px; z-index: 2;
+}
+.electron-app .pf-avatar-wrap {
+  width: 64px; height: 64px;
+  border-radius: 14px;
+  border: 3px solid rgba(255,255,255,.9);
+  overflow: hidden; cursor: pointer;
+  transition: transform 120ms;
+  margin-bottom: 10px;
+}
+.electron-app .pf-avatar-wrap:hover { transform: translateY(-2px); }
+.electron-app .pf-avatar-edit {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,.45);
+  font-size: 11px; color: #fff;
+  text-align: center; padding: 3px;
+}
+.electron-app .pf-avatar-uploading {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.5);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: #fff;
+}
+.electron-app .pf-hero-name {
+  font-size: 20px; font-weight: 700; color: #fff;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  text-shadow: 0 1px 4px rgba(0,0,0,.25);
+}
+.electron-app .pf-hero-bio {
+  font-size: 12px; color: rgba(255,255,255,.8);
+  margin-top: 3px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.electron-app .pf-vid-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 6px; padding: 3px 10px;
+  background: rgba(255,255,255,.18);
+  border-radius: 12px; cursor: pointer;
+  transition: background 120ms;
+}
+.electron-app .pf-vid-chip:hover { background: rgba(255,255,255,.28); }
+.electron-app .pf-vid-label { font-size: 11px; color: rgba(255,255,255,.85); }
+.electron-app .pf-vid-value { font-size: 12px; color: #fff; font-weight: 600; }
+
+/* Settings / profile content */
+.electron-app .wc-section-pad { padding: 0 16px; }
+.electron-app .wc-slabel {
+  padding: 14px 16px 6px;
+  font-size: 11px; font-weight: 600;
+  color: #B0B4BB; letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.electron-app .wc-edit-pad { padding: 12px 16px; }
+.electron-app .wc-edit-wrap { position: relative; }
+.electron-app .wc-edit-input {
+  width: 100%; height: 40px; padding: 0 12px;
+  background: #F7F8FA; border: 1px solid #EAECF0;
+  border-radius: 8px; font-size: 14px; color: #1F2329;
+  box-sizing: border-box;
+  transition: border-color 120ms, background 120ms;
+}
+.electron-app .wc-edit-input:focus {
+  background: #fff; border-color: #16C55B; outline: none;
+}
+.electron-app .wc-edit-input::placeholder { color: #B0B4BB; }
+.electron-app .wc-edit-textarea {
+  height: auto; min-height: 80px; padding: 10px 12px;
+  resize: vertical; line-height: 1.6;
+}
+.electron-app .wc-edit-counter {
+  position: absolute; bottom: 8px; right: 10px;
+  font-size: 11px; color: #B0B4BB;
+}
+.electron-app .wc-edit-error {
+  font-size: 12px; color: #FF4D4F; margin-top: 6px;
+}
+.electron-app .wc-edit-hint {
+  font-size: 12px; color: #B0B4BB; margin-top: 6px;
+}
+
+/* Settings rows */
+.electron-app .wc-settings-entry {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #F0F1F2;
+  cursor: pointer; transition: background 120ms;
+}
+.electron-app .wc-settings-entry:last-child { border-bottom: none; }
+.electron-app .wc-settings-entry:hover { background: #F3F5F7; }
+.electron-app .wc-settings-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #F0F1F2;
+}
+.electron-app .wc-settings-row:last-child { border-bottom: none; }
+.electron-app .wc-settings-glass-block {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #EAECF0;
+  overflow: hidden; margin-bottom: 16px;
+}
+.electron-app .wc-settings-profile-card {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px; background: #fff;
+  border-bottom: 1px solid #F0F1F2;
+}
+.electron-app .wc-settings-qr-card {
+  width: 60px; height: 60px;
+  border-radius: 10px; overflow: hidden;
+  border: 1px solid #EAECF0;
+}
+
+/* Device list */
+.electron-app .wc-device-pad { padding: 0 16px; }
+.electron-app .wc-device-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 0; border-bottom: 1px solid #F0F1F2;
+}
+.electron-app .wc-device-item:last-child { border-bottom: none; }
+.electron-app .wc-device-name { font-size: 14px; font-weight: 500; color: #1F2329; }
+.electron-app .wc-device-info { font-size: 12px; color: #8A8F98; margin-top: 2px; }
+.electron-app .wc-device-icon { font-size: 20px; }
+.electron-app .wc-badge-current {
+  font-size: 11px; color: #16C55B;
+  background: #EAF8EF; border-radius: 4px;
+  padding: 2px 6px;
+}
+.electron-app .wc-btn-exit {
+  height: 28px; padding: 0 10px;
+  font-size: 12px; color: #FF4D4F;
+  background: rgba(255,77,79,.06);
+  border: 1px solid rgba(255,77,79,.2);
+  border-radius: 6px; cursor: pointer;
+  transition: background 120ms;
+}
+.electron-app .wc-btn-exit:hover { background: rgba(255,77,79,.12); }
+.electron-app .wc-btn-exit-all {
+  width: 100%; height: 36px;
+  background: rgba(255,77,79,.06);
+  border: 1px solid rgba(255,77,79,.2);
+  border-radius: 8px;
+  font-size: 13px; color: #FF4D4F;
+  cursor: pointer; transition: background 120ms;
+}
+.electron-app .wc-btn-exit-all:hover { background: rgba(255,77,79,.12); }
+.electron-app .wc-device-hint { font-size: 12px; color: #B0B4BB; padding: 8px 0; }
+
+/* Appearance */
+.electron-app .wc-appearance-pad { padding: 16px; }
+.electron-app .wc-appearance-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.electron-app .wc-appearance-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: #F7F8FA; border: 1.5px solid #EAECF0;
+  border-radius: 10px; cursor: pointer;
+  font-size: 13px; color: #1F2329;
+  transition: border-color 120ms;
+}
+.electron-app .wc-appearance-btn.active { border-color: #16C55B; color: #16C55B; }
+.electron-app .wc-appearance-btn:hover { border-color: #16C55B; }
+.electron-app .wc-appearance-emoji { font-size: 24px; }
+
+/* Font size */
+.electron-app .wc-font-size-row { display: flex; gap: 8px; align-items: flex-end; }
+.electron-app .wc-font-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 8px 12px;
+  background: #F7F8FA; border: 1.5px solid #EAECF0;
+  border-radius: 8px; cursor: pointer;
+  transition: border-color 120ms;
+}
+.electron-app .wc-font-btn.active { border-color: #16C55B; }
+.electron-app .wc-font-preview { font-weight: 600; color: #1F2329; }
+.electron-app .wc-font-label { font-size: 11px; color: #8A8F98; }
+.electron-app .wc-font-demo {
+  margin-top: 12px; padding: 12px;
+  background: #F7F8FA; border-radius: 8px;
+  font-size: 14px; color: #1F2329; line-height: 1.6;
+}
+
+/* Privacy */
+.electron-app .wc-privacy-outer { padding: 0 16px; }
+.electron-app .wc-privacy-desc { font-size: 13px; color: #8A8F98; padding: 8px 0; }
+.electron-app .wc-privacy-card-mt { margin-top: 8px; }
+
+/* Notification */
+.electron-app .wc-notif-pad { padding: 4px 0; }
+
+/* Server / account inputs */
+.electron-app .wc-server-pad { padding: 0 16px; }
+.electron-app .wc-server-input {
+  flex: 1; height: 38px; padding: 0 12px;
+  background: #F7F8FA; border: 1px solid #EAECF0;
+  border-radius: 8px; font-size: 13px; color: #1F2329;
+}
+.electron-app .wc-server-input:focus {
+  border-color: #16C55B; background: #fff; outline: none;
+}
+
+/* Account add row */
+.electron-app .wc-add-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; cursor: pointer;
+  border-bottom: 1px solid #F0F1F2;
+  transition: background 120ms;
+}
+.electron-app .wc-add-row:hover { background: #F3F5F7; }
+.electron-app .wc-add-avatar-wrap { flex-shrink: 0; }
+.electron-app .wc-add-name { font-size: 14px; font-weight: 500; color: #1F2329; }
+.electron-app .wc-add-phone { font-size: 12px; color: #8A8F98; margin-top: 2px; }
+.electron-app .wc-add-switch {
+  font-size: 12px; color: #16C55B; flex-shrink: 0;
+}
+.electron-app .wc-add-icon-wrap {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: #F1F2F4; border: 1.5px dashed #D5D8DC;
+  display: flex; align-items: center; justify-content: center;
+}
+.electron-app .wc-add-icon-svg { width: 20px; height: 20px; fill: #B0B4BB; }
+.electron-app .wc-add-label { font-size: 14px; color: #1F2329; flex: 1; }
+.electron-app .wc-add-chevron { width: 16px; height: 16px; fill: #B0B4BB; }
+.electron-app .wc-add-form { padding: 0 16px 12px; }
+.electron-app .wc-add-info { padding: 8px 0; }
+.electron-app .wc-add-info-text { font-size: 12px; color: #8A8F98; }
+.electron-app .wc-add-form-inner { display: flex; flex-direction: column; gap: 8px; }
+.electron-app .wc-add-form-input {
+  height: 38px; padding: 0 12px;
+  background: #F7F8FA; border: 1px solid #EAECF0;
+  border-radius: 8px; font-size: 14px; color: #1F2329;
+  width: 100%; box-sizing: border-box;
+}
+.electron-app .wc-add-form-input:focus { border-color: #16C55B; background: #fff; outline: none; }
+.electron-app .wc-add-form-error { font-size: 12px; color: #FF4D4F; }
+.electron-app .wc-add-form-submit {
+  height: 36px; background: #16C55B; color: #fff;
+  border-radius: 8px; font-size: 14px; font-weight: 500;
+  border: none; cursor: pointer; transition: background 120ms;
+}
+.electron-app .wc-add-form-submit:hover { background: #13B552; }
+.electron-app .wc-add-form-submit:disabled { background: #C9CDD4; cursor: not-allowed; }
+
+/* ── Dark mode content ── */
+body.dark-mode .electron-app .gs-scroll { background: #1B1E22; }
+body.dark-mode .electron-app .gs-row { border-bottom-color: #292D33; }
+body.dark-mode .electron-app .gs-row:hover { background: rgba(255,255,255,.06); }
+body.dark-mode .electron-app .gs-name { color: #F2F3F5; }
+body.dark-mode .electron-app .gs-msg-text { color: #F2F3F5; }
+body.dark-mode .electron-app .gs-filehelper-icon { background: rgba(22,197,91,.13); }
+body.dark-mode .electron-app .gs-network-row { border-top-color: #32363D; }
+body.dark-mode .electron-app .gs-network-row:hover { background: rgba(255,255,255,.06); }
+body.dark-mode .electron-app .wc-settings-entry { border-bottom-color: #292D33; }
+body.dark-mode .electron-app .wc-settings-entry:hover { background: rgba(255,255,255,.06); }
+body.dark-mode .electron-app .wc-settings-row { border-bottom-color: #292D33; }
+body.dark-mode .electron-app .wc-settings-glass-block { background: #202327; border-color: #32363D; }
+body.dark-mode .electron-app .wc-settings-profile-card { background: #202327; border-bottom-color: #32363D; }
+body.dark-mode .electron-app .wc-edit-input { background: #292D32; border-color: #32363D; color: #F2F3F5; }
+body.dark-mode .electron-app .wc-edit-input:focus { background: #1B1E22; border-color: #16C55B; }
+body.dark-mode .electron-app .wc-device-item { border-bottom-color: #292D33; }
+body.dark-mode .electron-app .wc-device-name { color: #F2F3F5; }
+body.dark-mode .electron-app .wc-appearance-btn { background: #292D32; border-color: #32363D; color: #F2F3F5; }
+body.dark-mode .electron-app .wc-font-demo { background: #292D32; color: #F2F3F5; }
+body.dark-mode .electron-app .wc-add-row { border-bottom-color: #292D33; }
+body.dark-mode .electron-app .wc-add-row:hover { background: rgba(255,255,255,.06); }
+body.dark-mode .electron-app .wc-add-name { color: #F2F3F5; }
+body.dark-mode .electron-app .wc-add-form-input { background: #292D32; border-color: #32363D; color: #F2F3F5; }
+body.dark-mode .electron-app .wc-server-input { background: #292D32; border-color: #32363D; color: #F2F3F5; }

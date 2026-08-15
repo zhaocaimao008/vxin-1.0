@@ -1,0 +1,183 @@
+/* ================================================================
+   Windows Moments Page
+   All scoped under .electron-app
+================================================================ */
+
+.electron-app .wc-moment-card {
+  display: flex;
+  gap: 12px;
+  padding: 20px 20px 16px;
+  background: #FFFFFF;
+  border-bottom: 1px solid #EAECF0;
+}
+.electron-app .wc-moment-card:hover { background: #FAFBFC; }
+.electron-app .wc-moment-body { flex: 1; min-width: 0; }
+.electron-app .wc-moment-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.electron-app .wc-moment-name {
+  font-size: 14px; font-weight: 600; color: #16C55B;
+}
+.electron-app .wc-moment-delete {
+  font-size: 12px; color: #B0B4BB;
+  background: transparent; border: none; cursor: pointer;
+  padding: 2px 6px; border-radius: 4px;
+  transition: background 120ms;
+}
+.electron-app .wc-moment-delete:hover { background: #F3F5F7; color: #8A8F98; }
+
+.electron-app .wc-moment-text {
+  font-size: 14px; color: #1F2329;
+  line-height: 1.7; margin-bottom: 10px;
+  overflow-wrap: anywhere; word-break: break-word;
+}
+.electron-app .wc-moment-expand-btn {
+  color: #16C55B; font-size: 13px;
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+
+/* Image grid */
+.electron-app .wc-moment-images {
+  display: grid; gap: 4px;
+  margin-bottom: 10px;
+}
+.electron-app .wc-moment-images img {
+  width: 100%; aspect-ratio: 1;
+  object-fit: cover; border-radius: 6px;
+  opacity: 0; transition: opacity 200ms;
+}
+.electron-app .wc-moment-images img.loaded { opacity: 1; }
+.electron-app .wc-moment-images.single { display: block; }
+.electron-app .wc-moment-images.single img.wc-moment-single-img {
+  max-width: 340px;
+  max-height: 340px;
+  width: auto; height: auto;
+  aspect-ratio: unset; border-radius: 8px;
+  object-fit: contain;
+}
+.electron-app .wc-moment-images.single img.wc-moment-single-img:not(.loaded) {
+  min-width: 120px; min-height: 120px;
+}
+
+/* Actions row */
+.electron-app .wc-moment-actions {
+  display: flex; align-items: center;
+  gap: 16px; margin-top: 10px;
+}
+.electron-app .wc-moment-time { font-size: 12px; color: #A8ADB5; }
+.electron-app .wc-moment-action-btn {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 13px; color: #8A8F98;
+  background: none; border: none; cursor: pointer;
+  transition: color 120ms;
+}
+.electron-app .wc-moment-action-btn:hover { color: #1F2329; }
+.electron-app .wc-moment-action-btn.liked { color: #16C55B; }
+.electron-app .wc-moment-action-btn svg { width: 15px; height: 15px; fill: currentColor; }
+
+.electron-app .wc-moment-likes {
+  font-size: 13px; color: #8A8F98;
+  background: #F7F8FA; border-radius: 6px;
+  padding: 6px 10px; margin-top: 8px;
+  line-height: 1.6;
+}
+.electron-app .wc-moment-heart { color: #16C55B; }
+.electron-app .wc-moment-like-user {
+  color: #16C55B; cursor: pointer;
+  transition: opacity 120ms;
+}
+.electron-app .wc-moment-like-user:hover { opacity: 0.8; }
+
+.electron-app .wc-moment-comments {
+  margin-top: 6px;
+  background: #F7F8FA; border-radius: 6px;
+  padding: 6px 10px;
+}
+.electron-app .wc-moment-comment {
+  font-size: 13px; color: #1F2329;
+  padding: 3px 0; line-height: 1.6;
+}
+.electron-app .wc-moment-comment-user { color: #16C55B; font-weight: 500; }
+.electron-app .wc-moment-comment-reply { color: #8A8F98; }
+.electron-app .wc-moment-comment-del {
+  font-size: 11px; color: #B0B4BB;
+  background: none; border: none; cursor: pointer;
+  margin-left: 6px; transition: color 120ms;
+}
+.electron-app .wc-moment-comment-del:hover { color: #FF4D4F; }
+.electron-app .wc-moment-comment-viewall {
+  font-size: 12px; color: #16C55B;
+  background: none; border: none; cursor: pointer;
+  margin-top: 4px; padding: 0;
+}
+.electron-app .wc-moment-comment-viewall:disabled { color: #B0B4BB; cursor: default; }
+
+.electron-app .wc-moment-comment-input {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 8px;
+}
+.electron-app .wc-moment-comment-field {
+  flex: 1; height: 34px; padding: 0 10px;
+  background: #fff; border: 1px solid #EAECF0;
+  border-radius: 8px; font-size: 13px; color: #1F2329;
+}
+.electron-app .wc-moment-comment-field:focus { border-color: #16C55B; outline: none; }
+.electron-app .wc-moment-comment-submit {
+  height: 34px; padding: 0 14px;
+  background: #16C55B; color: #fff;
+  border-radius: 8px; font-size: 13px;
+  border: none; cursor: pointer;
+  transition: background 120ms;
+}
+.electron-app .wc-moment-comment-submit:hover { background: #13B552; }
+.electron-app .wc-moment-comment-submit:disabled { background: #C9CDD4; cursor: not-allowed; }
+
+/* Notification bar */
+.electron-app .wc-moment-notif-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 20px;
+  background: #FAFBFC; border-bottom: 1px solid #EAECF0;
+  cursor: pointer; transition: background 120ms;
+}
+.electron-app .wc-moment-notif-bar:hover { background: #F3F5F7; }
+.electron-app .wc-moment-notif-icon { color: #16C55B; display: flex; align-items: center; }
+.electron-app .wc-moment-notif-label { font-size: 14px; color: #1F2329; flex: 1; }
+.electron-app .wc-moment-notif-badge {
+  min-width: 18px; height: 18px;
+  background: #FF4D4F; color: #fff;
+  border-radius: 9px; font-size: 11px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 4px;
+}
+.electron-app .wc-moment-settings-btn {
+  padding: 4px 8px; border-radius: 6px;
+  color: #8A8F98; background: none; border: none; cursor: pointer;
+  transition: background 120ms;
+}
+.electron-app .wc-moment-settings-btn:hover { background: #F3F5F7; color: #1F2329; }
+
+/* Visibility option row */
+.electron-app .wc-moment-vis-opt {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer; border-bottom: 1px solid #F0F1F2;
+  transition: background 120ms;
+}
+.electron-app .wc-moment-vis-opt:hover { background: #F3F5F7; }
+.electron-app .wc-moment-vis-opt:last-child { border-bottom: none; }
+
+/* Dark mode */
+body.dark-mode .electron-app .wc-moment-card { background: #202327; border-bottom-color: #32363D; }
+body.dark-mode .electron-app .wc-moment-card:hover { background: #252830; }
+body.dark-mode .electron-app .wc-moment-text { color: #F2F3F5; }
+body.dark-mode .electron-app .wc-moment-likes,
+body.dark-mode .electron-app .wc-moment-comments { background: #292D32; }
+body.dark-mode .electron-app .wc-moment-comment { color: #F2F3F5; }
+body.dark-mode .electron-app .wc-moment-comment-field { background: #292D32; border-color: #32363D; color: #F2F3F5; }
+body.dark-mode .electron-app .wc-moment-notif-bar { background: #1B1E22; border-bottom-color: #32363D; }
+body.dark-mode .electron-app .wc-moment-notif-bar:hover { background: rgba(255,255,255,.06); }
+body.dark-mode .electron-app .wc-moment-notif-label { color: #F2F3F5; }
+body.dark-mode .electron-app .wc-moment-vis-opt { border-bottom-color: #32363D; }
+body.dark-mode .electron-app .wc-moment-vis-opt:hover { background: rgba(255,255,255,.06); }

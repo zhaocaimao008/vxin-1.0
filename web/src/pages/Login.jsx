@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { timeoutSignal } from '../utils/config';
 import { saveCred, loadCred, removeCred, lastRememberedPhone } from '../utils/rememberedCreds';
+import '../styles/login.css';
 
 const isElectron = !!window.__ELECTRON_CONFIG__;
 
@@ -87,9 +88,16 @@ export default function Login() {
         {/* Logo区域 */}
         <div className="auth-brand">
           <div className="auth-brand-icon">
-            <svg viewBox="0 0 40 40" width="38" height="38" fill="none">
-              <path d="M5 7a3 3 0 013-3h16a3 3 0 013 3v12a3 3 0 01-3 3H14l-5 5V7z" fill="rgba(255,255,255,.3)"/>
-              <path d="M17 15a3 3 0 013-3h11a3 3 0 013 3v10a3 3 0 01-3 3h-3v4l-5-4h-3a3 3 0 01-3-3V15z" fill="white"/>
+            {/* V信品牌图标 — 简洁V字 */}
+            <svg viewBox="0 0 46 46" fill="none" aria-hidden="true">
+              <path
+                d="M8 11 L23 35 L38 11"
+                stroke="white"
+                strokeWidth="7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
             </svg>
           </div>
           <h1 className="auth-brand-name auth-brand-name--brand">v信</h1>

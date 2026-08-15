@@ -135,6 +135,7 @@ private object Routes {
     const val CREATE_GROUP = "createGroup"
     const val SEARCH = "search"
     const val ADD_ACCOUNT = "addAccount"
+    const val INVITE_FRIEND = "inviteFriend"
     const val MENTIONS = "mentions"   // @我消息聚合
     const val CONVERSATION_FILES = "conversationFiles/{conversationId}"   // 功能A3: 聊天文件聚合
     const val GROUP_INFO = "groupInfo/{conversationId}"
@@ -225,7 +226,7 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0) {
                                 selectedTextColor = VxinGreen,
                                 unselectedIconColor = Color(0xFF999999),
                                 unselectedTextColor = Color(0xFF999999),
-                                indicatorColor = Color(0xFF07C160).copy(alpha = 0.12f),
+                                indicatorColor = Color(0xFF16C55B).copy(alpha = 0.12f),
                             ),
                             icon = {
                                 // 「消息」tab 显示未读总数红点角标
@@ -287,6 +288,7 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0) {
             composable(Routes.PROFILE) {
                 ProfileScreen(
                     onAddAccount = { navController.navigate(Routes.ADD_ACCOUNT) },
+                    onOpenInviteFriend = { navController.navigate(Routes.INVITE_FRIEND) },
                     onOpenMyQr = { navController.navigate(Routes.MY_QRCODE) },
                     onOpenCallHistory = { navController.navigate(Routes.CALL_HISTORY) },
                     onOpenWallet = { navController.navigate(Routes.WALLET) },
@@ -330,7 +332,10 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0) {
                 )
             }
             // 收藏 已按需移除
-            composable(Routes.ADD_ACCOUNT) {
+            composable(Routes.INVITE_FRIEND) {
+            com.vxin.app.feature.profile.InviteFriendScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.ADD_ACCOUNT) {
                 LoginScreen(
                     onNavigateRegister = { navController.navigate(Routes.REGISTER) },
                     onSuccess = { navController.popBackStack() },
@@ -417,7 +422,7 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0) {
 
 @Composable
 private fun SplashScreen() {
-    val brandGreen = androidx.compose.ui.graphics.Color(0xFF07C160)
+    val brandGreen = androidx.compose.ui.graphics.Color(0xFF16C55B)
     val white = androidx.compose.ui.graphics.Color.White
     Box(
         modifier = Modifier

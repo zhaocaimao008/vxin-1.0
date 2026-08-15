@@ -63,10 +63,29 @@ export default function ElectronTitlebar() {
         userSelect: 'none',
       }}
     >
-      <span style={{
-        flex: 1, paddingLeft: 56, fontSize: 'var(--text-sm)',
-        color: 'var(--titlebar-title)', letterSpacing: 1,
-      }}>v信</span>
+      {/* 左侧：图标 + 标题 */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+        flex: 1, paddingLeft: 10, minWidth: 0,
+      }}>
+        {/* v信 品牌图标 — 与 auth-brand-icon 相同的 V 形 */}
+        <div style={{
+          width: 18, height: 18, flexShrink: 0,
+          background: 'linear-gradient(135deg,#16C55B,#0DA84C)',
+          borderRadius: 4,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <svg viewBox="0 0 18 18" width="10" height="10" fill="none">
+            <path d="M3 4.5 L9 13.5 L15 4.5"
+              stroke="white" strokeWidth="2.8"
+              strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+        <span style={{
+          fontSize: 12, color: 'var(--titlebar-title)',
+          letterSpacing: 0.5, whiteSpace: 'nowrap',
+        }}>v信</span>
+      </div>
 
       <div style={{
         display: 'flex', height: '100%',
