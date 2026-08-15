@@ -227,6 +227,42 @@ app.get('/health', (req, res) => {
   }
 });
 
+// ── 前端静态文件服务 ──────────────────────────────────────────────
+// 提供 web/dist 目录作为 SPA，所有非 API 路由都返回 index.html
+const webDistPath = path.join(__dirname, '../../web/dist');
+const fs = require('fs');
+console.log('[Static] webDistPath:', webDistPath, 'exists:', fs.existsSync(webDistPath));
+if (fs.existsSync(webDistPath)) {
+  console.log('[Static] Setting up static file serving for:', webDistPath);
+
+  // 静态资源（JS/CSS/图片等）
+  app.use(express.static(webDistPath, {
+    maxAge: '1h',
+    etag: true,
+    lastModified: true,
+    index: false, // 不自动返回 index.html，由下面的路由处理
+  }));
+
+  // SPA 路由兜底：非 API 路径都返回 index.html
+  app.use((req, res, next) => {
+    // API/uploads/downloads/socket.io 路径跳过
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads') ||
+        req.path.startsWith('/downloads') || req.path.startsWith('/socket.io') ||
+        req.path.startsWith('/health') || req.path.startsWith('/metrics')) {
+      return next();
+    }
+    // 所有其他路径返回 index.html（SPA 客户端路由）
+    const indexPath = path.join(webDistPath, 'index.html');
+    console.log('[Static] Serving SPA for path:', req.path, 'index exists:', fs.existsSync(indexPath));
+    if (fs.existsSync(indexPath)) {
+      return res.sendFile(indexPath);
+    }
+    next();
+  });
+} else {
+  console.log('[Static] Web dist path does not exist, skipping static file serving');
+}
+
 // ── 兜底 ────────────────────────────────────────────────────────
 app.use(notFoundHandler);
 sentry.attachSentryErrorHandler(app);
