@@ -32,26 +32,6 @@ services:
       timeout: 5s
       retries: 5
 
-  nestjs:
-    build:
-      context: ./server/nestjs
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    env_file: .env
-    environment:
-      NODE_ENV: production
-      DB_HOST: postgres
-      REDIS_HOST: redis
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    volumes:
-      - uploads_data:/app/uploads
-    expose:
-      - "3000"
-
   ai-service:
     build:
       context: ./services/ai-service
@@ -80,7 +60,6 @@ services:
       - ./deploy/certs:/etc/nginx/certs:ro
       - uploads_data:/var/www/uploads:ro
     depends_on:
-      - nestjs
       - ai-service
 
 volumes:
