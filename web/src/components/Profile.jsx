@@ -1067,6 +1067,7 @@ function GeneralSettings({ onBack }) {
 
   useEffect(() => {
     if (isElectron) window.electronAPI?.getAutoLaunch?.().then(v => setAutoLaunchState(!!v));
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 首次挂载时读取 Cache Storage 用量（外部系统只读查询，非派生 state）
     refreshCacheSize();
   }, [isElectron, refreshCacheSize]);
 

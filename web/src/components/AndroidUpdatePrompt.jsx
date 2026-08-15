@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useAndroidVersionCheck } from '../hooks/useAndroidVersionCheck';
 
 /**
@@ -8,12 +8,13 @@ import { useAndroidVersionCheck } from '../hooks/useAndroidVersionCheck';
 export default function AndroidUpdatePrompt() {
   const { status, currentVersion, latestVersion, downloadUrl, changelog, openDownload } = useAndroidVersionCheck();
   const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
+  const [prevStatus, setPrevStatus] = useState(status);
+  if (status !== prevStatus) {
+    setPrevStatus(status);
     if (status === 'updateAvailable') {
       setIsVisible(true);
     }
-  }, [status]);
+  }
 
   if (status !== 'updateAvailable' || !isVisible || !latestVersion) {
     return null;

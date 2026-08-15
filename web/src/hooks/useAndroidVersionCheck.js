@@ -18,6 +18,22 @@ export function useAndroidVersionCheck() {
     return !!window.Capacitor || !!window.cordova;
   };
 
+  const openDownload = useCallback((downloadUrl) => {
+    // 使用 Capacitor Browser 或浏览器原生打开
+    if (window.Capacitor?.Plugins?.Browser) {
+      window.Capacitor.Plugins.Browser.open({ url: downloadUrl });
+    } else {
+      window.open(downloadUrl, '_system');
+    }
+  }, []);
+
+  const showUpdatePrompt = useCallback((latestVersion) => {
+    const message = `发现新版本 ${latestVersion.name}\n是否立即下载并安装？`;
+    if (confirm(message)) {
+      openDownload(latestVersion.downloadUrl);
+    }
+  }, [openDownload]);
+
   const checkVersion = useCallback(async () => {
     try {
       // 仅在 Capacitor 环境运行
@@ -74,29 +90,14 @@ export function useAndroidVersionCheck() {
         status: 'error'
       }));
     }
-  }, []);
-
-  const showUpdatePrompt = useCallback((latestVersion) => {
-    const message = `发现新版本 ${latestVersion.name}\n是否立即下载并安装？`;
-    if (confirm(message)) {
-      openDownload(latestVersion.downloadUrl);
-    }
-  }, []);
-
-  const openDownload = useCallback((downloadUrl) => {
-    // 使用 Capacitor Browser 或浏览器原生打开
-    if (window.Capacitor?.Plugins?.Browser) {
-      window.Capacitor.Plugins.Browser.open({ url: downloadUrl });
-    } else {
-      window.open(downloadUrl, '_system');
-    }
-  }, []);
+  }, [showUpdatePrompt]);
 
   useEffect(() => {
     // 仅在 Capacitor 环境运行
     if (!isCapacitorApp()) return;
 
-    // 应用启动时检查版本
+    // 应用启动时检查版本（外部 API 只读查询）
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 启动时拉取远程版本信息，非派生 state
     checkVersion();
 
     // 每小时检查一次
