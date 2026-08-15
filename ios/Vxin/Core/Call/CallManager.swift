@@ -290,9 +290,6 @@ final class CallManager: NSObject, ObservableObject {
             }
         }
     }
-        pendingIce.forEach { pc?.add($0) }
-        pendingIce.removeAll()
-    }
 
     private func createOfferAndSend() {
         guard let pc = pc else { return }
