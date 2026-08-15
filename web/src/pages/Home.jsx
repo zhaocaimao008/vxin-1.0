@@ -743,12 +743,15 @@ export default function Home() {
   return (
     <div className={`wc-app${isMobile ? ' wc-mobile' : ''}`}>
 
-      {/* 左侧导航栏 */}
+      {/* 左侧导航栏——Electron: Logo置顶/头像置底（对齐 Windows 三张参考图一致的结构）；
+          Web: 头像置顶（对齐 Web主界面.jpg，与 Electron 不同，不能因 Windows 通过就当 Web 也通过） */}
       <div className="wc-sidebar">
-        {isElectron && (
+        {isElectron ? (
           <div className="wc-sidebar-logo" aria-hidden="true">
             <svg viewBox="0 0 46 46" fill="none"><path d="M8 11 L23 35 L38 11" stroke="#07C160" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>
           </div>
+        ) : (
+          <AccountSwitcher />
         )}
         {/* Tab 按钮紧跟头像，不用 spacer 下推，防止小屏被裁切 */}
         <div className="wc-sidebar-btns" role="tablist" aria-label="主导航">
@@ -772,7 +775,7 @@ export default function Home() {
             );
           })}
         </div>
-        <AccountSwitcher />
+        {isElectron && <AccountSwitcher />}
       </div>
 
       {/* 主内容区 */}
