@@ -24,6 +24,9 @@ class VxinMessagingService : FirebaseMessagingService() {
         val data = message.data
         // 来电推送（后端 data-only：type=call）→ 走全屏来电通知，不当普通消息处理
         if (data["type"] == "call") {
+            // 后端现总是推送（不再按 presence 过滤），前台时 socket 已经收到 call:incoming
+            // 并由 CallManager 弹过一次通知，这里必须去重，否则会重复弹全屏来电通知。
+            if (MessageNotificationBridge.appForeground) return
             notificationHelper.showCallNotification(
                 callId = data["callId"].orEmpty(),
                 from = data["from"].orEmpty(),

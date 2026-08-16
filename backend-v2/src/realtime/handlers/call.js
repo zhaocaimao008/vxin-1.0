@@ -16,7 +16,6 @@
  */
 const { v4: uuidv4 } = require('uuid');
 const { db } = require('../../db/connection');
-const presence = require('../presence');
 const { pushCallInvite } = require('../../utils/push');
 
 // 通话超时：120s 未应答则自动取消（防 activeCalls Map 无限增长 + call_logs 悬空记录）
@@ -124,11 +123,12 @@ module.exports = function registerCallHandler(io, socket) {
     // 服务端从 DB 取真实用户信息，不透传客户端 caller 字段（防视觉身份冒充）
     const callerInfo = db.prepare('SELECT username, avatar FROM users WHERE id=?').get(userId);
     io.to(`user_${to}`).emit('call:incoming', { from: userId, type: t, caller: { id: userId, name: callerInfo?.username, avatar: callerInfo?.avatar } });
-    // 被叫不在线（App 未连 socket，如后台/熄屏）→ 发 data-only FCM 唤起来电界面；在线则 socket 已推 call:incoming
-    if (!presence.isOnline(to)) {
-      pushCallInvite({ toUserId: to, fromUserId: userId, callerName: callerInfo?.username || '', callType: t, callId: id })
-        .catch(e => console.warn('[call] 来电推送失败:', e.message));
-    }
+    // 「幽灵在线」修复（同 pushNewMessage）：不再因 socket 在线就���过推送。
+    // App 在后台/锁屏时 socket 进程存活仍连着 → presence.isOnline 误判在线 → 从不推送 →
+    // 只能等 App 被打开才看到来电。现改为总是推送；前台重复通知由客户端去重
+    // （VxinMessagingService/VxinGeTuiService 的 appForeground 判断 + CallManager 的 peer 去重）。
+    pushCallInvite({ toUserId: to, fromUserId: userId, callerName: callerInfo?.username || '', callType: t, callId: id })
+      .catch(e => console.warn(`[call] 来电推送失败 callId=${id}:`, e.message));
   });
 
   socket.on('call:response', ({ to, accepted, busy, reason }) => {

@@ -45,8 +45,18 @@ class VxinGeTuiService : GTIntentService() {
         Log.i(TAG, "个推透传: $payload")
         if (MessageNotificationBridge.appForeground) return   // 前台交给 socket UI
         runCatching {
-            // 透传约定为 JSON: {"title":"...","body":"...","conversationId":"..."}
             val json = org.json.JSONObject(payload)
+            // 来电透传（国产 ROM 无 GMS 时唯一通路，与 FCM type=call 分支对齐）→ 全屏来电通知
+            if (json.optString("type") == "call") {
+                entry(context).notificationHelper().showCallNotification(
+                    callId = json.optString("callId"),
+                    from = json.optString("from"),
+                    callerName = json.optString("callerName"),
+                    callType = json.optString("callType", "audio"),
+                )
+                return@runCatching
+            }
+            // 普通消息透传约定为 JSON: {"title":"...","body":"...","conversationId":"..."}
             entry(context).notificationHelper().showMessageNotification(
                 title = json.optString("title", "新消息"),
                 body = json.optString("body", "收到一条新消息"),

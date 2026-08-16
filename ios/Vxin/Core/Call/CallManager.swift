@@ -207,10 +207,24 @@ final class CallManager: NSObject, ObservableObject {
         if state.stage == .ended { state = CallState() }
     }
 
+    /// 由后台推送（AppDelegate didReceiveRemoteNotification，type=call）触发进入 incoming，
+    /// 用于 App 被静默唤醒、socket 尚未重连时。与 Android CallManager.incomingFromPush 等价。
+    /// 幂等：已在展示同一 peer 的来电或正在通话时不覆盖；socket 后续补发 call:incoming 会因 peer 相同被去重。
+    func incomingFromPush(from: String, callType: String, callerName: String) {
+        guard !from.isEmpty else { return }
+        guard state.stage == .idle || state.stage == .ended else { return }
+        state = CallState(stage: .incoming, peerId: from, peerName: callerName, isVideo: callType == "video", isCaller: false)
+        if UIApplication.shared.applicationState != .active {
+            showIncomingCallNotification(from: from, callerName: callerName, callType: callType)
+        }
+    }
+
     // MARK: - 信令
     private func observeSignaling() {
         socket.callIncoming.receive(on: DispatchQueue.main).sink { [weak self] (from, type, name) in
             guard let self else { return }
+            // 已在展示同一 peer 的来电（如先由后台推送进入 incoming）→ 忽略重复，勿误拒
+            if self.state.stage == .incoming && self.state.peerId == from { return }
             if self.state.stage != .idle && self.state.stage != .ended {
                 self.socket.emitCallResponse(to: from, accepted: false); return
             }
@@ -274,7 +288,9 @@ final class CallManager: NSObject, ObservableObject {
         let content = UNMutableNotificationContent()
         content.title = callerName.isEmpty ? "来电" : callerName
         content.body = callType == "video" ? "邀请你视频通话" : "邀请你语音通话"
-        content.sound = UNNotificationSound.defaultCritical
+        // .defaultCritical 需 Apple 单独审批的 Critical Alerts entitlement，未配置时静默失效
+        // （通知照常展示但无声）。降级为普通声音，保证至少有提示音。
+        content.sound = .default
         content.categoryIdentifier = "INCOMING_CALL"
         // 携带 from/callType 供通知操作使用
         content.userInfo = ["from": from, "callType": callType, "callerName": callerName]
