@@ -13,15 +13,13 @@ export default function Register() {
       const code = new URLSearchParams(window.location.search).get('invite');
       if (code && /^\d{6}$/.test(code)) inviteCode = code;
     } catch { /* SSR/无 window 时忽略 */ }
-    return { phone: '', verifyCode: '', password: '', inviteCode };
+    return { phone: '', password: '', inviteCode };
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
   const [showPwd, setShowPwd] = useState(false);
   const [agreed, setAgreed] = useState(false);
-  const [sendingCode, setSendingCode] = useState(false);
-  const [countdown, setCountdown] = useState(0);
   // 是否需要邀请码由后台开关决定（GET /api/config）。默认 true，避免加载前误放行 UI。
   const [inviteRequired, setInviteRequired] = useState(false); // 参考图显示邀请码为"选填"
   const { login } = useAuth();
@@ -33,34 +31,6 @@ export default function Register() {
       .catch(() => {}); // 拉取失败保持默认（需要邀请码），后端仍会最终裁决
   }, []);
 
-  useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [countdown]);
-
-  const handleSendCode = async () => {
-    if (sendingCode || countdown > 0) return;
-    if (!/^\d{11}$/.test(form.phone)) {
-      setError('请输入正确的手机号');
-      return;
-    }
-
-    setSendingCode(true);
-    setError('');
-
-    try {
-      await axios.post('/api/auth/send-verify-code', { phone: form.phone });
-      setCountdown(60);
-      setError('');
-    } catch (err) {
-      setError(err.response?.data?.error || '发送验证码失败');
-    } finally {
-      setSendingCode(false);
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return; // 防连点/回车重复提交（避免重复注册）
@@ -69,9 +39,6 @@ export default function Register() {
     // 前端基础校验
     if (!/^\d{11}$/.test(form.phone)) {
       setError('请输入 11 位手机号'); setLoading(false); return;
-    }
-    if (!form.verifyCode || form.verifyCode.length !== 6) {
-      setError('请输入6位验证码'); setLoading(false); return;
     }
     if (!/^(?=.*[a-zA-Z])(?=.*\d).{8,}$/.test(form.password)) {
       setError('密码至少8位且需包含字母和数字'); setLoading(false); return;
@@ -86,7 +53,6 @@ export default function Register() {
     try {
       const { data } = await axios.post('/api/auth/register', {
         phone: form.phone,
-        verifyCode: form.verifyCode,
         password: form.password,
         inviteCode: form.inviteCode || undefined
       });
@@ -102,12 +68,6 @@ export default function Register() {
       <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
         <rect x="3" y="1" width="14" height="18" rx="3"/>
         <line x1="8" y1="15" x2="12" y2="15"/>
-      </svg>
-    )},
-    { key: 'verifyCode', label: '验证码', type: 'text', inputMode: 'numeric', autocomplete: 'one-time-code', placeholder: '请输入验证码', maxLength: 6, hasButton: true, icon: (
-      <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M10 2a8 8 0 100 16 8 8 0 000-16z"/>
-        <path d="M10 6v4l2 2"/>
       </svg>
     )},
     { key: 'password', label: '密码', type: 'password', autocomplete: 'new-password', placeholder: '请输入密码', icon: (
@@ -177,16 +137,6 @@ export default function Register() {
                   required={!f.optional}
                 />
                 {f.key === 'phone' && <span className="auth-field-cc">+86</span>}
-                {f.key === 'verifyCode' && (
-                  <button
-                    type="button"
-                    className="auth-verify-code-btn"
-                    onClick={handleSendCode}
-                    disabled={sendingCode || countdown > 0 || !/^\d{11}$/.test(form.phone)}
-                  >
-                    {countdown > 0 ? `${countdown}秒后重试` : sendingCode ? '发送中...' : '获取验证码'}
-                  </button>
-                )}
                 {f.key === 'password' && (
                   <button type="button" className="auth-pwd-toggle" onClick={() => setShowPwd(v => !v)} aria-label={showPwd ? '隐藏密码' : '显示密码'}>
                     {showPwd ? (
@@ -216,7 +166,7 @@ export default function Register() {
             </div>
           )}
 
-          <button type="submit" data-testid="register-submit-btn" className="auth-submit" disabled={loading || !form.phone || !form.verifyCode || !form.password || !agreed}>
+          <button type="submit" data-testid="register-submit-btn" className="auth-submit" disabled={loading || !form.phone || !form.password || !agreed}>
             {loading ? <span className="auth-spinner" /> : '注册'}
           </button>
 
