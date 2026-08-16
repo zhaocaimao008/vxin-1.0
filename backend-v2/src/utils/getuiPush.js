@@ -79,14 +79,20 @@ async function getToken() {
 async function pushToCid(cid, { title, body, payload }) {
   const token = await getToken();
   // transmission（透传）格式与 VxinGeTuiService.onReceiveMessageData 解析约定一致：
-  // {"title":"...","body":"...","conversationId":"..."}
-  // App 在线时走透传 → onReceiveMessageData → showMessageNotification（使用 vxin_messages_v3 渠道）
+  // 普通消息 {"title":"...","body":"...","conversationId":"...","senderId":"..."}
+  // 来电（type="call"）额外带 {"type":"call","callType":...,"from":...,"callerName":...,"callId":...}
+  // App 在线时走透传 → onReceiveMessageData → 按 type 分派到消息/来电通知
   // App 离线/后台时走 push_channel.ups.notification → 厂商通道直接展示
   const transmissionPayload = JSON.stringify({
     title,
     body,
     conversationId: payload?.conversationId || '',
     senderId: payload?.senderId || '',
+    ...(payload?.type ? { type: payload.type } : {}),
+    ...(payload?.callType ? { callType: payload.callType } : {}),
+    ...(payload?.from ? { from: payload.from } : {}),
+    ...(payload?.callerName ? { callerName: payload.callerName } : {}),
+    ...(payload?.callId ? { callId: payload.callId } : {}),
   });
   const message = {
     request_id: `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,

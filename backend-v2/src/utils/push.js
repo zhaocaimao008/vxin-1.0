@@ -276,36 +276,85 @@ async function pushNewMessage({ conversationId, senderId, senderName, content, t
 }
 
 // ── 来电推送（data-only）────────────────────────────────────────
-// 被叫离线时用：发 data-only 高优先级 FCM，不带 notification 块，
-// 以保证 Android 端 onMessageReceived 一定被触发（去构建 fullScreenIntent 来电界面）；
-// 带 notification 块的推送在 App 后台会被系统托盘直接消费、拿不到 data。
-// iOS 后台来电需 PushKit/CallKit(VoIP push)，此处不含 apns，避免普通 APNs 静默无效。
+// 总是推送（同 pushNewMessage 的「幽灵在线」修复）：不再由调用方按 presence 过滤，
+// 保证被叫 App 后台/锁屏时也能收到。
+// FCM：data-only 高优先级，不带 notification 块，以保证 Android 端 onMessageReceived
+// 一定被触发（去构建 fullScreenIntent 来电界面）；带 notification 块的推送在 App
+// 后台会被系统托盘直接消费、拿不到 data。iOS 补充 content-available 静默唤醒块，
+// 使后台（未被杀）进程能收到 didReceiveRemoteNotification 并弹本地来电通知；
+// App 被彻底杀死时 iOS 静默推送不会拉起进程，根治需 PushKit/CallKit(VoIP push)，
+// 属单独任务，此处不做。
+// 个推：覆盖无 GMS 的国产 ROM（华为/小米等），走透传，客户端 VxinGeTuiService 按 type=call 分支处理。
 async function pushCallInvite({ toUserId, fromUserId, callerName, callType, callId }) {
-  if (!firebaseAdmin) return;
-  // 同 pushToUser：只发真正的 FCM token，避免把个推 CID 丢给 FCM 触发误删。
-  const deviceTokens = db.prepare(
-    "SELECT * FROM device_tokens WHERE user_id=? AND platform IN ('android','ios')"
-  ).all(toUserId);
-  if (!deviceTokens.length) return;
-  const promises = deviceTokens.map(row => {
-    const message = {
-      token: row.token,
-      data: {
-        type:       'call',
-        callType:   callType === 'video' ? 'video' : 'audio',
-        from:       String(fromUserId || ''),
-        callerName: String(callerName || ''),
-        callId:     String(callId || ''),
-      },
-      android: { priority: 'high' },
-    };
-    return firebaseAdmin.messaging().send(message).catch(err => {
-      if (err.code === 'messaging/invalid-registration-token' ||
-          err.code === 'messaging/registration-token-not-registered') {
-        db.prepare('DELETE FROM device_tokens WHERE id=?').run(row.id);
+  const type = callType === 'video' ? 'video' : 'audio';
+  const promises = [];
+
+  if (firebaseAdmin) {
+    // 同 pushToUser：只发真正的 FCM token，避免把个推 CID 丢给 FCM 触发误删。
+    const deviceTokens = db.prepare(
+      "SELECT * FROM device_tokens WHERE user_id=? AND platform IN ('android','ios')"
+    ).all(toUserId);
+    for (const row of deviceTokens) {
+      const message = {
+        token: row.token,
+        data: {
+          type:       'call',
+          callType:   type,
+          from:       String(fromUserId || ''),
+          callerName: String(callerName || ''),
+          callId:     String(callId || ''),
+        },
+        android: { priority: 'high' },
+      };
+      if (row.platform === 'ios') {
+        message.apns = {
+          headers: {
+            'apns-push-type': 'background',
+            'apns-priority': '5',
+            'apns-expiration': String(Math.floor(Date.now() / 1000) + 30), // 来电时效短，30s 过期不再唤醒
+          },
+          payload: { aps: { 'content-available': 1 } },
+        };
       }
-    });
-  });
+      promises.push(
+        firebaseAdmin.messaging().send(message).catch(err => {
+          console.warn(`[call-push] FCM 发送失败 user=${toUserId} platform=${row.platform} code=${err.code || '?'}`);
+          if (err.code === 'messaging/invalid-registration-token' ||
+              err.code === 'messaging/registration-token-not-registered') {
+            db.prepare('DELETE FROM device_tokens WHERE id=?').run(row.id);
+          }
+        })
+      );
+    }
+  }
+
+  // ── 个推（国产 ROM 覆盖，与 FCM 并行互不干扰）──────────────
+  if (getuiPush.isEnabled()) {
+    const getuiTokens = db.prepare("SELECT * FROM device_tokens WHERE user_id=? AND platform='getui'").all(toUserId);
+    for (const row of getuiTokens) {
+      promises.push(
+        getuiPush.pushToCid(row.token, {
+          title: callerName || '来电',
+          body: type === 'video' ? '邀请你视频通话' : '邀请你语音通话',
+          payload: {
+            type: 'call',
+            callType: type,
+            from: String(fromUserId || ''),
+            callerName: String(callerName || ''),
+            callId: String(callId || ''),
+          },
+        }).then(({ json }) => {
+          if (json.code !== 0) {
+            console.warn(`[call-push] 个推失败 user=${toUserId} code=${json.code} msg=${json.msg}`);
+            if (json.code === 10001 || json.code === 10002) {
+              db.prepare('DELETE FROM device_tokens WHERE id=?').run(row.id);
+            }
+          }
+        }).catch(e => console.warn(`[call-push] 个推异常 user=${toUserId}: ${e.message}`))
+      );
+    }
+  }
+
   await Promise.allSettled(promises);
 }
 

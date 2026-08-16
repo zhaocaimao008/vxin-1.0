@@ -48,6 +48,26 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
                      didFailToRegisterForRemoteNotificationsWithError error: Error) {
         // 占位/未配置或模拟器无 APNs 时会进这里，忽略
     }
+
+    // 来电静默推送（后端 pushCallInvite：data-only + content-available=1）。
+    // 后台（未被杀）时系统据此唤醒 App 执行此回调，不经过 UNUserNotificationCenter；
+    // App 被彻底杀死时 iOS 不会为静默推送拉起进程 —— 该场景仍需 PushKit/CallKit(VoIP push)，
+    // 属单独任务，此处不做。
+    func application(_ application: UIApplication,
+                     didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+                     fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        guard userInfo["type"] as? String == "call" else {
+            completionHandler(.noData)
+            return
+        }
+        let from = userInfo["from"] as? String ?? ""
+        let callType = userInfo["callType"] as? String ?? "audio"
+        let callerName = userInfo["callerName"] as? String ?? ""
+        DispatchQueue.main.async {
+            CallManager.shared.incomingFromPush(from: from, callType: callType, callerName: callerName)
+        }
+        completionHandler(.newData)
+    }
 }
 
 // MARK: - FCM token
