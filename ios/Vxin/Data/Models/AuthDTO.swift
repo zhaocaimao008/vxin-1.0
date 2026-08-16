@@ -1,8 +1,15 @@
 import Foundation
 
 struct LoginBody: Encodable {
-    let phone: String
+    let phone: String?
+    let wechat_id: String?
     let password: String
+
+    init(phone: String? = nil, wechat_id: String? = nil, password: String) {
+        self.phone = phone
+        self.wechat_id = wechat_id
+        self.password = password
+    }
 }
 
 struct RegisterBody: Encodable {

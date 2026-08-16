@@ -427,7 +427,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,                // 安全：启用沙箱，隔离渲染进程
+      sandbox: process.env.VISUAL_AUDIT ? false : true,  // Visual audit 模式下禁用沙箱（仅测试）
       // 固定页面缩放 100%（Windows 系统缩放由 high-dpi-support 以物理像素处理，
       // 避免 Chromium 默认缩放 + 系统缩放叠加导致模糊/错位）
       zoomFactor: 1.0,

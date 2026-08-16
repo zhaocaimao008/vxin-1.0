@@ -1,0 +1,69 @@
+{
+  "timestamp": "2026-08-16T03:58:34.712Z",
+  "results": [
+    {
+      "page": "Web登录页面",
+      "name": "login",
+      "refTheme": "dark",
+      "actualTheme": "dark",
+      "themeMatch": true,
+      "status": "ok"
+    },
+    {
+      "page": "Web注册页",
+      "name": "register",
+      "refTheme": "dark",
+      "actualTheme": "dark",
+      "themeMatch": true,
+      "status": "ok"
+    },
+    {
+      "page": "Web主界面",
+      "name": "home",
+      "refTheme": "dark",
+      "actualTheme": "dark",
+      "themeMatch": true,
+      "status": "ok"
+    },
+    {
+      "page": "Web聊天详情页",
+      "name": "chat",
+      "refTheme": "dark",
+      "actualTheme": "dark",
+      "themeMatch": true,
+      "status": "ok"
+    },
+    {
+      "page": "Web联系人页",
+      "name": "contacts",
+      "refTheme": "dark",
+      "actualTheme": "dark",
+      "themeMatch": true,
+      "status": "ok"
+    },
+    {
+      "page": "Web动态页",
+      "name": "moments",
+      "refTheme": "dark",
+      "actualTheme": "dark",
+      "themeMatch": true,
+      "status": "ok"
+    },
+    {
+      "page": "Web设置页",
+      "name": "settings",
+      "refTheme": "dark",
+      "actualTheme": "dark",
+      "themeMatch": true,
+      "status": "ok"
+    },
+    {
+      "page": "Web个人资料页",
+      "name": "profile",
+      "refTheme": "dark",
+      "actualTheme": "dark",
+      "themeMatch": true,
+      "status": "ok"
+    }
+  ]
+}

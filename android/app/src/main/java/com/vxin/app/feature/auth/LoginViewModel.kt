@@ -15,14 +15,26 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class LoginUiState(
+    val loginMode: LoginMode = LoginMode.PHONE,
     val phone: String = "",
+    val vxinId: String = "",
     val password: String = "",
     val serverUrl: String = "",
     val loading: Boolean = false,
     val loggedIn: Boolean = false,   // 成功后用于「添加账号」流程返回
     val error: String? = null,
 ) {
-    val canSubmit: Boolean get() = phone.isNotBlank() && password.isNotBlank() && !loading
+    val canSubmit: Boolean get() {
+        val identifierValid = when (loginMode) {
+            LoginMode.PHONE -> phone.isNotBlank()
+            LoginMode.VXIN -> vxinId.isNotBlank()
+        }
+        return identifierValid && password.isNotBlank() && !loading
+    }
+}
+
+enum class LoginMode {
+    PHONE, VXIN
 }
 
 @HiltViewModel
@@ -35,7 +47,9 @@ class LoginViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(LoginUiState(serverUrl = serverConfig.baseUrl))
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
+    fun onLoginModeChange(mode: LoginMode) = _uiState.update { it.copy(loginMode = mode, error = null) }
     fun onPhoneChange(v: String) = _uiState.update { it.copy(phone = v, error = null) }
+    fun onVxinIdChange(v: String) = _uiState.update { it.copy(vxinId = v, error = null) }
     fun onPasswordChange(v: String) = _uiState.update { it.copy(password = v, error = null) }
     fun onServerUrlChange(v: String) = _uiState.update { it.copy(serverUrl = v) }
 
@@ -52,12 +66,19 @@ class LoginViewModel @Inject constructor(
         _uiState.update { it.copy(loading = true, error = null) }
         viewModelScope.launch {
             android.util.Log.d("LOGIN_DIAG", "═══ LOGIN_START ═══")
-            android.util.Log.d("LOGIN_DIAG", "phone=${s.phone.take(3)}*** (masked)")
+            android.util.Log.d("LOGIN_DIAG", "loginMode=${s.loginMode}")
+            when (s.loginMode) {
+                LoginMode.PHONE -> android.util.Log.d("LOGIN_DIAG", "phone=${s.phone.take(3)}*** (masked)")
+                LoginMode.VXIN -> android.util.Log.d("LOGIN_DIAG", "vxinId=${s.vxinId.take(3)}*** (masked)")
+            }
             android.util.Log.d("LOGIN_DIAG", "serverUrl=${s.serverUrl}")
 
             runCatching {
                 android.util.Log.d("LOGIN_DIAG", "LOGIN_REPOSITORY_CALL")
-                authRepository.login(s.phone, s.password)
+                when (s.loginMode) {
+                    LoginMode.PHONE -> authRepository.login(s.phone, s.password)
+                    LoginMode.VXIN -> authRepository.loginWithVxinId(s.vxinId, s.password)
+                }
             }
                 .onSuccess { user ->
                     android.util.Log.d("LOGIN_DIAG", "LOGIN_SUCCESS userId=${user.id}")

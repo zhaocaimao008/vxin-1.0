@@ -202,7 +202,12 @@ async function startServer() {
 }
 
 // 启动服务器
-startServer().catch(err => {
-  console.error('服务器启动失败:', err);
-  process.exit(1);
-});
+if (require.main === module) {
+  startServer().catch(err => {
+    console.error('服务器启动失败:', err);
+    process.exit(1);
+  });
+} else {
+  // 测试环境：导出 app 而不启动服务器
+  module.exports = require('./app');
+}

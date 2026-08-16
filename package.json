@@ -5,19 +5,20 @@
   "scripts": {
     "dev:web": "cd web && npx vite --host",
     "dev:desktop": "cd desktop-electron && npm run dev",
-
     "build:web": "cd web && npx vite build",
     "build:desktop": "cd web && npx vite build --mode desktop && cd ../desktop-electron && npx electron-builder --win --x64",
-
     "build:desktop:all": "cd desktop-electron && npm run build:web && npx electron-builder --win --x64 --mac --x64 --linux --x64",
     "build:desktop:win": "cd desktop-electron && npm run build:win",
     "build:desktop:mac": "cd desktop-electron && npm run build:mac",
     "build:desktop:linux": "cd desktop-electron && npm run build:linux",
-
     "setup:desktop": "cd desktop-electron && npm install",
     "setup:all": "cd web && npm install && cd ../desktop-electron && npm install"
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "puppeteer-core": "^25.7.0"
   }
 }

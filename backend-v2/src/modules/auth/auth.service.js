@@ -123,10 +123,36 @@ async function register({ username, phone, password, inviteCode }) {
   return { token: signToken({ id, username }), user };
 }
 
-async function login({ phone, password }) {
-  if (!phone || !password) throw badRequest('请填写手机号和密码');
-  const user = db.prepare('SELECT id,username,phone,avatar,bio,wechat_id,cover_photo,password,banned FROM users WHERE phone=?').get(phone);
-  if (!user || !await bcrypt.compare(password, user?.password || '')) throw badRequest('手机号或密码错误');
+// 登录：支持「手机号 + 密码」与「v信号(wechat_id) + 密码」两种方式。
+//   向后兼容：旧客户端仍发 { phone, password }，无 loginType/identifier 时回退按 phone 查询。
+//   新客户端发 { loginType: 'phone'|'vxin', identifier, password }。
+//   两条路径复用同一套密码校验 / JWT / Session / 设备逻辑，不复制第二套认证系统。
+//   统一错误文案「账号或密码错误」——手机号与 v信号均不区分，避免账号枚举。
+async function login(body = {}) {
+  const password = body.password;
+  // 归一化登录方式与账号标识：
+  //   - 显式 loginType='vxin' 时按 v信号查；
+  //   - 否则一律走手机号（含旧的 { phone } 请求与 loginType='phone'）。
+  const loginType = body.loginType === 'vxin' ? 'vxin' : 'phone';
+  const identifier =
+    loginType === 'vxin'
+      ? (body.identifier ?? body.wechat_id ?? '')
+      : (body.identifier ?? body.phone ?? '');
+
+  if (!identifier || !password) throw badRequest('请填写账号和密码');
+
+  let user;
+  if (loginType === 'vxin') {
+    // v信号 = 6 位纯数字（现有 generateVxinId 规则）。格式不符直接按「账号或密码错误」拒绝，
+    // 既避免无谓查询，也不泄漏「该 v信号不存在」的信息。
+    const vxin = String(identifier).trim();
+    if (!/^\d{6}$/.test(vxin)) throw badRequest('账号或密码错误');
+    user = db.prepare('SELECT id,username,phone,avatar,bio,wechat_id,cover_photo,password,banned FROM users WHERE wechat_id=?').get(vxin);
+  } else {
+    user = db.prepare('SELECT id,username,phone,avatar,bio,wechat_id,cover_photo,password,banned FROM users WHERE phone=?').get(String(identifier).trim());
+  }
+
+  if (!user || !await bcrypt.compare(password, user?.password || '')) throw badRequest('账号或密码错误');
   if (user.banned) throw forbidden('账号已被封禁，请联系管理员');
   return { token: signToken(user), user: serializeUser(user) };
 }

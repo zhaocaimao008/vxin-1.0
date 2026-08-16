@@ -1,9 +1,15 @@
 import Foundation
 
+enum LoginMode {
+    case phone, vxin
+}
+
 @MainActor
 final class AuthViewModel: ObservableObject {
     // 登录表单
+    @Published var loginMode: LoginMode = .phone
     @Published var phone = ""
+    @Published var vxinId = ""
     @Published var password = ""
     @Published var serverURL = ServerConfig.shared.baseURL
     // 注册额外字段
@@ -25,7 +31,10 @@ final class AuthViewModel: ObservableObject {
         p.range(of: "^(?=.*[a-zA-Z])(?=.*\\d).{8,}$", options: .regularExpression) != nil
     }
 
-    var canLogin: Bool { !phone.isEmpty && !password.isEmpty && !loading }
+    var canLogin: Bool {
+        let identifierValid = loginMode == .phone ? !phone.isEmpty : !vxinId.isEmpty
+        return identifierValid && !password.isEmpty && !loading
+    }
     var canRegister: Bool {
         !username.isEmpty && !phone.isEmpty && isValidPassword(password)
             && (!inviteRequired || inviteCode.count == 6) && !loading
@@ -54,7 +63,12 @@ final class AuthViewModel: ObservableObject {
         error = nil
         Task {
             do {
-                authedUser = try await AuthRepository.shared.login(phone: phone, password: password)
+                switch loginMode {
+                case .phone:
+                    authedUser = try await AuthRepository.shared.login(phone: phone, password: password)
+                case .vxin:
+                    authedUser = try await AuthRepository.shared.loginWithVxinId(vxinId: vxinId, password: password)
+                }
             } catch let err {
                 error = (err as? LocalizedError)?.errorDescription ?? "登录失败"
             }

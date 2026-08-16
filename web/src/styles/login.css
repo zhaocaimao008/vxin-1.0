@@ -177,7 +177,7 @@
   letter-spacing: .3px;
 }
 
-/* ── 登录方式 Tab（当前仅"手机登录/手机注册"真实可用，不伪造第二个入口） ── */
+/* ── 登录方式 Tab（手机登录 | v信登录）── */
 .auth-tabs {
   display: flex;
   gap: 28px;
@@ -191,6 +191,8 @@
   position: relative;
   cursor: pointer;
   transition: color 0.2s;
+  background: transparent;
+  border: none;
 }
 .auth-tab.active { color: #07C160; }
 .auth-tab.active::after {
@@ -201,8 +203,6 @@
   background: #07C160;
   border-radius: 1px;
 }
-/* 视觉占位、非真实功能：无对应后端，禁止点击/无交互反馈 */
-.auth-tab.disabled { color: #8A8F98; cursor: default; user-select: none; pointer-events: none; }
 
 /* ── 最近登录 ── */
 .auth-accounts {

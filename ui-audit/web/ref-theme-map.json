@@ -1,0 +1,50 @@
+[
+  {
+    "file": "Web个人资料页",
+    "theme": "DARK",
+    "panelRGB": "RGB(30,34,43)",
+    "brightness": "36"
+  },
+  {
+    "file": "Web主界面",
+    "theme": "DARK",
+    "panelRGB": "RGB(51,51,51)",
+    "brightness": "51"
+  },
+  {
+    "file": "Web动态页",
+    "theme": "DARK",
+    "panelRGB": "RGB(38,47,56)",
+    "brightness": "47"
+  },
+  {
+    "file": "Web注册页",
+    "theme": "DARK",
+    "panelRGB": "RGB(64,64,64)",
+    "brightness": "64"
+  },
+  {
+    "file": "Web登录页面",
+    "theme": "DARK",
+    "panelRGB": "RGB(64,64,64)",
+    "brightness": "64"
+  },
+  {
+    "file": "Web聊天详情页",
+    "theme": "DARK",
+    "panelRGB": "RGB(64,64,64)",
+    "brightness": "64"
+  },
+  {
+    "file": "Web联系人页",
+    "theme": "DARK",
+    "panelRGB": "RGB(41,49,60)",
+    "brightness": "50"
+  },
+  {
+    "file": "Web设置页",
+    "theme": "DARK",
+    "panelRGB": "RGB(36,43,51)",
+    "brightness": "43"
+  }
+]

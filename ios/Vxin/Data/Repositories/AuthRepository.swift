@@ -26,6 +26,16 @@ final class AuthRepository {
         return res.user
     }
 
+    func loginWithVxinId(vxinId: String, password: String) async throws -> User {
+        let res: AuthResponse = try await api.send(
+            "api/auth/login", method: "POST",
+            body: LoginBody(wechat_id: vxinId.trimmingCharacters(in: .whitespaces), password: password),
+            authorized: false
+        )
+        applyAuth(res)
+        return res.user
+    }
+
     private func applyAuth(_ res: AuthResponse) {
         KeychainStore.shared.token = res.token   // active token
         AccountStore.shared.upsertActive(StoredAccount(id: res.user.id, username: res.user.username, avatar: res.user.avatar, token: res.token))

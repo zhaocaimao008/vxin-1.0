@@ -1,0 +1,95 @@
+name: iOS Visual Audit
+
+on:
+  workflow_dispatch:
+
+jobs:
+  visual-audit:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Resolve Swift packages
+        working-directory: ios
+        run: |
+          xcodebuild -resolvePackageDependencies \
+            -project Vxin.xcodeproj \
+            -scheme Vxin
+
+      - name: Build for Simulator
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing \
+            -project Vxin.xcodeproj \
+            -scheme Vxin \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Pick iPhone simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j \
+            | jq -r '[.devices | to_entries[] | select(.key | test("iOS")) | .value[] | select(.name | test("iPhone")) | .udid] | first')
+          if [ -z "$UDID" ] || [ "$UDID" = "null" ]; then
+            echo "No iPhone simulator found"; exit 1
+          fi
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          echo "Using iPhone simulator UDID: $UDID"
+
+      - name: Boot simulator
+        run: |
+          xcrun simctl boot ${{ steps.sim.outputs.udid }} || true
+          xcrun simctl bootstatus ${{ steps.sim.outputs.udid }}
+
+      - name: Force Light Mode
+        run: |
+          xcrun simctl ui ${{ steps.sim.outputs.udid }} appearance light
+
+      - name: Install app
+        working-directory: ios
+        run: |
+          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "Vxin.app" | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "App not found in DerivedData"
+            exit 1
+          fi
+          echo "Installing: $APP_PATH"
+          xcrun simctl install ${{ steps.sim.outputs.udid }} "$APP_PATH"
+
+      - name: Launch app and wait
+        run: |
+          xcrun simctl launch ${{ steps.sim.outputs.udid }} com.vxin.app
+          sleep 5
+
+      - name: Create screenshots directory
+        run: mkdir -p ios-screenshots
+
+      - name: Screenshot - Login
+        run: |
+          xcrun simctl io ${{ steps.sim.outputs.udid }} screenshot ios-screenshots/01-login.png
+          sleep 2
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-visual-audit-screenshots
+          path: ios-screenshots/
+          if-no-files-found: error
+
+      - name: Shutdown simulator
+        if: always()
+        run: xcrun simctl shutdown ${{ steps.sim.outputs.udid }} || true

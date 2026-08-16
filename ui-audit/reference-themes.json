@@ -1,0 +1,105 @@
+{
+  "timestamp": "2026-08-16T04:04:26.077Z",
+  "results": [
+    {
+      "page": "login",
+      "displayName": "Web登录页面",
+      "file": "ui-login.png",
+      "theme": "DARK",
+      "darkRatio": 98.9,
+      "lightRatio": 0.2,
+      "hasDarkSidebar": true,
+      "size": "1280×800"
+    },
+    {
+      "page": "login-alt",
+      "displayName": "Web登录页面(备用)",
+      "file": "01-login.png",
+      "theme": "DARK",
+      "darkRatio": 98.9,
+      "lightRatio": 0.2,
+      "hasDarkSidebar": true,
+      "size": "1280×800"
+    },
+    {
+      "page": "home",
+      "displayName": "Web主界面",
+      "file": "ui-home.png",
+      "theme": "LIGHT",
+      "darkRatio": 2.8,
+      "lightRatio": 95.9,
+      "hasDarkSidebar": true,
+      "size": "1280×800"
+    },
+    {
+      "page": "home-alt",
+      "displayName": "Web主界面(备用)",
+      "file": "02-chatlist.png",
+      "theme": "LIGHT",
+      "darkRatio": 2.8,
+      "lightRatio": 96.2,
+      "hasDarkSidebar": true,
+      "size": "1280×800"
+    },
+    {
+      "page": "chat",
+      "displayName": "Web聊天详情页",
+      "file": "ui-chat.png",
+      "theme": "LIGHT",
+      "darkRatio": 2.8,
+      "lightRatio": 86,
+      "hasDarkSidebar": true,
+      "size": "1280×800"
+    },
+    {
+      "page": "chat-alt",
+      "displayName": "Web聊天详情页(备用)",
+      "file": "03-chat.png",
+      "theme": "LIGHT",
+      "darkRatio": 2.7,
+      "lightRatio": 95.5,
+      "hasDarkSidebar": true,
+      "size": "1280×800"
+    },
+    {
+      "page": "contacts",
+      "displayName": "Web联系人页",
+      "file": "04-contacts.png",
+      "theme": "LIGHT",
+      "darkRatio": 2.8,
+      "lightRatio": 95.3,
+      "hasDarkSidebar": true,
+      "size": "1280×800"
+    },
+    {
+      "page": "moments",
+      "displayName": "Web动态页",
+      "file": "05-moments.png",
+      "theme": "LIGHT",
+      "darkRatio": 2.7,
+      "lightRatio": 96.8,
+      "hasDarkSidebar": true,
+      "size": "1280×800"
+    },
+    {
+      "page": "settings",
+      "displayName": "Web设置页",
+      "file": "settings.png",
+      "theme": "LIGHT",
+      "darkRatio": 2.8,
+      "lightRatio": 95.2,
+      "hasDarkSidebar": true,
+      "size": "1280×800"
+    },
+    {
+      "page": "profile",
+      "displayName": "Web个人资料页",
+      "file": "06-me.png",
+      "theme": "LIGHT",
+      "darkRatio": 2.8,
+      "lightRatio": 95.2,
+      "hasDarkSidebar": true,
+      "size": "1280×800"
+    }
+  ]
+}

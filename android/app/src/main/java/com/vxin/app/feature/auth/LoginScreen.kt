@@ -92,37 +92,51 @@ fun LoginScreen(
         Text("连接世界 · 沟通无限", fontSize = VxinTextSize.base, color = VxinTextSecondary)
         Spacer(Modifier.height(36.dp))
 
-        // 登录方式：当前仅「手机登录」有真实后端支持（login 仅按手机号查询）。
-        // 参考图上的「v信登录」（按 v信号登录）没有对应的后端能力，未实现，避免伪造入口。
-        Text(
-            "手机登录",
-            fontSize = VxinTextSize.lg,
-            fontWeight = FontWeight.SemiBold,
-            color = VxinTextPrimary,
+        // 登录方式切换：手机登录 | v信登录
+        Row(
             modifier = Modifier
                 .align(Alignment.Start)
-                .padding(bottom = 4.dp),
-        )
-        androidx.compose.foundation.layout.Box(
-            Modifier
-                .align(Alignment.Start)
-                .width(56.dp)
-                .height(2.dp)
-                .background(VxinBrand),
-        )
+                .padding(bottom = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(28.dp),
+        ) {
+            LoginModeTab(
+                text = "手机登录",
+                selected = state.loginMode == LoginMode.PHONE,
+                onClick = { viewModel.onLoginModeChange(LoginMode.PHONE) },
+            )
+            LoginModeTab(
+                text = "v信登录",
+                selected = state.loginMode == LoginMode.VXIN,
+                onClick = { viewModel.onLoginModeChange(LoginMode.VXIN) },
+            )
+        }
         Spacer(Modifier.height(20.dp))
 
-        VxinAuthField(
-            icon = VxinIcons.Phone,
-            value = state.phone,
-            onValueChange = viewModel::onPhoneChange,
-            placeholder = "请输入手机号",
-            keyboardType = KeyboardType.Phone,
-            testTag = "login-phone-input",
-            trailing = {
-                Text("+86", color = VxinTextSecondary, fontSize = VxinTextSize.base)
-            },
-        )
+        when (state.loginMode) {
+            LoginMode.PHONE -> {
+                VxinAuthField(
+                    icon = VxinIcons.Phone,
+                    value = state.phone,
+                    onValueChange = viewModel::onPhoneChange,
+                    placeholder = "请输入手机号",
+                    keyboardType = KeyboardType.Phone,
+                    testTag = "login-phone-input",
+                    trailing = {
+                        Text("+86", color = VxinTextSecondary, fontSize = VxinTextSize.base)
+                    },
+                )
+            }
+            LoginMode.VXIN -> {
+                VxinAuthField(
+                    icon = VxinIcons.User,
+                    value = state.vxinId,
+                    onValueChange = viewModel::onVxinIdChange,
+                    placeholder = "请输入v信号",
+                    keyboardType = KeyboardType.Text,
+                    testTag = "login-vxin-input",
+                )
+            }
+        }
         VxinPasswordField(
             value = state.password,
             onValueChange = viewModel::onPasswordChange,
@@ -227,5 +241,34 @@ fun LoginScreen(
             }
         }
         Spacer(Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun LoginModeTab(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .androidx.compose.foundation.clickable(onClick = onClick)
+    ) {
+        Text(
+            text = text,
+            fontSize = VxinTextSize.lg,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (selected) VxinTextPrimary else VxinTextSecondary,
+        )
+        Spacer(Modifier.height(4.dp))
+        if (selected) {
+            androidx.compose.foundation.layout.Box(
+                Modifier
+                    .width(56.dp)
+                    .height(2.dp)
+                    .background(VxinBrand),
+            )
+        }
     }
 }

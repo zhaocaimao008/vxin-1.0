@@ -16,8 +16,9 @@ data class User(
 
 @Serializable
 data class LoginRequest(
-    val phone: String,
+    val phone: String? = null,
     val password: String,
+    val wechat_id: String? = null,
 )
 
 @Serializable

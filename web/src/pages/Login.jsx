@@ -14,7 +14,9 @@ export default function Login() {
   // 凭证仅在本地做可逆混淆存储，默认不勾选，详见 utils/rememberedCreds.js 安全边界。
   const initialPhone = lastRememberedPhone();
   const initialPwd = initialPhone ? loadCred(initialPhone) : '';
+  const [loginMode, setLoginMode] = useState('phone'); // 'phone' or 'vxin'
   const [phone, setPhone] = useState(initialPhone);
+  const [vxinId, setVxinId] = useState('');
   const [password, setPassword] = useState(initialPwd);
   const [remember, setRemember] = useState(!!initialPwd);
   const [error, setError] = useState('');
@@ -72,10 +74,15 @@ export default function Login() {
     if (loading) return; // 防连点/回车重复提交
     setError(''); setLoading(true);
     try {
-      const { data } = await axios.post('/api/auth/login', { phone, password });
+      const payload = loginMode === 'phone'
+        ? { phone, password }
+        : { loginType: 'vxin', identifier: vxinId, password };
+      const { data } = await axios.post('/api/auth/login', payload);
       // 登录成功后按勾选保存/清除本地记住的密码（凭证按手机号归档，可逆混淆存储）
-      if (remember) saveCred(phone, password);
-      else removeCred(phone);
+      if (loginMode === 'phone') {
+        if (remember) saveCred(phone, password);
+        else removeCred(phone);
+      }
       login(data.user, data.token);
       navigate('/');
     } catch (err) {
@@ -140,12 +147,23 @@ export default function Login() {
       <div className="auth-container">
         <h1 className="auth-brand-name" style={{ fontSize: 24, textAlign: 'center', marginBottom: 6 }}>欢迎登录 <span style={{ color: 'var(--color-primary, #07C160)' }}>v信</span></h1>
         <p className="auth-brand-desc" style={{ textAlign: 'center', marginBottom: 24 }}>安全连接每一刻，畅享沟通新体验</p>
-        {/* 登录方式：当前仅「手机登录」有真实后端支持（/api/auth/login 仅按手机号查询）。
-            参考图上的「v信登录」（按 v信号登录）没有对应后端能力 —— 为对齐参考图布局保留第二个
-            Tab 的视觉位置，但设为禁用态、不可点击、不触发任何逻辑，避免伪造未实现的功能。 */}
+
+        {/* 登录方式切换：手机登录 | v信登录 */}
         <div className="auth-tabs">
-          <span className="auth-tab active">手机登录</span>
-          <span className="auth-tab disabled" aria-disabled="true" title="暂未开放">v信登录</span>
+          <button
+            type="button"
+            className={`auth-tab ${loginMode === 'phone' ? 'active' : ''}`}
+            onClick={() => setLoginMode('phone')}
+          >
+            手机登录
+          </button>
+          <button
+            type="button"
+            className={`auth-tab ${loginMode === 'vxin' ? 'active' : ''}`}
+            onClick={() => setLoginMode('vxin')}
+          >
+            v信登录
+          </button>
         </div>
 
         {/* 最近登录：点击回填手机号；若曾记住密码则一并回填密码并自动勾选「记住密码」 */}
@@ -185,33 +203,58 @@ export default function Login() {
 
         {/* 登录表单 */}
         <form className="auth-form" onSubmit={handleSubmit}>
-          <div className={`auth-field ${focusedField === 'phone' ? 'focused' : ''} ${phone ? 'has-value' : ''}`}>
-            <label className="auth-field-label" htmlFor="login-phone">手机号</label>
-            <div className="auth-field-input-wrap">
-              <svg className="auth-field-icon" viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-                <rect x="3" y="1" width="14" height="18" rx="3"/>
-                <line x1="8" y1="15" x2="12" y2="15"/>
-              </svg>
-              <input
-                id="login-phone"
-                data-testid="login-phone-input"
-                className="auth-field-input"
-                type="tel"
-                inputMode="tel"
-                autoComplete="username"
-                placeholder="请输入手机号"
-                value={phone}
-                onChange={e => setPhone(e.target.value)}
-                onFocus={() => setFocusedField('phone')}
-                onBlur={() => setFocusedField(null)}
-                required
-              />
-              <span className="auth-field-cc">
-                +86
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M7 10l5 5 5-5z"/></svg>
-              </span>
+          {loginMode === 'phone' ? (
+            <div className={`auth-field ${focusedField === 'phone' ? 'focused' : ''} ${phone ? 'has-value' : ''}`}>
+              <label className="auth-field-label" htmlFor="login-phone">手机号</label>
+              <div className="auth-field-input-wrap">
+                <svg className="auth-field-icon" viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                  <rect x="3" y="1" width="14" height="18" rx="3"/>
+                  <line x1="8" y1="15" x2="12" y2="15"/>
+                </svg>
+                <input
+                  id="login-phone"
+                  data-testid="login-phone-input"
+                  className="auth-field-input"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="username"
+                  placeholder="请输入手机号"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  onFocus={() => setFocusedField('phone')}
+                  onBlur={() => setFocusedField(null)}
+                  required
+                />
+                <span className="auth-field-cc">
+                  +86
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M7 10l5 5 5-5z"/></svg>
+                </span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className={`auth-field ${focusedField === 'vxin' ? 'focused' : ''} ${vxinId ? 'has-value' : ''}`}>
+              <label className="auth-field-label" htmlFor="login-vxin">v信号</label>
+              <div className="auth-field-input-wrap">
+                <svg className="auth-field-icon" viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                  <circle cx="10" cy="10" r="8"/>
+                  <path d="M10 6v4l3 2"/>
+                </svg>
+                <input
+                  id="login-vxin"
+                  data-testid="login-vxin-input"
+                  className="auth-field-input"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="请输入v信号"
+                  value={vxinId}
+                  onChange={e => setVxinId(e.target.value)}
+                  onFocus={() => setFocusedField('vxin')}
+                  onBlur={() => setFocusedField(null)}
+                  required
+                />
+              </div>
+            </div>
+          )}
 
           <div className={`auth-field ${focusedField === 'password' ? 'focused' : ''} ${password ? 'has-value' : ''}`}>
             <label className="auth-field-label" htmlFor="login-password">密码</label>

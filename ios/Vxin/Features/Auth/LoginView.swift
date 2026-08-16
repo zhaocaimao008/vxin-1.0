@@ -32,33 +32,58 @@ struct LoginView: View {
                     .foregroundColor(.vxinTextSecondary)
                     .padding(.bottom, 20)
 
-                // 登录方式：当前仅「手机登录」有真实后端支持（login 仅按手机号查询）。
-                // 参考图上的「v信登录」（按 v信号登录）没有对应后端能力，未实现，避免伪造入口。
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("手机登录")
-                            .font(.headline)
-                            .foregroundColor(.vxinTextPrimary)
-                        Rectangle().fill(Color.vxinBrand).frame(width: 56, height: 2)
+                // 登录方式切换
+                HStack(spacing: 24) {
+                    Button(action: { vm.loginMode = .phone }) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("手机登录")
+                                .font(.headline)
+                                .foregroundColor(vm.loginMode == .phone ? .vxinTextPrimary : .vxinTextSecondary)
+                            if vm.loginMode == .phone {
+                                Rectangle().fill(Color.vxinBrand).frame(width: 56, height: 2)
+                            }
+                        }
+                    }
+                    Button(action: { vm.loginMode = .vxin }) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("v信登录")
+                                .font(.headline)
+                                .foregroundColor(vm.loginMode == .vxin ? .vxinTextPrimary : .vxinTextSecondary)
+                            if vm.loginMode == .vxin {
+                                Rectangle().fill(Color.vxinBrand).frame(width: 56, height: 2)
+                            }
+                        }
                     }
                     Spacer()
                 }
                 .padding(.bottom, 8)
 
-                VxinAuthField(
-                    icon: "iphone",
-                    placeholder: "请输入手机号",
-                    text: $vm.phone,
-                    keyboardType: .phonePad,
-                    accessibilityId: "login-phone-input",
-                    trailing: AnyView(Text("+86").foregroundColor(.vxinTextSecondary))
-                )
+                if vm.loginMode == .phone {
+                    VxinAuthField(
+                        icon: "iphone",
+                        placeholder: "请输入手机号",
+                        text: $vm.phone,
+                        keyboardType: .phonePad,
+                        accessibilityId: "login-phone-input",
+                        trailing: AnyView(Text("+86").foregroundColor(.vxinTextSecondary))
+                    )
+                } else {
+                    VxinAuthField(
+                        icon: "at",
+                        placeholder: "请输入v信号",
+                        text: $vm.vxinId,
+                        keyboardType: .default,
+                        accessibilityId: "login-vxin-input"
+                    )
+                }
                 VxinPasswordAuthField(placeholder: "请输入密码", text: $vm.password, accessibilityId: "login-password-input")
 
                 HStack {
                     HStack(spacing: 8) {
                         VxinRoundCheckbox(checked: $rememberPhone, accessibilityId: "login-remember-checkbox")
-                        Text("记住手机号").font(.footnote).foregroundColor(.vxinTextSecondary)
+                        Text(vm.loginMode == .phone ? "记住手机号" : "记住v信号")
+                            .font(.footnote)
+                            .foregroundColor(.vxinTextSecondary)
                     }
                     Spacer()
                     NavigationLink("忘记密码?") { ForgotPasswordView() }
