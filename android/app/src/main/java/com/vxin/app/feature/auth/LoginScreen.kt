@@ -2,6 +2,7 @@ package com.vxin.app.feature.auth
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -128,7 +129,7 @@ fun LoginScreen(
             }
             LoginMode.VXIN -> {
                 VxinAuthField(
-                    icon = VxinIcons.User,
+                    icon = VxinIcons.Person,
                     value = state.vxinId,
                     onValueChange = viewModel::onVxinIdChange,
                     placeholder = "请输入v信号",
@@ -253,7 +254,7 @@ private fun LoginModeTab(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .androidx.compose.foundation.clickable(onClick = onClick)
+            .clickable(onClick = onClick)
     ) {
         Text(
             text = text,
