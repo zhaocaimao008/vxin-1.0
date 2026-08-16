@@ -16,7 +16,7 @@ beforeAll(() => {
 describe('v信号 + 手机号双模式登录 — auth.service 核心逻辑', () => {
   let testUserId;
   const TEST_PHONE = '13900001234';
-  const TEST_VXIN  = 'vxlogin1';
+  const TEST_VXIN  = '881234';
   const TEST_PASS  = 'LoginTest1';
 
   beforeAll(async () => {
