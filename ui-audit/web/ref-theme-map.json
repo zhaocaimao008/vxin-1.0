@@ -1,50 +1,50 @@
 [
   {
     "file": "Web个人资料页",
-    "theme": "DARK",
+    "theme": "LIGHT",
     "panelRGB": "RGB(30,34,43)",
-    "brightness": "36"
+    "brightness": "223"
   },
   {
     "file": "Web主界面",
-    "theme": "DARK",
+    "theme": "LIGHT",
     "panelRGB": "RGB(51,51,51)",
-    "brightness": "51"
+    "brightness": "222"
   },
   {
     "file": "Web动态页",
-    "theme": "DARK",
+    "theme": "LIGHT",
     "panelRGB": "RGB(38,47,56)",
-    "brightness": "47"
+    "brightness": "213"
   },
   {
     "file": "Web注册页",
-    "theme": "DARK",
+    "theme": "LIGHT",
     "panelRGB": "RGB(64,64,64)",
-    "brightness": "64"
+    "brightness": "245"
   },
   {
     "file": "Web登录页面",
-    "theme": "DARK",
+    "theme": "LIGHT",
     "panelRGB": "RGB(64,64,64)",
-    "brightness": "64"
+    "brightness": "246"
   },
   {
     "file": "Web聊天详情页",
-    "theme": "DARK",
+    "theme": "LIGHT",
     "panelRGB": "RGB(64,64,64)",
-    "brightness": "64"
+    "brightness": "222"
   },
   {
     "file": "Web联系人页",
-    "theme": "DARK",
+    "theme": "LIGHT",
     "panelRGB": "RGB(41,49,60)",
-    "brightness": "50"
+    "brightness": "233"
   },
   {
     "file": "Web设置页",
-    "theme": "DARK",
+    "theme": "LIGHT",
     "panelRGB": "RGB(36,43,51)",
-    "brightness": "43"
+    "brightness": "233"
   }
 ]

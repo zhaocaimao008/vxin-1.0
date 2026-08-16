@@ -42,7 +42,7 @@ async function main() {
   console.log('🚀 启动隔离后端...');
   const backend = await startBackend();
   const testPhone = uniquePhone();
-  await seedUsers([{ phone: testPhone, password: 'e2epass1234', inviteCode: '123456', nickname: 'Test User' }]);
+  await seedUsers([{ username: 'VisualWin', phone: testPhone, password: 'e2epass1234', inviteCode: '123456', nickname: 'Test User' }]);
   console.log(`✅ 后端: ${env.BACKEND_URL}`);
   console.log(`✅ 测试账号: ${testPhone} / e2epass1234`);
 
@@ -53,10 +53,12 @@ async function main() {
     // 4. 启动 Electron
     console.log('🖥️  启动 Electron...');
     app = await electron.launch({
-      args: [ELECTRON_DIR],
+      executablePath: path.join(ELECTRON_DIR, 'node_modules', 'electron', 'dist', 'electron'),
+      args: [ELECTRON_DIR, '--no-sandbox'],
       env: {
         ...process.env,
         NODE_ENV: 'development',
+        VISUAL_AUDIT: '1', // 桌面端识别：禁用 sandbox（仅测试），与 --no-sandbox 一致
         VXIN_API_URL: env.BACKEND_URL, // 覆盖后端地址
       },
     });

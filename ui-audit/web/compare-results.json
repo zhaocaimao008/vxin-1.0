@@ -1,85 +1,85 @@
 {
-  "timestamp": "2026-08-16T05:00:33.354Z",
+  "timestamp": "2026-08-16T10:30:11.634Z",
   "results": [
     {
       "name": "Web登录页面",
       "ref": "Web登录页面.jpg",
       "actual": "login.png",
-      "diffPercent": 33.34,
-      "diffPixels": 691256,
+      "diffPercent": 33.31,
+      "diffPixels": 690691,
       "totalPixels": 2073600,
       "status": "FAIL",
-      "diffPath": "/root/v信/ui-audit/web/diff/Web登录页面-diff.png"
+      "diffPath": "/root/vxin-worktrees/INTEGRATION-OTP-TEST/ui-audit/web/diff/Web登录页面-diff.png"
     },
     {
       "name": "Web注册页",
       "ref": "Web注册页.jpg",
       "actual": "register.png",
-      "diffPercent": 29.39,
-      "diffPixels": 609349,
+      "diffPercent": 29.36,
+      "diffPixels": 608762,
       "totalPixels": 2073600,
       "status": "FAIL",
-      "diffPath": "/root/v信/ui-audit/web/diff/Web注册页-diff.png"
+      "diffPath": "/root/vxin-worktrees/INTEGRATION-OTP-TEST/ui-audit/web/diff/Web注册页-diff.png"
     },
     {
       "name": "Web主界面",
       "ref": "Web主界面.jpg",
       "actual": "home.png",
-      "diffPercent": 41.79,
-      "diffPixels": 866494,
+      "diffPercent": 41.78,
+      "diffPixels": 866344,
       "totalPixels": 2073600,
       "status": "FAIL",
-      "diffPath": "/root/v信/ui-audit/web/diff/Web主界面-diff.png"
+      "diffPath": "/root/vxin-worktrees/INTEGRATION-OTP-TEST/ui-audit/web/diff/Web主界面-diff.png"
     },
     {
       "name": "Web聊天详情页",
       "ref": "Web聊天详情页.jpg",
       "actual": "chat.png",
-      "diffPercent": 92.43,
-      "diffPixels": 1916660,
+      "diffPercent": 41.75,
+      "diffPixels": 865823,
       "totalPixels": 2073600,
       "status": "FAIL",
-      "diffPath": "/root/v信/ui-audit/web/diff/Web聊天详情页-diff.png"
+      "diffPath": "/root/vxin-worktrees/INTEGRATION-OTP-TEST/ui-audit/web/diff/Web聊天详情页-diff.png"
     },
     {
       "name": "Web联系人页",
       "ref": "Web联系人页.jpg",
       "actual": "contacts.png",
-      "diffPercent": 26.29,
-      "diffPixels": 545251,
+      "diffPercent": 25.68,
+      "diffPixels": 532470,
       "totalPixels": 2073600,
       "status": "FAIL",
-      "diffPath": "/root/v信/ui-audit/web/diff/Web联系人页-diff.png"
+      "diffPath": "/root/vxin-worktrees/INTEGRATION-OTP-TEST/ui-audit/web/diff/Web联系人页-diff.png"
     },
     {
       "name": "Web动态页",
       "ref": "Web动态页.jpg",
       "actual": "moments.png",
-      "diffPercent": 37.1,
-      "diffPixels": 769354,
+      "diffPercent": 36.71,
+      "diffPixels": 761250,
       "totalPixels": 2073600,
       "status": "FAIL",
-      "diffPath": "/root/v信/ui-audit/web/diff/Web动态页-diff.png"
+      "diffPath": "/root/vxin-worktrees/INTEGRATION-OTP-TEST/ui-audit/web/diff/Web动态页-diff.png"
     },
     {
       "name": "Web设置页",
       "ref": "Web设置页.jpg",
       "actual": "settings.png",
-      "diffPercent": 25.38,
-      "diffPixels": 526335,
+      "diffPercent": 24.43,
+      "diffPixels": 506583,
       "totalPixels": 2073600,
       "status": "FAIL",
-      "diffPath": "/root/v信/ui-audit/web/diff/Web设置页-diff.png"
+      "diffPath": "/root/vxin-worktrees/INTEGRATION-OTP-TEST/ui-audit/web/diff/Web设置页-diff.png"
     },
     {
       "name": "Web个人资料页",
       "ref": "Web个人资料页.jpg",
       "actual": "profile.png",
-      "diffPercent": 31.39,
-      "diffPixels": 650849,
+      "diffPercent": 44.83,
+      "diffPixels": 929532,
       "totalPixels": 2073600,
       "status": "FAIL",
-      "diffPath": "/root/v信/ui-audit/web/diff/Web个人资料页-diff.png"
+      "diffPath": "/root/vxin-worktrees/INTEGRATION-OTP-TEST/ui-audit/web/diff/Web个人资料页-diff.png"
     }
   ]
 }

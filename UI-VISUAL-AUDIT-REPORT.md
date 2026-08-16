@@ -68,14 +68,14 @@
 
 | 页面 | 截图 | 差异率 | 评估 | 说明 |
 |------|------|--------|------|------|
-| Web登录页面 | ✅ | 33.34% | ⚠️ MINOR | 需人工审查 |
-| Web注册页 | ✅ | 29.39% | ⚠️ MINOR | 需人工审查 |
-| Web主界面 | ✅ | 41.79% | ❌ FAIL | 数据稀疏（测试账号） |
-| Web聊天详情页 | ✅ | 92.43% | ❌ FAIL | 空白页（无会话数据）|
-| Web联系人页 | ✅ | 26.29% | ⚠️ MINOR | 需人工审查 |
-| Web动态页 | ✅ | 37.10% | ⚠️ MINOR | 需人工审查 |
-| Web设置页 | ✅ | 25.38% | ⚠️ MINOR | 需人工审查 |
-| Web个人资料页 | ✅ | 31.39% | ⚠️ MINOR | 需人工审查 |
+| Web登录页面 | ✅ | 33.31% | ⚠️ MINOR | 需人工审查 |
+| Web注册页 | ✅ | 29.36% | ⚠️ MINOR | 需人工审查 |
+| Web主界面 | ✅ | 41.78% | ❌ FAIL | 数据稀疏（测试账号） |
+| Web聊天详情页 | ✅ | 41.75% | ❌ FAIL | 数据稀疏（测试账号）|
+| Web联系人页 | ✅ | 25.68% | ⚠️ MINOR | 需人工审查 |
+| Web动态页 | ✅ | 36.71% | ⚠️ MINOR | 需人工审查 |
+| Web设置页 | ✅ | 24.43% | ⚠️ MINOR | 需人工审查 |
+| Web个人资料页 | ✅ | 44.83% | ⚠️ MINOR | 需人工审查 |
 
 **汇总: PASS=0 / MINOR=6 / FAIL=2 / 截图完成率=100%**
 
@@ -429,14 +429,14 @@ Total:    8/34  ████░░░░░░░░░░░░░░░░  23
 
 | 页面 | 截图 | 差异率 | 评估 | 主要差异原因 |
 |------|------|--------|------|--------------|
-| Web登录页面 | ✅ | 33.34% | ⚠️ MINOR | 测试数据不同 |
-| Web注册页 | ✅ | 29.39% | ⚠️ MINOR | 测试数据不同 |
-| Web主界面 | ✅ | 41.79% | ❌ FAIL | 测试账号数据稀疏 |
-| Web聊天详情页 | ✅ | 92.43% | ❌ FAIL | 无会话历史（空白页）|
-| Web联系人页 | ✅ | 26.29% | ⚠️ MINOR | 测试数据不同 |
-| Web动态页 | ✅ | 37.10% | ⚠️ MINOR | 测试数据不同 |
-| Web设置页 | ✅ | 25.38% | ⚠️ MINOR | 测试数据不同 |
-| Web个人资料页 | ✅ | 31.39% | ⚠️ MINOR | 测试数据不同 |
+| Web登录页面 | ✅ | 33.31% | ⚠️ MINOR | 测试数据不同 |
+| Web注册页 | ✅ | 29.36% | ⚠️ MINOR | 测试数据不同 |
+| Web主界面 | ✅ | 41.78% | ❌ FAIL | 测试账号数据稀疏 |
+| Web聊天详情页 | ✅ | 41.75% | ❌ FAIL | 无会话历史（空白页）|
+| Web联系人页 | ✅ | 25.68% | ⚠️ MINOR | 测试数据不同 |
+| Web动态页 | ✅ | 36.71% | ⚠️ MINOR | 测试数据不同 |
+| Web设置页 | ✅ | 24.43% | ⚠️ MINOR | 测试数据不同 |
+| Web个人资料页 | ✅ | 44.83% | ⚠️ MINOR | 测试数据不同 |
 
 **Web 汇总**: PASS=0 / MINOR=6 / FAIL=2 / 截图完成率=100%
 
@@ -484,6 +484,57 @@ Total:    8/34  ████░░░░░░░░░░░░░░░░  23
    - 但当前差异主要是数据内容，不是 UI 问题
 
 ---
+
+---
+
+## 🪟 Phase 2: Windows 端（环境受限）
+
+### 审计脚本修复（e2e 测试工具）
+- **seedUsers 缺 username 字段** → 已补（"VisualWin"）
+- **electron.launch 缺 executablePath** → 已指定 dist/electron 真实路径
+- **root 环境缺 --no-sandbox** → args + VISUAL_AUDIT=1 环境变量
+- **DISPLAY 未继承** → 显式 DISPLAY=:99（Xvfb）
+
+### 阻塞原因（环境，非代码）
+- 本机为 root + Xvfb + Electron 30.5.1，Chromium 沙箱持续 FATAL
+  （`Running as root without --no-sandbox is not supported`）
+- 已尝试 7 种组合：--no-sandbox 参数位置、ELECTRON_DISABLE_SANDBOX=1、
+  ELECTRON_NO_SANDBOX=1、--disable-setuid-sandbox、--disable-gpu、
+  chrome-sandbox setuid 4755（FATAL 85→1 但主进程仍退出）
+- **结论**: Windows 桌面端视觉审计需在真实 Windows 机器或 Windows CI
+  （GitHub Actions windows-latest）上执行，本 Linux 服务器环境无法验证
+
+### 建议
+- 使用 `.github/workflows/` 现有 iOS workflow 模式，新增 Windows visual-audit workflow
+- 或由招财猫在本地 Windows 机器跑 `e2e/visual-audit-windows.js`（已修复）
+
+---
+
+
+---
+
+## 🧪 Phase 3: Playwright Web 测试（P0-3）
+
+### 结果：61 passed / 0 failed ✅（全量 Web 套件）
+
+### 过程中发现并修复的测试工具 bug（e2e 基础设施，非产品代码）
+1. **LoginPage POM 未同步登录页协议勾选**（根因，导致 58/61 全挂）
+   - 登录页新增「我已阅读并同意协议」checkbox，未勾选时提交按钮 disabled
+   - `e2e/playwright/pages/LoginPage.js` login() 缺少勾选步骤 → 已补
+2. **login-edge.spec.js LOGIN-02/05 同样缺协议勾选**（2 个残留失败）
+   - 直接 fill 后点提交，未勾选协议 → 按钮 disabled → 已补
+
+### 验证链路
+- 首轮全量：58 failed / 3 passed（登录前置全挂）
+- POM 修复后：59 passed / 2 failed（仅剩 LOGIN-02/05）
+- 用例修复后全量复跑：**61 passed / 0 failed（3.8m）**
+
+### 结论
+- 产品功能正常，58 个失败均为测试工具未同步登录页交互变更所致
+- P0-3 Web 部分 ✅ 完成
+
+---
+
 
 ## 📁 生成的文件
 

@@ -56,6 +56,8 @@ test.describe('登录异常 LOGIN-EDGE', () => {
     await login.gotoLogin(baseURL);
     await webPage.locator(`[data-testid="${A.loginPhone}"]`).fill('13800000000');
     await webPage.locator(`[data-testid="${A.loginPassword}"]`).fill('wrongpassword999');
+    // 登录页新增协议勾选：未勾选时提交按钮 disabled，需先勾选才能触发提交
+    await webPage.locator('[data-testid="login-agreement-checkbox"]').check({ force: true });
     await webPage.locator(`[data-testid="${A.loginSubmit}"]`).click();
     await webPage.waitForTimeout(2500);
 
@@ -102,6 +104,8 @@ test.describe('登录异常 LOGIN-EDGE', () => {
     await login.gotoLogin(baseURL);
     await webPage.locator(`[data-testid="${A.loginPhone}"]`).fill(seeded.users[0].phone);
     await webPage.locator(`[data-testid="${A.loginPassword}"]`).fill(seeded.users[0].password);
+    // 登录页新增协议勾选：未勾选时提交按钮 disabled，需先勾选才能触发提交
+    await webPage.locator('[data-testid="login-agreement-checkbox"]').check({ force: true });
 
     const submitBtn = webPage.locator(`[data-testid="${A.loginSubmit}"]`);
     await submitBtn.click();

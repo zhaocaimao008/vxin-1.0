@@ -16,6 +16,13 @@ class LoginPage {
   async login(phone, password) {
     await this.tid(A.loginPhone).fill(phone);
     await this.tid(A.loginPassword).fill(password);
+    // 登录页新增「我已阅读并同意协议」勾选：未勾选时提交按钮 disabled。
+    // 视觉审计脚本已同步该交互（login-agreement-checkbox），此处 POM 对齐。
+    const agree = this.tid('login-agreement-checkbox');
+    if (await agree.count()) {
+      const checked = await agree.isChecked().catch(() => false);
+      if (!checked) await agree.check({ force: true });
+    }
     await this.tid(A.loginSubmit).click();
   }
 
