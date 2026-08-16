@@ -1,6 +1,6 @@
 'use strict';
-const bcrypt = require('bcrypt');
-const db = require('../src/db/connection');
+const bcrypt = require('bcryptjs');
+const { db } = require('../src/db/connection');
 
 describe('v信号登录核心逻辑测试', () => {
   let testUserId;
