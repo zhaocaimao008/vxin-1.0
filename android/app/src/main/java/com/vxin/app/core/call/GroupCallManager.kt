@@ -57,6 +57,7 @@ class GroupCallManager @Inject constructor(
     private val socketManager: SocketManager,
     private val sessionManager: SessionManager,
     private val turnApi: com.vxin.app.data.api.TurnApi,
+    private val notificationHelper: com.vxin.app.core.push.NotificationHelper,
     @AppScope private val scope: CoroutineScope,
 ) {
     val eglBase: EglBase = EglBase.create()
@@ -181,6 +182,20 @@ class GroupCallManager @Inject constructor(
             socketManager.groupCallStartedEvents.collect { e ->
                 if (_state.value.stage == GroupCallStage.ENDED) return@collect
                 _state.update { it.copy(stage = GroupCallStage.CONNECTED, callId = e.callId, connectedAt = if (it.connectedAt == 0L) android.os.SystemClock.elapsedRealtime() else it.connectedAt) }
+            }
+        }
+        scope.launch {
+            // 后台/被杀时的群通话邀请提醒：前台由 Compose 横幅承接（不动），这里只补后台通知，
+            // 复用 1对1 来电通知样式（接听/拒绝按钮语义不适用群通话，但好过完全无提醒）。
+            socketManager.groupCallInviteEvents.collect { e ->
+                if (!com.vxin.app.core.push.MessageNotificationBridge.appForeground) {
+                    notificationHelper.showCallNotification(
+                        callId = e.callId,
+                        from = e.from,
+                        callerName = e.fromName,
+                        callType = e.type,
+                    )
+                }
             }
         }
         scope.launch {
