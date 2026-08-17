@@ -321,9 +321,10 @@ function getFeatures() {
     groupVoiceCall: get('feature_group_voice_call') !== 'off',
     groupVideoCall: get('feature_group_video_call') !== 'off',
     changePassword: get('feature_change_password') !== 'off',
+    vxinRegister: get('feature_vxin_register') !== 'off',
   };
 }
-function setFeatures({ moments, collect, inviteRequired, groupVoiceCall, groupVideoCall, changePassword }) {
+function setFeatures({ moments, collect, inviteRequired, groupVoiceCall, groupVideoCall, changePassword, vxinRegister }) {
   const set = (k, on) => db.prepare(`
     INSERT INTO admin_settings (key, value, updated_at) VALUES (?, ?, strftime('%s','now'))
     ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at
@@ -334,6 +335,7 @@ function setFeatures({ moments, collect, inviteRequired, groupVoiceCall, groupVi
   if (groupVoiceCall !== undefined) set('feature_group_voice_call', !!groupVoiceCall);
   if (groupVideoCall !== undefined) set('feature_group_video_call', !!groupVideoCall);
   if (changePassword !== undefined) set('feature_change_password', !!changePassword);
+  if (vxinRegister !== undefined) set('feature_vxin_register', !!vxinRegister);
   return getFeatures();
 }
 

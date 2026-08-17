@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import { showToast } from '../utils/toast';
 import '../styles/login.css';
 
 export default function Register() {
@@ -14,8 +13,10 @@ export default function Register() {
       const code = new URLSearchParams(window.location.search).get('invite');
       if (code && /^\d{6}$/.test(code)) inviteCode = code;
     } catch { /* SSR/无 window 时忽略 */ }
-    return { phone: '', password: '', inviteCode };
+    return { phone: '', vxinId: '', password: '', inviteCode };
   });
+  const [registerMode, setRegisterMode] = useState('phone'); // 'phone' | 'vxin'
+  const [vxinRegister, setVxinRegister] = useState(false); // 后端开关（GET /api/config features.vxinRegister）
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
@@ -28,7 +29,10 @@ export default function Register() {
 
   useEffect(() => {
     axios.get('/api/config')
-      .then(r => setInviteRequired(r.data?.features?.inviteRequired !== false))
+      .then(r => {
+        setInviteRequired(r.data?.features?.inviteRequired !== false);
+        setVxinRegister(r.data?.features?.vxinRegister !== false);
+      })
       .catch(() => {}); // 拉取失败保持默认（需要邀请码），后端仍会最终裁决
   }, []);
 
@@ -37,9 +41,15 @@ export default function Register() {
     if (loading) return; // 防连点/回车重复提交（避免重复注册）
     setError(''); setLoading(true);
 
-    // 前端基础校验
-    if (!/^\d{11}$/.test(form.phone)) {
-      setError('请输入 11 位手机号'); setLoading(false); return;
+    // 前端基础校验（按注册方式：手机号注册 / v信号注册）
+    if (registerMode === 'phone') {
+      if (!/^\d{11}$/.test(form.phone)) {
+        setError('请输入 11 位手机号'); setLoading(false); return;
+      }
+    } else {
+      if (!/^\d{6}$/.test(form.vxinId)) {
+        setError('请输入 6 位数字 v信号'); setLoading(false); return;
+      }
     }
     if (!/^(?=.*[a-zA-Z])(?=.*\d).{8,}$/.test(form.password)) {
       setError('密码至少8位且需包含字母和数字'); setLoading(false); return;
@@ -52,11 +62,10 @@ export default function Register() {
     }
 
     try {
-      const { data } = await axios.post('/api/auth/register', {
-        phone: form.phone,
-        password: form.password,
-        inviteCode: form.inviteCode || undefined
-      });
+      const payload = registerMode === 'phone'
+        ? { phone: form.phone, password: form.password, inviteCode: form.inviteCode || undefined }
+        : { loginType: 'vxin', identifier: form.vxinId, password: form.password, inviteCode: form.inviteCode || undefined };
+      const { data } = await axios.post('/api/auth/register', payload);
       login(data.user, data.token);
       navigate('/');
     } catch (err) {
@@ -64,13 +73,21 @@ export default function Register() {
     } finally { setLoading(false); }
   };
 
-  const fields = [
-    { key: 'phone', label: '手机号', type: 'tel', inputMode: 'tel', autocomplete: 'username', placeholder: '请输入手机号', maxLength: 11, icon: (
+  const accountField = registerMode === 'phone'
+    ? { key: 'phone', label: '手机号', type: 'tel', inputMode: 'tel', autocomplete: 'username', placeholder: '请输入手机号', maxLength: 11, icon: (
       <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
         <rect x="3" y="1" width="14" height="18" rx="3"/>
         <line x1="8" y1="15" x2="12" y2="15"/>
       </svg>
-    )},
+    )}
+    : { key: 'vxinId', label: 'v信号', type: 'text', inputMode: 'numeric', autocomplete: 'username', placeholder: '请输入6位数字v信号', maxLength: 6, icon: (
+      <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <rect x="3" y="1" width="14" height="18" rx="3"/>
+        <line x1="8" y1="15" x2="12" y2="15"/>
+      </svg>
+    )};
+  const fields = [
+    accountField,
     { key: 'password', label: '密码', type: 'password', autocomplete: 'new-password', placeholder: '请输入密码', icon: (
       <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
         <rect x="3" y="9" width="14" height="10" rx="2"/>
@@ -83,6 +100,13 @@ export default function Register() {
       </svg>
     )},
   ];
+
+  // 切换注册方式时清空错误
+  const switchMode = (mode) => {
+    if (mode === registerMode) return;
+    setRegisterMode(mode);
+    setError('');
+  };
 
   return (
     <div className="auth-page">
@@ -109,17 +133,24 @@ export default function Register() {
         <h1 className="auth-brand-name" style={{ fontSize: 22, textAlign: 'left', marginBottom: 4 }}>欢迎注册 v信</h1>
         <p className="auth-brand-desc" style={{ textAlign: 'left', marginBottom: 20 }}>安全连接每一刻，畅享沟通新体验</p>
 
-        {/* 注册方式：当前仅「手机注册」有真实后端支持（/api/auth/register 仅按手机号注册）。
-            参考图上的「v信注册」没有对应后端能力，未实现——tab 保留但点击给提示，避免伪造入口。 */}
+        {/* 注册方式切换：手机注册 | v信号注册（v信号注册由后端开关 feature_vxin_register 控制，关闭时不显示） */}
         <div className="auth-tabs">
-          <span className="auth-tab active">手机注册</span>
           <button
             type="button"
-            className="auth-tab"
-            onClick={() => showToast('v信注册暂未开放，请使用手机注册', 'info')}
+            className={`auth-tab ${registerMode === 'phone' ? 'active' : ''}`}
+            onClick={() => switchMode('phone')}
           >
-            v信注册
+            手机注册
           </button>
+          {vxinRegister && (
+            <button
+              type="button"
+              className={`auth-tab ${registerMode === 'vxin' ? 'active' : ''}`}
+              onClick={() => switchMode('vxin')}
+            >
+              v信号注册
+            </button>
+          )}
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
@@ -173,7 +204,7 @@ export default function Register() {
             </div>
           )}
 
-          <button type="submit" data-testid="register-submit-btn" className="auth-submit" disabled={loading || !form.phone || !form.password || !agreed}>
+          <button type="submit" data-testid="register-submit-btn" className="auth-submit" disabled={loading || (registerMode === 'phone' ? !form.phone : !form.vxinId) || !form.password || !agreed}>
             {loading ? <span className="auth-spinner" /> : '注册'}
           </button>
 

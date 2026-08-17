@@ -63,12 +63,8 @@ const loginLimiter = rateLimit({
   message: json('登录尝试过于频繁，请10分钟后再试'),
 });
 
-// 注册：1 小时 5 次
-const registerLimiter = rateLimit({
-  ...base, windowMs: 60 * 60 * 1000, max: 5,
-  store: makeStore('register'),
-  message: json('注册过于频繁，请1小时后再试'),
-});
+// 注册限流：已按用户要求关闭（2026-08-17），仅注册不限制，其他限流保持不变
+const registerLimiter = (req, res, next) => next();
 
 // HTTP 发消息：单用户每分钟 60 条
 const sendMsgLimiter = rateLimit({

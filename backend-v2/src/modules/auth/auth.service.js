@@ -28,6 +28,12 @@ function isInviteRequired() {
   return row?.value !== 'off';
 }
 
+// v信号注册总开关（存 admin_settings.feature_vxin_register）。默认开启，后端可随时关闭。
+function isVxinRegisterEnabled() {
+  const row = db.prepare("SELECT value FROM admin_settings WHERE key='feature_vxin_register'").get();
+  return row?.value !== 'off';
+}
+
 // 解析注册邀请码：先认管理员全局码（无邀请人），再认某用户的专属码（记其为邀请人）。
 // 返回 { valid, inviterId }。inviterId 仅在用了他人专属码时非空。
 function resolveInvite(code) {
@@ -83,8 +89,28 @@ function upsertSession(userId, req) {
 }
 
 // ── 业务 ────────────────────────────────────────────────────────
-async function register({ username, phone, password, inviteCode }) {
-  if (!username || !phone || !password) throw badRequest('请填写所有字段');
+async function register({ username, phone, password, inviteCode, loginType, identifier }) {
+  // v信号注册模式：loginType='vxin' 时用 6 位数字 v信号注册（受 feature_vxin_register 开关控制）
+  const vxinMode = loginType === 'vxin';
+  if (vxinMode && !isVxinRegisterEnabled()) throw badRequest('v信号注册已关闭');
+  if (!password) throw badRequest('请填写所有字段');
+
+  let wechatId;
+  if (vxinMode) {
+    // v信号注册：用户自定义 6 位数字 v信号，不填手机号
+    const vxin = String(identifier || '').trim();
+    if (!/^\d{6}$/.test(vxin)) throw badRequest('v信号必须是6位数字');
+    if (db.prepare('SELECT id FROM users WHERE wechat_id=?').get(vxin)) throw badRequest('该v信号已被注册');
+    username = (username || vxin || '').trim();
+    phone = '0' + vxin; // 占位手机号（0开头不与真实手机号冲突，登录走 v信号）
+    wechatId = vxin;
+  } else {
+    if (!phone) throw badRequest('请填写所有字段');
+    // 前端注册页无「用户名」输入框（仅手机号/密码/邀请码）→ username 缺省时用手机号兜底，
+    // 保证 Windows/Android 客户端注册流程可用（手机号本身唯一，作为用户名不冲突）。
+    username = (username || phone || '').trim();
+    wechatId = generateVxinId();
+  }
   // 用户名 2-20 字符（与前端 Register 保持一致，后端为权威）
   if (typeof username !== 'string' || username.length < 2 || username.length > 20)
     throw badRequest('用户名长度为 2-20 字符');
@@ -109,7 +135,6 @@ async function register({ username, phone, password, inviteCode }) {
 
   const hash = await bcrypt.hash(password, 12);
   const id = uuidv4();
-  const wechatId = generateVxinId();
   const myInviteCode = generateUserInviteCode(); // 新用户自己的专属邀请码
   try {
     db.prepare('INSERT INTO users (id,username,phone,password,wechat_id,invite_code,invited_by) VALUES (?,?,?,?,?,?,?)')

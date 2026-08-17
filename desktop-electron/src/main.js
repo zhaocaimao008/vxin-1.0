@@ -259,12 +259,17 @@ function inlineScriptHashes() {
 // scriptSrc 由调用方传入（哈希白名单优先，失败回退 unsafe-inline）。
 // style-src 保留 unsafe-inline：存在内联 <style> 且运行时有动态样式注入，风险低。
 function buildCSP(scriptSrc) {
+  // 图片/媒体源：自身 + API 服务器 + 可选 CDN（保留 https: 兼容未来 HTTPS 资源）。
+  // 服务器可能是 http://（如 http://45.77.131.33），若不把 API_ORIGIN 加入 img-src，
+  // 头像/图片会被 CSP 拦截加载失败 → 看起来“头像不变/裂图”。
+  const mediaSrc = [...new Set(["'self'", 'data:', 'blob:', 'https:', API_ORIGIN,
+    ...(CDN_ORIGIN && CDN_ORIGIN !== API_ORIGIN ? [CDN_ORIGIN] : [])].filter(Boolean))].join(' ');
   return [
     "default-src 'self'",
     `script-src ${scriptSrc}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https:",
-    "media-src 'self' blob: data: https:",
+    `img-src ${mediaSrc}`,
+    `media-src ${mediaSrc}`,
     "font-src 'self' data:",
     // connect-src：后端 API/WS + 可选 CDN + config 发现源(jsDelivr 等)。config 源
     // 若与 API/CDN 重复由后续去重过滤，避免重复 token。
@@ -405,6 +410,23 @@ function sanitizeBounds(raw) {
 }
 
 // ── 主窗口 ─────────────────────────────────────────────────
+// ── 页面加载：优先远程（服务器部署即热更新），失败回退本地打包版 ──
+// 远程模式：前端代码改动 → 构建部署到服务器 → 用户重启 App 即新版，
+// 无需重新下载安装包。本地 dist 仅作离线/服务器不可达时的兑底。
+function loadAppPage() {
+  const remoteUrl = (SERVER_URL && /^https?:\/\//.test(SERVER_URL)) ? SERVER_URL : null;
+  if (!remoteUrl) {
+    mainWindow.loadFile(indexHtmlPath());
+    return;
+  }
+  mainWindow.loadURL(remoteUrl).catch((err) => {
+    log.warn('[Window] 远程页面加载失败，回退本地版本:', err.message);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.loadFile(indexHtmlPath()).catch(() => {});
+    }
+  });
+}
+
 function createWindow() {
   // ── 从持久化存储恢复上次窗口位置/尺寸 ──────────────────────────
   const savedState = windowState.load();
@@ -450,27 +472,45 @@ function createWindow() {
     backgroundColor: '#1A2033',
   });
 
-  mainWindow.loadFile(indexHtmlPath());
+  loadAppPage();
 
   // 加载失败/渲染进程崩溃兜底：否则用户只见纯色空窗、无提示无入口。
   // did-fail-load 的 errorCode -3 是主动中断(如 loadFile 被后续导航取代)，忽略。
+  // 远程加载失败自动回退本地打包版（不弹窗打扰）；本地回退后仍失败才弹窗。
   mainWindow.webContents.on('did-fail-load', (_e, errorCode, errorDesc, url, isMainFrame) => {
     if (!isMainFrame || errorCode === -3 || !mainWindow) return;
     log.error('页面加载失败:', errorCode, errorDesc, url);
-    dialog.showMessageBox(mainWindow, {
-      type: 'error', title: 'v信',
-      message: '界面加载失败',
-      detail: `错误：${errorDesc || errorCode}`,
-      buttons: ['重试', '退出'], defaultId: 0, cancelId: 1,
-    }).then(({ response }) => {
-      if (response === 0) mainWindow?.loadFile(indexHtmlPath());
-      else { isQuitting = true; app.quit(); }
-    }).catch(() => {});
+    if (/^https?:\/\//.test(url)) {
+      // 远程不可达 → 回退本地打包版本
+      mainWindow.loadFile(indexHtmlPath()).catch((e) => {
+        log.error('本地回退也失败:', e.message);
+        dialog.showMessageBox(mainWindow, {
+          type: 'error', title: 'v信',
+          message: '界面加载失败',
+          detail: `错误：${errorDesc || errorCode}`,
+          buttons: ['重试', '退出'], defaultId: 0, cancelId: 1,
+        }).then(({ response }) => {
+          if (response === 0) loadAppPage();
+          else { isQuitting = true; app.quit(); }
+        }).catch(() => {});
+      });
+    } else {
+      // 本地加载失败 → 直接弹窗
+      dialog.showMessageBox(mainWindow, {
+        type: 'error', title: 'v信',
+        message: '界面加载失败',
+        detail: `错误：${errorDesc || errorCode}`,
+        buttons: ['重试', '退出'], defaultId: 0, cancelId: 1,
+      }).then(({ response }) => {
+        if (response === 0) loadAppPage();
+        else { isQuitting = true; app.quit(); }
+      }).catch(() => {});
+    }
   });
   mainWindow.webContents.on('render-process-gone', (_e, details) => {
     log.error('渲染进程退出:', details?.reason);
     if (details?.reason === 'clean-exit' || !mainWindow) return;
-    mainWindow.loadFile(indexHtmlPath());
+    loadAppPage();
   });
 
   let hasShownWindow = false;
