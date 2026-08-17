@@ -104,3 +104,6 @@ scripts/__pycache__/
 .ios-review.log
 # 内部任务书(Claude 开发批次指令)
 .claude-briefs/
+
+# 生产凭据目录（APNs .p8 / Firebase admin / GeTui）——禁止入库
+backend-v2/.secrets/
