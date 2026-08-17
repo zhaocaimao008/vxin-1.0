@@ -1,6 +1,9 @@
 package com.vxin.app.core.call
 
 import android.content.Context
+import android.media.AudioAttributes
+import android.media.MediaPlayer
+import android.media.RingtoneManager
 import android.util.Log
 import com.vxin.app.core.auth.SessionManager
 import com.vxin.app.core.di.AppScope
@@ -163,6 +166,7 @@ class CallManager @Inject constructor(
     fun accept() {
         val s = _state.value
         if (s.stage != CallStage.INCOMING) return
+        stopIncomingRing()                  // 已接通 → 停铃声
         _state.update { it.copy(stage = CallStage.CONNECTING) }
         scope.launch {
             refreshIceServers()
@@ -222,6 +226,8 @@ class CallManager @Inject constructor(
         _state.value = CallState(
             CallStage.INCOMING, from, callerName, isVideo = callType == "video", isCaller = false,
         )
+        startIncomingRing()
+        CallForegroundService.start(context, callType == "video")   // 响铃期保活
     }
 
     // ── 信令处理 ───────────────────────────────────────────
@@ -238,6 +244,8 @@ class CallManager @Inject constructor(
                 _state.value = CallState(
                     CallStage.INCOMING, e.from, e.callerName, isVideo = e.type == "video", isCaller = false,
                 )
+                startIncomingRing()                                   // 来电就该响，前台也播
+                CallForegroundService.start(context, e.type == "video")   // 响铃期保活
                 // ── 锁屏/后台来电通知 ────────────────────────────────────────
                 // socket 连着时服务端不发 FCM，须由此处补弹全屏来电通知。
                 // App 在前台时 CallHost 会渲染来电 UI，无需重复弹通知。
@@ -412,6 +420,7 @@ class CallManager @Inject constructor(
 
     // ── 清理 ──────────────────────────────────────────────
     private fun cleanup(finalStage: CallStage) {
+        stopIncomingRing()                                 // 停被叫来电铃声（幂等，未响铃时 no-op）
         releaseTone()                                     // 停回铃/接通音并释放 ToneGenerator
         callTimeoutJob?.cancel(); callTimeoutJob = null   // 接通/挂断/被拒 → 取消呼出超时
         CallForegroundService.stop(context)               // 停前台服务（未起过则 no-op）
@@ -468,6 +477,46 @@ class CallManager @Inject constructor(
         runCatching { toneGen?.stopTone() }
         runCatching { toneGen?.release() }
         toneGen = null
+    }
+
+    // ── 被叫来电铃声 ───────────────────────────────────────
+    // 被叫路径此前完全静音：只有主叫走 playRingbackTone；INCOMING 分支不播音、前台也不弹通知。
+    // 用系统默认铃声循环播放（USAGE_NOTIFICATION_RINGTONE，随铃声音量/静音开关，与原生来电一致）；
+    // MediaPlayer 初始化失败（如铃声 uri 不可用）时降级到 ToneGenerator 循环音。
+    @Volatile
+    private var ringPlayer: MediaPlayer? = null
+
+    @Synchronized
+    private fun startIncomingRing() {
+        if (ringPlayer != null) return   // 幂等：已在响铃
+        val started = runCatching {
+            val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE) ?: return@runCatching false
+            val mp = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
+                setDataSource(context, uri)
+                isLooping = true
+                prepare()
+                start()
+            }
+            ringPlayer = mp
+            true
+        }.getOrDefault(false)
+        if (!started) {
+            Log.w(TAG, "startIncomingRing: MediaPlayer 不可用，降级 ToneGenerator")
+            runCatching { ensureToneGen()?.startTone(android.media.ToneGenerator.TONE_SUP_RINGTONE) }
+        }
+    }
+
+    @Synchronized
+    private fun stopIncomingRing() {
+        runCatching { ringPlayer?.apply { if (isPlaying) stop(); release() } }
+        ringPlayer = null
+        runCatching { toneGen?.stopTone() }   // 若走了 ToneGenerator 降级路径，一并停止（不 release，供回铃音复用）
     }
 
     private companion object {

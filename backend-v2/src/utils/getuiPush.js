@@ -94,6 +94,12 @@ async function pushToCid(cid, { title, body, payload }) {
     ...(payload?.callerName ? { callerName: payload.callerName } : {}),
     ...(payload?.callId ? { callId: payload.callId } : {}),
   });
+  // 离线通知点击 intent：来电（type=call）须带 call extras，让 MainActivity 直接进 INCOMING
+  // 并显示接听/拒绝（key 与 NotificationHelper.EXTRA_CALL_ID/FROM/NAME/TYPE 一致）；
+  // 非来电沿用普通启动 intent。
+  const intent = payload?.type === 'call'
+    ? `intent:#Intent;action=com.vxin.app.action.CALL_SHOW;category=android.intent.category.LAUNCHER;package=com.vxin.app;component=com.vxin.app/com.vxin.app.MainActivity;S.callId=${encodeURIComponent(payload?.callId || '')};S.callFrom=${encodeURIComponent(payload?.from || '')};S.callerName=${encodeURIComponent(payload?.callerName || '')};S.callType=${encodeURIComponent(payload?.callType || '')};end`
+    : `intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.vxin.app;component=com.vxin.app/com.vxin.app.MainActivity;end`;
   const message = {
     request_id: `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
     settings: { ttl: 3600000 },   // 离线保留 1h
@@ -107,8 +113,7 @@ async function pushToCid(cid, { title, body, payload }) {
     push_channel: {
       android: {
         ups: {
-          notification: { title, body, click_type: 'intent',
-            intent: `intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.vxin.app;component=com.vxin.app/com.vxin.app.MainActivity;end` },
+          notification: { title, body, click_type: 'intent', intent },
           // 各厂商离线厂商通道 options（保证锁屏送达）
           options: {
             HW: { '/message/android/notification/importance': 'HIGH' },

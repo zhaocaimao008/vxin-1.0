@@ -152,7 +152,7 @@ class NotificationHelper @Inject constructor(
 
         val title = callerName.ifBlank { "来电" }
         val text = if (callType == "video") "邀请你视频通话" else "邀请你语音通话"
-        val notification = NotificationCompat.Builder(context, CALL_CHANNEL_ID)
+        val notification = NotificationCompat.Builder(context, CALL_CHANNEL_ID_V2)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(text)
@@ -204,7 +204,9 @@ class NotificationHelper @Inject constructor(
                 enableLights(true)
             }
             mgr.createNotificationChannel(messagesSilent)
-            // 来电渠道：最高优先级 + 绕过勿扰，为后续 fullScreenIntent 来电通知预留（拉起 CallScreen）。
+            // 旧来电渠道：未 setSound()，Android 8+ 声音由渠道决定、创建后不可再改，
+            // 导致来电只响系统默认通知音（单声“叮”非循环铃声）。保留不删（避免老用户渠道设置丢失/崩溃），
+            // 新渠道见 CALL_CHANNEL_ID_V2（同「改渠道属性必须 bump 渠道 id」策略，同上 messagesSilent 注释）。
             val calls = NotificationChannel(
                 CALL_CHANNEL_ID, "来电", NotificationManager.IMPORTANCE_HIGH,
             ).apply {
@@ -214,6 +216,23 @@ class NotificationHelper @Inject constructor(
                 lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
             }
             mgr.createNotificationChannel(calls)
+            // 来电渠道 v2：显式 setSound() 为系统铃声（循环由 CallManager 的 MediaPlayer 负责，
+            // 此处渠道声音仅保证系统层兜底一致），IMPORTANCE_MAX 保证弹出式 + 声音，
+            // 绕过勿扰，来电就该响、就该弹。
+            val callAttrs = android.media.AudioAttributes.Builder()
+                .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+            val callsV2 = NotificationChannel(
+                CALL_CHANNEL_ID_V2, "来电", NotificationManager.IMPORTANCE_MAX,
+            ).apply {
+                description = "语音/视频通话来电"
+                setSound(android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_RINGTONE), callAttrs)
+                setBypassDnd(true)
+                enableVibration(true)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+            }
+            mgr.createNotificationChannel(callsV2)
         }
     }
 
@@ -224,6 +243,7 @@ class NotificationHelper @Inject constructor(
         const val CHANNEL_ID = "vxin_messages_v3"
         const val CHANNEL_ID_SILENT = "vxin_messages_v3_silent"
         const val CALL_CHANNEL_ID = "vxin_calls"
+        const val CALL_CHANNEL_ID_V2 = "vxin_calls_v2"
         const val EXTRA_CONVERSATION_ID = "conversationId"
         const val CALL_NOTIFICATION_ID = 424242
         const val SUMMARY_NOTIFICATION_ID = 424200        // 群组汇总通知 ID（固定，更新时覆盖）

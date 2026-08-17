@@ -58,6 +58,9 @@ if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && proc
 }
 
 async function pushToUser(userId, payload) {
+  if (!firebaseAdmin && !getuiPush.isEnabled()) {
+    console.warn('[push] 推送未配置（无 FIREBASE/GETUI 凭据），后台/离线用户收不到通知');
+  }
   const promises = [];
 
   const webSubs = db.prepare('SELECT * FROM push_subscriptions WHERE user_id=?').all(userId);
@@ -286,6 +289,9 @@ async function pushNewMessage({ conversationId, senderId, senderName, content, t
 // 属单独任务，此处不做。
 // 个推：覆盖无 GMS 的国产 ROM（华为/小米等），走透传，客户端 VxinGeTuiService 按 type=call 分支处理。
 async function pushCallInvite({ toUserId, fromUserId, callerName, callType, callId }) {
+  if (!firebaseAdmin && !getuiPush.isEnabled()) {
+    console.warn('[call-push] 推送未配置（无 FIREBASE/GETUI 凭据），来电无兜底，断线/后台来电将无提醒');
+  }
   const type = callType === 'video' ? 'video' : 'audio';
   const promises = [];
 

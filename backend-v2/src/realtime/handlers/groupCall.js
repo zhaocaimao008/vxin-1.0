@@ -22,6 +22,7 @@ const { v4: uuidv4 } = require('uuid');
 const { db } = require('../../db/connection');
 const { isMember } = require('../../modules/messages/shared');
 const presence = require('../presence');
+const { pushCallInvite } = require('../../utils/push');
 
 const MAX_PARTICIPANTS = 9;
 const MAX_CALL_DURATION_MS = 4 * 60 * 60 * 1000; // 4小时强制结束，防单用户永久独占
@@ -103,6 +104,15 @@ module.exports = function registerGroupCallHandler(io, socket) {
       fromName: starter?.username, fromAvatar: starter?.avatar,
     });
     socket.emit('group_call:started', { callId, conversationId, type: t });
+
+    // push 兜底（同 1对1 call.js）：群成员的 socket 可能后台/断线收不到上面的实时广播，
+    // 逐个补推来电通知；不发给发起者自己。
+    const members = db.prepare('SELECT user_id FROM conversation_members WHERE conversation_id=?').all(conversationId);
+    for (const { user_id: toUserId } of members) {
+      if (toUserId === userId) continue;
+      pushCallInvite({ toUserId, fromUserId: userId, callerName: starter?.username || '', callType: t, callId })
+        .catch(e => console.warn(`[groupCall] 来电推送失败 callId=${callId} to=${toUserId}:`, e.message));
+    }
   });
 
   socket.on('group_call:join', ({ callId }) => {
