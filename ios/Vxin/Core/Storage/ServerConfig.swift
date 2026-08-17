@@ -14,7 +14,10 @@ final class ServerConfig {
 
     /// 生效地址；setter 写入「手动覆盖」（登录页切换服务器用）
     var baseURL: String {
-        get { manualOverride ?? remote ?? Self.defaultURL }
+        get {
+            clearDeprecatedManualOverrideIfNeeded()
+            return manualOverride ?? remote ?? Self.defaultURL
+        }
         set {
             let v = normalize(newValue)
             if !v.isEmpty { UserDefaults.standard.set(v, forKey: overrideKey) }
@@ -41,4 +44,31 @@ final class ServerConfig {
         while v.hasSuffix("/") { v.removeLast() }
         return v
     }
+
+    /// BATCH4：自动清除已确认废弃的 v信官方旧服务器地址的手动覆盖
+    /// （45.77.131.33 / 104.244.95.70）。只清除白名单内的废弃地址，
+    /// 用户自己配置的其他自定义服务器一律保留。
+    private func clearDeprecatedManualOverrideIfNeeded() {
+        guard let current = UserDefaults.standard.string(forKey: overrideKey), !current.isEmpty else { return }
+        let host = Self.extractHost(current)
+        if Self.deprecatedServers.contains(host) {
+            UserDefaults.standard.removeObject(forKey: overrideKey)
+        }
+    }
+
+    /// 从 URL 中提取 host（去协议、去端口、去尾部斜杠）
+    private static func extractHost(_ url: String) -> String {
+        var v = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        while v.hasSuffix("/") { v.removeLast() }
+        if let scheme = v.range(of: "://") {
+            v = String(v[scheme.upperBound...])
+        }
+        if let colon = v.firstIndex(of: ":") {
+            v = String(v[..<colon])
+        }
+        return v
+    }
+
+    /// 已确认废弃的 v信官方旧服务器地址（仅自动清除这些；自定义服务器不受影响）
+    private static let deprecatedServers: Set<String> = ["45.77.131.33", "104.244.95.70"]
 }
