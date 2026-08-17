@@ -6,6 +6,11 @@ struct LoginView: View {
     @State private var showServerConfig = false
     @State private var rememberPhone = true   // 仅记住手机号（明文本地），不落盘密码，避免凭据泄露风险
     @State private var agreed = false
+    /// 登录成功后的额外回调：根流程(RootView 按 session.state 切换)无需传，默认 nil。
+    /// 「添加账号」场景以 sheet 弹出本视图，session.state 仍是 .authenticated(旧user)→
+    /// .authenticated(新user)，同一个 case 不会触发 RootView 切换视图、sheet 不会自动关闭，
+    /// 需要这个回调显式关掉 sheet 回到主界面。
+    var onSuccess: (() -> Void)? = nil
 
     var body: some View {
         ScrollView {
@@ -161,7 +166,10 @@ struct LoginView: View {
             .padding(.horizontal, 32)
         }
         .onChange(of: vm.authedUser) { user in
-            if let user { session.onAuthenticated(user) }
+            if let user {
+                session.onAuthenticated(user)
+                onSuccess?()
+            }
         }
     }
 }

@@ -7,6 +7,7 @@ import { showToast } from '../utils/toast';
 import { downloadFile } from '../utils/download';
 import { getAspect, rememberAspect } from '../utils/imgDimCache';
 import { linkify } from '../utils/linkify';
+import { IcoFile, IcoRedPacket, IcoTransfer } from './Icons';
 
 // 图片加载失败占位图（过期/被删的云文件）：灰底 + 可见文字，保证不显示浏览器裂图
 const IMG_BROKEN = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
@@ -297,7 +298,7 @@ const MessageItem = memo(function MessageItem({ item, cbRef, measure }) {
               <a href={mediaUrl(msg.file_url)}
                  onClick={(e) => { e.preventDefault(); downloadFile(msg.file_url, msg.content); }}
                  className="wc-msg-file-link" data-testid="msg-file">
-                <div className="wc-msg-file-icon">📄</div>
+                <div className="wc-msg-file-icon"><IcoFile size={26} /></div>
                 <div>
                   <div className="wc-msg-file-name">{msg.content}</div>
                   <div className="wc-msg-file-size">点击下载</div>
@@ -341,7 +342,7 @@ const MessageItem = memo(function MessageItem({ item, cbRef, measure }) {
                   onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cbs.openRedPacket(rp.packetId); } }}
                 >
                   <div className="wc-redpacket-body">
-                    <div className="wc-redpacket-icon">🧧</div>
+                    <div className="wc-redpacket-icon"><IcoRedPacket size={28} /></div>
                     <div className="wc-redpacket-info">
                       <div className="wc-redpacket-greeting">
                         {rp.greeting || '恭喜发财，大吉大利'}
@@ -361,7 +362,7 @@ const MessageItem = memo(function MessageItem({ item, cbRef, measure }) {
               return (
                 <div className="wc-transfer-card" aria-label={`转账 ${tf.amount} 金币`}>
                   <div className="wc-transfer-body">
-                    <div className="wc-transfer-icon">💸</div>
+                    <div className="wc-transfer-icon"><IcoTransfer size={26} /></div>
                     <div className="wc-transfer-info">
                       <div className="wc-transfer-amount">¥ {tf.amount} 金币</div>
                       {tf.note ? <div className="wc-transfer-note">{tf.note}</div> : null}

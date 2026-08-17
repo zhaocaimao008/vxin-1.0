@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// 用于需要鉴权的图片端点（如 /api/users/me/qrcode）。
+// 用于需要鉴权的图片端点。
 // Web 端 <img> 靠同源 cookie 能直接加载；但 Electron 桌面端 <img> 无法携带
 // Authorization Bearer 头，会 401。这里统一用 axios（自动带 cookie 或 Bearer）
 // 拉成 blob 再显示，两端都能用。

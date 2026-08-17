@@ -5,6 +5,7 @@ import { GroupAvatar } from './GroupAvatar';
 import { showToast } from '../utils/toast';
 import useFocusTrap from '../hooks/useFocusTrap';
 import './ForwardModal.css';
+import { IcoClose } from './Icons';
 
 export default function ForwardModal({ message, messages, onClose }) {
   // 支持单条(message)与多条(messages)转发；统一成数组处理
@@ -160,7 +161,7 @@ export default function ForwardModal({ message, messages, onClose }) {
         {/* 标题栏 */}
         <div className="fwd-hd">
           <span className="fwd-hd-title">转发消息</span>
-          <button className="fwd-hd-close" onClick={onClose} aria-label="关闭">✕</button>
+          <button className="fwd-hd-close" onClick={onClose} aria-label="关闭"><IcoClose size={18} /></button>
         </div>
 
         {done ? (
@@ -197,7 +198,7 @@ export default function ForwardModal({ message, messages, onClose }) {
                   aria-label="搜索联系人" />
                 {search && (
                   <button type="button" className="fwd-search-clr" aria-label="清除搜索" title="清除"
-                    onClick={() => setSearch('')}>✕</button>
+                    onClick={() => setSearch('')}><IcoClose size={14} /></button>
                 )}
               </div>
             </div>

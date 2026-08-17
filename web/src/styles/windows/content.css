@@ -81,22 +81,14 @@
   position: absolute; inset: 0;
   background: rgba(0,0,0,.08);
 }
-.electron-app .pf-hero-qr {
-  position: absolute; top: 12px; right: 12px; z-index: 2;
-  width: 32px; height: 32px;
-  background: rgba(255,255,255,.18);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  color: #fff; cursor: pointer;
-  transition: background 120ms;
-}
-.electron-app .pf-hero-qr:hover { background: rgba(255,255,255,.30); }
 .electron-app .pf-hero-inner {
   position: absolute; bottom: 0; left: 0; right: 0;
   padding: 16px 20px 14px; z-index: 2;
 }
 .electron-app .pf-avatar-wrap {
-  width: 64px; height: 64px;
+  /* 与 Profile.jsx 渲染的 <Avatar size={92}/> 保持一致，否则 92px 头像被 64px
+     容器（overflow:hidden）裁掉顶部/偏移 */
+  width: 92px; height: 92px;
   border-radius: 14px;
   border: 3px solid rgba(255,255,255,.9);
   overflow: hidden; cursor: pointer;
@@ -335,6 +327,7 @@
 .electron-app .wc-add-form-submit:disabled { background: #C9CDD4; cursor: not-allowed; }
 
 /* ── Dark mode content ── */
+body.dark-mode .electron-app .wc-collections-wrap { background: #15171A; }
 body.dark-mode .electron-app .gs-scroll { background: #1B1E22; }
 body.dark-mode .electron-app .gs-row { border-bottom-color: #292D33; }
 body.dark-mode .electron-app .gs-row:hover { background: rgba(255,255,255,.06); }

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { clearCache } from '../utils/msgCache';
 
@@ -105,22 +105,35 @@ export const AuthProvider = ({ children }) => {
   const userRef = useRef(null);
   useEffect(() => { userRef.current = user; }, [user]);
 
+  // 会话失效统一清理：401 兜底踢出 / 被踢下线(SocketContext force_logout) /
+  // refresh 失败(axiosInterceptor vxin:session_expired) 三处共用，避免各写一套、遗漏清理项。
+  const forceLogout = useCallback(() => {
+    setUser(null);
+    setElectronToken(null);
+    if (window.__ELECTRON_CONFIG__) window.location.hash = '#/login';
+    else window.location.replace('/login');
+  }, []);
+
   // ── 401 自动踢出 ───────────────────────────────────────────────
   useEffect(() => {
     const id = axios.interceptors.response.use(
       res => res,
       err => {
-        if (err.response?.status === 401 && userRef.current) {
-          setUser(null);
-          setElectronToken(null);
-          if (window.__ELECTRON_CONFIG__) window.location.hash = '#/login';
-          else window.location.replace('/login');
-        }
+        if (err.response?.status === 401 && userRef.current) forceLogout();
         return Promise.reject(err);
       }
     );
     return () => axios.interceptors.response.eject(id);
-  }, []);
+  }, [forceLogout]);
+
+  // ── 被踢下线 / token 静默刷新失败 → 立即登出（而非静默挂起） ────
+  // 事件来源：web/src/utils/axiosInterceptor.js 的 refresh 失败分支、
+  // web/src/contexts/SocketContext.jsx 的 socket 'force_logout' 监听。
+  useEffect(() => {
+    const onSessionExpired = () => { if (userRef.current) forceLogout(); };
+    window.addEventListener('vxin:session_expired', onSessionExpired);
+    return () => window.removeEventListener('vxin:session_expired', onSessionExpired);
+  }, [forceLogout]);
 
   // ── 初始化：恢复 Electron Bearer token，然后验证身份 ────────
   useEffect(() => {

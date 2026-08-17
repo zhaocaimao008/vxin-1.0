@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import Avatar from './Avatar';
 import { showToast } from '../utils/toast';
+import { IcoCamera, IcoMic, IcoPhoneOff } from './Icons';
 
 // 仅在拉取 /api/turn/credentials 失败时兜底
 const FALLBACK_ICE = { iceServers: [
@@ -331,7 +332,7 @@ export default function GroupCallModal({ socket, user, session, nameOf, onClose 
       }}>
         {isVideo && (
           <CtrlBtn
-            icon={cameraOff ? '📷' : '📹'}
+            icon={<IcoCamera off={cameraOff} size={isMobileWidth() ? 20 : 22} />}
             label={cameraOff ? '开摄像头' : '关摄像头'}
             bg={cameraOff ? '#555' : 'rgba(255,255,255,.18)'}
             size={isMobileWidth() ? 44 : 52}
@@ -339,14 +340,14 @@ export default function GroupCallModal({ socket, user, session, nameOf, onClose 
           />
         )}
         <CtrlBtn
-          icon={muted ? '🔇' : '🎙️'}
+          icon={<IcoMic off={muted} size={isMobileWidth() ? 20 : 22} />}
           label={muted ? '取消静音' : '静音'}
           bg="rgba(255,255,255,.18)"
           size={isMobileWidth() ? 44 : 52}
           onClick={webrtc.toggleMute}
         />
         <CtrlBtn
-          icon="📵"
+          icon={<IcoPhoneOff size={isMobileWidth() ? 24 : 28} />}
           label="挂断"
           bg="var(--color-badge)"
           size={isMobileWidth() ? 54 : 64}

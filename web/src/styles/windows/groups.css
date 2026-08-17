@@ -199,3 +199,6 @@ body.dark-mode .electron-app .gi-mi:hover { background: rgba(255,255,255,.06); }
 body.dark-mode .electron-app .gi-mi { border-bottom-color: #292D33; }
 body.dark-mode .electron-app .gi-ann-textarea { background: #292D32; border-color: #32363D; color: #F2F3F5; }
 body.dark-mode .electron-app .gi-name-edit { background: #1B1E22; color: #F2F3F5; }
+body.dark-mode .electron-app .gi-toggle { background: #3A3F47; }
+body.dark-mode .electron-app .gi-badge-owner { background: rgba(250,173,20,.16); color: #FAAD14; }
+body.dark-mode .electron-app .gi-badge-admin { background: rgba(7,193,96,.16); color: #3DDC84; }

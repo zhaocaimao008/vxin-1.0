@@ -5,6 +5,7 @@ import { showConfirm, showToast } from '../utils/toast';
 import { downloadFile } from '../utils/download';
 import ImagePreview from './ImagePreview';
 import { Skeleton } from './StateViews';
+import { IcoVideoFile, IcoFile, IcoClose } from './Icons';
 
 function formatDate(sec) {
   const dt = new Date(sec * 1000);
@@ -106,13 +107,15 @@ export default function Collections() {
     }
     if (c.type === 'file' || c.type === 'video') {
       const fileUrl = c.extra?.file_url;
-      const label = `${c.type === 'video' ? '🎬' : '📎'} ${c.content || (c.type === 'video' ? '视频' : '文件')}`;
+      const Icon = c.type === 'video' ? IcoVideoFile : IcoFile;
+      const label = c.content || (c.type === 'video' ? '视频' : '文件');
+      const rowStyle = { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-base)', color: 'var(--text-primary)' };
       // 有 file_url 才可下载；老数据无 url 则只显示（与聊天窗口一致：点击=下载，不跳网页）
-      if (!fileUrl) return <span style={{ fontSize: 'var(--text-base)', color: 'var(--text-primary)' }}>{label}</span>;
+      if (!fileUrl) return <span style={rowStyle}><Icon size={16} />{label}</span>;
       return (
         <button onClick={() => downloadFile(fileUrl, c.content)}
-          style={{ fontSize: 'var(--text-base)', color: 'var(--text-primary)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>
-          {label}
+          style={{ ...rowStyle, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>
+          <Icon size={16} />{label}
         </button>
       );
     }
@@ -131,7 +134,7 @@ export default function Collections() {
             style={{ width: '100%', padding: '7px 28px 7px 10px', borderRadius: 'var(--radius-input)', border: '1px solid var(--border-color)', fontSize: 'var(--text-base)', boxSizing: 'border-box' }} />
           {query && (
             <button type="button" aria-label="清除搜索" title="清除" onClick={() => setQuery('')}
-              style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', width: 18, height: 18, border: 'none', borderRadius: 'var(--radius-full)', background: 'var(--border-color)', color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+              style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', width: 18, height: 18, border: 'none', borderRadius: 'var(--radius-full)', background: 'var(--border-color)', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IcoClose size={11} /></button>
           )}
         </div>
         <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>

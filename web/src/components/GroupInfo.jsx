@@ -6,6 +6,7 @@ import { mediaUrl } from '../utils/url';
 import { showToast, showConfirm } from '../utils/toast';
 import { useConvSettings } from '../hooks/useConvSettings';
 import { GroupAvatar } from './GroupAvatar';
+import { IcoClose } from './Icons';
 export { GroupAvatar } from './GroupAvatar'; // re-export 向后兼容
 
 /* ── 群头像上传（管理员 hover 显示相机图标） ── */
@@ -448,7 +449,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
           className="gi-close-btn"
           onClick={onClose}
           aria-label="关闭群聊信息"
-        >✕</button>
+        ><IcoClose size={16} /></button>
       </div>
 
       <div className="gi-body">
@@ -648,7 +649,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
                   className="gi-ml-si"
                 />
                 {kickSearch && (
-                  <button className="gi-clear-search" onClick={() => setKickSearch('')} aria-label="清空搜索">✕</button>
+                  <button className="gi-clear-search" onClick={() => setKickSearch('')} aria-label="清空搜索"><IcoClose size={14} /></button>
                 )}
               </div>
             )}
@@ -795,7 +796,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
           <div className="wc-modal gi-qr-panel" role="dialog" aria-modal="true" aria-label="群二维码">
             <div className="wc-modal-header">
               <span className="wc-modal-title">群二维码</span>
-              <button className="wc-modal-close" onClick={() => setShowQR(false)} aria-label="关闭二维码">✕</button>
+              <button className="wc-modal-close" onClick={() => setShowQR(false)} aria-label="关闭二维码"><IcoClose size={18} /></button>
             </div>
             <div className="gi-qr-wrap">
               {qrData ? (
@@ -836,7 +837,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
           <div className="wc-modal wide" role="dialog" aria-modal="true" aria-label="邀请成员">
             <div className="wc-modal-header">
               <span className="wc-modal-title">邀请成员</span>
-              <button className="wc-modal-close" onClick={() => setShowInvite(false)} aria-label="关闭邀请">✕</button>
+              <button className="wc-modal-close" onClick={() => setShowInvite(false)} aria-label="关闭邀请"><IcoClose size={18} /></button>
             </div>
             <div className="wc-modal-body">
               <div className="gi-inv-hint">从通讯录选择（已选 {selectedInvite.size} 人）</div>

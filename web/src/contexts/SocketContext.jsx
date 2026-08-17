@@ -86,6 +86,13 @@ export const SocketProvider = ({ children }) => {
       setConnected(false);
       disconnectAtRef.current = Math.floor(Date.now() / 1000);
     });
+    // 本设备被「踢下线」（其它端删除该会话）：后端已定向断开，这里只需触发前端的
+    // 登出清理 + 跳登录页——复用 401 刷新失败时同一条 vxin:session_expired 事件通道
+    // （由 AuthContext 统一监听处理），避免两处各写一套清理逻辑。
+    s.on('force_logout', () => {
+      s.disconnect();
+      window.dispatchEvent(new CustomEvent('vxin:session_expired'));
+    });
     s.on('sync:unread_cleared', (payload) => {
       unreadClearedListeners.current.forEach(fn => fn(payload));
     });

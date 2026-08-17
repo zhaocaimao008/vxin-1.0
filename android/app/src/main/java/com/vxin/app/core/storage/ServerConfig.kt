@@ -21,7 +21,10 @@ class ServerConfig @Inject constructor(
 
     /** 生效地址（读时计算优先级）；setter 写入「手动覆盖」 */
     var baseUrl: String
-        get() = manualOverride() ?: remote() ?: BuildConfig.DEFAULT_SERVER_URL
+        get() {
+            clearDeprecatedManualOverrideIfNeeded()
+            return manualOverride() ?: remote() ?: BuildConfig.DEFAULT_SERVER_URL
+        }
         set(value) {
             prefs.edit().putString(KEY_OVERRIDE, normalize(value)).apply()
         }
@@ -43,8 +46,33 @@ class ServerConfig @Inject constructor(
 
     private fun normalize(url: String): String = url.trim().trimEnd('/')
 
+    /**
+     * BATCH4：自动清除已确认废弃的 v信官方旧服务器地址的手动覆盖
+     * （45.77.131.33 / 104.244.95.70）。只清除白名单内的废弃地址，
+     * 用户自己配置的其他自定义服务器一律保留。
+     */
+    private fun clearDeprecatedManualOverrideIfNeeded() {
+        val current = prefs.getString(KEY_OVERRIDE, null) ?: return
+        val host = extractHost(current)
+        if (host in DEPRECATED_SERVERS) {
+            prefs.edit().remove(KEY_OVERRIDE).apply()
+        }
+    }
+
+    /** 从 URL 中提取 host（去协议、去端口、去尾部斜杠） */
+    private fun extractHost(url: String): String {
+        var v = url.trim().trimEnd('/')
+        val scheme = v.indexOf("://")
+        if (scheme >= 0) v = v.substring(scheme + 3)
+        val colon = v.indexOf(':')
+        if (colon >= 0) v = v.substring(0, colon)
+        return v
+    }
+
     private companion object {
         const val KEY_OVERRIDE = "base_url_override"
         const val KEY_REMOTE = "base_url_remote"
+        // 已确认废弃的 v信官方旧服务器地址（仅自动清除这些；自定义服务器不受影响）
+        private val DEPRECATED_SERVERS = setOf("45.77.131.33", "104.244.95.70")
     }
 }

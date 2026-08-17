@@ -9,9 +9,25 @@ const jwt = require('jsonwebtoken');
 const config = require('../config');
 const { db, readDb } = require('../db/connection');
 const { isBlacklisted } = require('../utils/tokenBlacklist');
+const { detectDevice } = require('../modules/auth/auth.service');
 const presence = require('./presence');
 const broadcaster = require('./broadcaster');
 const prodMetrics = require('../utils/prodMetrics');
+
+// 单设备踢下线用的房间名：同一用户可能多端在线（Windows/Android/iOS...），
+// deleteSession 只应断开被删的那一台设备，不能牵连同用户的其它在线设备。
+function deviceRoom(userId, device, platform) {
+  return `device_${userId}_${device}_${platform}`;
+}
+
+// 定向踢掉某用户某设备的在线 socket：先推 force_logout 事件（前端据此清 token/跳登录页），
+// 再强制断开连接。目标设备不在线时（房间为空）是安全的 no-op。
+function kickDevice(io, userId, device, platform) {
+  if (!io || !device || !platform) return;
+  const room = deviceRoom(userId, device, platform);
+  io.to(room).emit('force_logout', { reason: 'device_kicked' });
+  io.to(room).disconnectSockets(true);
+}
 
 const registerMessage = require('./handlers/message');
 const registerFile    = require('./handlers/file');
@@ -61,8 +77,11 @@ module.exports = function setupRealtime(io, app) {
     presence.addSocket(userId, socket.id);
     if (app) app.set('onlineUsers', presence.onlineUserIdSet());
 
-    // 立即入 user 房间，会话房间延迟到下一 tick
+    // 立即入 user 房间 + 本设备房间（后者供「Bug1: 单设备踢下线」定向 kickDevice 使用），
+    // 会话房间延迟到下一 tick
     socket.join(`user_${userId}`);
+    const { device, platform } = detectDevice(socket.handshake.headers['user-agent']);
+    socket.join(deviceRoom(userId, device, platform));
     setImmediate(() => {
       try {
         // 限制加入房间数上限：极端情况下（用户在数千个群）无上限 join 会阻塞事件循环。
@@ -110,3 +129,5 @@ module.exports = function setupRealtime(io, app) {
     });
   });
 };
+
+module.exports.kickDevice = kickDevice;

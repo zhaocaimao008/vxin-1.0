@@ -273,7 +273,14 @@
 /* ── Dark mode base ── */
 body.dark-mode .electron-app .wc-confirm-box { background: #202327; }
 body.dark-mode .electron-app .wc-confirm-msg { color: #F2F3F5; }
-body.dark-mode .electron-app .wc-confirm-cancel { background: #292D32; border-color: #32363D; color: #F2F3F5; }
+body.dark-mode .electron-app .wc-confirm-cancel,
+body.dark-mode .electron-app .up-btn-ghost,
+body.dark-mode .electron-app .cgm-cancel,
+body.dark-mode .electron-app .req-reject { background: #292D32; border-color: #32363D; color: #F2F3F5; }
+body.dark-mode .electron-app .wc-confirm-cancel:hover,
+body.dark-mode .electron-app .up-btn-ghost:hover,
+body.dark-mode .electron-app .cgm-cancel:hover,
+body.dark-mode .electron-app .req-reject:hover { background: #32363D; }
 body.dark-mode .electron-app .wc-modal { background: #202327; }
 body.dark-mode .electron-app .wc-modal-header { border-bottom-color: #32363D; }
 body.dark-mode .electron-app .wc-modal-title { color: #F2F3F5; }

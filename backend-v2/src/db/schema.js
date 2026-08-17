@@ -488,6 +488,22 @@ function applySchema(db) {
     // ── 红包过期回收查询索引：reclaimExpired 每10分钟扫 status='active' AND created_at<cutoff，
     //    无此索引则全表扫描。局部索引仅覆盖 active 行，随红包被领/过期而收缩，体积极小。──
     "CREATE INDEX IF NOT EXISTS idx_red_packets_status_time ON red_packets(status, created_at) WHERE status='active'",
+    // 单设备踢下线：deleteSession 需要该会话最后签发的 token 才能精确黑名单（而非牵连其它设备）
+    "ALTER TABLE user_sessions ADD COLUMN token TEXT DEFAULT NULL",
+    // ── BATCH4 最终补丁 idx 104：Legacy Session 强制重登 ──
+    // 一次性推进所有用户 password_changed_at 到当前秒，令 BATCH4 上线前签发的旧 JWT
+    // （iat < password_changed_at）立即失效，全部已登录设备重新登录一次；
+    // 之后新登录 JWT 的 iat >= password_changed_at，永久放行，进入新 token/session 精确设备管理。
+    //   - 幂等：schema_migrations 记录 idx 104，只执行一次；重复执行也只是再推进一次时间戳（无害）
+    //   - 不删除用户数据 / 不修改密码 / 不删除聊天、联系人、消息 —— 只影响登录状态
+    //   - 比较逻辑：auth middleware 用严格小于（iat < password_changed_at），单位均为 Unix 秒，
+    //     与 migration 同秒的新登录（iat == password_changed_at）不会被误杀
+    //   - 回滚（认证字段级，禁止一律置 0）：部署前必须先跑
+    //     scripts/backup-password-changed-at.js 备份全部用户原值快照；
+    //     回滚时 scripts/restore-password-changed-at.js 按快照逐用户恢复原值 ——
+    //     只影响登录状态，不覆盖上线后新产生的聊天数据，也不会复活
+    //     「因真实修改密码而应失效」的旧 JWT
+    "UPDATE users SET password_changed_at = strftime('%s','now')",
   ];
 
   // ── 迁移执行：版本追踪 + 错误分级 ────────────────────────────────

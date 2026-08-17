@@ -7,6 +7,7 @@ import { mediaUrl } from '../utils/url';
 import { showToast, showConfirm } from '../utils/toast';
 import { getAspect, rememberAspect } from '../utils/imgDimCache';
 import { linkify } from '../utils/linkify';
+import { IcoClose } from './Icons';
 
 function ago(sec) {
   // 钳到 0：时钟偏差/服务器时间超前时避免出现「-3分钟前」
@@ -516,7 +517,7 @@ export default function Moments() {
           <div className="wc-modal" role="dialog" aria-modal="true" aria-label="动态设置" style={{ maxWidth: 360, width: '90%' }}>
             <div className="wc-modal-header">
               <span className="wc-modal-title">动态设置</span>
-              <button className="wc-modal-close" onClick={() => setShowSettings(false)} aria-label="关闭">✕</button>
+              <button className="wc-modal-close" onClick={() => setShowSettings(false)} aria-label="关闭"><IcoClose size={18} /></button>
             </div>
             <div style={{ padding: '8px 0' }}>
               <div style={{ padding: '10px 18px', fontSize: 'var(--text-sm2)', color: 'var(--text-secondary)' }}>允许朋友查看动态的范围</div>
@@ -543,7 +544,7 @@ export default function Moments() {
           <div className="wc-modal" role="dialog" aria-modal="true" aria-label="编辑动态" style={{ maxWidth: 420, width: '90%' }}>
             <div className="wc-modal-header">
               <span className="wc-modal-title">编辑动态</span>
-              <button className="wc-modal-close" onClick={() => !savingEdit && setEditing(null)} aria-label="关闭">✕</button>
+              <button className="wc-modal-close" onClick={() => !savingEdit && setEditing(null)} aria-label="关闭"><IcoClose size={18} /></button>
             </div>
             <div style={{ padding: 16 }}>
               <textarea autoFocus value={editText} onChange={e => setEditText(e.target.value)}
@@ -569,7 +570,7 @@ export default function Moments() {
           <div className="wc-modal" role="dialog" aria-modal="true" aria-label="选择好友" style={{ maxWidth: 420, width: '90%' }}>
             <div className="wc-modal-header">
               <span className="wc-modal-title">{visibility === 'include' ? '选择可见的好友' : '选择不给谁看'}</span>
-              <button className="wc-modal-close" onClick={() => setShowFriendPicker(false)} aria-label="关闭">✕</button>
+              <button className="wc-modal-close" onClick={() => setShowFriendPicker(false)} aria-label="关闭"><IcoClose size={18} /></button>
             </div>
             <div className="wc-moment-notif-list" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
               {friends.length === 0 ? (
@@ -605,7 +606,7 @@ export default function Moments() {
           <div className="wc-modal" role="dialog" aria-modal="true" aria-label="互动消息" style={{ maxWidth: 420, width: '90%' }}>
             <div className="wc-modal-header">
               <span className="wc-modal-title">互动消息</span>
-              <button className="wc-modal-close" onClick={() => setNotifList(null)} aria-label="关闭">✕</button>
+              <button className="wc-modal-close" onClick={() => setNotifList(null)} aria-label="关闭"><IcoClose size={18} /></button>
             </div>
             <div className="wc-moment-notif-list">
               {notifList.length === 0 ? (
@@ -646,7 +647,7 @@ export default function Moments() {
                 {images.map((img, i) => (
                   <div key={i} className="wc-moment-img-thumb">
                     <img src={img.previewUrl} alt={`待发布图片 ${i + 1}`} loading="lazy" />
-                    <button className="wc-moment-img-remove" onClick={() => removeImage(i)} aria-label={`移除图片 ${i + 1}`}>×</button>
+                    <button className="wc-moment-img-remove" onClick={() => removeImage(i)} aria-label={`移除图片 ${i + 1}`}><IcoClose size={12} /></button>
                   </div>
                 ))}
               </div>

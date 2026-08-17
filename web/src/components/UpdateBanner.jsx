@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { IcoCelebrate, IcoCheckCircle, IcoWarn } from './Icons';
 
 /**
  * Windows/桌面端更新条。
@@ -68,7 +69,7 @@ export default function UpdateBanner() {
       )}
       {state === 'available' && (
         <>
-          <span className="wc-update-icon">🎉</span>
+          <span className="wc-update-icon"><IcoCelebrate size={17} /></span>
           <span className="wc-update-text">发现新版本 {version}，正在下载…</span>
           <div className="wc-update-progress-wrap">
             <div className="wc-update-progress-bar" style={{ width: `${progress}%` }} />
@@ -88,7 +89,7 @@ export default function UpdateBanner() {
       )}
       {state === 'ready' && (
         <>
-          <span className="wc-update-icon">✅</span>
+          <span className="wc-update-icon"><IcoCheckCircle size={17} /></span>
           <span className="wc-update-text">新版本已就绪，重启后自动安装</span>
           <button className="wc-update-install-btn" onClick={handleInstall}>立即重启安装</button>
           <button className="wc-update-dismiss" onClick={handleDismiss} aria-label="稍后">稍后</button>
@@ -96,7 +97,7 @@ export default function UpdateBanner() {
       )}
       {state === 'error' && (
         <>
-          <span className="wc-update-icon">⚠️</span>
+          <span className="wc-update-icon"><IcoWarn size={17} /></span>
           <span className="wc-update-text">{errMsg || '更新检查失败'}</span>
           <button className="wc-update-install-btn" onClick={handleCheck}>重试</button>
           <button className="wc-update-dismiss" onClick={handleDismiss} aria-label="关闭">✕</button>

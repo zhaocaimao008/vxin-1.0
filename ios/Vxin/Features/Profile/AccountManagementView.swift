@@ -13,6 +13,9 @@ struct AccountManagementView: View {
     @EnvironmentObject private var session: SessionStore
     @Environment(\.dismiss) private var dismiss
     @State private var showAddAccount = false
+    /// 本页本身以 sheet 从 ProfileView 弹出；添加账号成功时需要连本页一起收起，
+    /// 才能真正回到主界面（而不是停在本页——SwiftUI 的 dismiss() 只收自己这一层 sheet）。
+    var onAccountAdded: (() -> Void)? = nil
 
     var body: some View {
         List {
@@ -44,7 +47,14 @@ struct AccountManagementView: View {
         .navigationTitle("切换账号")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showAddAccount) {
-            NavigationStack { LoginView() }
+            // 添加账号成功后连本页一起关掉，直接回到主界面；
+            // SessionStore.onAuthenticated 已完成账号切换 + socket 重连，这里只需收起弹层。
+            NavigationStack {
+                LoginView(onSuccess: {
+                    showAddAccount = false
+                    onAccountAdded?()
+                })
+            }
         }
     }
 }

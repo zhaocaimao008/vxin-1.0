@@ -30,7 +30,7 @@ exports.register = asyncHandler(async (req, res) => {
   const { token, user } = await svc.register(req.body);
   setAuthCookie(req, res, token);
   svc.recordDeviceAccount(ensureWallet(req, res), user.id);
-  svc.upsertSession(user.id, req);
+  svc.upsertSession(user.id, req, token);
   res.json({ token, user });
 });
 
@@ -38,7 +38,7 @@ exports.login = asyncHandler(async (req, res) => {
   const { token, user } = await svc.login(req.body);
   setAuthCookie(req, res, token);
   svc.recordDeviceAccount(ensureWallet(req, res), user.id);
-  svc.upsertSession(user.id, req);
+  svc.upsertSession(user.id, req, token);
   res.json({ token, user });
 });
 
@@ -49,7 +49,7 @@ exports.switchAccount = asyncHandler(async (req, res) => {
   const walletId = req.cookies?.[config.walletCookie];
   const { token, user } = svc.switchAccount(walletId, userId);
   setAuthCookie(req, res, token);
-  svc.upsertSession(user.id, req);
+  svc.upsertSession(user.id, req, token);
   res.json({ user });
 });
 
@@ -80,6 +80,9 @@ exports.refresh = asyncHandler(async (req, res) => {
     if (payload?.exp) await addToBlacklist(req.token, payload.exp).catch(() => {});
   }
   setAuthCookie(req, res, newToken);
+  // 同步该设备 session 记录的 token，否则单设备踢下线(deleteSession)黑名单的会是
+  // 已刷新失效的旧 token，刷新后的新 token 不受影响，踢下线会失效。
+  svc.upsertSession(req.user.id, req, newToken);
   res.json({ success: true, token: newToken, user: svc.getMe(req.user.id) });
 });
 
@@ -109,7 +112,13 @@ exports.sessions = asyncHandler(async (req, res) => {
 });
 
 exports.deleteSession = asyncHandler(async (req, res) => {
-  svc.deleteSession(req.user.id, req.params.id);
+  const target = await svc.deleteSession(req.user.id, req.params.id);
+  // 定向踢掉该设备的在线 socket：立即断线 + 前端收到 force_logout 后跳转登录页，
+  // 不必等到该设备下一次 HTTP 请求命中黑名单才发现掉线。
+  if (target) {
+    const { kickDevice } = require('../../realtime');
+    kickDevice(req.app.get('io'), req.user.id, target.device, target.platform);
+  }
   res.json({ success: true });
 });
 

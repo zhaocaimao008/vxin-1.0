@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { downloadFile } from '../utils/download';
 import { shareMessage, canShare } from '../utils/share';
+import { IcoClose } from './Icons';
 
 // 从(可能带 ?token= 的)图片地址里抽一个像样的下载文件名
 function filenameFromUrl(u) {
@@ -263,7 +264,7 @@ export default function ImagePreview({ url, urls = null, initialIdx = 0, onClose
         }}
         aria-label="关闭"
       >
-        ✕
+        <IcoClose size={18} />
       </button>
 
       {/* Zoom indicator */}
