@@ -151,7 +151,19 @@ class NotificationHelper @Inject constructor(
         val decline = PendingIntent.getActivity(context, reqBase + 2, callIntent(ACTION_CALL_DECLINE), piFlags)
 
         val title = callerName.ifBlank { "来电" }
-        val text = if (callType == "video") "邀请你视频通话" else "邀请你语音通话"
+        var text = if (callType == "video") "邀请你视频通话" else "邀请你语音通话"
+
+        // 渠道已 setBypassDnd(true)，但用户未授予「通知使用权」时系统不认这个绕过声明，
+        // 通知会被勿扰模式静音降级——此时提前告知，避免"来电为什么没响"的排障黑洞。
+        val nm = context.getSystemService(NotificationManager::class.java)
+        val inDnd = nm != null && nm.currentInterruptionFilter != NotificationManager.INTERRUPTION_FILTER_ALL
+        val hasPolicyAccess = nm?.isNotificationPolicyAccessGranted ?: true
+        if (inDnd && !hasPolicyAccess) {
+            android.util.Log.w(TAG, "勿扰模式下通知将被抑制（未授予通知使用权），来电可能无声")
+            text += "\n勿扰模式下可能无声"
+            warnNotificationPolicyAccessOnce()
+        }
+
         val notification = NotificationCompat.Builder(context, CALL_CHANNEL_ID_V2)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
@@ -176,6 +188,17 @@ class NotificationHelper @Inject constructor(
     /** 接听/拒绝后清除来电通知 */
     fun cancelCallNotification() {
         NotificationManagerCompat.from(context).cancel(CALL_NOTIFICATION_ID)
+    }
+
+    /**
+     * 首次检测到「勿扰模式下未授予通知使用权」时引导用户去系统设置授权。
+     * 此处只持有 ApplicationContext，无 Activity 上下文不便弹 Snackbar/拉起设置页，
+     * 故仅记一次标记 + 日志兜底（通知正文已追加提示，见 showCallNotification）。
+     */
+    private fun warnNotificationPolicyAccessOnce() {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        if (prefs.getBoolean(KEY_DND_POLICY_WARNED, false)) return
+        prefs.edit().putBoolean(KEY_DND_POLICY_WARNED, true).apply()
     }
 
     private fun createChannel() {
@@ -217,8 +240,10 @@ class NotificationHelper @Inject constructor(
             }
             mgr.createNotificationChannel(calls)
             // 来电渠道 v2：显式 setSound() 为系统铃声（循环由 CallManager 的 MediaPlayer 负责，
-            // 此处渠道声音仅保证系统层兜底一致），IMPORTANCE_MAX 保证弹出式 + 声音，
-            // 绕过勿扰，来电就该响、就该弹。
+            // 此处渠道声音仅保证系统层兜底一致），IMPORTANCE_MAX 保证弹出式 + 声音。
+            // setBypassDnd(true) 只是尽力绕过勿扰：系统仍要求用户已授予「通知使用权」
+            // (isNotificationPolicyAccessGranted) 才会真正生效，未授权时降级为普通高优先级通知
+            // （见 showCallNotification 的 inDnd/hasPolicyAccess 检测与文案提示）。
             val callAttrs = android.media.AudioAttributes.Builder()
                 .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
                 .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
@@ -257,5 +282,11 @@ class NotificationHelper @Inject constructor(
         const val EXTRA_CALL_FROM = "callFrom"
         const val EXTRA_CALL_NAME = "callerName"
         const val EXTRA_CALL_TYPE = "callType"
+
+        private const val TAG = "NotificationHelper"
+
+        // 勿扰模式下「通知使用权」未授予的一次性提醒标记
+        private const val PREFS_NAME = "vxin_notif_prefs"
+        private const val KEY_DND_POLICY_WARNED = "dndPolicyWarned"
     }
 }

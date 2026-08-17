@@ -175,11 +175,13 @@ final class CallManager: NSObject, ObservableObject {
 
     func reject() {
         if !state.peerId.isEmpty { socket.emitCallResponse(to: state.peerId, accepted: false) }
+        VoipCallManager.shared.endActiveCall()
         cleanup(.ended)
     }
 
     func hangup() {
         if !state.peerId.isEmpty { socket.emitCallEnd(to: state.peerId) }
+        VoipCallManager.shared.endActiveCall()
         cleanup(.ended)
     }
 
@@ -272,6 +274,7 @@ final class CallManager: NSObject, ObservableObject {
 
         socket.callEnd.receive(on: DispatchQueue.main).sink { [weak self] from in
             guard let self, from == self.state.peerId else { return }
+            VoipCallManager.shared.endActiveCall()
             self.cleanup(.ended)
         }.store(in: &cancellables)
     }

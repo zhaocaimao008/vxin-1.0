@@ -12,6 +12,7 @@ data class AppVersionDto(
     val versionName: String,
     val url: String,
     val notes: String,
+    val sha256: String? = null,
 )
 
 /**
@@ -27,6 +28,7 @@ sealed class CheckResult {
         val versionName: String,
         val url: String,
         val notes: String,
+        val sha256: String? = null,
     ) : CheckResult()
 
     /** 检查失败（网络/解析/服务器错误） */

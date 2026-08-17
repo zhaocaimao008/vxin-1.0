@@ -227,7 +227,31 @@ class CallManager @Inject constructor(
             CallStage.INCOMING, from, callerName, isVideo = callType == "video", isCaller = false,
         )
         startIncomingRing()
-        CallForegroundService.start(context, callType == "video")   // 响铃期保活
+        startCallFgsBestEffort(callType == "video")   // 响铃期保活（尽力而为，不满足条件则跳过）
+    }
+
+    /**
+     * 后台响铃期起 FGS 会被系统拒绝（Android 12+ 后台启动限制）或抛权限异常
+     * （Android 14+ microphone 型 FGS 强校验 RECORD_AUDIO），故只在满足条件时尝试：
+     * App 在前台 且（SDK<34 或已授予 RECORD_AUDIO）。不满足则跳过、不报错——响铃仍由
+     * vxin_calls_v2 通知 + fullScreenIntent 覆盖，FGS 只是 Doze 保活增强，非必需。
+     */
+    private fun canStartCallFgs(): Boolean {
+        if (!com.vxin.app.core.push.MessageNotificationBridge.appForeground) return false
+        if (android.os.Build.VERSION.SDK_INT < 34) return true
+        return context.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun startCallFgsBestEffort(video: Boolean) {
+        if (!canStartCallFgs()) return
+        runCatching { CallForegroundService.start(context, video) }.onFailure { e ->
+            if (e is SecurityException ||
+                (android.os.Build.VERSION.SDK_INT >= 31 && e is android.app.ForegroundServiceStartNotAllowedException)
+            ) {
+                Log.w(TAG, "响铃期起前台服务被拒(尽力而为,不影响响铃/通知): ${e.message}")
+            }
+        }
     }
 
     // ── 信令处理 ───────────────────────────────────────────
@@ -245,7 +269,7 @@ class CallManager @Inject constructor(
                     CallStage.INCOMING, e.from, e.callerName, isVideo = e.type == "video", isCaller = false,
                 )
                 startIncomingRing()                                   // 来电就该响，前台也播
-                CallForegroundService.start(context, e.type == "video")   // 响铃期保活
+                startCallFgsBestEffort(e.type == "video")             // 响铃期保活（尽力而为）
                 // ── 锁屏/后台来电通知 ────────────────────────────────────────
                 // socket 连着时服务端不发 FCM，须由此处补弹全屏来电通知。
                 // App 在前台时 CallHost 会渲染来电 UI，无需重复弹通知。

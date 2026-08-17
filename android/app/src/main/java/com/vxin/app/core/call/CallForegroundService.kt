@@ -71,7 +71,13 @@ class CallForegroundService : Service() {
         /** 通话建立本地媒体后调用（此刻 App 在前台、RECORD_AUDIO 已授予，满足 microphone FGS 合规）。 */
         fun start(context: Context, video: Boolean) {
             val intent = Intent(context, CallForegroundService::class.java).putExtra(EXTRA_VIDEO, video)
-            runCatching { ContextCompat.startForegroundService(context, intent) }
+            runCatching { ContextCompat.startForegroundService(context, intent) }.onFailure { e ->
+                if (e is SecurityException ||
+                    (Build.VERSION.SDK_INT >= 31 && e is android.app.ForegroundServiceStartNotAllowedException)
+                ) {
+                    android.util.Log.w("CallForegroundService", "startForegroundService 被拒: ${e.message}")
+                }
+            }
         }
 
         /** 通话结束（cleanup）时调用。 */

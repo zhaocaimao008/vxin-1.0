@@ -44,6 +44,10 @@ class UpdateChecker @Inject constructor(
             val result = runCatching { fetchVersion(url) }
             if (result.isSuccess) {
                 val dto = result.getOrThrow()
+                if (!isTrustedDownloadUrl(dto.url)) {
+                    Log.w(TAG, "更新清单 url 校验失败(需 https 且 host=dipsin.com)，跳过该源: ${dto.url}")
+                    continue
+                }
                 if (dto.versionCode > BuildConfig.VERSION_CODE) {
                     Log.i(TAG, "发现新版本: ${dto.versionName} (${dto.versionCode})")
                     return@withContext CheckResult.Available(
@@ -51,6 +55,7 @@ class UpdateChecker @Inject constructor(
                         versionName = dto.versionName,
                         url = dto.url,
                         notes = dto.notes,
+                        sha256 = dto.sha256,
                     )
                 } else {
                     Log.i(TAG, "已是最新版: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
@@ -62,6 +67,12 @@ class UpdateChecker @Inject constructor(
         }
         CheckResult.Failed("无法连接到更新服务器")
     }
+
+    /** 下载直链必须 https 且 host 固定为 dipsin.com，防止清单被篡改后指向任意下载源。 */
+    private fun isTrustedDownloadUrl(url: String): Boolean = runCatching {
+        val uri = java.net.URI(url)
+        uri.scheme.equals("https", ignoreCase = true) && uri.host == "dipsin.com"
+    }.getOrDefault(false)
 
     private fun fetchVersion(url: String): AppVersionDto {
         val request = Request.Builder().url(url).get().build()

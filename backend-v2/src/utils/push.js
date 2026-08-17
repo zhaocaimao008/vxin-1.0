@@ -5,6 +5,8 @@
  * 并按各自的免打扰/详情预览/声音/震动设置定制 payload。
  * 推送优先级：FCM（GMS 设备）+ 个推（国产 ROM）并行，互不干扰。
  */
+const http2 = require('http2');
+const jwt = require('jsonwebtoken');
 const webpush = require('web-push');
 const config = require('../config');
 const { db } = require('../db/connection');
@@ -278,6 +280,106 @@ async function pushNewMessage({ conversationId, senderId, senderName, content, t
   await Promise.allSettled(pushPromises);
 }
 
+// ── APNs VoIP push（PushKit，走 firebase-admin 之外的独立通路）──────
+// firebase-admin/FCM 不代发 APNs VoIP（voip 类型 token 不是 FCM token），需直连
+// api.push.apple.com 用 HTTP/2 + APNs Provider Token（ES256 JWT）发送。
+const APNS_VOIP_TOPIC = 'com.vxin.app';
+let apnsVoipJwtCache = null; // { token, iat } —— 同一 JWT 复用一段时间，避免每次推送都重新签名
+
+function getApnsVoipToken() {
+  const keyId = process.env.APNS_KEY_ID;
+  const teamId = process.env.APNS_TEAM_ID;
+  const p8 = process.env.APNS_P8;
+  if (!keyId || !teamId || !p8) return null;
+  const now = Math.floor(Date.now() / 1000);
+  // APNs 建议单个 Provider Token 有效期不超过 1 小时，55 分钟内复用留安全余量
+  if (apnsVoipJwtCache && now - apnsVoipJwtCache.iat < 55 * 60) return apnsVoipJwtCache.token;
+  const privateKey = p8.replace(/\\n/g, '\n');
+  const token = jwt.sign({ iss: teamId, iat: now }, privateKey, {
+    algorithm: 'ES256',
+    header: { alg: 'ES256', kid: keyId },
+  });
+  apnsVoipJwtCache = { token, iat: now };
+  return token;
+}
+
+// PushKit voip push：纯自定义 JSON payload（不允许带 aps.alert），app 收到后自行
+// reportNewIncomingCall 弹 CallKit 界面。凭据缺失时静默降级（不影响其他推送通路）。
+function sendVoipPush(deviceToken, { callId, from, callerName, callType }) {
+  return new Promise((resolve) => {
+    const authToken = getApnsVoipToken();
+    if (!authToken) {
+      console.warn('[call-push] APNs voip 未配置（缺 APNS_P8/APNS_KEY_ID/APNS_TEAM_ID）');
+      resolve({ ok: false, skipped: true });
+      return;
+    }
+    const body = JSON.stringify({
+      type: 'call',
+      callId: String(callId || ''),
+      from: String(from || ''),
+      callerName: String(callerName || ''),
+      callType: callType === 'video' ? 'video' : 'audio',
+      ts: Date.now(),
+    });
+
+    let client;
+    try {
+      client = http2.connect('https://api.push.apple.com:443');
+    } catch (e) {
+      console.warn('[call-push] APNs voip 连接失败:', e.message);
+      resolve({ ok: false });
+      return;
+    }
+    client.on('error', (e) => {
+      console.warn('[call-push] APNs voip http2 连接异常:', e.message);
+      resolve({ ok: false });
+    });
+
+    const req = client.request({
+      ':method': 'POST',
+      ':path': `/3/device/${deviceToken}`,
+      'apns-push-type': 'voip',
+      'apns-priority': '10',
+      'apns-expiration': String(Math.floor(Date.now() / 1000) + 60),
+      'apns-topic': APNS_VOIP_TOPIC,
+      authorization: `Bearer ${authToken}`,
+      'content-type': 'application/json',
+    });
+
+    let status = 0;
+    let resBody = '';
+    req.on('response', (headers) => { status = headers[':status']; });
+    req.setEncoding('utf8');
+    req.on('data', (chunk) => { resBody += chunk; });
+    req.on('end', () => {
+      client.close();
+      if (status === 200) {
+        resolve({ ok: true });
+        return;
+      }
+      let reason = '';
+      try { reason = JSON.parse(resBody || '{}').reason || ''; } catch {}
+      if (status === 401 || status === 403) {
+        // 凭据问题（JWT 失效/kid 或 team 不匹配），不是设备的问题，不清 token
+        console.warn(`[call-push] APNs voip 凭据无效 status=${status} body=${resBody}`);
+      } else if (status === 410 || reason === 'BadDeviceToken' || reason === 'Unregistered') {
+        // 设备 token 已失效（卸载/重装/系统回收）→ 清理，避免反复无效推送
+        try { db.prepare('DELETE FROM device_tokens WHERE token=?').run(deviceToken); } catch {}
+        console.warn(`[call-push] APNs voip token 失效已清理 status=${status} reason=${reason}`);
+      } else {
+        console.warn(`[call-push] APNs voip 推送失败 status=${status} reason=${reason}`);
+      }
+      resolve({ ok: false, status });
+    });
+    req.on('error', (e) => {
+      console.warn('[call-push] APNs voip 请求异常:', e.message);
+      client.close();
+      resolve({ ok: false });
+    });
+    req.end(body);
+  });
+}
+
 // ── 来电推送（data-only）────────────────────────────────────────
 // 总是推送（同 pushNewMessage 的「幽灵在线」修复）：不再由调用方按 presence 过滤，
 // 保证被叫 App 后台/锁屏时也能收到。
@@ -295,12 +397,17 @@ async function pushCallInvite({ toUserId, fromUserId, callerName, callType, call
   const type = callType === 'video' ? 'video' : 'audio';
   const promises = [];
 
-  if (firebaseAdmin) {
-    // 同 pushToUser：只发真正的 FCM token，避免把个推 CID 丢给 FCM 触发误删。
-    const deviceTokens = db.prepare(
-      "SELECT * FROM device_tokens WHERE user_id=? AND platform IN ('android','ios')"
-    ).all(toUserId);
-    for (const row of deviceTokens) {
+  // 同 pushToUser：android/ios 走 FCM，避免把个推 CID 丢给 FCM 触发误删；
+  // ios_voip 是 PushKit 专用 token，走独立的 APNs 直连通路，不依赖 firebaseAdmin。
+  const deviceTokens = db.prepare(
+    "SELECT * FROM device_tokens WHERE user_id=? AND platform IN ('android','ios','ios_voip')"
+  ).all(toUserId);
+  for (const row of deviceTokens) {
+    if (row.platform === 'ios_voip') {
+      promises.push(sendVoipPush(row.token, { callId, from: fromUserId, callerName, callType: type }));
+      continue;
+    }
+    if (firebaseAdmin) {
       const message = {
         token: row.token,
         data: {
@@ -364,4 +471,4 @@ async function pushCallInvite({ toUserId, fromUserId, callerName, callType, call
   await Promise.allSettled(promises);
 }
 
-module.exports = { pushToUser, pushNewMessage, pushCallInvite, isAllowedPushEndpoint, isInQuietHours };
+module.exports = { pushToUser, pushNewMessage, pushCallInvite, sendVoipPush, isAllowedPushEndpoint, isInQuietHours };

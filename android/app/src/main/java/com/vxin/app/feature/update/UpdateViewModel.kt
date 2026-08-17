@@ -141,7 +141,7 @@ class UpdateViewModel @Inject constructor(
         _uiState.value = UpdateUiState.Downloading(progress = 0f)
         viewModelScope.launch {
             runCatching {
-                apkDownloader.download(version.url) { bytes, total, percent ->
+                apkDownloader.download(version.url, version.sha256) { bytes, total, percent ->
                     _uiState.update {
                         if (it is UpdateUiState.Downloading) it.copy(progress = percent)
                         else it // 状态已变，忽略旧进度

@@ -551,13 +551,10 @@ function loadUpdatePublicKey() {
   }
 }
 
-// 更新源根地址：优先用远程 config.json 下发并缓存的 updateFeed（换服务器后能切换），
-// 其次读 app-update.yml(打包固化)，最后回退常量。
+// 更新源根地址（验签用）：只读打包固化值，不采纳远程 config.json 下发的 updateFeed——
+// 那条路径可被中间人/被劫持的 config.json 改写，若验签源本身可被远程指向任意地址，
+// 验签就形同虚设。优先读 app-update.yml(打包固化)，最后回退常量。
 function updateFeedBase() {
-  const remote = store.get('updateFeed');
-  if (remote && typeof remote === 'string' && isValidServerUrl(remote)) {
-    return remote.replace(/\/+$/, '');
-  }
   try {
     const cfg = app.isPackaged
       ? path.join(process.resourcesPath, 'app-update.yml')
@@ -616,13 +613,13 @@ async function verifyUpdateSignature() {
       fetchBuffer(sigUrl, { allowMissing: true }),
     ]);
   } catch (e) {
-    // 网络/拉取异常：不阻断合法更新(electron-updater 已能取到 yml)，回退 TLS。
-    log.warn('更新验签：拉取元数据失败，回退仅 TLS：', e.message);
-    return 'skip';
+    // 已配置真实公钥（非占位）→ fail-closed：拉取失败不能回退到仅信任 TLS，否则验签形同虚设。
+    log.error('更新验签：拉取元数据失败，已阻止下载：', e.message);
+    return 'fail';
   }
   if (!sigBuf) {
-    log.warn('更新验签：未找到 .sig，签名分发尚未启用，回退仅 TLS');
-    return 'skip';
+    log.error('更新验签：已配置公钥但未找到 .sig，已阻止下载');
+    return 'fail';
   }
   try {
     const ok = crypto.verify(null, ymlBuf, pub, sigBuf);
