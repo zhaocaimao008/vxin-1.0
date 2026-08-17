@@ -115,11 +115,14 @@ function ensureInviteCodes() {
 }
 
 // 确保所有用户都有 6 位纯数字 v信号（幂等：仅修补不合规者）
+// 排除 banned=1：已注销/封禁账号不需要 vxin_id，且其 wechat_id 置 NULL 是注销占位，
+// 不应在重启时被重新分配号码（否则会与 delete-account 的 NULL 语义冲突）。
 function ensureNumericVxinIds() {
   const users = db.prepare(`
     SELECT id FROM users
-    WHERE wechat_id IS NULL OR wechat_id = ''
-       OR length(wechat_id) != 6 OR wechat_id GLOB '*[^0-9]*'
+    WHERE banned = 0
+      AND (wechat_id IS NULL OR wechat_id = ''
+       OR length(wechat_id) != 6 OR wechat_id GLOB '*[^0-9]*')
   `).all();
   const update = db.prepare('UPDATE users SET wechat_id=? WHERE id=?');
   db.transaction(() => {
