@@ -25,7 +25,7 @@ class CacheWarmer {
       
       const users = db.prepare(`
         SELECT * FROM users 
-        ORDER BY last_active DESC 
+        ORDER BY last_online_at DESC 
         LIMIT ?
       `).all(this.maxActiveUsers);
 
@@ -91,9 +91,9 @@ class CacheWarmer {
       console.log('[CacheWarmer] 开始预热群组...');
       
       const groups = db.prepare(`
-        SELECT * FROM groups 
-        WHERE deleted = 0
-        ORDER BY last_message_time DESC
+        SELECT * FROM conversations 
+        WHERE type = 'group'
+        ORDER BY created_at DESC
         LIMIT 500
       `).all();
 
@@ -104,8 +104,8 @@ class CacheWarmer {
         
         // 同时预热群成员
         const members = db.prepare(`
-          SELECT * FROM group_members 
-          WHERE group_id = ?
+          SELECT * FROM conversation_members 
+          WHERE conversation_id = ?
         `).all(group.id);
         
         const memberKey = `group:${group.id}:members`;
@@ -206,10 +206,12 @@ class CacheWarmer {
 
       // 预热用户的会话列表
       const conversations = db.prepare(`
-        SELECT * FROM conversations 
-        WHERE participant_a = ? OR participant_b = ?
+        SELECT c.* FROM conversations c
+        JOIN conversation_members cm ON cm.conversation_id = c.id
+        WHERE cm.user_id = ?
+        ORDER BY c.created_at DESC
         LIMIT 100
-      `).all(userId, userId);
+      `).all(userId);
 
       const convKey = `user:${userId}:conversations`;
       await redis.setex(convKey, this.userTTL, JSON.stringify(conversations));
