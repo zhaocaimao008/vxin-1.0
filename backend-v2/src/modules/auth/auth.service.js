@@ -255,7 +255,11 @@ async function deleteAccount(userId, password) {
       throw badRequest(`钱包仍有余额 ${balance} 金币，请先提现或清零后再注销`, 'WALLET_NOT_EMPTY');
     }
 
-    db.prepare("UPDATE users SET username=?, phone=?, password='*', avatar='', bio='', wechat_id='', banned=1 WHERE id=?")
+    // wechat_id 必须置 NULL 而非 ''：idx_users_wechat_id_unique 是全表唯一索引（非 partial），
+    // 若置 ''，第二个被注销账号会与第一个的 '' 冲突 → UNIQUE constraint failed 500。
+    // SQLite UNIQUE 索引允许多个 NULL，故 NULL 是安全的注销占位；
+    // ensureNumericVxinIds 也已排除 banned 用户，不会给已注销账号重新分配 vxin_id。
+    db.prepare("UPDATE users SET username=?, phone=?, password='*', avatar='', bio='', wechat_id=NULL, banned=1 WHERE id=?")
       .run(`已注销${rand}`, `deleted_${rand}@x`, userId);
     invalidateUser(userId); // 驱逐状态缓存，令已注销账号立即被拒
     db.prepare('DELETE FROM contacts WHERE user_id=? OR contact_id=?').run(userId, userId);
