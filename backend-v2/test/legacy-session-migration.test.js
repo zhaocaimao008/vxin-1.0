@@ -187,13 +187,55 @@ describe('BATCH4 Legacy Session 强制重登 + 精确踢下线', () => {
     expect(winMe.status).toBe(200);
   });
 
-  test('7. 认证字段级回滚方案可用（不恢复整库备份）', async () => {
-    // 应急回滚：把 password_changed_at 归零即可让所有 JWT 恢复可用（新 token 不受影响）
-    db.prepare('UPDATE users SET password_changed_at=0 WHERE id=?').run(user.userId);
+  test('7. 认证字段级回滚：快照备份 → 恢复原值（非一律置 0，脚本实测）', async () => {
+    const { execSync } = require('child_process');
+    const os = require('os');
+    const fs = require('fs');
+    const path = require('path');
+
+    // 独立用户：注册时 password_changed_at 默认为 0（未改过密码的真实原值）
+    const u = await makeUser({ username: 'rollback_user' });
+
+    const snapshotFile = path.join(os.tmpdir(), `pca-snapshot-${Date.now()}.json`);
+    const env = { ...process.env, DB_PATH: process.env.DB_PATH };
+
+    // ① 部署前备份全部用户原值（正式工具：scripts/backup-password-changed-at.js）
+    execSync(`node scripts/backup-password-changed-at.js "${snapshotFile}"`, { cwd: path.join(__dirname, '..'), env });
+    const snapshot = JSON.parse(fs.readFileSync(snapshotFile, 'utf8'));
+    const before = snapshot.users.find(x => x.id === u.userId);
+    expect(before).toBeTruthy();
+    expect(before.password_changed_at).toBe(0); // 注册用户原值 = 0（未改密）
+
+    // 手工旧 token（iat = 1h 前），用于验证回滚后旧 JWT 恢复可用
+    const jwt = require('jsonwebtoken');
+    const config = require('../src/config');
+    const oldIat = Math.floor(Date.now() / 1000) - 3600;
+    const oldToken = jwt.sign(
+      { id: u.userId, username: u.username, csrf: 'rollback-csrf', iat: oldIat },
+      config.jwtSecret,
+      { algorithm: 'HS256', expiresIn: `${config.tokenMaxAge}s` }
+    );
+
+    // ② 模拟 migration 104 推进 → 旧 token 立即失效
+    db.prepare("UPDATE users SET password_changed_at = strftime('%s','now') WHERE id=?")
+      .run(u.userId);
+    require('../src/utils/userStatusCache').invalidateUser(u.userId);
+    const kicked = await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', `Bearer ${oldToken}`)
+      .set('User-Agent', WIN_UA);
+    expect(kicked.status).toBe(401);
+
+    // ③ 回滚：按快照恢复每个用户原值（正式工具：scripts/restore-password-changed-at.js）
+    execSync(`node scripts/restore-password-changed-at.js "${snapshotFile}"`, { cwd: path.join(__dirname, '..'), env });
+    require('../src/utils/userStatusCache').invalidateUser(u.userId);
+
+    // ④ 恢复原值后旧 JWT 重新可用（未覆盖上线后新数据；未改密用户原值恢复不会复活应失效 JWT）
     const res = await request(app)
       .get('/api/auth/me')
-      .set('Authorization', `Bearer ${user.token}`)
+      .set('Authorization', `Bearer ${oldToken}`)
       .set('User-Agent', WIN_UA);
     expect(res.status).toBe(200);
+    fs.unlinkSync(snapshotFile);
   });
 });

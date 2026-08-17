@@ -498,6 +498,11 @@ function applySchema(db) {
     //   - 不删除用户数据 / 不修改密码 / 不删除聊天、联系人、消息 —— 只影响登录状态
     //   - 比较逻辑：auth middleware 用严格小于（iat < password_changed_at），单位均为 Unix 秒，
     //     与 migration 同秒的新登录（iat == password_changed_at）不会被误杀
+    //   - 回滚（认证字段级，禁止一律置 0）：部署前必须先跑
+    //     scripts/backup-password-changed-at.js 备份全部用户原值快照；
+    //     回滚时 scripts/restore-password-changed-at.js 按快照逐用户恢复原值 ——
+    //     只影响登录状态，不覆盖上线后新产生的聊天数据，也不会复活
+    //     「因真实修改密码而应失效」的旧 JWT
     "UPDATE users SET password_changed_at = strftime('%s','now')",
   ];
 
