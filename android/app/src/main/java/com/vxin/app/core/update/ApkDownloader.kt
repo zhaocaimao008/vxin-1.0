@@ -45,12 +45,14 @@ class ApkDownloader @Inject constructor(
     /**
      * 下载 APK 到本地。
      * @param url  APK 直链
+     * @param sha256  期望的文件 SHA-256（十六进制，忽略大小写）；非空时下载完成后校验，不匹配则删文件抛异常
      * @param progress  进度回调（下载线程调用）
      * @return 下载完成的本地文件
-     * @throws IOException 网络/IO 异常
+     * @throws IOException 网络/IO 异常，或 sha256 校验不匹配
      */
     suspend fun download(
         url: String,
+        sha256: String? = null,
         progress: DownloadProgress? = null,
     ): File = withContext(Dispatchers.IO) {
         val target = File(downloadDir, apkFileName)
@@ -86,8 +88,29 @@ class ApkDownloader @Inject constructor(
         if (!target.exists() || target.length() == 0L) {
             throw IOException("下载文件为空")
         }
+        if (!sha256.isNullOrBlank()) {
+            val actual = sha256Hex(target)
+            if (!actual.equals(sha256, ignoreCase = true)) {
+                target.delete()
+                throw IOException("APK 校验失败：SHA-256 不匹配，已删除文件")
+            }
+            Log.i(TAG, "APK SHA-256 校验通过")
+        }
         Log.i(TAG, "APK 下载完成: ${target.absolutePath} (${target.length()} bytes)")
         target
+    }
+
+    private fun sha256Hex(file: File): String {
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        file.inputStream().use { input ->
+            val buf = ByteArray(8192)
+            while (true) {
+                val read = input.read(buf)
+                if (read == -1) break
+                digest.update(buf, 0, read)
+            }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
     }
 
     companion object {

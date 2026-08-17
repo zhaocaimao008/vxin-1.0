@@ -40,6 +40,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             Messaging.messaging().delegate = self
         }
 
+        // 5. PushKit VoIP + CallKit：App 被彻底杀死时也能被唤醒弹出系统来电界面
+        VoipCallManager.shared.activate()
+
         return true
     }
 

@@ -42,6 +42,7 @@ class MainActivity : ComponentActivity() {
         if (isCallIntent(intent)) enableShowOverLockscreen()
         handleCallIntent(intent)
         handleMessageIntent(intent)
+        warnIfFullScreenIntentDisabled()
         setContent {
             // 主题：由 VxinTheme 内部读取本地外观偏好（不在 Activity 根注入/收集 Flow，
             // 与 1.0.14 的启动路径保持一致，杜绝启动期换肤相关的崩溃风险）。
@@ -128,6 +129,22 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
+     * API 34+ 若用户关闭了「全屏通知」权限，来电的 fullScreenIntent 不再自动拉起本 Activity，
+     * 只能收到普通通知（可能错过来电）。一次性提示引导用户去系统设置打开，不阻塞通话/不弹 Activity。
+     */
+    private fun warnIfFullScreenIntentDisabled() {
+        if (Build.VERSION.SDK_INT < 34) return
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as? android.app.NotificationManager ?: return
+        if (nm.canUseFullScreenIntent()) return
+        val prefs = getSharedPreferences("vxin_prefs", Context.MODE_PRIVATE)
+        if (prefs.getBoolean(PREF_FSI_WARNED, false)) return
+        prefs.edit().putBoolean(PREF_FSI_WARNED, true).apply()
+        android.widget.Toast.makeText(
+            this, "来电全屏提醒未开启，可在 设置→通知→全屏通知 打开", android.widget.Toast.LENGTH_LONG,
+        ).show()
+    }
+
+    /**
      * 处理消息通知点击拉起的意图：只带 EXTRA_CONVERSATION_ID、无 call action。
      * 冷启动时 navController 未组合完成，这里不能直接 navigate，写入 PendingConversationHolder，
      * 由 AppNavigation 的 LaunchedEffect 监听并在 navController 就绪后再跳转
@@ -139,5 +156,9 @@ class MainActivity : ComponentActivity() {
         PendingConversationHolder.conversationId.value = convId
         // 消费掉，避免旋转/重建时重复触发
         intent.removeExtra(NotificationHelper.EXTRA_CONVERSATION_ID)
+    }
+
+    private companion object {
+        const val PREF_FSI_WARNED = "fullScreenIntentWarned"
     }
 }
