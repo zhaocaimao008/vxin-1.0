@@ -28,7 +28,7 @@ export function useGroupData({ conversationId, isGroup, userId, socket }) {
   const loadMembers = useCallback(async (convId) => {
     if (!convId || !isGroup) return;
     try {
-      const { data } = await axios.get(`/api/groups/${convId}/members`);
+      const { data } = await axios.get(`/api/messages/conversation/${convId}/members`);
       setMembers(data || []);
       const me = (data || []).find(m => m.id === userId);
       const role = me?.role || 'member';

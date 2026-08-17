@@ -37,6 +37,7 @@ function csrfCookieOptions(req) {
     httpOnly: false,
     secure:   isHttps(req) || cross,
     sameSite: cross ? 'none' : (isHttps(req) ? 'strict' : 'lax'),
+    maxAge:   config.tokenMaxAge * 1000, // 与鉴权 token 对齐，避免会话级 cookie 提前失效导致 CSRF 误报
     path:     '/',
   };
 }

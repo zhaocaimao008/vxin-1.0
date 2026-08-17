@@ -41,6 +41,11 @@ class VxinMessagingService : FirebaseMessagingService() {
         // 负责前台震动），再弹通知会重复打扰。后台/锁屏时 onMessageReceived 的 notification 块
         // 由系统托盘直接展示（不进此回调），故这里只处理前台 data 消息。
         if (MessageNotificationBridge.appForeground) return
-        notificationHelper.showMessageNotification(title, body, data["conversationId"])
+        // 后台 FCM 回调不能同步拉网络刷新设置，读 NotifySettingsCache 已缓存的值（前台由 bridge 定期刷新）。
+        notificationHelper.showMessageNotification(
+            title, body, data["conversationId"],
+            soundEnabled = NotifySettingsCache.soundEnabled,
+            vibrateEnabled = NotifySettingsCache.vibrateEnabled,
+        )
     }
 }

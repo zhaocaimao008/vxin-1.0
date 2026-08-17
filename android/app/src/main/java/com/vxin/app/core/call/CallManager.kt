@@ -415,6 +415,7 @@ class CallManager @Inject constructor(
         releaseTone()                                     // 停回铃/接通音并释放 ToneGenerator
         callTimeoutJob?.cancel(); callTimeoutJob = null   // 接通/挂断/被拒 → 取消呼出超时
         CallForegroundService.stop(context)               // 停前台服务（未起过则 no-op）
+        notificationHelper.cancelCallNotification()        // 通话终结统一收口：清掉残留来电通知（幂等）
         runCatching { videoCapturer?.stopCapture() }
         runCatching { videoCapturer?.dispose() }
         videoCapturer = null

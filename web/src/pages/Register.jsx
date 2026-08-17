@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { showToast } from '../utils/toast';
 import '../styles/login.css';
 
 export default function Register() {
@@ -109,10 +110,16 @@ export default function Register() {
         <p className="auth-brand-desc" style={{ textAlign: 'left', marginBottom: 20 }}>安全连接每一刻，畅享沟通新体验</p>
 
         {/* 注册方式：当前仅「手机注册」有真实后端支持（/api/auth/register 仅按手机号注册）。
-            参考图上的「v信注册」没有对应后端能力，未实现，避免伪造入口。 */}
+            参考图上的「v信注册」没有对应后端能力，未实现——tab 保留但点击给提示，避免伪造入口。 */}
         <div className="auth-tabs">
           <span className="auth-tab active">手机注册</span>
-          <span className="auth-tab">v信注册</span>
+          <button
+            type="button"
+            className="auth-tab"
+            onClick={() => showToast('v信注册暂未开放，请使用手机注册', 'info')}
+          >
+            v信注册
+          </button>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>

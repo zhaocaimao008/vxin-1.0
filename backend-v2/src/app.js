@@ -13,7 +13,7 @@ const config = require('./config');
 const csrfProtection = require('./middleware/csrf');
 const requestId = require('./middleware/requestId');
 const { notFoundHandler, errorHandler } = require('./middleware/error');
-const { requestLogger, warn } = require('./utils/logger');
+const { requestLogger, warn, debug } = require('./utils/logger');
 const { metricsMiddleware, metrics } = require('./utils/monitoring');
 const swaggerSpec = require('./utils/swagger');
 const sentry = require('./utils/sentry');
@@ -153,6 +153,24 @@ app.post('/api/client-errors', clientErrorLimiter, (req, res) => {
       componentStack: String(componentStack || '').slice(0, 2000),
       url: String(url || '').slice(0, 300),
       ua: String(ua || '').slice(0, 300),
+      ip: req.ip,
+    });
+  } catch { /* 上报失败不影响前端 */ }
+  res.json({ ok: true });
+});
+
+// Web Vitals 性能指标上报（免鉴权 / 免 CSRF，置于 CSRF 门控之前）。sendBeacon 发送 text/plain，仅记录，best-effort。
+const vitalsLimiter = require('express-rate-limit')({ windowMs: 60 * 1000, max: 60, legacyHeaders: false });
+app.post('/api/metrics/vitals', vitalsLimiter, (req, res) => {
+  try {
+    const body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
+    let parsed = {};
+    try { parsed = body ? JSON.parse(body) : {}; } catch { /* 非 JSON 忽略 */ }
+    debug('[web-vitals] 前端性能指标', {
+      name: String(parsed.name || '').slice(0, 50),
+      value: Number.isFinite(Number(parsed.value)) ? Number(parsed.value) : undefined,
+      rating: String(parsed.rating || '').slice(0, 30),
+      url: String(parsed.url || '').slice(0, 300),
       ip: req.ip,
     });
   } catch { /* 上报失败不影响前端 */ }

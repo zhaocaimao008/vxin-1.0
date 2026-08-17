@@ -38,9 +38,25 @@ class NotificationHelper @Inject constructor(
     private val notifIdMap = ConcurrentHashMap<String, Int>()
     private val idCounter = AtomicInteger(1000)
 
-    /** 消息通知（支持聚合折叠） */
-    fun showMessageNotification(title: String, body: String, conversationId: String?) {
+    /**
+     * 消息通知（支持聚合折叠）。
+     * soundEnabled/vibrateEnabled 对齐用户「声音/震动」设置：
+     *  - Android 8+ 声音由通知渠道决定，per-notification 的 setDefaults 不生效，
+     *    所以按 soundEnabled 选普通渠道（有声）还是静音渠道（CHANNEL_ID_SILENT，setSound(null)）；
+     *  - 8 以下版本渠道无意义，靠 setDefaults 的位组合控制。
+     */
+    fun showMessageNotification(
+        title: String,
+        body: String,
+        conversationId: String?,
+        soundEnabled: Boolean = true,
+        vibrateEnabled: Boolean = false,
+    ) {
         val convId = conversationId ?: "global"
+        val channelId = if (soundEnabled) CHANNEL_ID else CHANNEL_ID_SILENT
+        val defaults = NotificationCompat.DEFAULT_LIGHTS or
+            (if (soundEnabled) NotificationCompat.DEFAULT_SOUND else 0) or
+            (if (vibrateEnabled) NotificationCompat.DEFAULT_VIBRATE else 0)
         val notifId = notifIdMap.getOrPut(convId) { idCounter.incrementAndGet() }
 
         // 聚合摘要列表（最新在前，最多 5 条）
@@ -58,14 +74,14 @@ class NotificationHelper @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setDefaults(defaults)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(pending)
             // ── 通知分组（Android 7+）──────────────────────────
@@ -176,6 +192,18 @@ class NotificationHelper @Inject constructor(
                 enableLights(true)
             }
             mgr.createNotificationChannel(messages)
+            // 静音消息渠道：用户关闭「声音」设置时使用。Android 8+ 声音由渠道决定、创建后不可再改，
+            // 所以用独立 id（而非改 CHANNEL_ID 的属性）—— 遵循本文件既有的「改渠道属性必须 bump 渠道 id」策略。
+            val messagesSilent = NotificationChannel(
+                CHANNEL_ID_SILENT, "消息通知（静音）", NotificationManager.IMPORTANCE_LOW,
+            ).apply {
+                description = "新消息与提及（已关闭声音）"
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+                setSound(null, null)
+                enableVibration(true)
+                enableLights(true)
+            }
+            mgr.createNotificationChannel(messagesSilent)
             // 来电渠道：最高优先级 + 绕过勿扰，为后续 fullScreenIntent 来电通知预留（拉起 CallScreen）。
             val calls = NotificationChannel(
                 CALL_CHANNEL_ID, "来电", NotificationManager.IMPORTANCE_HIGH,
@@ -194,6 +222,7 @@ class NotificationHelper @Inject constructor(
         // 需换新 id 才能让新配置对老用户生效。改动这些渠道属性时同步 bump 版本号。
         // 注意：后端 FCM android.notification.channelId 也须同步为此值（见 backend push.js）。
         const val CHANNEL_ID = "vxin_messages_v3"
+        const val CHANNEL_ID_SILENT = "vxin_messages_v3_silent"
         const val CALL_CHANNEL_ID = "vxin_calls"
         const val EXTRA_CONVERSATION_ID = "conversationId"
         const val CALL_NOTIFICATION_ID = 424242

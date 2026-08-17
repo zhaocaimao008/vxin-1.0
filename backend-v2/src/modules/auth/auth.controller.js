@@ -80,7 +80,7 @@ exports.refresh = asyncHandler(async (req, res) => {
     if (payload?.exp) await addToBlacklist(req.token, payload.exp).catch(() => {});
   }
   setAuthCookie(req, res, newToken);
-  res.json({ success: true });
+  res.json({ success: true, token: newToken, user: svc.getMe(req.user.id) });
 });
 
 exports.logout = asyncHandler(async (req, res) => {
