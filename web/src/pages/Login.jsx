@@ -26,6 +26,7 @@ export default function Login() {
   // 《用户协议》《隐私政策》暂无落地页，链接点击不跳转（与 Register 现状一致）；
   // 勾选框本身是真实交互状态，未勾选禁止提交。
   const [agreed, setAgreed] = useState(false);
+  const identifierOk = loginMode === 'phone' ? phone : vxinId;
   const { login, accounts, removeAccount, maxAccounts } = useAuth();
   const { lang, setLang } = useI18n();
   const [showLangMenu, setShowLangMenu] = useState(false);
@@ -65,6 +66,7 @@ export default function Login() {
     const url = serverInput.trim().replace(/\/$/, '');
     if (!url.startsWith('http')) { setServerTest({ ok: false, msg: '请以 http:// 或 https:// 开头' }); return; }
     localStorage.setItem('vxin_server_url', url);
+    window.electronAPI?.setServerUrl?.(url);
     axios.defaults.baseURL = url;
     window.location.reload();
   };
@@ -316,7 +318,7 @@ export default function Login() {
             <Link to="/forgot-password" className="auth-link" style={{ fontSize: 'var(--text-sm2)' }}>忘记密码？</Link>
           </div>
 
-          <button type="submit" className="auth-submit" data-testid="login-submit-btn" disabled={loading || !phone || !password || !agreed}>
+          <button type="submit" className="auth-submit" data-testid="login-submit-btn" disabled={loading || !identifierOk || !password || !agreed}>
             {loading ? (
               <span className="auth-spinner" />
             ) : (

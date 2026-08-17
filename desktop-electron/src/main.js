@@ -990,6 +990,13 @@ function setupIPC() {
       return false;
     }
     store.set('serverUrl', url);
+    // 同步运行时变量，否则 onHeadersReceived 仍按旧 API_ORIGIN/WS_ORIGIN 拼 CSP，
+    // 把新服务器的请求当成跨域拦下来。CDN_ORIGIN 清空——新服务器的 cdn 域名未知，
+    // 需下次 loadRemoteServerUrl() 重新拉取。
+    SERVER_URL = u.origin;
+    API_ORIGIN = u.origin;
+    WS_ORIGIN = u.origin.replace(/^http/, 'ws');
+    CDN_ORIGIN = '';
     return true;
   });
   ipcMain.handle('config:getServerUrl', () => store.get('serverUrl'));

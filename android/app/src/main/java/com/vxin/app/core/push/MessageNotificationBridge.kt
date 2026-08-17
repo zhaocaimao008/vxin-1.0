@@ -47,13 +47,8 @@ class MessageNotificationBridge @Inject constructor(
     private val startedActivities = AtomicInteger(0)
     private val isForeground: Boolean get() = startedActivities.get() > 0
 
-    // ── 通知偏好缓存（TTL 60s，消息到达时懒刷新）──
-    @Volatile private var messageNotifyEnabled = true       // 全局新消息通知总开关
-    @Volatile private var detailPreviewEnabled = true       // 通知详情预览
-    @Volatile private var vibrateEnabled = false            // 震动
-    @Volatile private var soundEnabled = true               // 声音
-    @Volatile private var mutedConversations: Set<String> = emptySet() // 免打扰会话集合
-    @Volatile private var settingsLoadedAt = 0L
+    // 通知偏好缓存（TTL 60s，消息到达时懒刷新）：存于 NotifySettingsCache 共享单例，
+    // 好让后台的 VxinMessagingService / VxinGeTuiService 也能读到同一份（它们不能同步拉网络刷新）。
     private val refreshMutex = Mutex()
 
     /** 由 VxinApp.onCreate 调用一次：注册前后台追踪 + 开始监听 socket 新消息。 */
@@ -68,9 +63,9 @@ class MessageNotificationBridge @Inject constructor(
                 // 不再由本桥弹本地通知——否则与 FCM 通知重复。
                 if (!isForeground) return@collect
                 refreshMuteStateIfStale()
-                if (!messageNotifyEnabled) return@collect                         // 全局关新消息通知
-                if (msg.conversation_id in mutedConversations) return@collect     // 该会话免打扰
-                if (vibrateEnabled) vibrateOnce()
+                if (!NotifySettingsCache.messageNotifyEnabled) return@collect                 // 全局关新消息通知
+                if (msg.conversation_id in NotifySettingsCache.mutedConversations) return@collect // 该会话免打扰
+                if (NotifySettingsCache.vibrateEnabled) vibrateOnce()
             }
         }
     }
@@ -95,19 +90,19 @@ class MessageNotificationBridge @Inject constructor(
 
     /** 刷新通知偏好与免打扰会话集合（TTL 内跳过；双重检查避免并发重复拉取）。 */
     private suspend fun refreshMuteStateIfStale() {
-        if (System.currentTimeMillis() - settingsLoadedAt < SETTINGS_TTL_MS) return
+        if (System.currentTimeMillis() - NotifySettingsCache.loadedAt < NotifySettingsCache.TTL_MS) return
         refreshMutex.withLock {
-            if (System.currentTimeMillis() - settingsLoadedAt < SETTINGS_TTL_MS) return@withLock
+            if (System.currentTimeMillis() - NotifySettingsCache.loadedAt < NotifySettingsCache.TTL_MS) return@withLock
             runCatching { userApi.settings() }.onSuccess {
-                messageNotifyEnabled = it.messageNotify
-                detailPreviewEnabled = it.detailPreview
-                vibrateEnabled = it.vibrate
-                soundEnabled = it.sound
+                NotifySettingsCache.messageNotifyEnabled = it.messageNotify
+                NotifySettingsCache.detailPreviewEnabled = it.detailPreview
+                NotifySettingsCache.vibrateEnabled = it.vibrate
+                NotifySettingsCache.soundEnabled = it.sound
             }
             runCatching { chatRepository.loadConversations() }.onSuccess { list ->
-                mutedConversations = list.filter { it.muted == 1 }.map { it.id }.toSet()
+                NotifySettingsCache.mutedConversations = list.filter { it.muted == 1 }.map { it.id }.toSet()
             }
-            settingsLoadedAt = System.currentTimeMillis()
+            NotifySettingsCache.loadedAt = System.currentTimeMillis()
         }
     }
 
@@ -142,6 +137,5 @@ class MessageNotificationBridge @Inject constructor(
         // 前台则不弹 FCM 通知（避免与 socket UI 重复），交给应用内 UI/震动处理。
         @Volatile @JvmStatic var appForeground: Boolean = false
             private set
-        const val SETTINGS_TTL_MS = 60_000L
     }
 }

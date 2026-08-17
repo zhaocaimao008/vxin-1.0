@@ -5,6 +5,7 @@
  */
 
 let mockRedis = null;
+let fallbackRedis = null;
 
 function getRedisClient() {
   // 首先尝试获取真实 Redis
@@ -143,12 +144,62 @@ function createMockRedis() {
   };
 }
 
+function createFallbackRedis() {
+  // 生产环境 Redis 未初始化时的内存兜底实现，避免调用方 TypeError。
+  const storage = new Map();
+  return {
+    async get(key) {
+      return storage.get(key) || null;
+    },
+    async set(key, value) {
+      storage.set(key, value);
+    },
+    async del(...keys) {
+      let count = 0;
+      for (const key of keys) {
+        if (storage.delete(key)) count++;
+      }
+      return count;
+    },
+    async lpush(key, ...values) {
+      const list = storage.get(key) || [];
+      list.unshift(...values.reverse());
+      storage.set(key, list);
+      return list.length;
+    },
+    async rpush(key, ...values) {
+      const list = storage.get(key) || [];
+      list.push(...values);
+      storage.set(key, list);
+      return list.length;
+    },
+    async rpop(key) {
+      const list = storage.get(key) || [];
+      const value = list.pop();
+      storage.set(key, list);
+      return value === undefined ? null : value;
+    },
+    async lrange(key, start, stop) {
+      const list = storage.get(key) || [];
+      const end = stop === -1 ? undefined : stop + 1;
+      return list.slice(start, end);
+    },
+    async setex(key, ttl, value) {
+      storage.set(key, value);
+      // 内存兜底无持久化 TTL 管理，用定时器模拟自清理
+      setTimeout(() => storage.delete(key), ttl * 1000).unref?.();
+    },
+  };
+}
+
 module.exports = {
   get redis() {
     const client = getRedisClient();
     if (!client && process.env.NODE_ENV !== 'test') {
       console.warn('[redis] Redis client not initialized. Ensure redisCache.connect() is called in server.js');
     }
-    return client || { get: async () => null, set: async () => {}, del: async () => {} };
+    if (client) return client;
+    if (!fallbackRedis) fallbackRedis = createFallbackRedis();
+    return fallbackRedis;
   },
 };

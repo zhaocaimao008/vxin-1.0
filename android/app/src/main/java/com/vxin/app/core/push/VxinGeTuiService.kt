@@ -57,10 +57,13 @@ class VxinGeTuiService : GTIntentService() {
                 return@runCatching
             }
             // 普通消息透传约定为 JSON: {"title":"...","body":"...","conversationId":"..."}
+            // 后台回调不能同步拉网络刷新设置，读 NotifySettingsCache 已缓存的值（前台由 bridge 定期刷新）。
             entry(context).notificationHelper().showMessageNotification(
                 title = json.optString("title", "新消息"),
                 body = json.optString("body", "收到一条新消息"),
                 conversationId = json.optString("conversationId", null),
+                soundEnabled = NotifySettingsCache.soundEnabled,
+                vibrateEnabled = NotifySettingsCache.vibrateEnabled,
             )
         }.onFailure { Log.w(TAG, "透传解析失败: ${it.message}") }
     }
