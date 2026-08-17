@@ -26,8 +26,8 @@ export function useProfileData(user, onUserUpdate) {
     setLoading(true);
     try {
       const [p, s] = await Promise.all([
-        axios.get('/api/users/me'),
-        axios.get('/api/users/settings'),
+        axios.get('/api/auth/me'),
+        axios.get('/api/users/me/settings'),
       ]);
       setProfile(p.data);
       setSettings(s.data);
@@ -71,7 +71,7 @@ export function useProfileData(user, onUserUpdate) {
   // ── 设置更新 ──────────────────────────────────────────────────
   const saveSettings = useCallback(async (patch) => {
     try {
-      await axios.put('/api/users/settings', patch);
+      await axios.put('/api/users/me/settings', patch);
       setSettings(prev => ({ ...prev, ...patch }));
     } catch (e) {
       showToast(e?.response?.data?.error || '设置保存失败', 'error');
@@ -81,7 +81,7 @@ export function useProfileData(user, onUserUpdate) {
   // ── 通话记录（懒加载）─────────────────────────────────────────
   const loadCallLogs = useCallback(async () => {
     try {
-      const { data } = await axios.get('/api/users/call-logs');
+      const { data } = await axios.get('/api/users/me/call-logs');
       setCallLogs(data || []);
     } catch { /* 静默 */ }
   }, []);
@@ -97,7 +97,7 @@ export function useProfileData(user, onUserUpdate) {
   // ── 邀请码（懒加载）──────────────────────────────────────────
   const loadInviteInfo = useCallback(async () => {
     try {
-      const { data } = await axios.get('/api/users/invite-info');
+      const { data } = await axios.get('/api/users/me/invite');
       setInviteInfo(data);
     } catch { /* 静默 */ }
   }, []);

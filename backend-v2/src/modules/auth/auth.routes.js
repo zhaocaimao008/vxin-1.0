@@ -1,6 +1,7 @@
 'use strict';
 const router = require('express').Router();
 const auth = require('../../middleware/auth');
+const authRefresh = require('../../middleware/authRefresh');
 const { loginLimiter, registerLimiter, switchLimiter, forgetLimiter, resetPasswordLimiter } = require('../../middleware/rateLimiters');
 const c = require('./auth.controller');
 
@@ -105,7 +106,7 @@ router.get ('/me',              auth,            c.me);
  *       200:
  *         description: New token issued
  */
-router.post('/refresh',         auth,            c.refresh);
+router.post('/refresh',         authRefresh,     c.refresh);
 
 /**
  * @swagger

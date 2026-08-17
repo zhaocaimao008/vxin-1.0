@@ -29,7 +29,7 @@ function extractCsrfToken(response) {
 
 /**
  * 静默刷新 token（使用 Refresh Token 换取新 Access Token）
- * v3.2: 改用 /api/auth/token-refresh 端点（Refresh Token 轮换，更安全）
+ * v3.2: 改用 /api/auth/refresh 端点（服务端 refresh，轮换 Access Token，更安全）
  * 同时只允许一次并发刷新（防止多请求同时 401 触发多次刷新）
  */
 async function refreshToken(axios) {
@@ -37,7 +37,7 @@ async function refreshToken(axios) {
 
   const isElectronOrMobile = !!(window.__ELECTRON_CONFIG__ || window.Capacitor?.isNativePlatform?.());
 
-  tokenRefreshPromise = axios.post('/api/auth/token-refresh', {
+  tokenRefreshPromise = axios.post('/api/auth/refresh', {
     // Cookie 模式：服务端从 vxin_refresh cookie 读取（Web/桌面端）
     // Bearer 模式：从 localStorage 读取存储的 refresh token（Electron/移动端备用）
     refreshToken: isElectronOrMobile
@@ -125,7 +125,7 @@ export function setupAxiosInterceptors(axios) {
       // 性能监控
       if (response.config.metadata) {
         const duration = Date.now() - response.config.metadata.startTime;
-        if (duration > 1000) {
+        if (duration > 1000 && import.meta.env.DEV) {
           console.warn(`[axios] 慢请求: ${response.config.method?.toUpperCase()} ${response.config.url} ${duration}ms`);
         }
       }
