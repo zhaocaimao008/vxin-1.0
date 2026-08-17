@@ -78,14 +78,15 @@ function serializeUser(u) {
   };
 }
 
-function upsertSession(userId, req) {
+// token 可选：登录/注册/切换账号/刷新时传入，供 deleteSession 精确黑名单该设备的最新 token。
+function upsertSession(userId, req, token = null) {
   const { device, platform } = detectDevice(req.headers['user-agent']);
   const now = Math.floor(Date.now() / 1000);
   db.prepare(`
-    INSERT INTO user_sessions (id, user_id, device, platform, ip, created_at, last_seen)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(user_id, device, platform) DO UPDATE SET ip=excluded.ip, last_seen=excluded.last_seen
-  `).run(uuidv4(), userId, device, platform, getClientIp(req), now, now);
+    INSERT INTO user_sessions (id, user_id, device, platform, ip, created_at, last_seen, token)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(user_id, device, platform) DO UPDATE SET ip=excluded.ip, last_seen=excluded.last_seen, token=excluded.token
+  `).run(uuidv4(), userId, device, platform, getClientIp(req), now, now, token);
 }
 
 // ── 业务 ────────────────────────────────────────────────────────
@@ -199,8 +200,18 @@ function listSessions(userId, req) {
   return sessions.map(s => ({ ...s, current: s.device === device && s.platform === platform }));
 }
 
-function deleteSession(userId, sessionId) {
+// 单设备踢下线：只黑名单该会话最后记录的 token（不推进 password_changed_at，
+// 否则会牵连该用户的所有其它在线设备一并失效）。返回该会话的 device/platform，
+// 供上层定向断开对应的 socket 连接；会话不存在（已被删除/不属于该用户）返回 null。
+async function deleteSession(userId, sessionId) {
+  const session = db.prepare('SELECT device, platform, token FROM user_sessions WHERE id=? AND user_id=?').get(sessionId, userId);
+  if (!session) return null;
   db.prepare('DELETE FROM user_sessions WHERE id=? AND user_id=?').run(sessionId, userId);
+  if (session.token) {
+    const payload = jwt.decode(session.token);
+    if (payload?.exp) await addToBlacklist(session.token, payload.exp).catch(() => {});
+  }
+  return { device: session.device, platform: session.platform };
 }
 
 function deleteAllOtherSessions(userId, device, platform) {

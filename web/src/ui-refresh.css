@@ -156,16 +156,17 @@
   background: #07C160;
 }
 
-/* AccountSwitcher 头像适配 */
+/* AccountSwitcher 头像适配 —— .electron-app 双类选择器特异性已高于基础 .as-avatar-img/
+   .as-avatar-inner（单类）且加载顺序在后，!important 冗余，去除以统一覆盖规则 */
 .electron-app .as-avatar-img {
-  width: 42px !important;
-  height: 42px !important;
-  border-radius: 10px !important;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
 }
 .electron-app .as-avatar-inner {
-  width: 42px !important;
-  height: 42px !important;
-  border-radius: 10px !important;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
 }
 
 /* 导航按钮容器 */
@@ -664,3 +665,16 @@ body.dark-mode .electron-app .adi-row { color: #D0D3D8; }
 body.dark-mode .electron-app .wc-ctx-item:hover,
 body.dark-mode .electron-app .adi-row:hover { background: rgba(255,255,255,0.08); }
 body.dark-mode .electron-app .home-add-divider { background: #3A3A3C; }
+/* Bug2 补充：§21 首版遗漏的浅色残留（hover/active/disabled + 骨架屏） */
+body.dark-mode .electron-app .wc-icon-btn:hover { background: rgba(255,255,255,0.08); color: #E5E5EA; }
+body.dark-mode .electron-app .wc-icon-btn:active { background: rgba(255,255,255,0.12); }
+body.dark-mode .electron-app .wc-chat-item.active:hover { background: rgba(7,193,96,0.20); }
+body.dark-mode .electron-app .wc-chat-item-badge.muted { background: #5A5A5E; }
+body.dark-mode .electron-app .wc-chat-item.pinned:not(.active) { background: rgba(255,255,255,0.03); }
+body.dark-mode .electron-app .wc-chat-item.pinned:not(.active):hover { background: rgba(255,255,255,0.06); }
+body.dark-mode .electron-app .wc-chat-header-btn:active { background: rgba(255,255,255,0.12); }
+body.dark-mode .electron-app .wc-chat-header-btn.active { background: rgba(255,255,255,0.08); color: #E5E5EA; }
+body.dark-mode .electron-app .wc-tool-btn:active { background: rgba(255,255,255,0.12); }
+body.dark-mode .electron-app .wc-tool-btn.active { background: rgba(7,193,96,0.18); color: #07C160; }
+body.dark-mode .electron-app .wc-skel-avatar,
+body.dark-mode .electron-app .wc-skel { background: #2C2C2E; }

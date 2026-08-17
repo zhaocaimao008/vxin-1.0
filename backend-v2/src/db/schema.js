@@ -488,6 +488,8 @@ function applySchema(db) {
     // ── 红包过期回收查询索引：reclaimExpired 每10分钟扫 status='active' AND created_at<cutoff，
     //    无此索引则全表扫描。局部索引仅覆盖 active 行，随红包被领/过期而收缩，体积极小。──
     "CREATE INDEX IF NOT EXISTS idx_red_packets_status_time ON red_packets(status, created_at) WHERE status='active'",
+    // 单设备踢下线：deleteSession 需要该会话最后签发的 token 才能精确黑名单（而非牵连其它设备）
+    "ALTER TABLE user_sessions ADD COLUMN token TEXT DEFAULT NULL",
   ];
 
   // ── 迁移执行：版本追踪 + 错误分级 ────────────────────────────────

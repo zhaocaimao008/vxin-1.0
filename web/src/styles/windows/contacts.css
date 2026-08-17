@@ -440,3 +440,6 @@ body.dark-mode .electron-app .afm-result-item { border-bottom-color: #292D33; }
 body.dark-mode .electron-app .afm-result-item:hover { background: rgba(255,255,255,.06); }
 body.dark-mode .electron-app .afm-result-name { color: #F2F3F5; }
 body.dark-mode .electron-app .cl-entry-icon-box { background: rgba(7,193,96,.13); }
+body.dark-mode .electron-app .req-status-accepted { color: #3DDC84; background: rgba(7,193,96,.16); }
+body.dark-mode .electron-app .req-status-rejected { color: #8E8E93; background: rgba(255,255,255,.08); }
+body.dark-mode .electron-app .req-status-pending  { color: #FAAD14; background: rgba(250,173,20,.16); }

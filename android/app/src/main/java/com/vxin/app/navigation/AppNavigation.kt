@@ -388,7 +388,13 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0, appViewModel: App
         composable(Routes.ADD_ACCOUNT) {
                 LoginScreen(
                     onNavigateRegister = { navController.navigate(Routes.REGISTER) },
-                    onSuccess = { navController.popBackStack() },
+                    onSuccess = {
+                        // 添加账号成功后回到消息主界面，而非仅回退一层停在设置/账号管理页
+                        // （原 popBackStack() 只弹出 ADD_ACCOUNT 本身，中间的设置页仍在栈里，
+                        // 返回键还会先经过它们才能退出）。SessionManager.onAuthenticated 已完成
+                        // 账号切换 + socket 重连，这里只需清理导航栈回到会话列表。
+                        navController.popBackStack(Routes.CONVERSATIONS, inclusive = false)
+                    },
                 )
             }
             composable(Routes.ADD_FRIEND) {

@@ -1,4 +1,5 @@
 import React from 'react';
+import { IcoWarn } from './Icons';
 
 /** Skeleton — 骨架屏占位（列表首屏加载态） */
 export const Skeleton = React.memo(function Skeleton({ rows = 6, avatar = true }) {
@@ -33,7 +34,7 @@ export const EmptyState = React.memo(function EmptyState({ icon = '📭', title 
 export const ErrorState = React.memo(function ErrorState({ title = '加载失败', desc = '请检查网络后重试', onRetry }) {
   return (
     <div className="wc-state wc-state--error" role="alert">
-      <div className="wc-state-icon" aria-hidden="true">⚠️</div>
+      <div className="wc-state-icon" aria-hidden="true"><IcoWarn size={40} /></div>
       <div className="wc-state-title">{title}</div>
       {desc && <div className="wc-state-desc">{desc}</div>}
       {onRetry && (

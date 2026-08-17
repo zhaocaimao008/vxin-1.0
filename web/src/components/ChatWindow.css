@@ -85,6 +85,9 @@
   color: var(--color-warning);
   font-weight: var(--font-semibold);
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 .wc-pinned-text {
   font-size: var(--text-sm2);

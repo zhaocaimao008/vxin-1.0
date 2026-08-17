@@ -229,7 +229,7 @@ struct ProfileView: View {
             NavigationStack { ProfileEditView() }
         }
         .sheet(isPresented: $showSwitchAccount) {
-            NavigationStack { AccountManagementView() }
+            NavigationStack { AccountManagementView(onAccountAdded: { showSwitchAccount = false }) }
         }
         .alert("退出登录", isPresented: $showLogout) {
             Button("退出", role: .destructive) { Task { await session.logout() } }

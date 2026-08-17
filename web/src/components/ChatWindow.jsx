@@ -51,6 +51,7 @@ import { copyToClipboard, copyImageToClipboard } from '../utils/clipboard';
 import { downloadFile } from '../utils/download';
 import { shareMessage, canShare } from '../utils/share';
 import './ChatWindow.css';
+import { IcoClose } from './Icons';
 
 const REACTIONS = ['👍','❤️','😄','😮','😢','🙏'];
 
@@ -2311,7 +2312,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
           <div className="wc-card-picker">
             <div className="wc-card-picker-header">
               <span className="wc-card-picker-title">选择要分享的名片</span>
-              <button className="wc-card-picker-close" onClick={() => setShowCardPicker(false)} aria-label="关闭名片选择">✕</button>
+              <button className="wc-card-picker-close" onClick={() => setShowCardPicker(false)} aria-label="关闭名片选择"><IcoClose size={16} /></button>
             </div>
             <div className="wc-card-picker-list">
               {cardContacts.length === 0 && (

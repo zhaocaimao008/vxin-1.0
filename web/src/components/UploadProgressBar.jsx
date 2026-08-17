@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { IcoErrorX } from './Icons';
 
 /* ── 文件上传进度 / 失败重试条（从 ChatWindow 抽离）─────────────────
    纯展示子组件：由 uploadState 驱动（null | { name, progress, status,
@@ -29,7 +30,7 @@ function UploadProgressBar({ uploadState, onCancel }) {
         </>
       ) : (
         <>
-          <span className="wc-upload-icon wc-upload-icon-fail">❌</span>
+          <span className="wc-upload-icon wc-upload-icon-fail"><IcoErrorX size={18} /></span>
           <div className="wc-upload-error-text">
             {uploadState.errorMsg || '上传失败'}
           </div>

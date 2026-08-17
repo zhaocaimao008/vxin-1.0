@@ -3,7 +3,6 @@ import axios from 'axios';
 import Avatar from '../components/Avatar';
 import { mediaUrl } from '../utils/url';
 import { showConfirm } from '../utils/toast';
-import AuthImage from './AuthImage';
 import { useAuth } from '../contexts/AuthContext';
 import { loadCred, saveCred, removeCred } from '../utils/rememberedCreds';
 
@@ -193,15 +192,6 @@ function AccountSwitcher() {
                 <div className="as-profile-item">
                   <span className="as-profile-label-text">手机号</span>
                   <span className="as-profile-value">{user.phone}</span>
-                </div>
-              )}
-              {/* 二维码 */}
-              {user?.id && (
-                <div className="as-qr-section">
-                  <div className="as-qr-label">二维码</div>
-                  <div className="as-qr-content">
-                    <AuthImage src="/api/users/me/qrcode" alt="我的二维码" className="as-qr-img" />
-                  </div>
                 </div>
               )}
             </div>

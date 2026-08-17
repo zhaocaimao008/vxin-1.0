@@ -21,7 +21,6 @@ const MentionList   = lazy(() => import('../components/MentionList'));
 const ScanQR           = lazy(() => import('../components/ScanQR'));
 const AccountSwitcher  = lazy(() => import('../components/AccountSwitcher'));
 import Avatar from '../components/Avatar';
-import AuthImage from '../components/AuthImage';
 import ReconnectingBanner from '../components/ReconnectingBanner';
 import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -66,6 +65,7 @@ function WcEmpty() {
 /* ── SVG Icons ── */
 import { IcoAdd, IcoSearch, visibleTabs, TABS, desktopVisibleTabs } from '../components/TabIcons';
 import { ModalSkeleton } from '../components/ModalSkeleton';
+import { IcoClose } from '../components/Icons';
 
 const isElectron = !!window.__ELECTRON_CONFIG__;
 
@@ -257,7 +257,6 @@ export default function Home() {
   const [unread, setUnread] = useState({});
   const [friendReqCount, setFriendReqCount] = useState(0);
   const [search, setSearch] = useState('');
-  const [showQR, setShowQR] = useState(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [addMenuPos, setAddMenuPos] = useState(null);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
@@ -561,14 +560,6 @@ export default function Home() {
   };
   const closeAddMenu = () => { setShowAddMenu(false); setAddMenuPos(null); };
 
-  // Esc 关闭二维码弹窗，与其它弹窗键盘行为一致
-  useEffect(() => {
-    if (!showQR) return;
-    const onKey = (e) => { if (e.key === 'Escape') setShowQR(false); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [showQR]);
-
   const handleCreateGroup = () => {
     closeAddMenu();
     setShowCreateGroup(true);
@@ -608,20 +599,6 @@ export default function Home() {
             onClose={() => setActiveCall(null)}
           />
         </Suspense>
-      )}
-      {showQR && (
-        <div className="wc-modal-overlay" onClick={() => setShowQR(false)}>
-          <div className="wc-modal home-qr-modal" role="dialog" aria-modal="true" aria-label="我的二维码" onClick={e => e.stopPropagation()}>
-            <div className="wc-modal-header">
-              <span className="wc-modal-title">我的二维码</span>
-              <button className="wc-modal-close" aria-label="关闭二维码" onClick={() => setShowQR(false)}>✕</button>
-            </div>
-            <div className="wc-modal-body home-qr-body">
-              <AuthImage src="/api/users/me/qrcode" alt="我的二维码" className="home-qr-img" />
-              <p className="home-qr-text">扫描二维码添加我为好友</p>
-            </div>
-          </div>
-        </div>
       )}
       {showAddMenu && addMenuPos && (
         <>
@@ -698,7 +675,7 @@ export default function Home() {
                     <span className="m-search-icon"><IcoSearch /></span>
                     <input placeholder="搜索" aria-label="搜索" value={search}
                       onChange={e => setSearch(e.target.value)} />
-                    {search && <button className="m-search-clear" aria-label="清除" onClick={() => setSearch('')}>✕</button>}
+                    {search && <button className="m-search-clear" aria-label="清除" onClick={() => setSearch('')}><IcoClose size={14} /></button>}
                   </div>
                 </>
               ) : (
@@ -806,7 +783,7 @@ export default function Home() {
                 />
                 {search && (
                   <button className="home-search-clear" aria-label="清除搜索"
-                    onClick={() => setSearch('')}>✕</button>
+                    onClick={() => setSearch('')}><IcoClose size={14} /></button>
                 )}
               </div>
 

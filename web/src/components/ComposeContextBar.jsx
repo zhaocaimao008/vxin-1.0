@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { IcoClose } from './Icons';
 
 /* ── 输入区上方的上下文条（从 ChatWindow 抽离）─────────────────────
    编辑模式指示条 与 回复引用条 二选一（编辑优先）。纯展示子组件：
@@ -23,7 +24,7 @@ function ComposeContextBar({ editingMsg, replyTo, onCancelEdit, onCancelReply })
           <div className="wc-edit-bar-label">编辑消息</div>
           <div className="wc-edit-bar-text">{editingMsg.content}</div>
         </div>
-        <button className="wc-edit-cancel-btn" onClick={onCancelEdit} aria-label="取消编辑">✕</button>
+        <button className="wc-edit-cancel-btn" onClick={onCancelEdit} aria-label="取消编辑"><IcoClose size={16} /></button>
       </div>
     );
   }
@@ -36,7 +37,7 @@ function ComposeContextBar({ editingMsg, replyTo, onCancelEdit, onCancelReply })
             {replyPreview(replyTo.type, replyTo.content)}
           </div>
         </div>
-        <button className="wc-reply-bar-close" onClick={onCancelReply} aria-label="取消回复">✕</button>
+        <button className="wc-reply-bar-close" onClick={onCancelReply} aria-label="取消回复"><IcoClose size={16} /></button>
       </div>
     );
   }

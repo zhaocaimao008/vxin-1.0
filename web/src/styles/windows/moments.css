@@ -181,3 +181,4 @@ body.dark-mode .electron-app .wc-moment-notif-bar:hover { background: rgba(255,2
 body.dark-mode .electron-app .wc-moment-notif-label { color: #F2F3F5; }
 body.dark-mode .electron-app .wc-moment-vis-opt { border-bottom-color: #32363D; }
 body.dark-mode .electron-app .wc-moment-vis-opt:hover { background: rgba(255,255,255,.06); }
+body.dark-mode .electron-app .wc-moment-delete:hover { background: rgba(255,255,255,.08); color: #A9AFB7; }

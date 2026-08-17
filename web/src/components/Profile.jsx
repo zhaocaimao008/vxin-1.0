@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import axios from 'axios';
 import Avatar from './Avatar';
-import AuthImage from './AuthImage';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { useI18n, SUPPORTED_LANGS } from '../contexts/I18nContext';
@@ -9,6 +8,7 @@ import { goLogin } from '../utils/url';
 import { showConfirm, showToast } from '../utils/toast';
 import { copyToClipboard } from '../utils/clipboard';
 import { timeoutSignal } from '../utils/config';
+import { IcoDesktop as IcoDeviceDesktop, IcoMobile as IcoDeviceMobile } from './Icons';
 
 /* ─── 小工具 ─── */
 // role="button" 的 div 应同时支持 Enter 和空格触发（空格默认会滚动页面，需 preventDefault）
@@ -41,12 +41,6 @@ const IcoBell    = () => <Ico d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c
 const IcoShield  = () => <Ico d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>;
 const IcoServer  = () => <Ico d="M4 1h16a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1zm0 8h16a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1v-4a1 1 0 011-1zm0 8h16a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1v-4a1 1 0 011-1zM6 4a1 1 0 100 2 1 1 0 000-2zm0 8a1 1 0 100 2 1 1 0 000-2zm0 8a1 1 0 100 2 1 1 0 000-2z"/>;
 const IcoKeyboard = () => <Ico d="M20 5H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 5H5v-2h2v2zm0-3H5v-2h2v2zm0-3H5V8h2v2zm10 6H7v-2h10v2zm0-3h-2v-2h2v2zm0-3h-2V8h2v2zm3 6h-2v-2h2v2zm0-3h-2v-2h2v2zm0-3h-2V8h2v2z"/>;
-const IcoQR      = () => (
-  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-    <path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM13 13h2v2h-2zM15 15h2v2h-2zM13 17h2v2h-2zM17 13h2v2h-2zM19 15h2v2h-2zM17 17h2v2h-2zM19 19h2v2h-2zM15 19h2v2h-2z"/>
-  </svg>
-);
-
 /* ─── 通用 UI 零件 ─── */
 function PageBg({ children }) {
   return <div className="wc-page-bg">{children}</div>;
@@ -499,9 +493,8 @@ function DeviceList({ onBack }) {
 
   const icon = (p = '') => {
     const pl = p.toLowerCase();
-    if (pl.includes('windows')) return '🖥️';
-    if (pl.includes('mac')) return '💻';
-    if (pl.includes('iphone') || pl.includes('ipad') || pl.includes('android')) return '📱';
+    if (pl.includes('windows') || pl.includes('mac')) return <IcoDeviceDesktop size={18} />;
+    if (pl.includes('iphone') || pl.includes('ipad') || pl.includes('android')) return <IcoDeviceMobile size={18} />;
     return '🌐';
   };
 
@@ -868,15 +861,6 @@ async function doLogout(logout) {
 function ProfileDetail({ user, updateUser, onBack, navigateTo }) {
   const fileRef = useRef(null);
   const [uploading, setUploading] = useState(false);
-  const [showQR, setShowQR] = useState(false);
-
-  // 二维码弹窗：ESC 键关闭（键盘无障碍）
-  useEffect(() => {
-    if (!showQR) return;
-    const handler = e => { if (e.key === 'Escape') setShowQR(false); };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [showQR]);
 
   const handleAvatarClick = () => {
     fileRef.current?.click();
@@ -926,9 +910,6 @@ function ProfileDetail({ user, updateUser, onBack, navigateTo }) {
       {/* ── 渐变 Hero ── */}
       <div className="pf-hero">
         <div className="pf-hero-bg" aria-hidden="true" />
-        <button className="pf-hero-qr" onClick={() => setShowQR(true)} title="我的二维码" aria-label="我的二维码">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm11-2h2v2h-2v-2zm3 0h2v2h-2v-2zm-3 3h2v2h-2v-2zm3 0h2v5h-5v-2h3v-3zm-3 3h2v2h-2v-2z"/></svg>
-        </button>
         <div className="pf-hero-inner">
           <div className="pf-avatar-wrap" role="button" tabIndex={0}
             onClick={handleAvatarClick} onKeyDown={e => activateOnKey(handleAvatarClick)(e)}
@@ -965,22 +946,6 @@ function ProfileDetail({ user, updateUser, onBack, navigateTo }) {
           <CRow label="手机号" value={user?.phone || ''} onClick={() => navigateTo?.('change-phone')} />
         </Card>
       </div>
-
-      {/* ── 二维码弹窗 ── */}
-      {showQR && (
-        <div className="wc-modal-overlay" onClick={() => setShowQR(false)}>
-          <div className="wc-modal home-qr-modal" role="dialog" aria-modal="true" aria-label="我的二维码" onClick={e => e.stopPropagation()}>
-            <div className="wc-modal-header">
-              <span className="wc-modal-title">我的二维码</span>
-              <button className="wc-modal-close" aria-label="关闭二维码" onClick={() => setShowQR(false)}>✕</button>
-            </div>
-            <div className="wc-modal-body home-qr-body">
-              <AuthImage src="/api/users/me/qrcode" alt="我的二维码" className="home-qr-img" />
-              <p className="home-qr-text">扫描二维码添加我为好友</p>
-            </div>
-          </div>
-        </div>
-      )}
     </PageBg>
   );
 }
@@ -1321,14 +1286,6 @@ function ShortcutSettings({ onBack }) {
 export default function Profile({ isMobile = false }) {
   const { user, updateUser, logout, accounts, login, switchAccount } = useAuth();
   const [subPage, setSubPage] = useState(null);
-  const [showQR, setShowQR] = useState(false);
-
-  useEffect(() => {
-    if (!showQR) return;
-    const handler = e => { if (e.key === 'Escape') setShowQR(false); };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [showQR]);
 
   /* ── 子页 ── */
   if (subPage === 'profile-detail') return <ProfileDetail user={user} updateUser={updateUser} onBack={() => setSubPage(null)} navigateTo={setSubPage} />;
@@ -1364,28 +1321,9 @@ export default function Profile({ isMobile = false }) {
           {user?.bio && <div className="wc-me-bio">{user.bio}</div>}
         </div>
         <div className="wc-me-actions">
-          <button className="wc-me-qr-btn" onClick={e => { e.stopPropagation(); setShowQR(true); }} title="我的二维码" aria-label="我的二维码">
-            <IcoQR />
-          </button>
           <ChevronRight />
         </div>
       </div>
-
-      {/* ── 二维码弹窗 ── */}
-      {showQR && (
-        <div className="wc-modal-overlay" onClick={() => setShowQR(false)}>
-          <div className="wc-modal home-qr-modal" role="dialog" aria-modal="true" aria-label="我的二维码" onClick={e => e.stopPropagation()}>
-            <div className="wc-modal-header">
-              <span className="wc-modal-title">我的二维码</span>
-              <button className="wc-modal-close" onClick={() => setShowQR(false)} aria-label="关闭">✕</button>
-            </div>
-            <div className="wc-modal-body home-qr-body">
-              <AuthImage src="/api/users/me/qrcode" alt="我的二维码" className="home-qr-img" />
-              <p className="home-qr-text">扫描二维码添加我为好友</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── 钱包 ── */}
       <div className="wc-section-pad">

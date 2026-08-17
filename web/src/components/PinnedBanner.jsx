@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { IcoPin } from './Icons';
 
 /* ── 置顶消息 Banner / 详情（从 ChatWindow 抽离）────────────────────
    纯展示子组件：只读置顶列表与展开态，交互经回调上抛父级。memo 化后，
@@ -14,7 +15,7 @@ function PinnedBanner({ pinnedMessages, showPinnedDetail, onToggleDetail, onUnpi
         role="button" tabIndex={0} aria-expanded={showPinnedDetail} aria-label="置顶消息"
         onClick={onToggleDetail}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleDetail(); } }}>
-        <span className="wc-pinned-badge">📌 置顶</span>
+        <span className="wc-pinned-badge"><IcoPin size={13} /> 置顶</span>
         <span className="wc-pinned-text">
           {first?.type === 'image' ? '[图片]' : first?.content}
         </span>
@@ -25,7 +26,7 @@ function PinnedBanner({ pinnedMessages, showPinnedDetail, onToggleDetail, onUnpi
         <div className="wc-pinned-detail">
           {pinnedMessages.map(p => (
             <div key={p.msgId} className="wc-pinned-item">
-              <span className="wc-pinned-item-icon">📌</span>
+              <span className="wc-pinned-item-icon"><IcoPin size={18} /></span>
               <div className="wc-pinned-item-body">
                 <div className="wc-pinned-item-meta">{p.senderName} · 由{p.pinnedByName}置顶</div>
                 <div className="wc-pinned-item-text">{p.type === 'image' ? '[图片]' : p.content}</div>
