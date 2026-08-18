@@ -1,6 +1,6 @@
 'use strict';
 /**
- * API 回归测试 — 生产环境 https://dipsin.com
+ * API 回归测试 — 生产环境 https://vxinchat.com
  *
  * P3 修复：
  * - SEC-02: 修正 URL 编码，用 URLSearchParams 构造查询参数
@@ -10,7 +10,7 @@ const https = require('https');
 const assert = require('assert');
 const fs = require('fs');
 
-const DOMAIN = 'dipsin.com';
+const DOMAIN = 'vxinchat.com';
 const API_BASE = '/api';
 const TEST_PHONE    = '13800138006';
 const TEST_PASSWORD = 'Review2026ab';
