@@ -88,10 +88,12 @@ exports.refresh = asyncHandler(async (req, res) => {
 
 exports.logout = asyncHandler(async (req, res) => {
   // 将 token 加入黑名单 + 从本设备钱包移除当前账号（其余账号仍可丝滑切换）。
-  // logout 路由无 auth 中间件，故从 cookie 解码取 userId。
+  // logout 路由无 auth 中间件，故手动取 token：Cookie（Web）或 Bearer header（桌面/移动端）。
   try {
     const jwt = require('jsonwebtoken');
-    const tok = req.cookies?.[config.cookieName];
+    const bearerHeader = req.headers['authorization'];
+    const tok = req.cookies?.[config.cookieName] ||
+      (bearerHeader?.startsWith('Bearer ') ? bearerHeader.slice(7) : null);
     const walletId = req.cookies?.[config.walletCookie];
     if (tok) {
       const payload = jwt.verify(tok, config.jwtSecret, { algorithms: ['HS256'] });
