@@ -11,10 +11,24 @@ struct LoginView: View {
     /// .authenticated(新user)，同一个 case 不会触发 RootView 切换视图、sheet 不会自动关闭，
     /// 需要这个回调显式关掉 sheet 回到主界面。
     var onSuccess: (() -> Void)? = nil
+    /// 添加账号入口专用：传入后显示「返回」按钮关闭弹层；普通登录入口不传，无影响
+    var onCancel: (() -> Void)? = nil
 
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
+                if let onCancel {
+                    HStack {
+                        Button(action: onCancel) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "chevron.left")
+                                Text("返回")
+                            }
+                        }
+                        .foregroundColor(.vxinBrand)
+                        Spacer()
+                    }
+                }
                 Spacer(minLength: 32)
 
                 // 品牌 Logo：项目暂无独立可在内容区引用的 Logo 图片资源（只有 AppIcon），

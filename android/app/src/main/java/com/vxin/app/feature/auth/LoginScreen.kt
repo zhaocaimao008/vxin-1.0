@@ -23,6 +23,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,12 +61,15 @@ fun LoginScreen(
     onNavigateRegister: () -> Unit,
     onNavigateForgotPassword: () -> Unit = {},
     onSuccess: () -> Unit = {},
+    onBack: (() -> Unit)? = null,
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     androidx.compose.runtime.LaunchedEffect(state.loggedIn) { if (state.loggedIn) onSuccess() }
     var showServerConfig by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
+    // 添加账号入口：系统返回键/手势返回 = 返回上一页；普通登录页 onBack=null 时不拦截
+    BackHandler(enabled = onBack != null) { onBack?.invoke() }
     // 记住手机号（明文本地存储，等级与 ServerConfig 一致）；密码不做本地持久化，避免明文凭据泄露风险
     var rememberPhone by remember { mutableStateOf(true) }
     var agreed by remember { mutableStateOf(false) }
@@ -74,6 +82,16 @@ fun LoginScreen(
             .padding(horizontal = 32.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        if (onBack != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start,
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                }
+            }
+        }
         Spacer(Modifier.height(32.dp))
         // 品牌 Logo：使用项目正式 App 图标资源，而非参考图上的示意 Logo
         androidx.compose.foundation.layout.Box(

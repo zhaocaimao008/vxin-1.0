@@ -53,7 +53,7 @@ struct AccountManagementView: View {
                 LoginView(onSuccess: {
                     showAddAccount = false
                     onAccountAdded?()
-                })
+                }, onCancel: { showAddAccount = false })
             }
         }
     }
