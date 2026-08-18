@@ -194,7 +194,10 @@ function refreshToken(payload) {
 
 function listSessions(userId, req) {
   const { device, platform } = detectDevice(req.headers['user-agent']);
-  const sessions = db.prepare('SELECT * FROM user_sessions WHERE user_id=? ORDER BY last_seen DESC').all(userId);
+  // 显式列查询：绝不返回 token 等敏感列，仅暴露设备展示所需字段。
+  const sessions = db.prepare(
+    'SELECT id, user_id, device, platform, ip, created_at, last_seen FROM user_sessions WHERE user_id=? ORDER BY last_seen DESC'
+  ).all(userId);
   db.prepare('UPDATE user_sessions SET last_seen=? WHERE user_id=? AND device=? AND platform=?')
     .run(Math.floor(Date.now() / 1000), userId, device, platform);
   return sessions.map(s => ({ ...s, current: s.device === device && s.platform === platform }));

@@ -44,11 +44,21 @@ app.use(helmet({
   },
 }));
 
+// ── CORS：前置拦截非法 Origin，返回明确的 403（而非抛错变 500）─────────
+// 1) 无 Origin（同源/非浏览器）与 'null'（Electron file://）放行
+// 2) 白名单内放行；其余一律 403，且不进入任何业务路由
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && origin !== 'null' && !config.allowedOrigins.includes(origin)) {
+    return res.status(403).json({ error: '跨域请求被拒绝', error_code: 'FORBIDDEN' });
+  }
+  next();
+});
 app.use(cors({
   origin: (origin, cb) => {
     // origin === 'null'：Electron 桌面端 file:// 页面发送的字面量 "null"，需放行
     if (!origin || origin === 'null' || config.allowedOrigins.includes(origin)) return cb(null, true);
-    cb(new Error('Not allowed by CORS'));
+    cb(null, false); // 已由前置中间件 403 拦截，这里兜底不再抛错，避免 500
   },
   credentials: true,
 }));
