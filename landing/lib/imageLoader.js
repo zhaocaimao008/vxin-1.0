@@ -10,7 +10,7 @@
  *   if ($http_accept ~* "webp") { rewrite ^(/images/.+)\.(png|jpg)$ $1.webp; }
  *
  * 扩展：换 Cloudflare 时将 URL 改为:
- *   return `https://dipsin.com/cdn-cgi/image/width=${width},format=auto/${src}`;
+ *   return `https://vxinchat.com/cdn-cgi/image/width=${width},format=auto/${src}`;
  */
 export default function imageLoader({ src, width, quality }) {
   if (src.startsWith('http')) return src;  // 外部图片直接透传

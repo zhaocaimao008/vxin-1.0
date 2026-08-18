@@ -24,7 +24,7 @@ if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
     release: `vxin@${__APP_VERSION__}`,
     integrations: [
       new Sentry.BrowserTracing({
-        tracePropagationTargets: ['localhost', /^https:\/\/dipsin\.com/],
+        tracePropagationTargets: ['localhost', /^https:\/\/vxinchat\.com/],
       }),
       new Sentry.Replay({
         maskAllText: true,

@@ -64,7 +64,7 @@ class RemoteConfig @Inject constructor(
         // 引导地址（稳定，唯一编译常量）；与 web/src/utils/config.js 一致
         val CONFIG_URLS = listOf(
             "https://cdn.jsdelivr.net/gh/zhaocaimao008/vxin-config@main/config.json",
-            "https://dipsin.com/config.json",
+            "https://vxinchat.com/config.json",
         )
     }
 }

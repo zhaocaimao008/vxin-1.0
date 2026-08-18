@@ -42,7 +42,7 @@ export function useAndroidVersionCheck() {
       setState(prev => ({ ...prev, status: 'checking' }));
 
       const response = await fetch(
-        'https://dipsin.com/downloads/android-version.json',
+        'https://vxinchat.com/downloads/android-version.json',
         {
           method: 'GET',
           headers: { 'Accept': 'application/json' },

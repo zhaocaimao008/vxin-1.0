@@ -13,7 +13,7 @@ enum RemoteConfig {
     /// 引导地址（稳定，唯一编译常量）；与 web/src/utils/config.js、Android RemoteConfig 一致
     static let configURLs = [
         "https://cdn.jsdelivr.net/gh/zhaocaimao008/vxin-config@main/config.json",
-        "https://dipsin.com/config.json",
+        "https://vxinchat.com/config.json",
     ]
 
     /// 拉取并应用远程服务器地址；失败则保留上次缓存/默认。请在首个网络请求前 await 调用。

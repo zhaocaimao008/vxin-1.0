@@ -31,11 +31,11 @@ class UpdateChecker @Inject constructor(
         .build()
 
     /**
-     * 远程版本清单 URL 列表（优先 CDN，兜底 dipsin.com 源站）。
+     * 远程版本清单 URL 列表（优先 CDN，兜底 vxinchat.com 源站）。
      * 返回第一个能成功拉取并解析的结果。
      */
     private val CHECK_URLS = listOf(
-        "https://dipsin.com/downloads/vxin-android-version.json",
+        "https://vxinchat.com/downloads/vxin-android-version.json",
     )
 
     /** 静默检查：返回结果不抛异常，适合启动时调用 */
@@ -45,7 +45,7 @@ class UpdateChecker @Inject constructor(
             if (result.isSuccess) {
                 val dto = result.getOrThrow()
                 if (!isTrustedDownloadUrl(dto.url)) {
-                    Log.w(TAG, "更新清单 url 校验失败(需 https 且 host=dipsin.com)，跳过该源: ${dto.url}")
+                    Log.w(TAG, "更新清单 url 校验失败(需 https 且 host=vxinchat.com)，跳过该源: ${dto.url}")
                     continue
                 }
                 if (dto.versionCode > BuildConfig.VERSION_CODE) {
@@ -68,10 +68,10 @@ class UpdateChecker @Inject constructor(
         CheckResult.Failed("无法连接到更新服务器")
     }
 
-    /** 下载直链必须 https 且 host 固定为 dipsin.com，防止清单被篡改后指向任意下载源。 */
+    /** 下载直链必须 https 且 host 固定为 vxinchat.com，防止清单被篡改后指向任意下载源。 */
     private fun isTrustedDownloadUrl(url: String): Boolean = runCatching {
         val uri = java.net.URI(url)
-        uri.scheme.equals("https", ignoreCase = true) && uri.host == "dipsin.com"
+        uri.scheme.equals("https", ignoreCase = true) && uri.host == "vxinchat.com"
     }.getOrDefault(false)
 
     private fun fetchVersion(url: String): AppVersionDto {

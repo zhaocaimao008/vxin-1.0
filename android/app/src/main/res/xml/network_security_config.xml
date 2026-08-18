@@ -9,7 +9,7 @@
 <network-security-config>
     <!-- 已知生产域名：强制 HTTPS，不允许明文降级 -->
     <domain-config cleartextTrafficPermitted="false">
-        <domain includeSubdomains="true">dipsin.com</domain>
+        <domain includeSubdomains="true">vxinchat.com</domain>
         <domain includeSubdomains="true">91aigu.com</domain>
     </domain-config>
 
