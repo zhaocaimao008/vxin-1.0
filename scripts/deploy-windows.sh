@@ -81,5 +81,5 @@ for UPDATES_DIR in /var/www/html/downloads/updates /var/www/downloads/updates; d
 done
 
 echo "[build] 完成。"
-echo "[build] 下载: https://dipsin.com/downloads/vxin-${VERSION}-setup.exe"
-echo "[build] 更新: https://dipsin.com/downloads/updates/latest.yml"
+echo "[build] 下载: https://vxinchat.com/downloads/vxin-${VERSION}-setup.exe"
+echo "[build] 更新: https://vxinchat.com/downloads/updates/latest.yml"

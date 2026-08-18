@@ -2,10 +2,10 @@
   "name": "vxin-desktop",
   "version": "8.0.5",
   "description": "v信 桌面客户端",
-  "homepage": "https://dipsin.com",
+  "homepage": "https://vxinchat.com",
   "author": {
     "name": "Vxin Team",
-    "email": "support@dipsin.com"
+    "email": "support@vxinchat.com"
   },
   "main": "src/main.js",
   "scripts": {
@@ -72,7 +72,7 @@
     },
     "publish": {
       "provider": "generic",
-      "url": "https://dipsin.com/downloads/updates",
+      "url": "https://vxinchat.com/downloads/updates",
       "channel": "latest"
     }
   },

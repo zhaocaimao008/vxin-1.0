@@ -11,4 +11,4 @@ Allow: /welcome/
 # 主入口允许（让搜索引擎知道应用存在，但 noindex 由 meta 控制）
 Allow: /
 
-Sitemap: https://dipsin.com/sitemap.xml
+Sitemap: https://vxinchat.com/sitemap.xml

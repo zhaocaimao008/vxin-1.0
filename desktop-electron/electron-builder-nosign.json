@@ -40,7 +40,7 @@
   },
   "publish": {
     "provider": "generic",
-    "url": "https://dipsin.com/downloads/updates",
+    "url": "https://vxinchat.com/downloads/updates",
     "channel": "latest"
   }
 }

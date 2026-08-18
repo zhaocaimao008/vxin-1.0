@@ -11,7 +11,7 @@ import Foundation
 ///   - 支持 CA 签发的多张证书（CDN/灾备）
 ///
 /// Hash 获取方法（在服务器上执行）：
-///   openssl s_client -connect dipsin.com:443 -servername dipsin.com < /dev/null 2>/dev/null \
+///   openssl s_client -connect vxinchat.com:443 -servername vxinchat.com < /dev/null 2>/dev/null \
 ///     | openssl x509 -pubkey -noout \
 ///     | openssl pkey -pubin -outform der \
 ///     | openssl dgst -sha256 -binary \
