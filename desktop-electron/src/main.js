@@ -149,10 +149,31 @@ const CONFIG_ORIGINS = [...new Set(
   CONFIG_URLS.map((u) => { try { return new URL(u).origin; } catch { return ''; } }).filter(Boolean)
 )];
 
+// ── 已确认废弃的 v信官方旧服务器地址（与 Android/iOS DEPRECATED_SERVERS 一致）──
+// 仅自动清除白名单内的废弃官方地址；用户自己配置的其他自定义服务器一律保留。
+// ⚠️ 必须定义在 clearDeprecatedServerUrl() 调用之前：const 存在暂时性死区(TDZ)，
+// 若在初始化前访问会抛 ReferenceError（被 isDeprecatedServerUrl 的 try/catch 吞掉后
+// 恒返回 false，导致启动时的废弃地址清除逻辑静默失效）。
+const DEPRECATED_SERVERS = new Set(['45.77.131.33', '104.244.95.70']);
+
+function isDeprecatedServerUrl(url) {
+  try {
+    const host = new URL(url).hostname;
+    return DEPRECATED_SERVERS.has(host);
+  } catch {
+    return false;
+  }
+}
+
 // 安全：校验存储中的 serverUrl，防止被篡改的配置污染 CSP connect-src/origin 推导
+// 启动时自动清除已废弃的官方旧服务器地址（45.77.131.33 / 104.244.95.70），
+// 与 Android/iOS 的 DEPRECATED_SERVERS 清理行为保持一致；默认回退 https://vxinchat.com。
+clearDeprecatedServerUrl();
 const _storedServerUrl = store.get('serverUrl');
 // SERVER_URL / API_ORIGIN / WS_ORIGIN 为 let：启动时 loadRemoteServerUrl() 可据远程配置更新。
-let SERVER_URL = isValidServerUrl(_storedServerUrl) ? _storedServerUrl : 'https://vxinchat.com';
+let SERVER_URL = isValidServerUrl(_storedServerUrl) && !isDeprecatedServerUrl(_storedServerUrl)
+  ? _storedServerUrl
+  : 'https://vxinchat.com';
 
 // 后台功能开关缓存（/api/config 的 features）。托盘菜单等主进程 UI 据此隐藏被后台关闭的入口。
 let serverFeatures = null;
@@ -172,6 +193,33 @@ function isValidServerUrl(url) {
   } catch {
     return false;
   }
+}
+
+// 清除废弃的官方旧服务器地址（store + 渲染进程 localStorage）。返回是否发生了清除。
+function clearDeprecatedServerUrl() {
+  let cleared = false;
+  const stored = store.get('serverUrl');
+  if (typeof stored === 'string' && stored && isDeprecatedServerUrl(stored)) {
+    log.warn('[ServerUrl] 清除已废弃的官方旧服务器地址:', stored);
+    store.delete('serverUrl');
+    // 废弃地址被清除后，manual override 标志一并重置：恢复远程 config 引导能力
+    store.delete('serverUrlManual');
+    cleared = true;
+  }
+  // 主进程没有 localStorage（仅渲染进程有）。显式 typeof 检查避免 ReferenceError，
+  // 不依赖 try/catch 兜底；渲染层(localStorage vxin_server_url)由 web 端
+  // url.js/Login.jsx 的 clearDeprecatedServerUrl() 在读取/保存时自行清理。
+  try {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem) {
+      const manual = localStorage.getItem('vxin_server_url');
+      if (manual && isDeprecatedServerUrl(manual)) {
+        log.warn('[ServerUrl] 清除渲染层废弃地址:', manual);
+        localStorage.removeItem('vxin_server_url');
+        cleared = true;
+      }
+    }
+  } catch { /* 渲染层尚未创建时忽略 */ }
+  return cleared;
 }
 
 // ── 安全：后端来源（用于 CSP connect-src）──────────────────────
@@ -216,12 +264,25 @@ async function loadServerFeatures() {
 }
 
 async function loadRemoteServerUrlInner() {
+  // 用户手动配置过自定义服务器（config:setServerUrl 写入 serverUrlManual=true）→
+  // manual override 优先，远程 config 不再覆盖 SERVER_URL / store 缓存，
+  // 与 Android/iOS 行为一致：用户显式选择的服务器 > 远程引导配置。
+  if (store.get('serverUrlManual') === true) {
+    log.info(`[RemoteConfig] 检测到用户手动配置的服务器，跳过远程覆盖: ${SERVER_URL}`);
+    return;
+  }
   for (const url of CONFIG_URLS) {
     try {
       const buf = await fetchBuffer(url);
+      // 竞态防护：fetch 期间（可能远超 5s 启动超时，后台仍在跑）用户手动切换了服务器
+      // → manual override 已置位，放弃本次远程覆盖，避免覆盖用户刚选择的自定义服务器。
+      if (store.get('serverUrlManual') === true) {
+        log.info(`[RemoteConfig] fetch 期间用户手动配置了服务器，放弃远程覆盖: ${SERVER_URL}`);
+        return;
+      }
       const cfg = JSON.parse(buf.toString('utf8'));
       const api = (cfg.api && String(cfg.api).trim()) || (cfg.socket && String(cfg.socket).trim()) || '';
-      if (api && isValidServerUrl(api)) {
+      if (api && isValidServerUrl(api) && !isDeprecatedServerUrl(api)) {
         SERVER_URL = new URL(api).origin;
         API_ORIGIN = SERVER_URL;
         // socket 可与 api 分属不同主机(config.json 的 socket 字段)。单独解析,
@@ -1036,6 +1097,10 @@ function setupIPC() {
       log.warn('config:setServerUrl 非法 URL:', url);
       return false;
     }
+    if (isDeprecatedServerUrl(url)) {
+      log.warn('config:setServerUrl 拒绝已废弃的官方旧服务器地址:', url);
+      return false;
+    }
     let u;
     try { u = new URL(url); } catch { return false; }
     if (u.protocol !== 'https:') {
@@ -1057,6 +1122,10 @@ function setupIPC() {
       return false;
     }
     store.set('serverUrl', url);
+    // 标记用户手动配置（manual override）：后续 loadRemoteServerUrl() 拉远程 config 时
+    // 不得覆盖用户显式选择的自定义服务器（与 Android/iOS manual override 语义一致）；
+    // 仅当用户重新手动配置或清除废弃地址时才更新此标志。
+    store.set('serverUrlManual', true);
     // 同步运行时变量，否则 onHeadersReceived 仍按旧 API_ORIGIN/WS_ORIGIN 拼 CSP，
     // 把新服务器的请求当成跨域拦下来。CDN_ORIGIN 清空——新服务器的 cdn 域名未知，
     // 需下次 loadRemoteServerUrl() 重新拉取。

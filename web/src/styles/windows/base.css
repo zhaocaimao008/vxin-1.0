@@ -14,7 +14,7 @@
   height: 36px;
   padding: 0 16px;
   background: #07C160;
-  color: #fff;
+  color: var(--vx-text-inverse);
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -31,15 +31,15 @@
 .electron-app .cgm-create:hover,
 .electron-app .cl-add-btn:hover,
 .electron-app .up-btn-primary:hover,
-.electron-app .req-accept:hover { background: #06A652; }
+.electron-app .req-accept:hover { background: var(--vx-primary-hover); }
 .electron-app .wc-confirm-ok:active,
 .electron-app .lt-save-btn:active,
 .electron-app .cgm-create:active,
-.electron-app .up-btn-primary:active { background: #058A44; }
+.electron-app .up-btn-primary:active { background: var(--vx-primary-active); }
 .electron-app .wc-confirm-ok:disabled,
 .electron-app .lt-save-btn:disabled,
 .electron-app .cgm-create:disabled,
-.electron-app .up-btn-primary:disabled { background: #C9CDD4; cursor: not-allowed; }
+.electron-app .up-btn-primary:disabled { background: var(--vx-disabled); cursor: not-allowed; }
 
 .electron-app .up-btn-primary.up-btn-full { width: 100%; }
 
@@ -50,9 +50,9 @@
 .electron-app .req-reject {
   height: 36px;
   padding: 0 16px;
-  background: #fff;
-  color: #1F2329;
-  border: 1px solid #EAECF0;
+  background: var(--vx-surface);
+  color: var(--vx-text-primary);
+  border: 1px solid var(--vx-border);
   border-radius: 8px;
   font-size: 14px;
   font-weight: 400;
@@ -65,7 +65,7 @@
 .electron-app .wc-confirm-cancel:hover,
 .electron-app .up-btn-ghost:hover,
 .electron-app .cgm-cancel:hover,
-.electron-app .req-reject:hover { background: #F7F8FA; }
+.electron-app .req-reject:hover { background: var(--vx-bg); }
 
 /* Save button (text-style green) */
 .electron-app .wc-save-btn { color: #07C160; font-size: 15px; font-weight: 600; }
@@ -76,7 +76,7 @@
   width: 40px;
   height: 22px;
   border-radius: 11px;
-  background: #D7DADF;
+  background: var(--vx-border-muted);
   border: none;
   position: relative;
   cursor: pointer;
@@ -88,7 +88,7 @@
   top: 3px; left: 3px;
   width: 16px; height: 16px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--vx-surface);
   transition: transform var(--vx-transition);
   box-shadow: 0 1px 3px rgba(0,0,0,.2);
 }
@@ -106,11 +106,11 @@
 .electron-app .gi-name-edit {
   height: 38px;
   padding: 0 12px;
-  background: #F7F8FA;
-  border: 1px solid #EAECF0;
+  background: var(--vx-bg);
+  border: 1px solid var(--vx-border);
   border-radius: 8px;
   font-size: 14px;
-  color: #1F2329;
+  color: var(--vx-text-primary);
   transition: border-color var(--vx-transition), background var(--vx-transition);
   width: 100%;
   box-sizing: border-box;
@@ -122,15 +122,15 @@
 .electron-app .afm-search-input:focus,
 .electron-app .wc-add-form-input:focus,
 .electron-app .gi-name-edit:focus {
-  background: #fff;
+  background: var(--vx-surface);
   border-color: #07C160;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(7,193,96,.12);
+  box-shadow: 0 0 0 2px var(--vx-focus-ring-soft);
 }
 .electron-app .lt-edit-input::placeholder,
 .electron-app .cgm-name-input::placeholder,
 .electron-app .up-remark-input::placeholder,
-.electron-app .gi-name-edit::placeholder { color: #B0B4BB; }
+.electron-app .gi-name-edit::placeholder { color: var(--vx-text-muted); }
 
 /* ── Toast ── */
 .electron-app .wc-toast {
@@ -139,24 +139,24 @@
   padding: 8px 16px;
   box-shadow: 0 4px 16px rgba(0,0,0,.12);
 }
-.electron-app .wc-toast.success { background: rgba(7,193,96,.9); }
-.electron-app .wc-toast.error   { background: rgba(255,77,79,.9); }
+.electron-app .wc-toast.success { background: var(--vx-toast-success-bg); }
+.electron-app .wc-toast.error   { background: var(--vx-toast-error-bg); }
 
 /* ── Confirm dialog ── */
 .electron-app .wc-confirm-overlay {
-  background: rgba(0,0,0,.35);
+  background: var(--vx-overlay);
 }
 .electron-app .wc-confirm-box {
   border-radius: 12px;
-  box-shadow: 0 16px 48px rgba(0,0,0,.14);
-  background: #fff;
+  box-shadow: var(--vx-shadow-dialog);
+  background: var(--vx-surface);
   width: 420px;
   max-width: 92vw;
   padding: 24px;
 }
 .electron-app .wc-confirm-msg {
   font-size: 15px;
-  color: #1F2329;
+  color: var(--vx-text-primary);
   line-height: 1.6;
   margin-bottom: 20px;
 }
@@ -171,77 +171,77 @@
 /* ── Modal base ── */
 .electron-app .wc-modal {
   border-radius: 12px;
-  box-shadow: 0 16px 48px rgba(0,0,0,.14);
-  background: #fff;
+  box-shadow: var(--vx-shadow-dialog);
+  background: var(--vx-surface);
   border: none;
 }
-.electron-app .wc-modal-overlay { background: rgba(0,0,0,.35); }
+.electron-app .wc-modal-overlay { background: var(--vx-overlay); }
 .electron-app .wc-modal-header {
   height: 52px;
   padding: 0 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #EAECF0;
+  border-bottom: 1px solid var(--vx-border);
 }
 .electron-app .wc-modal-title {
   font-size: 16px;
   font-weight: 600;
-  color: #1F2329;
+  color: var(--vx-text-primary);
 }
 .electron-app .wc-modal-close {
   width: 28px; height: 28px;
   border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
-  color: #8A8F98;
+  color: var(--vx-text-secondary);
   cursor: pointer;
   transition: background var(--vx-transition);
 }
-.electron-app .wc-modal-close:hover { background: #F3F5F7; color: #1F2329; }
+.electron-app .wc-modal-close:hover { background: var(--vx-surface-hover); color: var(--vx-text-primary); }
 .electron-app .wc-modal-body { padding: 16px; }
 
 /* ── Page layout (Profile sub-pages) ── */
-.electron-app .wc-page-bg { background: #F7F8FA; }
+.electron-app .wc-page-bg { background: var(--vx-bg); }
 .electron-app .wc-page-header {
   height: 56px;
-  background: #fff;
-  border-bottom: 1px solid #EAECF0;
+  background: var(--vx-surface);
+  border-bottom: 1px solid var(--vx-border);
   padding: 0 16px;
 }
 .electron-app .wc-page-header-back { color: #07C160; font-size: 15px; }
-.electron-app .wc-page-header-title { font-size: 16px; font-weight: 600; color: #1F2329; }
+.electron-app .wc-page-header-title { font-size: 16px; font-weight: 600; color: var(--vx-text-primary); }
 
 /* ── Settings card / row ── */
 .electron-app .wc-card {
-  background: #fff;
+  background: var(--vx-surface);
   border-radius: 10px;
-  border: 1px solid #EAECF0;
+  border: 1px solid var(--vx-border);
   box-shadow: none;
   overflow: hidden;
 }
 .electron-app .wc-crow {
   padding: 14px 16px;
-  border-bottom: 1px solid #F0F1F2;
+  border-bottom: 1px solid var(--vx-border-light);
   transition: background var(--vx-transition);
 }
 .electron-app .wc-crow:last-child { border-bottom: none; }
-.electron-app .wc-crow-clickable:hover { background: #F3F5F7; }
+.electron-app .wc-crow-clickable:hover { background: var(--vx-surface-hover); }
 .electron-app .wc-crow-icon { width: 32px; height: 32px; border-radius: 8px; }
-.electron-app .wc-crow-label { font-size: 14px; font-weight: 500; color: #1F2329; }
-.electron-app .wc-crow-desc { font-size: 12px; color: #8A8F98; margin-top: 2px; }
-.electron-app .wc-crow-value { font-size: 13px; color: #8A8F98; }
+.electron-app .wc-crow-label { font-size: 14px; font-weight: 500; color: var(--vx-text-primary); }
+.electron-app .wc-crow-desc { font-size: 12px; color: var(--vx-text-secondary); margin-top: 2px; }
+.electron-app .wc-crow-value { font-size: 13px; color: var(--vx-text-secondary); }
 .electron-app .wc-section-pad { padding: 0 16px; }
 .electron-app .wc-slabel {
   padding: 12px 16px 6px;
   font-size: 12px;
   font-weight: 600;
-  color: #8A8F98;
+  color: var(--vx-text-secondary);
   letter-spacing: 0.4px;
   text-transform: uppercase;
 }
 
 /* ── Chevron & icons ── */
-.electron-app .wc-chevron { width: 16px; height: 16px; fill: #B0B4BB; }
+.electron-app .wc-chevron { width: 16px; height: 16px; fill: var(--vx-text-muted); }
 .electron-app .wc-ico { width: 20px; height: 20px; fill: currentColor; }
 
 /* ── Empty state ── */
@@ -251,57 +251,57 @@
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  color: #8A8F98;
+  color: var(--vx-text-secondary);
   font-size: 14px;
   text-align: center;
 }
-.electron-app .wc-empty svg { fill: #D5D8DC; }
-.electron-app .wc-empty p { color: #8A8F98; margin-top: 8px; font-size: 13px; }
+.electron-app .wc-empty svg { fill: var(--vx-border-strong); }
+.electron-app .wc-empty p { color: var(--vx-text-secondary); margin-top: 8px; font-size: 13px; }
 .electron-app .wc-loading {
   display: flex; align-items: center; justify-content: center;
   padding: 32px;
-  color: #8A8F98;
+  color: var(--vx-text-secondary);
   font-size: 13px;
 }
 
 /* ── Focus ring ── */
 .electron-app :focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(7,193,96,.2);
+  box-shadow: 0 0 0 2px var(--vx-focus-ring);
 }
 
 /* ── Dark mode base ── */
-body.dark-mode .electron-app .wc-confirm-box { background: #202327; }
-body.dark-mode .electron-app .wc-confirm-msg { color: #F2F3F5; }
+body.dark-mode .electron-app .wc-confirm-box { background: var(--vx-surface); }
+body.dark-mode .electron-app .wc-confirm-msg { color: var(--vx-text-primary); }
 body.dark-mode .electron-app .wc-confirm-cancel,
 body.dark-mode .electron-app .up-btn-ghost,
 body.dark-mode .electron-app .cgm-cancel,
-body.dark-mode .electron-app .req-reject { background: #292D32; border-color: #32363D; color: #F2F3F5; }
+body.dark-mode .electron-app .req-reject { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
 body.dark-mode .electron-app .wc-confirm-cancel:hover,
 body.dark-mode .electron-app .up-btn-ghost:hover,
 body.dark-mode .electron-app .cgm-cancel:hover,
-body.dark-mode .electron-app .req-reject:hover { background: #32363D; }
-body.dark-mode .electron-app .wc-modal { background: #202327; }
-body.dark-mode .electron-app .wc-modal-header { border-bottom-color: #32363D; }
-body.dark-mode .electron-app .wc-modal-title { color: #F2F3F5; }
-body.dark-mode .electron-app .wc-modal-close { color: #A9AFB7; }
-body.dark-mode .electron-app .wc-modal-close:hover { background: rgba(255,255,255,.08); color: #F2F3F5; }
-body.dark-mode .electron-app .wc-card { background: #202327; border-color: #32363D; }
-body.dark-mode .electron-app .wc-crow { border-bottom-color: #292D33; }
-body.dark-mode .electron-app .wc-crow-clickable:hover { background: rgba(255,255,255,.06); }
-body.dark-mode .electron-app .wc-crow-label { color: #F2F3F5; }
-body.dark-mode .electron-app .wc-crow-value { color: #A9AFB7; }
-body.dark-mode .electron-app .wc-page-bg { background: #15171A; }
-body.dark-mode .electron-app .wc-page-header { background: #1B1E22; border-bottom-color: #32363D; }
-body.dark-mode .electron-app .wc-page-header-title { color: #F2F3F5; }
+body.dark-mode .electron-app .req-reject:hover { background: var(--vx-border); }
+body.dark-mode .electron-app .wc-modal { background: var(--vx-surface); }
+body.dark-mode .electron-app .wc-modal-header { border-bottom-color: var(--vx-border); }
+body.dark-mode .electron-app .wc-modal-title { color: var(--vx-text-primary); }
+body.dark-mode .electron-app .wc-modal-close { color: var(--vx-text-secondary); }
+body.dark-mode .electron-app .wc-modal-close:hover { background: var(--vx-hover-overlay-strong); color: var(--vx-text-primary); }
+body.dark-mode .electron-app .wc-card { background: var(--vx-surface); border-color: var(--vx-border); }
+body.dark-mode .electron-app .wc-crow { border-bottom-color: var(--vx-border-light); }
+body.dark-mode .electron-app .wc-crow-clickable:hover { background: var(--vx-hover-overlay); }
+body.dark-mode .electron-app .wc-crow-label { color: var(--vx-text-primary); }
+body.dark-mode .electron-app .wc-crow-value { color: var(--vx-text-secondary); }
+body.dark-mode .electron-app .wc-page-bg { background: var(--vx-bg); }
+body.dark-mode .electron-app .wc-page-header { background: var(--vx-bg-secondary); border-bottom-color: var(--vx-border); }
+body.dark-mode .electron-app .wc-page-header-title { color: var(--vx-text-primary); }
 body.dark-mode .electron-app .lt-edit-input,
 body.dark-mode .electron-app .cgm-name-input,
 body.dark-mode .electron-app .up-remark-input,
 body.dark-mode .electron-app .up-verify-input,
 body.dark-mode .electron-app .gi-name-edit {
-  background: #292D32; border-color: #32363D; color: #F2F3F5;
+  background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary);
 }
-body.dark-mode .electron-app .wc-switch { background: #3A3F47; }
+body.dark-mode .electron-app .wc-switch { background: var(--vx-border-strong); }
 body.dark-mode .electron-app .wc-switch.on { background: #07C160; }
 
 /* ── Final QA Polish — targeted fixes from code audit ── */
@@ -343,13 +343,13 @@ body.dark-mode .electron-app .wc-switch.on { background: #07C160; }
 
 /* Fix: self bubble color — slightly warmer, less saturated */
 .electron-app .wc-msg-row.mine .wc-msg-bubble {
-  background: #D6F3E3;
+  background: var(--vx-bubble-mine);
 }
 
 /* Fix: other bubble lighter border */
 .electron-app .wc-msg-row:not(.mine) .wc-msg-bubble {
-  background: #FFFFFF;
-  border-color: #E8EAED;
+  background: var(--vx-surface);
+  border-color: var(--vx-bubble-other-border);
 }
 
 /* Fix: file card width consistency */
@@ -384,8 +384,8 @@ body.dark-mode .electron-app .wc-switch.on { background: #07C160; }
 /* Fix: send button disabled — readable text */
 .electron-app .wc-send-btn:disabled {
   opacity: 1;
-  background: #E8EAED;
-  color: #B0B4BB;
+  background: var(--vx-bubble-other-border);
+  color: var(--vx-text-muted);
 }
 
 /* Fix: modal body padding consistency */
@@ -433,7 +433,7 @@ body.dark-mode .electron-app .wc-switch.on { background: #07C160; }
 /* Fix: message area background — subtle not harsh */
 .electron-app .wc-messages,
 .electron-app .wc-messages-virt {
-  background: #F5F6F8;
+  background: var(--vx-surface-sunken);
 }
 
 /* Fix: time divider — center align properly */
@@ -444,7 +444,7 @@ body.dark-mode .electron-app .wc-switch.on { background: #07C160; }
 
 /* Fix: badge border color matches active background */
 .electron-app .wc-chat-item.active .wc-chat-item-badge {
-  border-color: #DCF4E6;
+  border-color: var(--vx-border-success);
 }
 
 /* Fix: unread dot size and border */
@@ -453,10 +453,10 @@ body.dark-mode .electron-app .wc-switch.on { background: #07C160; }
   height: 8px;
   border-radius: 50%;
   background: #07C160;
-  border: 1.5px solid #FAFBFC;
+  border: 1.5px solid var(--vx-bg-secondary);
 }
 .electron-app .wc-chat-item.active .wc-chat-item-unread-dot {
-  border-color: #EAF8EF;
+  border-color: var(--vx-surface-active);
 }
 
 /* Fix: contact item consistent line-height */
@@ -533,32 +533,32 @@ body.dark-mode .electron-app .wc-switch.on { background: #07C160; }
 
 /* Dark mode fixes */
 body.dark-mode .electron-app .wc-messages,
-body.dark-mode .electron-app .wc-messages-virt { background: #0F1115; }
+body.dark-mode .electron-app .wc-messages-virt { background: var(--vx-surface-sunken); }
 body.dark-mode .electron-app .wc-msg-row.mine .wc-msg-bubble {
-  background: rgba(7,193,96,.20);
-  color: #E8EBF0;
+  background: var(--vx-bubble-mine);
+  color: var(--vx-bubble-mine-text);
 }
 body.dark-mode .electron-app .wc-msg-row:not(.mine) .wc-msg-bubble {
-  background: #252830;
-  border-color: #32363D;
-  color: #D8DCE3;
+  background: var(--vx-surface-raised);
+  border-color: var(--vx-border);
+  color: var(--vx-text-soft);
 }
 body.dark-mode .electron-app .wc-send-btn:disabled {
-  background: #2A2D34;
-  color: #5A5E66;
+  background: var(--vx-disabled);
+  color: var(--vx-text-disabled);
 }
 body.dark-mode .electron-app .wc-confirm-cancel {
-  background: #292D32;
-  border-color: #32363D;
-  color: #D0D3D8;
+  background: var(--vx-surface-hover);
+  border-color: var(--vx-border);
+  color: var(--vx-text-soft);
 }
 body.dark-mode .electron-app .wc-ctx-menu {
-  background: #252830;
-  border-color: #32363D;
+  background: var(--vx-surface-raised);
+  border-color: var(--vx-border);
 }
-body.dark-mode .electron-app .wc-ctx-item { color: #D0D3D8; }
-body.dark-mode .electron-app .wc-ctx-item:hover { background: rgba(255,255,255,.07); }
-body.dark-mode .electron-app .wc-chat-item-unread-dot { border-color: #1B1E22; }
+body.dark-mode .electron-app .wc-ctx-item { color: var(--vx-text-soft); }
+body.dark-mode .electron-app .wc-ctx-item:hover { background: var(--vx-hover-overlay-strong); }
+body.dark-mode .electron-app .wc-chat-item-unread-dot { border-color: var(--vx-bg-secondary); }
 body.dark-mode .electron-app .wc-chat-item.active .wc-chat-item-unread-dot {
-  border-color: rgba(7,193,96,.14);
+  border-color: var(--vx-primary-soft);
 }

@@ -5,65 +5,65 @@
 
 /* ── Collections page ── */
 .electron-app .wc-collections-wrap {
-  display: flex; height: 100%; background: #fff;
+  display: flex; height: 100%; background: var(--vx-surface);
 }
 
 /* ── Global Search ── */
 .electron-app .gs-scroll {
   flex: 1; overflow-y: auto;
-  background: #FAFBFC;
+  background: var(--vx-bg-secondary);
 }
 .electron-app .gs-searching {
   text-align: center; padding: 20px;
-  font-size: 13px; color: #8A8F98;
+  font-size: 13px; color: var(--vx-text-secondary);
 }
 .electron-app .gs-cat {
   padding: 10px 16px 4px;
   font-size: 11px; font-weight: 600;
-  color: #B0B4BB; letter-spacing: 0.4px;
+  color: var(--vx-text-muted); letter-spacing: 0.4px;
   text-transform: uppercase;
 }
 .electron-app .gs-row {
   display: flex; align-items: center; gap: 12px;
   padding: 10px 16px; cursor: pointer;
-  border-bottom: 1px solid #F0F1F2;
+  border-bottom: 1px solid var(--vx-border-light);
   transition: background 120ms;
 }
-.electron-app .gs-row:hover { background: #F3F5F7; }
+.electron-app .gs-row:hover { background: var(--vx-surface-hover); }
 .electron-app .gs-row img,
 .electron-app .gs-row .avatar-initials { border-radius: 10px; }
 .electron-app .gs-info { flex: 1; min-width: 0; }
 .electron-app .gs-name {
-  font-size: 14px; font-weight: 500; color: #1F2329;
+  font-size: 14px; font-weight: 500; color: var(--vx-text-primary);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .electron-app .gs-sub {
-  font-size: 12px; color: #8A8F98;
+  font-size: 12px; color: var(--vx-text-secondary);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .electron-app .gs-highlight,
 .electron-app span.gs-highlight { color: #07C160; font-weight: 500; }
 .electron-app .gs-msg-meta {
-  font-size: 12px; color: #8A8F98; margin-bottom: 2px;
+  font-size: 12px; color: var(--vx-text-secondary); margin-bottom: 2px;
   display: flex; align-items: center; gap: 6px;
 }
 .electron-app .gs-msg-text {
-  font-size: 13px; color: #1F2329;
+  font-size: 13px; color: var(--vx-text-primary);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .electron-app .gs-filehelper-icon {
   width: 40px; height: 40px; border-radius: 10px;
-  background: #EAF8EF;
+  background: var(--vx-surface-active);
   display: flex; align-items: center; justify-content: center;
 }
 .electron-app .gs-network-row {
   display: flex; align-items: center; gap: 8px;
   padding: 12px 16px; cursor: pointer;
-  border-top: 1px solid #EAECF0;
-  font-size: 13px; color: #8A8F98;
+  border-top: 1px solid var(--vx-border);
+  font-size: 13px; color: var(--vx-text-secondary);
   transition: background 120ms;
 }
-.electron-app .gs-network-row:hover { background: #F3F5F7; }
+.electron-app .gs-network-row:hover { background: var(--vx-surface-hover); }
 .electron-app .gs-network-icon { flex-shrink: 0; }
 
 /* ── Profile / Settings page ── */
@@ -74,7 +74,7 @@
 }
 .electron-app .pf-hero-bg {
   position: absolute; inset: 0;
-  background: linear-gradient(135deg, #07C160 0%, #0A9C48 100%);
+  background: linear-gradient(135deg, #07C160 0%, var(--vx-primary-deep-2) 100%);
 }
 .electron-app .pf-hero-bg::after {
   content: '';
@@ -98,18 +98,18 @@
 .electron-app .pf-avatar-wrap:hover { transform: translateY(-2px); }
 .electron-app .pf-avatar-edit {
   position: absolute; bottom: 0; left: 0; right: 0;
-  background: rgba(0,0,0,.45);
-  font-size: 11px; color: #fff;
+  background: var(--vx-img-overlay);
+  font-size: 11px; color: var(--vx-text-inverse);
   text-align: center; padding: 3px;
 }
 .electron-app .pf-avatar-uploading {
   position: absolute; inset: 0;
-  background: rgba(0,0,0,.5);
+  background: var(--vx-overlay-strong);
   display: flex; align-items: center; justify-content: center;
-  font-size: 11px; color: #fff;
+  font-size: 11px; color: var(--vx-text-inverse);
 }
 .electron-app .pf-hero-name {
-  font-size: 20px; font-weight: 700; color: #fff;
+  font-size: 20px; font-weight: 700; color: var(--vx-text-inverse);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   text-shadow: 0 1px 4px rgba(0,0,0,.25);
 }
@@ -127,110 +127,110 @@
 }
 .electron-app .pf-vid-chip:hover { background: rgba(255,255,255,.28); }
 .electron-app .pf-vid-label { font-size: 11px; color: rgba(255,255,255,.85); }
-.electron-app .pf-vid-value { font-size: 12px; color: #fff; font-weight: 600; }
+.electron-app .pf-vid-value { font-size: 12px; color: var(--vx-text-inverse); font-weight: 600; }
 
 /* Settings / profile content */
 .electron-app .wc-section-pad { padding: 0 16px; }
 .electron-app .wc-slabel {
   padding: 14px 16px 6px;
   font-size: 11px; font-weight: 600;
-  color: #B0B4BB; letter-spacing: 0.4px;
+  color: var(--vx-text-muted); letter-spacing: 0.4px;
   text-transform: uppercase;
 }
 .electron-app .wc-edit-pad { padding: 12px 16px; }
 .electron-app .wc-edit-wrap { position: relative; }
 .electron-app .wc-edit-input {
   width: 100%; height: 40px; padding: 0 12px;
-  background: #F7F8FA; border: 1px solid #EAECF0;
-  border-radius: 8px; font-size: 14px; color: #1F2329;
+  background: var(--vx-bg); border: 1px solid var(--vx-border);
+  border-radius: 8px; font-size: 14px; color: var(--vx-text-primary);
   box-sizing: border-box;
   transition: border-color 120ms, background 120ms;
 }
 .electron-app .wc-edit-input:focus {
-  background: #fff; border-color: #07C160; outline: none;
+  background: var(--vx-surface); border-color: #07C160; outline: none;
 }
-.electron-app .wc-edit-input::placeholder { color: #B0B4BB; }
+.electron-app .wc-edit-input::placeholder { color: var(--vx-text-muted); }
 .electron-app .wc-edit-textarea {
   height: auto; min-height: 80px; padding: 10px 12px;
   resize: vertical; line-height: 1.6;
 }
 .electron-app .wc-edit-counter {
   position: absolute; bottom: 8px; right: 10px;
-  font-size: 11px; color: #B0B4BB;
+  font-size: 11px; color: var(--vx-text-muted);
 }
 .electron-app .wc-edit-error {
-  font-size: 12px; color: #FF4D4F; margin-top: 6px;
+  font-size: 12px; color: var(--vx-danger); margin-top: 6px;
 }
 .electron-app .wc-edit-hint {
-  font-size: 12px; color: #B0B4BB; margin-top: 6px;
+  font-size: 12px; color: var(--vx-text-muted); margin-top: 6px;
 }
 
 /* Settings rows */
 .electron-app .wc-settings-entry {
   display: flex; align-items: center; gap: 12px;
   padding: 14px 16px;
-  border-bottom: 1px solid #F0F1F2;
+  border-bottom: 1px solid var(--vx-border-light);
   cursor: pointer; transition: background 120ms;
 }
 .electron-app .wc-settings-entry:last-child { border-bottom: none; }
-.electron-app .wc-settings-entry:hover { background: #F3F5F7; }
+.electron-app .wc-settings-entry:hover { background: var(--vx-surface-hover); }
 .electron-app .wc-settings-row {
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px 16px;
-  border-bottom: 1px solid #F0F1F2;
+  border-bottom: 1px solid var(--vx-border-light);
 }
 .electron-app .wc-settings-row:last-child { border-bottom: none; }
 .electron-app .wc-settings-glass-block {
-  background: #fff;
+  background: var(--vx-surface);
   border-radius: 10px;
-  border: 1px solid #EAECF0;
+  border: 1px solid var(--vx-border);
   overflow: hidden; margin-bottom: 16px;
 }
 .electron-app .wc-settings-profile-card {
   display: flex; align-items: center; gap: 14px;
-  padding: 16px; background: #fff;
-  border-bottom: 1px solid #F0F1F2;
+  padding: 16px; background: var(--vx-surface);
+  border-bottom: 1px solid var(--vx-border-light);
 }
 .electron-app .wc-settings-qr-card {
   width: 60px; height: 60px;
   border-radius: 10px; overflow: hidden;
-  border: 1px solid #EAECF0;
+  border: 1px solid var(--vx-border);
 }
 
 /* Device list */
 .electron-app .wc-device-pad { padding: 0 16px; }
 .electron-app .wc-device-item {
   display: flex; align-items: center; gap: 10px;
-  padding: 12px 0; border-bottom: 1px solid #F0F1F2;
+  padding: 12px 0; border-bottom: 1px solid var(--vx-border-light);
 }
 .electron-app .wc-device-item:last-child { border-bottom: none; }
-.electron-app .wc-device-name { font-size: 14px; font-weight: 500; color: #1F2329; }
-.electron-app .wc-device-info { font-size: 12px; color: #8A8F98; margin-top: 2px; }
+.electron-app .wc-device-name { font-size: 14px; font-weight: 500; color: var(--vx-text-primary); }
+.electron-app .wc-device-info { font-size: 12px; color: var(--vx-text-secondary); margin-top: 2px; }
 .electron-app .wc-device-icon { font-size: 20px; }
 .electron-app .wc-badge-current {
   font-size: 11px; color: #07C160;
-  background: #EAF8EF; border-radius: 4px;
+  background: var(--vx-surface-active); border-radius: 4px;
   padding: 2px 6px;
 }
 .electron-app .wc-btn-exit {
   height: 28px; padding: 0 10px;
-  font-size: 12px; color: #FF4D4F;
-  background: rgba(255,77,79,.06);
-  border: 1px solid rgba(255,77,79,.2);
+  font-size: 12px; color: var(--vx-danger);
+  background: var(--vx-danger-soft);
+  border: 1px solid var(--vx-danger-border);
   border-radius: 6px; cursor: pointer;
   transition: background 120ms;
 }
-.electron-app .wc-btn-exit:hover { background: rgba(255,77,79,.12); }
+.electron-app .wc-btn-exit:hover { background: var(--vx-danger-soft); }
 .electron-app .wc-btn-exit-all {
   width: 100%; height: 36px;
-  background: rgba(255,77,79,.06);
-  border: 1px solid rgba(255,77,79,.2);
+  background: var(--vx-danger-soft);
+  border: 1px solid var(--vx-danger-border);
   border-radius: 8px;
-  font-size: 13px; color: #FF4D4F;
+  font-size: 13px; color: var(--vx-danger);
   cursor: pointer; transition: background 120ms;
 }
-.electron-app .wc-btn-exit-all:hover { background: rgba(255,77,79,.12); }
-.electron-app .wc-device-hint { font-size: 12px; color: #B0B4BB; padding: 8px 0; }
+.electron-app .wc-btn-exit-all:hover { background: var(--vx-danger-soft); }
+.electron-app .wc-device-hint { font-size: 12px; color: var(--vx-text-muted); padding: 8px 0; }
 
 /* Appearance */
 .electron-app .wc-appearance-pad { padding: 16px; }
@@ -238,9 +238,9 @@
 .electron-app .wc-appearance-btn {
   display: flex; flex-direction: column; align-items: center; gap: 8px;
   padding: 12px 16px;
-  background: #F7F8FA; border: 1.5px solid #EAECF0;
+  background: var(--vx-bg); border: 1.5px solid var(--vx-border);
   border-radius: 10px; cursor: pointer;
-  font-size: 13px; color: #1F2329;
+  font-size: 13px; color: var(--vx-text-primary);
   transition: border-color 120ms;
 }
 .electron-app .wc-appearance-btn.active { border-color: #07C160; color: #07C160; }
@@ -252,22 +252,22 @@
 .electron-app .wc-font-btn {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   padding: 8px 12px;
-  background: #F7F8FA; border: 1.5px solid #EAECF0;
+  background: var(--vx-bg); border: 1.5px solid var(--vx-border);
   border-radius: 8px; cursor: pointer;
   transition: border-color 120ms;
 }
 .electron-app .wc-font-btn.active { border-color: #07C160; }
-.electron-app .wc-font-preview { font-weight: 600; color: #1F2329; }
-.electron-app .wc-font-label { font-size: 11px; color: #8A8F98; }
+.electron-app .wc-font-preview { font-weight: 600; color: var(--vx-text-primary); }
+.electron-app .wc-font-label { font-size: 11px; color: var(--vx-text-secondary); }
 .electron-app .wc-font-demo {
   margin-top: 12px; padding: 12px;
-  background: #F7F8FA; border-radius: 8px;
-  font-size: 14px; color: #1F2329; line-height: 1.6;
+  background: var(--vx-bg); border-radius: 8px;
+  font-size: 14px; color: var(--vx-text-primary); line-height: 1.6;
 }
 
 /* Privacy */
 .electron-app .wc-privacy-outer { padding: 0 16px; }
-.electron-app .wc-privacy-desc { font-size: 13px; color: #8A8F98; padding: 8px 0; }
+.electron-app .wc-privacy-desc { font-size: 13px; color: var(--vx-text-secondary); padding: 8px 0; }
 .electron-app .wc-privacy-card-mt { margin-top: 8px; }
 
 /* Notification */
@@ -277,78 +277,78 @@
 .electron-app .wc-server-pad { padding: 0 16px; }
 .electron-app .wc-server-input {
   flex: 1; height: 38px; padding: 0 12px;
-  background: #F7F8FA; border: 1px solid #EAECF0;
-  border-radius: 8px; font-size: 13px; color: #1F2329;
+  background: var(--vx-bg); border: 1px solid var(--vx-border);
+  border-radius: 8px; font-size: 13px; color: var(--vx-text-primary);
 }
 .electron-app .wc-server-input:focus {
-  border-color: #07C160; background: #fff; outline: none;
+  border-color: #07C160; background: var(--vx-surface); outline: none;
 }
 
 /* Account add row */
 .electron-app .wc-add-row {
   display: flex; align-items: center; gap: 12px;
   padding: 12px 16px; cursor: pointer;
-  border-bottom: 1px solid #F0F1F2;
+  border-bottom: 1px solid var(--vx-border-light);
   transition: background 120ms;
 }
-.electron-app .wc-add-row:hover { background: #F3F5F7; }
+.electron-app .wc-add-row:hover { background: var(--vx-surface-hover); }
 .electron-app .wc-add-avatar-wrap { flex-shrink: 0; }
-.electron-app .wc-add-name { font-size: 14px; font-weight: 500; color: #1F2329; }
-.electron-app .wc-add-phone { font-size: 12px; color: #8A8F98; margin-top: 2px; }
+.electron-app .wc-add-name { font-size: 14px; font-weight: 500; color: var(--vx-text-primary); }
+.electron-app .wc-add-phone { font-size: 12px; color: var(--vx-text-secondary); margin-top: 2px; }
 .electron-app .wc-add-switch {
   font-size: 12px; color: #07C160; flex-shrink: 0;
 }
 .electron-app .wc-add-icon-wrap {
   width: 40px; height: 40px; border-radius: 10px;
-  background: #F1F2F4; border: 1.5px dashed #D5D8DC;
+  background: var(--vx-surface-muted); border: 1.5px dashed var(--vx-border-strong);
   display: flex; align-items: center; justify-content: center;
 }
-.electron-app .wc-add-icon-svg { width: 20px; height: 20px; fill: #B0B4BB; }
-.electron-app .wc-add-label { font-size: 14px; color: #1F2329; flex: 1; }
-.electron-app .wc-add-chevron { width: 16px; height: 16px; fill: #B0B4BB; }
+.electron-app .wc-add-icon-svg { width: 20px; height: 20px; fill: var(--vx-text-muted); }
+.electron-app .wc-add-label { font-size: 14px; color: var(--vx-text-primary); flex: 1; }
+.electron-app .wc-add-chevron { width: 16px; height: 16px; fill: var(--vx-text-muted); }
 .electron-app .wc-add-form { padding: 0 16px 12px; }
 .electron-app .wc-add-info { padding: 8px 0; }
-.electron-app .wc-add-info-text { font-size: 12px; color: #8A8F98; }
+.electron-app .wc-add-info-text { font-size: 12px; color: var(--vx-text-secondary); }
 .electron-app .wc-add-form-inner { display: flex; flex-direction: column; gap: 8px; }
 .electron-app .wc-add-form-input {
   height: 38px; padding: 0 12px;
-  background: #F7F8FA; border: 1px solid #EAECF0;
-  border-radius: 8px; font-size: 14px; color: #1F2329;
+  background: var(--vx-bg); border: 1px solid var(--vx-border);
+  border-radius: 8px; font-size: 14px; color: var(--vx-text-primary);
   width: 100%; box-sizing: border-box;
 }
-.electron-app .wc-add-form-input:focus { border-color: #07C160; background: #fff; outline: none; }
-.electron-app .wc-add-form-error { font-size: 12px; color: #FF4D4F; }
+.electron-app .wc-add-form-input:focus { border-color: #07C160; background: var(--vx-surface); outline: none; }
+.electron-app .wc-add-form-error { font-size: 12px; color: var(--vx-danger); }
 .electron-app .wc-add-form-submit {
-  height: 36px; background: #07C160; color: #fff;
+  height: 36px; background: #07C160; color: var(--vx-text-inverse);
   border-radius: 8px; font-size: 14px; font-weight: 500;
   border: none; cursor: pointer; transition: background 120ms;
 }
-.electron-app .wc-add-form-submit:hover { background: #06A652; }
-.electron-app .wc-add-form-submit:disabled { background: #C9CDD4; cursor: not-allowed; }
+.electron-app .wc-add-form-submit:hover { background: var(--vx-primary-hover); }
+.electron-app .wc-add-form-submit:disabled { background: var(--vx-disabled); cursor: not-allowed; }
 
 /* ── Dark mode content ── */
-body.dark-mode .electron-app .wc-collections-wrap { background: #15171A; }
-body.dark-mode .electron-app .gs-scroll { background: #1B1E22; }
-body.dark-mode .electron-app .gs-row { border-bottom-color: #292D33; }
-body.dark-mode .electron-app .gs-row:hover { background: rgba(255,255,255,.06); }
-body.dark-mode .electron-app .gs-name { color: #F2F3F5; }
-body.dark-mode .electron-app .gs-msg-text { color: #F2F3F5; }
-body.dark-mode .electron-app .gs-filehelper-icon { background: rgba(7,193,96,.13); }
-body.dark-mode .electron-app .gs-network-row { border-top-color: #32363D; }
-body.dark-mode .electron-app .gs-network-row:hover { background: rgba(255,255,255,.06); }
-body.dark-mode .electron-app .wc-settings-entry { border-bottom-color: #292D33; }
-body.dark-mode .electron-app .wc-settings-entry:hover { background: rgba(255,255,255,.06); }
-body.dark-mode .electron-app .wc-settings-row { border-bottom-color: #292D33; }
-body.dark-mode .electron-app .wc-settings-glass-block { background: #202327; border-color: #32363D; }
-body.dark-mode .electron-app .wc-settings-profile-card { background: #202327; border-bottom-color: #32363D; }
-body.dark-mode .electron-app .wc-edit-input { background: #292D32; border-color: #32363D; color: #F2F3F5; }
-body.dark-mode .electron-app .wc-edit-input:focus { background: #1B1E22; border-color: #07C160; }
-body.dark-mode .electron-app .wc-device-item { border-bottom-color: #292D33; }
-body.dark-mode .electron-app .wc-device-name { color: #F2F3F5; }
-body.dark-mode .electron-app .wc-appearance-btn { background: #292D32; border-color: #32363D; color: #F2F3F5; }
-body.dark-mode .electron-app .wc-font-demo { background: #292D32; color: #F2F3F5; }
-body.dark-mode .electron-app .wc-add-row { border-bottom-color: #292D33; }
-body.dark-mode .electron-app .wc-add-row:hover { background: rgba(255,255,255,.06); }
-body.dark-mode .electron-app .wc-add-name { color: #F2F3F5; }
-body.dark-mode .electron-app .wc-add-form-input { background: #292D32; border-color: #32363D; color: #F2F3F5; }
-body.dark-mode .electron-app .wc-server-input { background: #292D32; border-color: #32363D; color: #F2F3F5; }
+body.dark-mode .electron-app .wc-collections-wrap { background: var(--vx-bg); }
+body.dark-mode .electron-app .gs-scroll { background: var(--vx-bg-secondary); }
+body.dark-mode .electron-app .gs-row { border-bottom-color: var(--vx-border-light); }
+body.dark-mode .electron-app .gs-row:hover { background: var(--vx-hover-overlay); }
+body.dark-mode .electron-app .gs-name { color: var(--vx-text-primary); }
+body.dark-mode .electron-app .gs-msg-text { color: var(--vx-text-primary); }
+body.dark-mode .electron-app .gs-filehelper-icon { background: var(--vx-primary-soft); }
+body.dark-mode .electron-app .gs-network-row { border-top-color: var(--vx-border); }
+body.dark-mode .electron-app .gs-network-row:hover { background: var(--vx-hover-overlay); }
+body.dark-mode .electron-app .wc-settings-entry { border-bottom-color: var(--vx-border-light); }
+body.dark-mode .electron-app .wc-settings-entry:hover { background: var(--vx-hover-overlay); }
+body.dark-mode .electron-app .wc-settings-row { border-bottom-color: var(--vx-border-light); }
+body.dark-mode .electron-app .wc-settings-glass-block { background: var(--vx-surface); border-color: var(--vx-border); }
+body.dark-mode .electron-app .wc-settings-profile-card { background: var(--vx-surface); border-bottom-color: var(--vx-border); }
+body.dark-mode .electron-app .wc-edit-input { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
+body.dark-mode .electron-app .wc-edit-input:focus { background: var(--vx-bg-secondary); border-color: #07C160; }
+body.dark-mode .electron-app .wc-device-item { border-bottom-color: var(--vx-border-light); }
+body.dark-mode .electron-app .wc-device-name { color: var(--vx-text-primary); }
+body.dark-mode .electron-app .wc-appearance-btn { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
+body.dark-mode .electron-app .wc-font-demo { background: var(--vx-surface-hover); color: var(--vx-text-primary); }
+body.dark-mode .electron-app .wc-add-row { border-bottom-color: var(--vx-border-light); }
+body.dark-mode .electron-app .wc-add-row:hover { background: var(--vx-hover-overlay); }
+body.dark-mode .electron-app .wc-add-name { color: var(--vx-text-primary); }
+body.dark-mode .electron-app .wc-add-form-input { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
+body.dark-mode .electron-app .wc-server-input { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
