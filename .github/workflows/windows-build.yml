@@ -3,12 +3,24 @@ name: Windows Desktop Build
 # 在云端 Windows runner 上用 electron-builder 打 Windows 安装包（NSIS .exe）。
 # 无需本地/服务器装 wine。用法：Actions →「Windows Desktop Build」→ Run workflow，
 # 跑完在底部 Artifacts 下载 vxin-windows-setup。
+#
+# 部署架构（2026-08-19 起）：build 仍在 GitHub-hosted windows-latest 上完成；
+# deploy 改在生产服务器本机的 self-hosted runner（label: vxin-prod-deploy）上
+# 跑本地文件操作，不再需要 GitHub Actions 出口 IP 反向 SSH 到生产服务器公网
+# 22 端口（该端口对 GitHub 动态出口 IP 段一直被云防火墙拦截，7000+ 条 CIDR
+# 也无法靠白名单维护）。仓库已改为 private，避免公共仓库上挂持久化
+# self-hosted runner 带来的任意代码执行风险。
 on:
   workflow_dispatch:
   push:
     tags:
       # 仅桌面端专属前缀触发；避免裸 v* 同时误触发 Android/iOS 发布（详见 VERSIONING.md）。
+      # 触发方式只有「打 tag」和「有写权限的人手动 dispatch」两种，均不可能来自
+      # pull_request/fork，production deploy 天然不会被外部贡献者触发。
       - 'desktop-v*'
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -56,9 +68,15 @@ jobs:
           if-no-files-found: error
 
   deploy:
-    name: 部署到香港服务器
+    name: 部署到生产（本地 self-hosted runner，无公网 SSH）
     needs: build
-    runs-on: ubuntu-latest
+    # 只在打了 desktop-v* tag 时真正发布；workflow_dispatch 手动跑仅用于
+    # build 联调，不落地到生产目录，避免任意分支手动触发就覆盖线上产物。
+    if: startsWith(github.ref, 'refs/tags/desktop-v')
+    runs-on: [self-hosted, linux, x64, vxin-prod-deploy]
+    environment: production
+    permissions:
+      contents: read
     steps:
       - name: 下载构建产物
         uses: actions/download-artifact@v4
@@ -66,33 +84,110 @@ jobs:
           name: vxin-windows-setup
           path: artifacts
 
-      - name: 配置 SSH
+      - name: 校验 + 原子发布到 /var/www/vxin-download
+        shell: bash
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "${{ secrets.DEPLOY_SERVER_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+          set -euo pipefail
 
-      - name: SCP 到服务器
-        run: |
-          EXE=$(find artifacts -name "*.exe" | head -1)
-          echo "部署: $EXE"
-          # Nginx 实际配置（/etc/nginx/sites-available/vxin）：
-          #   location /downloads/ { alias /var/www/vxin-download/; }
-          # 即 https://vxinchat.com/downloads/updates/latest.yml 对应服务器上的
-          # /var/www/vxin-download/updates/latest.yml —— 不是 /var/www/downloads
-          # 或 /var/www/html/downloads（历史遗留的错误假设，导致 latest.yml 404）。
-          ssh -i ~/.ssh/deploy_key "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_HOST }}" \
-            "mkdir -p /var/www/vxin-download/updates"
-          # 落地页固定下载链接：/downloads/vxin-windows-<version>-setup.exe（带版本号，见 landing/lib/content.ts）
-          scp -i ~/.ssh/deploy_key "$EXE" \
-            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_HOST }}:/var/www/vxin-download/$(basename "$EXE")"
-          # electron-updater 更新源：EXE + latest.yml + .blockmap 必须同目录
-          scp -i ~/.ssh/deploy_key "$EXE" \
-            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_HOST }}:/var/www/vxin-download/updates/$(basename "$EXE")"
-          for f in $(find artifacts -name latest.yml -o -name '*.blockmap'); do
-            scp -i ~/.ssh/deploy_key "$f" \
-              "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_HOST }}:/var/www/vxin-download/updates/"
+          TARGET=/var/www/vxin-download
+          EXE=$(find artifacts -maxdepth 1 -name "*.exe" | head -1)
+          YML="artifacts/latest.yml"
+          BLOCKMAP=$(find artifacts -maxdepth 1 -name "*.blockmap" | head -1)
+
+          if [ -z "$EXE" ] || [ ! -f "$YML" ] || [ -z "$BLOCKMAP" ]; then
+            echo "❌ 构建产物不全（EXE/latest.yml/blockmap 缺失），拒绝发布"; exit 1
+          fi
+
+          EXE_NAME=$(basename "$EXE")
+          BLOCKMAP_NAME=$(basename "$BLOCKMAP")
+          VERSION=$(grep -m1 '^version:' "$YML" | awk '{print $2}')
+
+          # 版本号格式防御性校验（拒绝任何异常值被拼进文件系统路径）
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ latest.yml version 格式异常: $VERSION"; exit 1
+          fi
+
+          YML_PATH_FIELD=$(grep -m1 '^path:' "$YML" | awk '{print $2}')
+          YML_SHA512=$(grep -m1 '^sha512:' "$YML" | awk '{print $2}')
+          YML_SIZE=$(grep -A3 '^files:' "$YML" | grep -m1 'size:' | awk '{print $2}')
+
+          [ "$EXE_NAME" = "vxin-${VERSION}-setup.exe" ] || { echo "❌ EXE 文件名与 latest.yml version 不匹配: $EXE_NAME vs vxin-${VERSION}-setup.exe"; exit 1; }
+          [ "$YML_PATH_FIELD" = "$EXE_NAME" ] || { echo "❌ latest.yml path 字段($YML_PATH_FIELD) 与 EXE 文件名($EXE_NAME) 不匹配"; exit 1; }
+
+          ACTUAL_SIZE=$(stat -c%s "$EXE")
+          ACTUAL_SHA512=$(openssl dgst -sha512 -binary "$EXE" | openssl base64 -A)
+
+          [ "$ACTUAL_SIZE" = "$YML_SIZE" ] || { echo "❌ size 不一致: 实际=$ACTUAL_SIZE latest.yml=$YML_SIZE"; exit 1; }
+          [ "$ACTUAL_SHA512" = "$YML_SHA512" ] || { echo "❌ sha512 不一致: 实际=$ACTUAL_SHA512 latest.yml=$YML_SHA512"; exit 1; }
+          echo "✅ 产物完整性校验通过：version=$VERSION size=$ACTUAL_SIZE"
+
+          # ── Staging：先在隔离目录里拼好完整的一套产物并二次校验 ──
+          STAGING="$TARGET/.staging-$VERSION"
+          rm -rf "$STAGING"
+          mkdir -p "$STAGING/updates"
+          cp "$EXE" "$STAGING/$EXE_NAME"
+          cp "$EXE" "$STAGING/updates/$EXE_NAME"
+          cp "$BLOCKMAP" "$STAGING/updates/$BLOCKMAP_NAME"
+          cp "$YML" "$STAGING/updates/latest.yml"
+
+          for f in "$STAGING/$EXE_NAME" "$STAGING/updates/$EXE_NAME"; do
+            s=$(stat -c%s "$f"); h=$(openssl dgst -sha512 -binary "$f" | openssl base64 -A)
+            if [ "$s" != "$ACTUAL_SIZE" ] || [ "$h" != "$ACTUAL_SHA512" ]; then
+              echo "❌ staging 校验失败（拷贝过程可能损坏）: $f"; rm -rf "$STAGING"; exit 1
+            fi
           done
-          echo "✅ 已发布到 https://vxinchat.com/downloads/$(basename "$EXE")"
-          echo "✅ 更新源: https://vxinchat.com/downloads/updates/latest.yml"
+          echo "✅ staging 二次校验通过"
+
+          # 覆盖前备份当前 latest.yml，供发布后校验失败时自动回滚
+          # （EXE/blockmap 文件名自带版本号，天然不覆盖旧版本，不需要单独备份）
+          mkdir -p "$TARGET/updates"
+          if [ -f "$TARGET/updates/latest.yml" ]; then
+            cp "$TARGET/updates/latest.yml" "$TARGET/updates/latest.yml.bak-$(date -u +%Y%m%d%H%M%S)"
+          fi
+
+          # ── 原子发布：EXE/blockmap 先落地（同文件系统内 mv 是原子操作），
+          # latest.yml 最后才切换，确保客户端不会先读到新 latest.yml 却下载不到对应 EXE ──
+          mv "$STAGING/$EXE_NAME" "$TARGET/$EXE_NAME"
+          mv "$STAGING/updates/$EXE_NAME" "$TARGET/updates/$EXE_NAME"
+          mv "$STAGING/updates/$BLOCKMAP_NAME" "$TARGET/updates/$BLOCKMAP_NAME"
+          mv "$STAGING/updates/latest.yml" "$TARGET/updates/latest.yml"
+          rm -rf "$STAGING"
+
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "EXE_NAME=$EXE_NAME" >> "$GITHUB_ENV"
+          echo "BLOCKMAP_NAME=$BLOCKMAP_NAME" >> "$GITHUB_ENV"
+          echo "EXPECTED_SHA512=$ACTUAL_SHA512" >> "$GITHUB_ENV"
+          echo "✅ 已发布 vxin-${VERSION}-setup.exe 到 $TARGET（落地页直链 + electron-updater 更新源）"
+
+      - name: 生产验证（失败自动回滚 latest.yml）
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET=/var/www/vxin-download
+          YML_URL="https://vxinchat.com/downloads/updates/latest.yml"
+          EXE_URL="https://vxinchat.com/downloads/updates/${EXE_NAME}"
+          BM_URL="https://vxinchat.com/downloads/updates/${BLOCKMAP_NAME}"
+
+          sleep 3
+          YML_CODE=$(curl -sS -o /tmp/live-latest-${VERSION}.yml -w "%{http_code}" "$YML_URL" || echo "000")
+          EXE_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -I "$EXE_URL" || echo "000")
+          BM_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -I "$BM_URL" || echo "000")
+          LIVE_VERSION=$(grep -m1 '^version:' /tmp/live-latest-${VERSION}.yml 2>/dev/null | awk '{print $2}' || echo "")
+          LIVE_SHA512=$(grep -m1 '^sha512:' /tmp/live-latest-${VERSION}.yml 2>/dev/null | awk '{print $2}' || echo "")
+
+          echo "latest.yml=$YML_CODE  exe=$EXE_CODE  blockmap=$BM_CODE  live_version=$LIVE_VERSION"
+
+          if [ "$YML_CODE" != "200" ] || [ "$EXE_CODE" != "200" ] || [ "$BM_CODE" != "200" ] \
+             || [ "$LIVE_VERSION" != "$VERSION" ] || [ "$LIVE_SHA512" != "$EXPECTED_SHA512" ]; then
+            echo "❌ 生产验证失败，尝试回滚 latest.yml 到上一版本"
+            LATEST_BAK=$(ls -t "$TARGET"/updates/latest.yml.bak-* 2>/dev/null | head -1 || true)
+            if [ -n "$LATEST_BAK" ]; then
+              cp "$LATEST_BAK" "$TARGET/updates/latest.yml"
+              echo "已回滚 latest.yml 到 $LATEST_BAK"
+            else
+              echo "⚠ 没有可用的 latest.yml 备份，无法自动回滚"
+            fi
+            exit 1
+          fi
+
+          echo "✅ 生产验证通过：https://vxinchat.com/downloads/updates/latest.yml 已是 $VERSION"
