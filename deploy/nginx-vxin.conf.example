@@ -29,6 +29,16 @@ server {
         proxy_read_timeout 3600s;                   # 长连接
     }
 
+    # Windows 客户端安装包 + electron-updater 更新源。
+    # 落地页下载链接 = /downloads/vxin-windows-<version>-setup.exe（flat）
+    # electron-updater generic provider 拉取 = /downloads/updates/latest.yml
+    # 两者都在同一份构件目录下，用 alias 指过去即可，产物由 CI
+    # （.github/workflows/windows-build.yml）SCP 上传，不需要额外 root。
+    location /downloads/ {
+        alias /var/www/vxin-download/;
+        autoindex on;
+    }
+
     # 前端单页应用路由兜底
     location / { try_files $uri $uri/ /index.html; }
 }

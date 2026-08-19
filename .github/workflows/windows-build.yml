@@ -78,22 +78,22 @@ jobs:
         run: |
           EXE=$(find artifacts -name "*.exe" | head -1)
           echo "部署: $EXE"
-          # 创建两个 updates 目录（/var/www/downloads/updates 是 CI 写入路径，
-          # /var/www/html/downloads/updates 是 Nginx 实际服务路径，两者必须同步）
+          # Nginx 实际配置（/etc/nginx/sites-available/vxin）：
+          #   location /downloads/ { alias /var/www/vxin-download/; }
+          # 即 https://vxinchat.com/downloads/updates/latest.yml 对应服务器上的
+          # /var/www/vxin-download/updates/latest.yml —— 不是 /var/www/downloads
+          # 或 /var/www/html/downloads（历史遗留的错误假设，导致 latest.yml 404）。
           ssh -i ~/.ssh/deploy_key "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_HOST }}" \
-            "mkdir -p /var/www/downloads/updates && mkdir -p /var/www/html/downloads/updates"
+            "mkdir -p /var/www/vxin-download/updates"
+          # 落地页固定下载链接：/downloads/vxin-windows-<version>-setup.exe（带版本号，见 landing/lib/content.ts）
           scp -i ~/.ssh/deploy_key "$EXE" \
-            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_HOST }}:/var/www/downloads/vxin-windows-latest-setup.exe"
-          # EXE 同步到两个 updates 目录
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_HOST }}:/var/www/vxin-download/$(basename "$EXE")"
+          # electron-updater 更新源：EXE + latest.yml + .blockmap 必须同目录
           scp -i ~/.ssh/deploy_key "$EXE" \
-            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_HOST }}:/var/www/downloads/updates/$(basename "$EXE")"
-          scp -i ~/.ssh/deploy_key "$EXE" \
-            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_HOST }}:/var/www/html/downloads/updates/$(basename "$EXE")"
-          # latest.yml / .blockmap 同步到两个目录（Nginx 实际服务 /var/www/html/downloads/updates/）
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_HOST }}:/var/www/vxin-download/updates/$(basename "$EXE")"
           for f in $(find artifacts -name latest.yml -o -name '*.blockmap'); do
             scp -i ~/.ssh/deploy_key "$f" \
-              "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_HOST }}:/var/www/downloads/updates/" || true
-            scp -i ~/.ssh/deploy_key "$f" \
-              "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_HOST }}:/var/www/html/downloads/updates/" || true
+              "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_SERVER_HOST }}:/var/www/vxin-download/updates/"
           done
-          echo "✅ 已发布到 https://vxinchat.com/downloads/vxin-windows-latest-setup.exe"
+          echo "✅ 已发布到 https://vxinchat.com/downloads/$(basename "$EXE")"
+          echo "✅ 更新源: https://vxinchat.com/downloads/updates/latest.yml"
