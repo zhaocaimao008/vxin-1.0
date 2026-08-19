@@ -20,6 +20,7 @@ struct CallState {
     var networkEnded: Bool = false      // 网络断开/ICE 失败 → 结束页提示"网络已断开"
     var connectedAt: Date?              // 接通时刻，用于计算通话时长(mm:ss)
     var endedAt: Date?                  // 结束时刻，用于在结束页定格总时长
+    var callId: String = ""             // 服务端通话 id（VoIP push 传入）
 }
 
 /// GET /api/turn/credentials 响应。
@@ -212,10 +213,10 @@ final class CallManager: NSObject, ObservableObject {
     /// 由后台推送（AppDelegate didReceiveRemoteNotification，type=call）触发进入 incoming，
     /// 用于 App 被静默唤醒、socket 尚未重连时。与 Android CallManager.incomingFromPush 等价。
     /// 幂等：已在展示同一 peer 的来电或正在通话时不覆盖；socket 后续补发 call:incoming 会因 peer 相同被去重。
-    func incomingFromPush(from: String, callType: String, callerName: String) {
+    func incomingFromPush(from: String, callType: String, callerName: String, callId: String = "") {
         guard !from.isEmpty else { return }
         guard state.stage == .idle || state.stage == .ended else { return }
-        state = CallState(stage: .incoming, peerId: from, peerName: callerName, isVideo: callType == "video", isCaller: false)
+        state = CallState(stage: .incoming, peerId: from, peerName: callerName, isVideo: callType == "video", isCaller: false, callId: callId)
         if UIApplication.shared.applicationState != .active {
             showIncomingCallNotification(from: from, callerName: callerName, callType: callType)
         }
