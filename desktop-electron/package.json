@@ -41,7 +41,11 @@
         "nsis"
       ],
       "icon": "assets/icon.ico",
-      "artifactName": "vxin-${version}-setup.${ext}"
+      "artifactName": "vxin-${version}-setup.${ext}",
+      "signingHashAlgorithms": null,
+      "sign": null,
+      "certificateFile": null,
+      "certificatePassword": null
     },
     "nsis": {
       "oneClick": false,
@@ -68,7 +72,8 @@
         "deb"
       ],
       "icon": "assets/icon.png",
-      "category": "Network;InstantMessaging"
+      "category": "Network;InstantMessaging",
+      "executableName": "v信"
     },
     "publish": {
       "provider": "generic",

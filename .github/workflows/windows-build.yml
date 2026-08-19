@@ -47,14 +47,13 @@ jobs:
           name: vxin-windows-setup
           # latest.yml / *.blockmap 是 electron-updater 自动更新所必需：必须与 .exe
           # 一并上传到更新源 https://vxinchat.com/downloads/updates，否则客户端拉不到更新。
+          # 产物目录唯一来源：desktop-electron/package.json 的 build.directories.output
+          # = "dist"（electron-builder.yml 已删除，不再有 release/ 目录这套旧假设）。
           path: |
             desktop-electron/dist/*.exe
             desktop-electron/dist/latest.yml
             desktop-electron/dist/*.blockmap
-            desktop-electron/release/*.exe
-            desktop-electron/release/latest.yml
-            desktop-electron/release/*.blockmap
-          if-no-files-found: warn
+          if-no-files-found: error
 
   deploy:
     name: 部署到香港服务器
