@@ -460,6 +460,19 @@ body.dark-mode {
   --bubble-mine-rgb:     var(--color-primary-rgb);
   --bubble-other:        var(--bg-input-search);
 
+  /* 下面这几个是「引用其它 token 的别名」，在 :root 里只声明了一次——
+     CSS 自定义属性的继承规则是「继承已解析完的计算值」而不是「原样继承
+     var() 表达式再重新解析」，所以只要别名本身没有在 body.dark-mode 里
+     重新声明一遍，它在 :root(<html>) 处就已经用 light 值算死，永远不会
+     跟着 body.dark-mode 变。实测证据：搜索框/发布动态输入框等消费
+     --bg-search 的地方，Dark Mode 下背景仍是浅灰 #F1F2F4 而不是深色。
+     这里补上重新声明，让它们在 dark 作用域内重新按当前（已经是 dark 的）
+     被引用 token 解析一次。 */
+  --info-banner-fg:       var(--color-primary);
+  --info-banner-fg-hover: var(--color-primary-hover);
+  --bg-search:            var(--bg-input-search);
+  --border-light:         var(--border-subtle);
+
   /* Semantic */
   --color-danger:        #FF6B6B;
   --color-danger-light:  rgba(255, 107, 107, .12);
