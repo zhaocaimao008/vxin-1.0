@@ -169,16 +169,16 @@
 .electron-app .wc-moment-vis-opt:last-child { border-bottom: none; }
 
 /* Dark mode */
-body.dark-mode .electron-app .wc-moment-card { background: var(--vx-surface); border-bottom-color: var(--vx-border); }
-body.dark-mode .electron-app .wc-moment-card:hover { background: var(--vx-surface-raised); }
-body.dark-mode .electron-app .wc-moment-text { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .wc-moment-likes,
-body.dark-mode .electron-app .wc-moment-comments { background: var(--vx-surface-hover); }
-body.dark-mode .electron-app .wc-moment-comment { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .wc-moment-comment-field { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
-body.dark-mode .electron-app .wc-moment-notif-bar { background: var(--vx-bg-secondary); border-bottom-color: var(--vx-border); }
-body.dark-mode .electron-app .wc-moment-notif-bar:hover { background: var(--vx-hover-overlay); }
-body.dark-mode .electron-app .wc-moment-notif-label { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .wc-moment-vis-opt { border-bottom-color: var(--vx-border); }
-body.dark-mode .electron-app .wc-moment-vis-opt:hover { background: var(--vx-hover-overlay); }
-body.dark-mode .electron-app .wc-moment-delete:hover { background: var(--vx-hover-overlay-strong); color: var(--vx-text-secondary); }
+html.electron-app:has(body.dark-mode) .wc-moment-card { background: var(--vx-surface); border-bottom-color: var(--vx-border); }
+html.electron-app:has(body.dark-mode) .wc-moment-card:hover { background: var(--vx-surface-raised); }
+html.electron-app:has(body.dark-mode) .wc-moment-text { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .wc-moment-likes,
+html.electron-app:has(body.dark-mode) .wc-moment-comments { background: var(--vx-surface-hover); }
+html.electron-app:has(body.dark-mode) .wc-moment-comment { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .wc-moment-comment-field { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .wc-moment-notif-bar { background: var(--vx-bg-secondary); border-bottom-color: var(--vx-border); }
+html.electron-app:has(body.dark-mode) .wc-moment-notif-bar:hover { background: var(--vx-hover-overlay); }
+html.electron-app:has(body.dark-mode) .wc-moment-notif-label { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .wc-moment-vis-opt { border-bottom-color: var(--vx-border); }
+html.electron-app:has(body.dark-mode) .wc-moment-vis-opt:hover { background: var(--vx-hover-overlay); }
+html.electron-app:has(body.dark-mode) .wc-moment-delete:hover { background: var(--vx-hover-overlay-strong); color: var(--vx-text-secondary); }

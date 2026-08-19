@@ -96,8 +96,14 @@
   --vx-transition: 120ms ease;
 }
 
-/* ── Dark mode token overrides ── */
-body.dark-mode .electron-app {
+/* ── Dark mode token overrides ──
+   .electron-app 挂在 <html>（见 ElectronTitlebar.jsx），dark-mode 挂在 <body>
+   （见 SettingsContext.jsx）——<html> 是 <body> 的祖先而不是后代，
+   `body.dark-mode .electron-app` 这个后代选择器永远不可能命中，导致
+   Windows 全站在 Dark Mode 下 --vx-* 变量实际从未切换过（登录页、设置页
+   的搜索框/卡片/文字全部停在 Light 取值）。用 :has() 反过来表达
+   "electron-app 元素里存在处于 dark-mode 的后代"，让它真正生效。 */
+html.electron-app:has(body.dark-mode) {
   --vx-bg:           #15171A;
   --vx-bg-secondary: #1B1E22;
 

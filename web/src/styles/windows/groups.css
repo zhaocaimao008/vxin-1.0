@@ -188,17 +188,17 @@
 .electron-app .gi-spinner-green { border-top-color: #07C160; }
 
 /* Dark mode */
-body.dark-mode .electron-app .gi-panel { background: var(--vx-bg-secondary); border-left-color: var(--vx-border); }
-body.dark-mode .electron-app .gi-header { background: var(--vx-bg-secondary); border-bottom-color: var(--vx-border); }
-body.dark-mode .electron-app .gi-section,
-body.dark-mode .electron-app .gi-section-pad { background: var(--vx-surface); }
-body.dark-mode .electron-app .gi-row { border-bottom-color: var(--vx-border-light); }
-body.dark-mode .electron-app .gi-name { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .gi-mn { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .gi-mi:hover { background: var(--vx-hover-overlay); }
-body.dark-mode .electron-app .gi-mi { border-bottom-color: var(--vx-border-light); }
-body.dark-mode .electron-app .gi-ann-textarea { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
-body.dark-mode .electron-app .gi-name-edit { background: var(--vx-bg-secondary); color: var(--vx-text-primary); }
-body.dark-mode .electron-app .gi-toggle { background: var(--vx-border-strong); }
-body.dark-mode .electron-app .gi-badge-owner { background: var(--vx-warning-soft); color: var(--vx-warning); }
-body.dark-mode .electron-app .gi-badge-admin { background: var(--vx-primary-soft); color: var(--vx-badge-success); }
+html.electron-app:has(body.dark-mode) .gi-panel { background: var(--vx-bg-secondary); border-left-color: var(--vx-border); }
+html.electron-app:has(body.dark-mode) .gi-header { background: var(--vx-bg-secondary); border-bottom-color: var(--vx-border); }
+html.electron-app:has(body.dark-mode) .gi-section,
+html.electron-app:has(body.dark-mode) .gi-section-pad { background: var(--vx-surface); }
+html.electron-app:has(body.dark-mode) .gi-row { border-bottom-color: var(--vx-border-light); }
+html.electron-app:has(body.dark-mode) .gi-name { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .gi-mn { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .gi-mi:hover { background: var(--vx-hover-overlay); }
+html.electron-app:has(body.dark-mode) .gi-mi { border-bottom-color: var(--vx-border-light); }
+html.electron-app:has(body.dark-mode) .gi-ann-textarea { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .gi-name-edit { background: var(--vx-bg-secondary); color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .gi-toggle { background: var(--vx-border-strong); }
+html.electron-app:has(body.dark-mode) .gi-badge-owner { background: var(--vx-warning-soft); color: var(--vx-warning); }
+html.electron-app:has(body.dark-mode) .gi-badge-admin { background: var(--vx-primary-soft); color: var(--vx-badge-success); }

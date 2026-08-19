@@ -327,28 +327,28 @@
 .electron-app .wc-add-form-submit:disabled { background: var(--vx-disabled); cursor: not-allowed; }
 
 /* ── Dark mode content ── */
-body.dark-mode .electron-app .wc-collections-wrap { background: var(--vx-bg); }
-body.dark-mode .electron-app .gs-scroll { background: var(--vx-bg-secondary); }
-body.dark-mode .electron-app .gs-row { border-bottom-color: var(--vx-border-light); }
-body.dark-mode .electron-app .gs-row:hover { background: var(--vx-hover-overlay); }
-body.dark-mode .electron-app .gs-name { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .gs-msg-text { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .gs-filehelper-icon { background: var(--vx-primary-soft); }
-body.dark-mode .electron-app .gs-network-row { border-top-color: var(--vx-border); }
-body.dark-mode .electron-app .gs-network-row:hover { background: var(--vx-hover-overlay); }
-body.dark-mode .electron-app .wc-settings-entry { border-bottom-color: var(--vx-border-light); }
-body.dark-mode .electron-app .wc-settings-entry:hover { background: var(--vx-hover-overlay); }
-body.dark-mode .electron-app .wc-settings-row { border-bottom-color: var(--vx-border-light); }
-body.dark-mode .electron-app .wc-settings-glass-block { background: var(--vx-surface); border-color: var(--vx-border); }
-body.dark-mode .electron-app .wc-settings-profile-card { background: var(--vx-surface); border-bottom-color: var(--vx-border); }
-body.dark-mode .electron-app .wc-edit-input { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
-body.dark-mode .electron-app .wc-edit-input:focus { background: var(--vx-bg-secondary); border-color: #07C160; }
-body.dark-mode .electron-app .wc-device-item { border-bottom-color: var(--vx-border-light); }
-body.dark-mode .electron-app .wc-device-name { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .wc-appearance-btn { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
-body.dark-mode .electron-app .wc-font-demo { background: var(--vx-surface-hover); color: var(--vx-text-primary); }
-body.dark-mode .electron-app .wc-add-row { border-bottom-color: var(--vx-border-light); }
-body.dark-mode .electron-app .wc-add-row:hover { background: var(--vx-hover-overlay); }
-body.dark-mode .electron-app .wc-add-name { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .wc-add-form-input { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
-body.dark-mode .electron-app .wc-server-input { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .wc-collections-wrap { background: var(--vx-bg); }
+html.electron-app:has(body.dark-mode) .gs-scroll { background: var(--vx-bg-secondary); }
+html.electron-app:has(body.dark-mode) .gs-row { border-bottom-color: var(--vx-border-light); }
+html.electron-app:has(body.dark-mode) .gs-row:hover { background: var(--vx-hover-overlay); }
+html.electron-app:has(body.dark-mode) .gs-name { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .gs-msg-text { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .gs-filehelper-icon { background: var(--vx-primary-soft); }
+html.electron-app:has(body.dark-mode) .gs-network-row { border-top-color: var(--vx-border); }
+html.electron-app:has(body.dark-mode) .gs-network-row:hover { background: var(--vx-hover-overlay); }
+html.electron-app:has(body.dark-mode) .wc-settings-entry { border-bottom-color: var(--vx-border-light); }
+html.electron-app:has(body.dark-mode) .wc-settings-entry:hover { background: var(--vx-hover-overlay); }
+html.electron-app:has(body.dark-mode) .wc-settings-row { border-bottom-color: var(--vx-border-light); }
+html.electron-app:has(body.dark-mode) .wc-settings-glass-block { background: var(--vx-surface); border-color: var(--vx-border); }
+html.electron-app:has(body.dark-mode) .wc-settings-profile-card { background: var(--vx-surface); border-bottom-color: var(--vx-border); }
+html.electron-app:has(body.dark-mode) .wc-edit-input { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .wc-edit-input:focus { background: var(--vx-bg-secondary); border-color: #07C160; }
+html.electron-app:has(body.dark-mode) .wc-device-item { border-bottom-color: var(--vx-border-light); }
+html.electron-app:has(body.dark-mode) .wc-device-name { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .wc-appearance-btn { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .wc-font-demo { background: var(--vx-surface-hover); color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .wc-add-row { border-bottom-color: var(--vx-border-light); }
+html.electron-app:has(body.dark-mode) .wc-add-row:hover { background: var(--vx-hover-overlay); }
+html.electron-app:has(body.dark-mode) .wc-add-name { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .wc-add-form-input { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .wc-server-input { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }

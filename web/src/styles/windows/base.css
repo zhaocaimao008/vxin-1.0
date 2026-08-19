@@ -271,38 +271,38 @@
 }
 
 /* ── Dark mode base ── */
-body.dark-mode .electron-app .wc-confirm-box { background: var(--vx-surface); }
-body.dark-mode .electron-app .wc-confirm-msg { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .wc-confirm-cancel,
-body.dark-mode .electron-app .up-btn-ghost,
-body.dark-mode .electron-app .cgm-cancel,
-body.dark-mode .electron-app .req-reject { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
-body.dark-mode .electron-app .wc-confirm-cancel:hover,
-body.dark-mode .electron-app .up-btn-ghost:hover,
-body.dark-mode .electron-app .cgm-cancel:hover,
-body.dark-mode .electron-app .req-reject:hover { background: var(--vx-border); }
-body.dark-mode .electron-app .wc-modal { background: var(--vx-surface); }
-body.dark-mode .electron-app .wc-modal-header { border-bottom-color: var(--vx-border); }
-body.dark-mode .electron-app .wc-modal-title { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .wc-modal-close { color: var(--vx-text-secondary); }
-body.dark-mode .electron-app .wc-modal-close:hover { background: var(--vx-hover-overlay-strong); color: var(--vx-text-primary); }
-body.dark-mode .electron-app .wc-card { background: var(--vx-surface); border-color: var(--vx-border); }
-body.dark-mode .electron-app .wc-crow { border-bottom-color: var(--vx-border-light); }
-body.dark-mode .electron-app .wc-crow-clickable:hover { background: var(--vx-hover-overlay); }
-body.dark-mode .electron-app .wc-crow-label { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .wc-crow-value { color: var(--vx-text-secondary); }
-body.dark-mode .electron-app .wc-page-bg { background: var(--vx-bg); }
-body.dark-mode .electron-app .wc-page-header { background: var(--vx-bg-secondary); border-bottom-color: var(--vx-border); }
-body.dark-mode .electron-app .wc-page-header-title { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .lt-edit-input,
-body.dark-mode .electron-app .cgm-name-input,
-body.dark-mode .electron-app .up-remark-input,
-body.dark-mode .electron-app .up-verify-input,
-body.dark-mode .electron-app .gi-name-edit {
+html.electron-app:has(body.dark-mode) .wc-confirm-box { background: var(--vx-surface); }
+html.electron-app:has(body.dark-mode) .wc-confirm-msg { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .wc-confirm-cancel,
+html.electron-app:has(body.dark-mode) .up-btn-ghost,
+html.electron-app:has(body.dark-mode) .cgm-cancel,
+html.electron-app:has(body.dark-mode) .req-reject { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .wc-confirm-cancel:hover,
+html.electron-app:has(body.dark-mode) .up-btn-ghost:hover,
+html.electron-app:has(body.dark-mode) .cgm-cancel:hover,
+html.electron-app:has(body.dark-mode) .req-reject:hover { background: var(--vx-border); }
+html.electron-app:has(body.dark-mode) .wc-modal { background: var(--vx-surface); }
+html.electron-app:has(body.dark-mode) .wc-modal-header { border-bottom-color: var(--vx-border); }
+html.electron-app:has(body.dark-mode) .wc-modal-title { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .wc-modal-close { color: var(--vx-text-secondary); }
+html.electron-app:has(body.dark-mode) .wc-modal-close:hover { background: var(--vx-hover-overlay-strong); color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .wc-card { background: var(--vx-surface); border-color: var(--vx-border); }
+html.electron-app:has(body.dark-mode) .wc-crow { border-bottom-color: var(--vx-border-light); }
+html.electron-app:has(body.dark-mode) .wc-crow-clickable:hover { background: var(--vx-hover-overlay); }
+html.electron-app:has(body.dark-mode) .wc-crow-label { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .wc-crow-value { color: var(--vx-text-secondary); }
+html.electron-app:has(body.dark-mode) .wc-page-bg { background: var(--vx-bg); }
+html.electron-app:has(body.dark-mode) .wc-page-header { background: var(--vx-bg-secondary); border-bottom-color: var(--vx-border); }
+html.electron-app:has(body.dark-mode) .wc-page-header-title { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .lt-edit-input,
+html.electron-app:has(body.dark-mode) .cgm-name-input,
+html.electron-app:has(body.dark-mode) .up-remark-input,
+html.electron-app:has(body.dark-mode) .up-verify-input,
+html.electron-app:has(body.dark-mode) .gi-name-edit {
   background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary);
 }
-body.dark-mode .electron-app .wc-switch { background: var(--vx-border-strong); }
-body.dark-mode .electron-app .wc-switch.on { background: #07C160; }
+html.electron-app:has(body.dark-mode) .wc-switch { background: var(--vx-border-strong); }
+html.electron-app:has(body.dark-mode) .wc-switch.on { background: #07C160; }
 
 /* ── Final QA Polish — targeted fixes from code audit ── */
 
@@ -532,33 +532,33 @@ body.dark-mode .electron-app .wc-switch.on { background: #07C160; }
 }
 
 /* Dark mode fixes */
-body.dark-mode .electron-app .wc-messages,
-body.dark-mode .electron-app .wc-messages-virt { background: var(--vx-surface-sunken); }
-body.dark-mode .electron-app .wc-msg-row.mine .wc-msg-bubble {
+html.electron-app:has(body.dark-mode) .wc-messages,
+html.electron-app:has(body.dark-mode) .wc-messages-virt { background: var(--vx-surface-sunken); }
+html.electron-app:has(body.dark-mode) .wc-msg-row.mine .wc-msg-bubble {
   background: var(--vx-bubble-mine);
   color: var(--vx-bubble-mine-text);
 }
-body.dark-mode .electron-app .wc-msg-row:not(.mine) .wc-msg-bubble {
+html.electron-app:has(body.dark-mode) .wc-msg-row:not(.mine) .wc-msg-bubble {
   background: var(--vx-surface-raised);
   border-color: var(--vx-border);
   color: var(--vx-text-soft);
 }
-body.dark-mode .electron-app .wc-send-btn:disabled {
+html.electron-app:has(body.dark-mode) .wc-send-btn:disabled {
   background: var(--vx-disabled);
   color: var(--vx-text-disabled);
 }
-body.dark-mode .electron-app .wc-confirm-cancel {
+html.electron-app:has(body.dark-mode) .wc-confirm-cancel {
   background: var(--vx-surface-hover);
   border-color: var(--vx-border);
   color: var(--vx-text-soft);
 }
-body.dark-mode .electron-app .wc-ctx-menu {
+html.electron-app:has(body.dark-mode) .wc-ctx-menu {
   background: var(--vx-surface-raised);
   border-color: var(--vx-border);
 }
-body.dark-mode .electron-app .wc-ctx-item { color: var(--vx-text-soft); }
-body.dark-mode .electron-app .wc-ctx-item:hover { background: var(--vx-hover-overlay-strong); }
-body.dark-mode .electron-app .wc-chat-item-unread-dot { border-color: var(--vx-bg-secondary); }
-body.dark-mode .electron-app .wc-chat-item.active .wc-chat-item-unread-dot {
+html.electron-app:has(body.dark-mode) .wc-ctx-item { color: var(--vx-text-soft); }
+html.electron-app:has(body.dark-mode) .wc-ctx-item:hover { background: var(--vx-hover-overlay-strong); }
+html.electron-app:has(body.dark-mode) .wc-chat-item-unread-dot { border-color: var(--vx-bg-secondary); }
+html.electron-app:has(body.dark-mode) .wc-chat-item.active .wc-chat-item-unread-dot {
   border-color: var(--vx-primary-soft);
 }

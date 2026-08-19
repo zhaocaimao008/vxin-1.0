@@ -411,35 +411,35 @@
 .electron-app .afm-result-chevron { color: var(--vx-text-muted); }
 
 /* ── Dark mode contacts ── */
-body.dark-mode .electron-app .cl-panel { background: var(--vx-bg-secondary); }
-body.dark-mode .electron-app .wc-contact-item { border-bottom-color: var(--vx-border-light); }
-body.dark-mode .electron-app .wc-contact-item:hover { background: var(--vx-hover-overlay); }
-body.dark-mode .electron-app .wc-contact-item.active { background: var(--vx-primary-soft); }
-body.dark-mode .electron-app .wc-contact-item-name { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .cl-subtabs { background: var(--vx-bg-secondary); border-bottom-color: var(--vx-border); }
-body.dark-mode .electron-app .req-item { border-bottom-color: var(--vx-border-light); }
-body.dark-mode .electron-app .req-name { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .up-card { background: var(--vx-surface); }
-body.dark-mode .electron-app .up-cover-default { background: linear-gradient(135deg, #07C160 0%, var(--vx-primary-deep) 100%); }
-body.dark-mode .electron-app .up-avatar-wrap { border-color: var(--vx-surface); }
-body.dark-mode .electron-app .up-name { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .up-row { border-bottom-color: var(--vx-border-light); }
-body.dark-mode .electron-app button.up-row:hover { background: var(--vx-hover-overlay); }
-body.dark-mode .electron-app .up-row-value { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .up-remark-box { background: var(--vx-surface-raised); border-top-color: var(--vx-border); }
-body.dark-mode .electron-app .up-remark-input { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
-body.dark-mode .electron-app .up-actions { border-top-color: var(--vx-border); }
-body.dark-mode .electron-app .up-action-grey { background: var(--vx-surface-hover); color: var(--vx-text-primary); border-color: var(--vx-border); }
-body.dark-mode .electron-app .afm-card { background: var(--vx-surface); }
-body.dark-mode .electron-app .afm-header { border-bottom-color: var(--vx-border); }
-body.dark-mode .electron-app .afm-header-title { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .afm-search-wrap { background: var(--vx-surface-hover); }
-body.dark-mode .electron-app .afm-search-wrap-focused { background: var(--vx-bg-secondary); border-color: #07C160; }
-body.dark-mode .electron-app .afm-search-input { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .afm-result-item { border-bottom-color: var(--vx-border-light); }
-body.dark-mode .electron-app .afm-result-item:hover { background: var(--vx-hover-overlay); }
-body.dark-mode .electron-app .afm-result-name { color: var(--vx-text-primary); }
-body.dark-mode .electron-app .cl-entry-icon-box { background: var(--vx-primary-soft); }
-body.dark-mode .electron-app .req-status-accepted { color: var(--vx-badge-success); background: var(--vx-primary-soft); }
-body.dark-mode .electron-app .req-status-rejected { color: var(--vx-status-rejected); background: var(--vx-hover-overlay-strong); }
-body.dark-mode .electron-app .req-status-pending  { color: var(--vx-warning); background: var(--vx-warning-soft); }
+html.electron-app:has(body.dark-mode) .cl-panel { background: var(--vx-bg-secondary); }
+html.electron-app:has(body.dark-mode) .wc-contact-item { border-bottom-color: var(--vx-border-light); }
+html.electron-app:has(body.dark-mode) .wc-contact-item:hover { background: var(--vx-hover-overlay); }
+html.electron-app:has(body.dark-mode) .wc-contact-item.active { background: var(--vx-primary-soft); }
+html.electron-app:has(body.dark-mode) .wc-contact-item-name { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .cl-subtabs { background: var(--vx-bg-secondary); border-bottom-color: var(--vx-border); }
+html.electron-app:has(body.dark-mode) .req-item { border-bottom-color: var(--vx-border-light); }
+html.electron-app:has(body.dark-mode) .req-name { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .up-card { background: var(--vx-surface); }
+html.electron-app:has(body.dark-mode) .up-cover-default { background: linear-gradient(135deg, #07C160 0%, var(--vx-primary-deep) 100%); }
+html.electron-app:has(body.dark-mode) .up-avatar-wrap { border-color: var(--vx-surface); }
+html.electron-app:has(body.dark-mode) .up-name { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .up-row { border-bottom-color: var(--vx-border-light); }
+html.electron-app:has(body.dark-mode) button.up-row:hover { background: var(--vx-hover-overlay); }
+html.electron-app:has(body.dark-mode) .up-row-value { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .up-remark-box { background: var(--vx-surface-raised); border-top-color: var(--vx-border); }
+html.electron-app:has(body.dark-mode) .up-remark-input { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .up-actions { border-top-color: var(--vx-border); }
+html.electron-app:has(body.dark-mode) .up-action-grey { background: var(--vx-surface-hover); color: var(--vx-text-primary); border-color: var(--vx-border); }
+html.electron-app:has(body.dark-mode) .afm-card { background: var(--vx-surface); }
+html.electron-app:has(body.dark-mode) .afm-header { border-bottom-color: var(--vx-border); }
+html.electron-app:has(body.dark-mode) .afm-header-title { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .afm-search-wrap { background: var(--vx-surface-hover); }
+html.electron-app:has(body.dark-mode) .afm-search-wrap-focused { background: var(--vx-bg-secondary); border-color: #07C160; }
+html.electron-app:has(body.dark-mode) .afm-search-input { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .afm-result-item { border-bottom-color: var(--vx-border-light); }
+html.electron-app:has(body.dark-mode) .afm-result-item:hover { background: var(--vx-hover-overlay); }
+html.electron-app:has(body.dark-mode) .afm-result-name { color: var(--vx-text-primary); }
+html.electron-app:has(body.dark-mode) .cl-entry-icon-box { background: var(--vx-primary-soft); }
+html.electron-app:has(body.dark-mode) .req-status-accepted { color: var(--vx-badge-success); background: var(--vx-primary-soft); }
+html.electron-app:has(body.dark-mode) .req-status-rejected { color: var(--vx-status-rejected); background: var(--vx-hover-overlay-strong); }
+html.electron-app:has(body.dark-mode) .req-status-pending  { color: var(--vx-warning); background: var(--vx-warning-soft); }

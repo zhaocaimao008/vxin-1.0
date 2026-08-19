@@ -615,66 +615,66 @@
   --border-default:       #3A3A3C;
   --border-color:         #3A3A3C;
 }
-body.dark-mode .electron-app .wc-sidebar { background: #111111; }
-body.dark-mode .electron-app .wc-sidebar-badge { border-color: #111111; }
-body.dark-mode .electron-app .wc-sidebar-btn.active { background: rgba(7,193,96,0.14); }
-body.dark-mode .electron-app .wc-sidebar-btn.active::before { background: #07C160; }
-body.dark-mode .electron-app .wc-panel { background: #1C1C1E; border-right-color: #3A3A3C; }
-body.dark-mode .electron-app .wc-panel-topbar { background: #1C1C1E; border-bottom-color: #3A3A3C; }
-body.dark-mode .electron-app .wc-search { background: #2C2C2E; border: none; box-shadow: none; }
-body.dark-mode .electron-app .wc-search:focus-within { background: #3A3A3C; }
-body.dark-mode .electron-app .wc-search input { color: #D0D3D8; }
-body.dark-mode .electron-app .wc-chat-item { border-bottom-color: #2A2A2C; }
-body.dark-mode .electron-app .wc-chat-item:hover { background: rgba(255,255,255,0.06); }
-body.dark-mode .electron-app .wc-chat-item.active { background: rgba(7,193,96,0.14); }
-body.dark-mode .electron-app .wc-chat-item-name { color: #D0D3D8; }
-body.dark-mode .electron-app .wc-chat-item-badge { border-color: #1C1C1E; }
-body.dark-mode .electron-app .wc-chat-item-unread-dot { border-color: #1C1C1E; }
-body.dark-mode .electron-app .wc-chat-item.active .wc-chat-item-badge { border-color: rgba(7,193,96,0.14); }
-body.dark-mode .electron-app .wc-online-dot { border-color: #1C1C1E; background: #07C160; }
-body.dark-mode .electron-app .home-chat-area { background: #111111; }
-body.dark-mode .electron-app .wc-chat-header { background: #1C1C1E; border-bottom-color: #3A3A3C; }
-body.dark-mode .electron-app .wc-chat-header-name { color: #E5E5EA; }
-body.dark-mode .electron-app .wc-chat-header-btn:hover { background: rgba(255,255,255,0.08); color: #E5E5EA; }
-body.dark-mode .electron-app .wc-messages,
-body.dark-mode .electron-app .wc-messages-virt { background: #0E0E10; }
-body.dark-mode .electron-app .wc-msg-row.mine .wc-msg-bubble {
+html.electron-app:has(body.dark-mode) .wc-sidebar { background: #111111; }
+html.electron-app:has(body.dark-mode) .wc-sidebar-badge { border-color: #111111; }
+html.electron-app:has(body.dark-mode) .wc-sidebar-btn.active { background: rgba(7,193,96,0.14); }
+html.electron-app:has(body.dark-mode) .wc-sidebar-btn.active::before { background: #07C160; }
+html.electron-app:has(body.dark-mode) .wc-panel { background: #1C1C1E; border-right-color: #3A3A3C; }
+html.electron-app:has(body.dark-mode) .wc-panel-topbar { background: #1C1C1E; border-bottom-color: #3A3A3C; }
+html.electron-app:has(body.dark-mode) .wc-search { background: #2C2C2E; border: none; box-shadow: none; }
+html.electron-app:has(body.dark-mode) .wc-search:focus-within { background: #3A3A3C; }
+html.electron-app:has(body.dark-mode) .wc-search input { color: #D0D3D8; }
+html.electron-app:has(body.dark-mode) .wc-chat-item { border-bottom-color: #2A2A2C; }
+html.electron-app:has(body.dark-mode) .wc-chat-item:hover { background: rgba(255,255,255,0.06); }
+html.electron-app:has(body.dark-mode) .wc-chat-item.active { background: rgba(7,193,96,0.14); }
+html.electron-app:has(body.dark-mode) .wc-chat-item-name { color: #D0D3D8; }
+html.electron-app:has(body.dark-mode) .wc-chat-item-badge { border-color: #1C1C1E; }
+html.electron-app:has(body.dark-mode) .wc-chat-item-unread-dot { border-color: #1C1C1E; }
+html.electron-app:has(body.dark-mode) .wc-chat-item.active .wc-chat-item-badge { border-color: rgba(7,193,96,0.14); }
+html.electron-app:has(body.dark-mode) .wc-online-dot { border-color: #1C1C1E; background: #07C160; }
+html.electron-app:has(body.dark-mode) .home-chat-area { background: #111111; }
+html.electron-app:has(body.dark-mode) .wc-chat-header { background: #1C1C1E; border-bottom-color: #3A3A3C; }
+html.electron-app:has(body.dark-mode) .wc-chat-header-name { color: #E5E5EA; }
+html.electron-app:has(body.dark-mode) .wc-chat-header-btn:hover { background: rgba(255,255,255,0.08); color: #E5E5EA; }
+html.electron-app:has(body.dark-mode) .wc-messages,
+html.electron-app:has(body.dark-mode) .wc-messages-virt { background: #0E0E10; }
+html.electron-app:has(body.dark-mode) .wc-msg-row.mine .wc-msg-bubble {
   background: rgba(7,193,96,0.22);
   color: #E5E5EA;
   border: none;
 }
-body.dark-mode .electron-app .wc-msg-row:not(.mine) .wc-msg-bubble {
+html.electron-app:has(body.dark-mode) .wc-msg-row:not(.mine) .wc-msg-bubble {
   background: #26262A;
   border-color: #3A3A3C;
   color: #D0D3D8;
 }
-body.dark-mode .electron-app .wc-input-area { background: #1C1C1E; border-top-color: #3A3A3C; }
-body.dark-mode .electron-app .wc-textarea { color: #D0D3D8; }
-body.dark-mode .electron-app .wc-tool-btn { color: #8E8E93; }
-body.dark-mode .electron-app .wc-tool-btn:hover { background: rgba(255,255,255,0.08); color: #E5E5EA; }
-body.dark-mode .electron-app .wc-send-btn.active { background: #07C160; }
-body.dark-mode .electron-app .we-empty { background: #0E0E10; }
-body.dark-mode .electron-app .wc-ctx-menu,
-body.dark-mode .electron-app .home-add-dropdown {
+html.electron-app:has(body.dark-mode) .wc-input-area { background: #1C1C1E; border-top-color: #3A3A3C; }
+html.electron-app:has(body.dark-mode) .wc-textarea { color: #D0D3D8; }
+html.electron-app:has(body.dark-mode) .wc-tool-btn { color: #8E8E93; }
+html.electron-app:has(body.dark-mode) .wc-tool-btn:hover { background: rgba(255,255,255,0.08); color: #E5E5EA; }
+html.electron-app:has(body.dark-mode) .wc-send-btn.active { background: #07C160; }
+html.electron-app:has(body.dark-mode) .we-empty { background: #0E0E10; }
+html.electron-app:has(body.dark-mode) .wc-ctx-menu,
+html.electron-app:has(body.dark-mode) .home-add-dropdown {
   background: #2C2C2E;
   border-color: #3A3A3C;
   box-shadow: 0 8px 24px rgba(0,0,0,0.35);
 }
-body.dark-mode .electron-app .wc-ctx-item,
-body.dark-mode .electron-app .adi-row { color: #D0D3D8; }
-body.dark-mode .electron-app .wc-ctx-item:hover,
-body.dark-mode .electron-app .adi-row:hover { background: rgba(255,255,255,0.08); }
-body.dark-mode .electron-app .home-add-divider { background: #3A3A3C; }
+html.electron-app:has(body.dark-mode) .wc-ctx-item,
+html.electron-app:has(body.dark-mode) .adi-row { color: #D0D3D8; }
+html.electron-app:has(body.dark-mode) .wc-ctx-item:hover,
+html.electron-app:has(body.dark-mode) .adi-row:hover { background: rgba(255,255,255,0.08); }
+html.electron-app:has(body.dark-mode) .home-add-divider { background: #3A3A3C; }
 /* Bug2 补充：§21 首版遗漏的浅色残留（hover/active/disabled + 骨架屏） */
-body.dark-mode .electron-app .wc-icon-btn:hover { background: rgba(255,255,255,0.08); color: #E5E5EA; }
-body.dark-mode .electron-app .wc-icon-btn:active { background: rgba(255,255,255,0.12); }
-body.dark-mode .electron-app .wc-chat-item.active:hover { background: rgba(7,193,96,0.20); }
-body.dark-mode .electron-app .wc-chat-item-badge.muted { background: #5A5A5E; }
-body.dark-mode .electron-app .wc-chat-item.pinned:not(.active) { background: rgba(255,255,255,0.03); }
-body.dark-mode .electron-app .wc-chat-item.pinned:not(.active):hover { background: rgba(255,255,255,0.06); }
-body.dark-mode .electron-app .wc-chat-header-btn:active { background: rgba(255,255,255,0.12); }
-body.dark-mode .electron-app .wc-chat-header-btn.active { background: rgba(255,255,255,0.08); color: #E5E5EA; }
-body.dark-mode .electron-app .wc-tool-btn:active { background: rgba(255,255,255,0.12); }
-body.dark-mode .electron-app .wc-tool-btn.active { background: rgba(7,193,96,0.18); color: #07C160; }
-body.dark-mode .electron-app .wc-skel-avatar,
-body.dark-mode .electron-app .wc-skel { background: #2C2C2E; }
+html.electron-app:has(body.dark-mode) .wc-icon-btn:hover { background: rgba(255,255,255,0.08); color: #E5E5EA; }
+html.electron-app:has(body.dark-mode) .wc-icon-btn:active { background: rgba(255,255,255,0.12); }
+html.electron-app:has(body.dark-mode) .wc-chat-item.active:hover { background: rgba(7,193,96,0.20); }
+html.electron-app:has(body.dark-mode) .wc-chat-item-badge.muted { background: #5A5A5E; }
+html.electron-app:has(body.dark-mode) .wc-chat-item.pinned:not(.active) { background: rgba(255,255,255,0.03); }
+html.electron-app:has(body.dark-mode) .wc-chat-item.pinned:not(.active):hover { background: rgba(255,255,255,0.06); }
+html.electron-app:has(body.dark-mode) .wc-chat-header-btn:active { background: rgba(255,255,255,0.12); }
+html.electron-app:has(body.dark-mode) .wc-chat-header-btn.active { background: rgba(255,255,255,0.08); color: #E5E5EA; }
+html.electron-app:has(body.dark-mode) .wc-tool-btn:active { background: rgba(255,255,255,0.12); }
+html.electron-app:has(body.dark-mode) .wc-tool-btn.active { background: rgba(7,193,96,0.18); color: #07C160; }
+html.electron-app:has(body.dark-mode) .wc-skel-avatar,
+html.electron-app:has(body.dark-mode) .wc-skel { background: #2C2C2E; }
