@@ -26,8 +26,8 @@ export async function registerSW({ onUpdate, onSuccess, onOffline } = {}) {
   _updateAvailableCallback = onUpdate;
 
   try {
-    const registration = await navigator.serviceWorker.register('/sw.js', {
-      scope: '/',
+    const registration = await navigator.serviceWorker.register('/app/sw.js', {
+      scope: '/app/',
       updateViaCache: 'none',   // 强制每次检查更新
     });
     swRegistration = registration;

@@ -13,8 +13,8 @@ const MAX_DYNAMIC_ENTRIES = 60;
 
 // 预缓存核心 Shell（由 Vite Build 动态替换，这里是默认列表）
 const PRECACHE_URLS = [
-  '/',
-  '/index.html',
+  '/app/',
+  '/app/index.html',
 ];
 
 // ── 安装：预缓存核心 Shell ───────────────────────────────────

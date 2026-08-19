@@ -6,7 +6,7 @@ import { showConfirm } from '../utils/toast';
 import { useAuth } from '../contexts/AuthContext';
 import { loadCred, saveCred, removeCred } from '../utils/rememberedCreds';
 
-function goLogin() { window.location.href = '/'; }
+function goLogin() { window.location.href = window.__ELECTRON_CONFIG__ ? './' : '/app/'; }
 
 function AccountSwitcher() {
   const { user, accounts, login, switchAccount, removeAccount, logout } = useAuth();
