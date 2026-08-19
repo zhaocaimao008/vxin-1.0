@@ -21,7 +21,7 @@ const { crashReporter } = require('electron');
 crashReporter.start({
   productName: 'vxin-desktop',
   companyName: 'Vxin',
-  submitURL: 'https://dipsin.com/api/crash-report',
+  submitURL: 'https://www.vxinchat.com/api/crash-report',
   uploadToServer: process.env.NODE_ENV === 'production',
   compress: true,
   ignoreSystemCrashHandler: false,
@@ -46,7 +46,7 @@ app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
 // 更新源回退地址（须与 package.json build.publish.url 一致；运行时优先读
 // app-update.yml，读取失败才用此常量）。更新源在打包时固化，不随用户切换后端而变。
-const UPDATE_FEED_FALLBACK = 'https://dipsin.com/downloads/updates';
+const UPDATE_FEED_FALLBACK = 'https://www.vxinchat.com/downloads/updates';
 
 // 任务栏红点角标（16x16 PNG，纯红实心圆）。Windows 无原生数字角标，
 // 用此 overlay 表示"有未读"。内联 base64 避免运行时绘图依赖（canvas 等）。
@@ -70,7 +70,7 @@ function buildBadgeOverlay() {
 const store = new Store({
   clearInvalidConfig: true,   // 安全：磁盘上配置被篡改/损坏时回退默认值
   defaults: {
-    serverUrl: 'https://dipsin.com',
+    serverUrl: 'https://www.vxinchat.com',
     autoLaunch: false,
     windowBounds: { width: 1200, height: 800 },
     minimizeToTray: true,
@@ -138,7 +138,7 @@ let isQuitting = false;
 // 实现「改 vxin-config 即可换服务器、桌面端无需重编译」。互不依赖，单点故障不影响引导。
 const CONFIG_URLS = [
   'https://cdn.jsdelivr.net/gh/zhaocaimao008/vxin-config@main/config.json',
-  'https://dipsin.com/config.json',
+  'https://www.vxinchat.com/config.json',
 ];
 
 // 渲染进程(src/utils/config.js)也会拉这些 config 源做后端发现；其 origin 必须进 CSP
@@ -152,7 +152,7 @@ const CONFIG_ORIGINS = [...new Set(
 // 安全：校验存储中的 serverUrl，防止被篡改的配置污染 CSP connect-src/origin 推导
 const _storedServerUrl = store.get('serverUrl');
 // SERVER_URL / API_ORIGIN / WS_ORIGIN 为 let：启动时 loadRemoteServerUrl() 可据远程配置更新。
-let SERVER_URL = isValidServerUrl(_storedServerUrl) ? _storedServerUrl : 'https://dipsin.com';
+let SERVER_URL = isValidServerUrl(_storedServerUrl) ? _storedServerUrl : 'https://www.vxinchat.com';
 
 // ── 安全：仅允许读取 temp 目录下的截图文件 ──────────────────
 function isSafeReadPath(filePath) {
@@ -173,7 +173,7 @@ function isValidServerUrl(url) {
 
 // ── 安全：后端来源（用于 CSP connect-src）──────────────────────
 let API_ORIGIN = (() => {
-  try { return new URL(SERVER_URL).origin; } catch { return 'https://dipsin.com'; }
+  try { return new URL(SERVER_URL).origin; } catch { return 'https://www.vxinchat.com'; }
 })();
 let WS_ORIGIN = API_ORIGIN.replace(/^http/, 'ws');
 // 云存储/CDN 来源（用于 CSP connect-src，使图片/文件直传 xhr PUT 不被拦）。
@@ -455,7 +455,7 @@ function createWindow() {
       zoomFactor: 1.0,
       // 沙箱化 preload 无法可靠 require 本地文件；用 app.getVersion()(取自打包 package.json)
       // 经启动参数同步下发真实版本，替代 preload 里读错文件(读到仓库根 2.0.0)的旧写法。
-      // 一并下发运行时解析出的真实后端地址，避免 preload 里硬编码 dipsin.com 误导渲染层。
+      // 一并下发运行时解析出的真实后端地址，避免 preload 里硬编码 www.vxinchat.com 误导渲染层。
       additionalArguments: [
         `--vxin-app-version=${app.getVersion()}`,
         `--vxin-server-url=${SERVER_URL}`,

@@ -18,6 +18,7 @@ const Home           = lazy(() => import('./pages/Home'));
 
 // Electron 使用 HashRouter（file:// 不支持 pushState）；Web 用 BrowserRouter
 const Router = window.__ELECTRON_CONFIG__ ? HashRouter : BrowserRouter;
+const ROUTER_PROPS = window.__ELECTRON_CONFIG__ ? {} : { basename: '/app' };
 
 // 懒加载页面切换时的加载态（与 PrivateRoute 的 loading 视觉一致）
 const RouteFallback = () => (
@@ -48,7 +49,7 @@ export default function App() {
       {isElectron && <UpdateBanner />}
       <AndroidUpdatePrompt />
       <div id="main-content" role="main" style={isElectron ? { paddingTop: 30, height: '100vh', boxSizing: 'border-box', overflow: 'hidden' } : {}}>
-        <Router>
+        <Router {...ROUTER_PROPS}>
           {/* Suspense 兜底懒加载 chunk 拉取期间的加载态 */}
           <Suspense fallback={<RouteFallback />}>
             <Routes>

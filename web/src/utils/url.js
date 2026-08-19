@@ -57,5 +57,5 @@ export function mediaUrl(u) {
 // （会跳到 file:///login 白屏），必须用 HashRouter 的 hash 路由。
 export function goLogin() {
   if (window.__ELECTRON_CONFIG__) window.location.hash = '#/login';
-  else window.location.replace('/login');
+  else window.location.replace('/app/login');
 }

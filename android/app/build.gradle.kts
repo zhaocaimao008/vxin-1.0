@@ -22,7 +22,7 @@ android {
         versionName = "8.0.5"
 
         // 默认服务器地址（运行时可在 App 内切换并持久化覆盖）
-        buildConfigField("String", "DEFAULT_SERVER_URL", "\"https://dipsin.com\"")
+        buildConfigField("String", "DEFAULT_SERVER_URL", "\"https://www.vxinchat.com\"")
 
         // 个推密钥从环境变量/CI Secrets 注入，不硬编码到代码里。
         // 占位符名与个推 SDK 内置 Manifest 要求一致（GETUI_APPID/GETUI_APPKEY/GETUI_APPSECRET）。

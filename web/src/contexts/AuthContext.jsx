@@ -111,7 +111,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setElectronToken(null);
     if (window.__ELECTRON_CONFIG__) window.location.hash = '#/login';
-    else window.location.replace('/login');
+    else window.location.replace('/app/login');
   }, []);
 
   // ── 401 自动踢出 ───────────────────────────────────────────────
