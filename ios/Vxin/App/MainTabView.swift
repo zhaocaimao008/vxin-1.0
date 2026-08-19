@@ -51,7 +51,7 @@ struct MainTabView: View {
         // 登录后拉取后台功能开关（动态/收藏等），socket config:updated 实时热更新
         .task { await featureStore.refresh() }
         // 动态 tab 被后台关闭时，若当前正停在动态页则跳回消息页，避免空白页
-        .onChange(of: featureStore.moments) { _, enabled in
+        .onChange(of: featureStore.moments) { enabled in
             if !enabled && selectedTab == 2 { selectedTab = 0 }
         }
         // 点推送通知 → 跳回消息页
