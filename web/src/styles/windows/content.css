@@ -69,7 +69,12 @@
 /* ── Profile / Settings page ── */
 .electron-app .pf-hero {
   position: relative;
-  height: 180px; overflow: hidden;
+  /* 曾经固定 180px：.pf-hero-inner 是 bottom:0 的 absolute 定位、高度由内容
+     撑开（92px 头像 + 昵称 + 签名 + v信号 chip + 上下 padding 实测 ≈248px），
+     180px 装不下，头像顶部会被本容器的 overflow:hidden 直接切掉——这正是
+     真机截图里"头像顶部被严重裁切"的根因。改成 min-height 让卡片跟着内容
+     撑高，不再用固定高度赌内容量。 */
+  min-height: 248px; overflow: hidden;
   flex-shrink: 0;
 }
 .electron-app .pf-hero-bg {
