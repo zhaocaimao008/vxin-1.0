@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useI18n, SUPPORTED_LANGS } from '../contexts/I18nContext';
 import { timeoutSignal } from '../utils/config';
 import { saveCred, loadCred, removeCred, lastRememberedPhone } from '../utils/rememberedCreds';
+import { isDeprecatedServerUrl } from '../utils/url';
 import '../styles/login.css';
 
 const isElectron = !!window.__ELECTRON_CONFIG__;
@@ -44,7 +45,11 @@ export default function Login() {
   // ── 服务器切换（仅桌面端，登录前即可切换，无需重装） ──
   // 地址来自 localStorage（手动切换）或远程配置（CONFIG_URLS：jsDelivr + vxinchat.com）
   // 不再硬编码任何域名（统一走远程配置解析出的后端）
-  const currentServer = localStorage.getItem('vxin_server_url') || axios.defaults.baseURL || '';
+  // 自动清除已废弃的官方旧服务器地址（45.77.131.33 / 104.244.95.70），默认显示正式域名
+  const storedServer = localStorage.getItem('vxin_server_url');
+  const currentServer = (storedServer && !isDeprecatedServerUrl(storedServer))
+    ? storedServer
+    : (axios.defaults.baseURL || 'https://vxinchat.com');
   const [showServer, setShowServer] = useState(false);
   const [serverInput, setServerInput] = useState(currentServer);
   const [serverTest, setServerTest] = useState(null);
@@ -65,6 +70,7 @@ export default function Login() {
   const saveServer = () => {
     const url = serverInput.trim().replace(/\/$/, '');
     if (!url.startsWith('http')) { setServerTest({ ok: false, msg: '请以 http:// 或 https:// 开头' }); return; }
+    if (isDeprecatedServerUrl(url)) { setServerTest({ ok: false, msg: '该地址已废弃，请使用正式服务器 https://vxinchat.com' }); return; }
     localStorage.setItem('vxin_server_url', url);
     window.electronAPI?.setServerUrl?.(url);
     axios.defaults.baseURL = url;

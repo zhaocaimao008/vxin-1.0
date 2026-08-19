@@ -24,7 +24,7 @@
 .electron-app .cm-voice-name {
   font-size: 24px;
   font-weight: 600;
-  color: #fff;
+  color: var(--vx-text-inverse);
   text-align: center;
   text-shadow: 0 1px 6px rgba(0,0,0,.4);
   overflow: hidden;
@@ -99,7 +99,7 @@
   cursor: pointer;
   transition: background 120ms;
   border: none;
-  color: #fff;
+  color: var(--vx-text-inverse);
 }
 .electron-app .cm-minimize-btn:hover { background: rgba(255,255,255,.28); }
 
@@ -111,7 +111,7 @@
   z-index: 10;
 }
 .electron-app .cm-ended-text {
-  font-size: 16px; font-weight: 500; color: #fff;
+  font-size: 16px; font-weight: 500; color: var(--vx-text-inverse);
   background: rgba(0,0,0,.5);
   padding: 10px 20px; border-radius: 10px;
 }
@@ -123,7 +123,7 @@
   box-shadow: 0 8px 28px rgba(0,0,0,.35);
 }
 .electron-app .cm-mini-hangup {
-  background: #FF4D4F !important;
+  background: var(--vx-danger) !important;
   border-radius: 50%;
 }
 .electron-app .cm-mini-hangup:hover { background: #E63234 !important; }
@@ -147,7 +147,7 @@
 .electron-app .cm-video-name-text {
   font-size: 17px;
   font-weight: 600;
-  color: #fff;
+  color: var(--vx-text-inverse);
   text-shadow: 0 1px 4px rgba(0,0,0,.5);
 }
 .electron-app .cm-video-status {
@@ -159,7 +159,7 @@
 .electron-app .cm-incoming-name {
   font-size: 22px;
   font-weight: 600;
-  color: #fff;
+  color: var(--vx-text-inverse);
   text-shadow: 0 1px 6px rgba(0,0,0,.4);
   margin-top: 12px;
 }

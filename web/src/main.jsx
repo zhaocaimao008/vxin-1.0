@@ -10,6 +10,7 @@ import './index.css';
 import './mobile-adapt.css';
 import './ui-refresh.css';
 import { loadRemoteConfig, getConfig } from './utils/config';
+import { isDeprecatedServerUrl } from './utils/url';
 import { initWebVitals } from './utils/webVitals';
 import { initImageOptimizer } from './utils/imageOptimizer';
 import { setupAxiosInterceptors } from './utils/axiosInterceptor';
@@ -67,7 +68,13 @@ if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
 
   // 2. 设置 Axios baseURL
   //    优先级：运行时手动切换的 URL > 远程配置 > Vite 环境变量
-  const manualUrl = localStorage.getItem('vxin_server_url');
+  //    自动清除已废弃的官方旧服务器地址（45.77.131.33 / 104.244.95.70），
+  //    与 Android/iOS 的 DEPRECATED_SERVERS 清理行为保持一致；默认回退远程配置。
+  let manualUrl = localStorage.getItem('vxin_server_url');
+  if (manualUrl && isDeprecatedServerUrl(manualUrl)) {
+    localStorage.removeItem('vxin_server_url');
+    manualUrl = null;
+  }
   const apiBase = manualUrl || cfg.api || import.meta.env.VITE_API_BASE || '';
 
   if (apiBase) {

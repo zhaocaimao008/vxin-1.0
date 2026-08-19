@@ -35,6 +35,8 @@
   --vx-warning: #FAAD14;
   --vx-info:    #1677FF;
   --vx-success: #07C160;
+  --vx-disabled:    #C9CDD4;
+  --vx-warning-soft: #FFFBE6;
 
   /* ── Radius ── */
   --vx-r-xs: 4px;
@@ -73,6 +75,8 @@ body.dark-mode .electron-app {
   --vx-border-light: #292D33;
 
   --vx-primary-soft: rgba(7,193,96,.13);
+  --vx-disabled:    #2A2D34;
+  --vx-warning-soft: rgba(250,173,20,.14);
 
   --vx-shadow-sm:     0 2px 10px rgba(0,0,0,.18);
   --vx-shadow-md:     0 8px 28px rgba(0,0,0,.30);

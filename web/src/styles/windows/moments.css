@@ -7,10 +7,10 @@
   display: flex;
   gap: 12px;
   padding: 20px 20px 16px;
-  background: #FFFFFF;
-  border-bottom: 1px solid #EAECF0;
+  background: var(--vx-surface);
+  border-bottom: 1px solid var(--vx-border);
 }
-.electron-app .wc-moment-card:hover { background: #FAFBFC; }
+.electron-app .wc-moment-card:hover { background: var(--vx-bg-secondary); }
 .electron-app .wc-moment-body { flex: 1; min-width: 0; }
 .electron-app .wc-moment-header {
   display: flex; align-items: flex-start;
@@ -21,15 +21,15 @@
   font-size: 14px; font-weight: 600; color: #07C160;
 }
 .electron-app .wc-moment-delete {
-  font-size: 12px; color: #B0B4BB;
+  font-size: 12px; color: var(--vx-text-muted);
   background: transparent; border: none; cursor: pointer;
   padding: 2px 6px; border-radius: 4px;
   transition: background 120ms;
 }
-.electron-app .wc-moment-delete:hover { background: #F3F5F7; color: #8A8F98; }
+.electron-app .wc-moment-delete:hover { background: var(--vx-surface-hover); color: var(--vx-text-secondary); }
 
 .electron-app .wc-moment-text {
-  font-size: 14px; color: #1F2329;
+  font-size: 14px; color: var(--vx-text-primary);
   line-height: 1.7; margin-bottom: 10px;
   overflow-wrap: anywhere; word-break: break-word;
 }
@@ -69,17 +69,17 @@
 .electron-app .wc-moment-time { font-size: 12px; color: #A8ADB5; }
 .electron-app .wc-moment-action-btn {
   display: flex; align-items: center; gap: 4px;
-  font-size: 13px; color: #8A8F98;
+  font-size: 13px; color: var(--vx-text-secondary);
   background: none; border: none; cursor: pointer;
   transition: color 120ms;
 }
-.electron-app .wc-moment-action-btn:hover { color: #1F2329; }
+.electron-app .wc-moment-action-btn:hover { color: var(--vx-text-primary); }
 .electron-app .wc-moment-action-btn.liked { color: #07C160; }
 .electron-app .wc-moment-action-btn svg { width: 15px; height: 15px; fill: currentColor; }
 
 .electron-app .wc-moment-likes {
-  font-size: 13px; color: #8A8F98;
-  background: #F7F8FA; border-radius: 6px;
+  font-size: 13px; color: var(--vx-text-secondary);
+  background: var(--vx-bg); border-radius: 6px;
   padding: 6px 10px; margin-top: 8px;
   line-height: 1.6;
 }
@@ -92,27 +92,27 @@
 
 .electron-app .wc-moment-comments {
   margin-top: 6px;
-  background: #F7F8FA; border-radius: 6px;
+  background: var(--vx-bg); border-radius: 6px;
   padding: 6px 10px;
 }
 .electron-app .wc-moment-comment {
-  font-size: 13px; color: #1F2329;
+  font-size: 13px; color: var(--vx-text-primary);
   padding: 3px 0; line-height: 1.6;
 }
 .electron-app .wc-moment-comment-user { color: #07C160; font-weight: 500; }
-.electron-app .wc-moment-comment-reply { color: #8A8F98; }
+.electron-app .wc-moment-comment-reply { color: var(--vx-text-secondary); }
 .electron-app .wc-moment-comment-del {
-  font-size: 11px; color: #B0B4BB;
+  font-size: 11px; color: var(--vx-text-muted);
   background: none; border: none; cursor: pointer;
   margin-left: 6px; transition: color 120ms;
 }
-.electron-app .wc-moment-comment-del:hover { color: #FF4D4F; }
+.electron-app .wc-moment-comment-del:hover { color: var(--vx-danger); }
 .electron-app .wc-moment-comment-viewall {
   font-size: 12px; color: #07C160;
   background: none; border: none; cursor: pointer;
   margin-top: 4px; padding: 0;
 }
-.electron-app .wc-moment-comment-viewall:disabled { color: #B0B4BB; cursor: default; }
+.electron-app .wc-moment-comment-viewall:disabled { color: var(--vx-text-muted); cursor: default; }
 
 .electron-app .wc-moment-comment-input {
   display: flex; align-items: center; gap: 8px;
@@ -120,52 +120,52 @@
 }
 .electron-app .wc-moment-comment-field {
   flex: 1; height: 34px; padding: 0 10px;
-  background: #fff; border: 1px solid #EAECF0;
-  border-radius: 8px; font-size: 13px; color: #1F2329;
+  background: var(--vx-surface); border: 1px solid var(--vx-border);
+  border-radius: 8px; font-size: 13px; color: var(--vx-text-primary);
 }
 .electron-app .wc-moment-comment-field:focus { border-color: #07C160; outline: none; }
 .electron-app .wc-moment-comment-submit {
   height: 34px; padding: 0 14px;
-  background: #07C160; color: #fff;
+  background: #07C160; color: var(--vx-text-inverse);
   border-radius: 8px; font-size: 13px;
   border: none; cursor: pointer;
   transition: background 120ms;
 }
-.electron-app .wc-moment-comment-submit:hover { background: #06A652; }
-.electron-app .wc-moment-comment-submit:disabled { background: #C9CDD4; cursor: not-allowed; }
+.electron-app .wc-moment-comment-submit:hover { background: var(--vx-primary-hover); }
+.electron-app .wc-moment-comment-submit:disabled { background: var(--vx-disabled); cursor: not-allowed; }
 
 /* Notification bar */
 .electron-app .wc-moment-notif-bar {
   display: flex; align-items: center; gap: 8px;
   padding: 10px 20px;
-  background: #FAFBFC; border-bottom: 1px solid #EAECF0;
+  background: var(--vx-bg-secondary); border-bottom: 1px solid var(--vx-border);
   cursor: pointer; transition: background 120ms;
 }
-.electron-app .wc-moment-notif-bar:hover { background: #F3F5F7; }
+.electron-app .wc-moment-notif-bar:hover { background: var(--vx-surface-hover); }
 .electron-app .wc-moment-notif-icon { color: #07C160; display: flex; align-items: center; }
-.electron-app .wc-moment-notif-label { font-size: 14px; color: #1F2329; flex: 1; }
+.electron-app .wc-moment-notif-label { font-size: 14px; color: var(--vx-text-primary); flex: 1; }
 .electron-app .wc-moment-notif-badge {
   min-width: 18px; height: 18px;
-  background: #FF4D4F; color: #fff;
+  background: var(--vx-danger); color: var(--vx-text-inverse);
   border-radius: 9px; font-size: 11px; font-weight: 600;
   display: flex; align-items: center; justify-content: center;
   padding: 0 4px;
 }
 .electron-app .wc-moment-settings-btn {
   padding: 4px 8px; border-radius: 6px;
-  color: #8A8F98; background: none; border: none; cursor: pointer;
+  color: var(--vx-text-secondary); background: none; border: none; cursor: pointer;
   transition: background 120ms;
 }
-.electron-app .wc-moment-settings-btn:hover { background: #F3F5F7; color: #1F2329; }
+.electron-app .wc-moment-settings-btn:hover { background: var(--vx-surface-hover); color: var(--vx-text-primary); }
 
 /* Visibility option row */
 .electron-app .wc-moment-vis-opt {
   display: flex; align-items: center; gap: 10px;
   padding: 12px 16px;
-  cursor: pointer; border-bottom: 1px solid #F0F1F2;
+  cursor: pointer; border-bottom: 1px solid var(--vx-border-light);
   transition: background 120ms;
 }
-.electron-app .wc-moment-vis-opt:hover { background: #F3F5F7; }
+.electron-app .wc-moment-vis-opt:hover { background: var(--vx-surface-hover); }
 .electron-app .wc-moment-vis-opt:last-child { border-bottom: none; }
 
 /* Dark mode */

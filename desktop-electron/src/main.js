@@ -150,9 +150,14 @@ const CONFIG_ORIGINS = [...new Set(
 )];
 
 // 安全：校验存储中的 serverUrl，防止被篡改的配置污染 CSP connect-src/origin 推导
+// 启动时自动清除已废弃的官方旧服务器地址（45.77.131.33 / 104.244.95.70），
+// 与 Android/iOS 的 DEPRECATED_SERVERS 清理行为保持一致；默认回退 https://vxinchat.com。
+clearDeprecatedServerUrl();
 const _storedServerUrl = store.get('serverUrl');
 // SERVER_URL / API_ORIGIN / WS_ORIGIN 为 let：启动时 loadRemoteServerUrl() 可据远程配置更新。
-let SERVER_URL = isValidServerUrl(_storedServerUrl) ? _storedServerUrl : 'https://vxinchat.com';
+let SERVER_URL = isValidServerUrl(_storedServerUrl) && !isDeprecatedServerUrl(_storedServerUrl)
+  ? _storedServerUrl
+  : 'https://vxinchat.com';
 
 // 后台功能开关缓存（/api/config 的 features）。托盘菜单等主进程 UI 据此隐藏被后台关闭的入口。
 let serverFeatures = null;
@@ -172,6 +177,39 @@ function isValidServerUrl(url) {
   } catch {
     return false;
   }
+}
+
+// ── 已确认废弃的 v信官方旧服务器地址（与 Android/iOS DEPRECATED_SERVERS 一致）──
+// 仅自动清除白名单内的废弃官方地址；用户自己配置的其他自定义服务器一律保留。
+const DEPRECATED_SERVERS = new Set(['45.77.131.33', '104.244.95.70']);
+
+function isDeprecatedServerUrl(url) {
+  try {
+    const host = new URL(url).hostname;
+    return DEPRECATED_SERVERS.has(host);
+  } catch {
+    return false;
+  }
+}
+
+// 清除废弃的官方旧服务器地址（store + 渲染进程 localStorage）。返回是否发生了清除。
+function clearDeprecatedServerUrl() {
+  let cleared = false;
+  const stored = store.get('serverUrl');
+  if (typeof stored === 'string' && stored && isDeprecatedServerUrl(stored)) {
+    log.warn('[ServerUrl] 清除已废弃的官方旧服务器地址:', stored);
+    store.delete('serverUrl');
+    cleared = true;
+  }
+  try {
+    const manual = localStorage.getItem && localStorage.getItem('vxin_server_url');
+    if (manual && isDeprecatedServerUrl(manual)) {
+      log.warn('[ServerUrl] 清除渲染层废弃地址:', manual);
+      localStorage.removeItem('vxin_server_url');
+      cleared = true;
+    }
+  } catch { /* 渲染层尚未创建时忽略 */ }
+  return cleared;
 }
 
 // ── 安全：后端来源（用于 CSP connect-src）──────────────────────
@@ -221,7 +259,7 @@ async function loadRemoteServerUrlInner() {
       const buf = await fetchBuffer(url);
       const cfg = JSON.parse(buf.toString('utf8'));
       const api = (cfg.api && String(cfg.api).trim()) || (cfg.socket && String(cfg.socket).trim()) || '';
-      if (api && isValidServerUrl(api)) {
+      if (api && isValidServerUrl(api) && !isDeprecatedServerUrl(api)) {
         SERVER_URL = new URL(api).origin;
         API_ORIGIN = SERVER_URL;
         // socket 可与 api 分属不同主机(config.json 的 socket 字段)。单独解析,
@@ -1034,6 +1072,10 @@ function setupIPC() {
     if (!isTrustedSender(_e)) return false;
     if (typeof url !== 'string' || !isValidServerUrl(url)) {
       log.warn('config:setServerUrl 非法 URL:', url);
+      return false;
+    }
+    if (isDeprecatedServerUrl(url)) {
+      log.warn('config:setServerUrl 拒绝已废弃的官方旧服务器地址:', url);
       return false;
     }
     let u;
