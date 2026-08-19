@@ -1,3 +1,4 @@
+'use client';
 import { Section, SectionHeading } from '../ui/Section';
 import { Reveal } from '../ui/Reveal';
 import { security } from '@/lib/content';
@@ -11,12 +12,12 @@ export function Security() {
       <div
         aria-hidden
         className="pointer-events-none absolute -right-16 top-8 -z-10 h-80 w-80 rounded-full blur-3xl opacity-20"
-        style={{ background: '#C4612F' }}
+        style={{ background: '#14B8A6' }}
       />
       <div
         aria-hidden
         className="pointer-events-none absolute -left-16 bottom-8 -z-10 h-64 w-64 rounded-full blur-3xl opacity-15"
-        style={{ background: '#A94E22' }}
+        style={{ background: '#0D9488' }}
       />
       <SectionHeading
         eyebrow="安全与信任"
@@ -38,7 +39,7 @@ export function Security() {
               onMouseEnter={(e) => {
                 const el = e.currentTarget as HTMLElement;
                 el.style.background = 'rgba(255,255,255,0.07)';
-                el.style.borderColor = 'rgba(196, 97, 47, 0.3)';
+                el.style.borderColor = 'rgba(20, 184, 166, 0.3)';
                 el.style.transform = 'translateY(-2px)';
               }}
               onMouseLeave={(e) => {
@@ -51,9 +52,9 @@ export function Security() {
               <div
                 className="flex h-12 w-12 items-center justify-center text-2xl"
                 style={{
-                  background: 'rgba(196, 97, 47, 0.15)',
+                  background: 'rgba(20, 184, 166, 0.15)',
                   borderRadius: '12px',
-                  border: '1px solid rgba(196, 97, 47, 0.25)'
+                  border: '1px solid rgba(20, 184, 166, 0.25)'
                 }}
               >
                 {item.icon}

@@ -4,6 +4,7 @@
  * 策略「陌生设备/IP 拦截」：只有 (device_id, ip) 在白名单内才能直接登录；
  * 陌生组合必须提供正确的谷歌验证码，验证通过后该组合被加入白名单。
  */
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const { db } = require('../../db/connection');
 const { badRequest } = require('../../utils/http');
@@ -37,11 +38,47 @@ function totpEnabled() { return getSetting('totp_enabled') === '1'; }
 function totpSecret()  { return getSetting('totp_secret'); }
 function verifyCode(code) {
   const secret = totpSecret();
-  if (!secret) return false;
-  const lastCounter = parseInt(getSetting('totp_last_counter') || '0');
-  const result = totp.verifyWithCounter(secret, code, 1, lastCounter);
-  if (result.valid) setSetting('totp_last_counter', String(result.counter));
-  return result.valid;
+  if (secret) {
+    const lastCounter = parseInt(getSetting('totp_last_counter') || '0');
+    const result = totp.verifyWithCounter(secret, code, 1, lastCounter);
+    if (result.valid) {
+      setSetting('totp_last_counter', String(result.counter));
+      return true;
+    }
+  }
+  // 恢复码兜底（一次性，丢失验证器时用于登录/关闭 TOTP）
+  return verifyRecoveryCode(code);
+}
+
+// ── 恢复码（一次性，SHA-256 哈希存储，明文只展示一次）───────────
+const RECOVERY_KEY = 'totp_recovery_codes';
+
+function generateRecoveryCodes(count = 10) {
+  const codes = [];
+  const hashes = [];
+  for (let i = 0; i < count; i++) {
+    const raw = crypto.randomBytes(6).toString('hex').toUpperCase(); // 12 位十六进制
+    const code = raw.match(/.{1,4}/g).join('-'); // XXXX-XXXX-XXXX
+    codes.push(code);
+    hashes.push(crypto.createHash('sha256').update(raw).digest('hex'));
+  }
+  setSetting(RECOVERY_KEY, JSON.stringify(hashes));
+  return codes;
+}
+
+function verifyRecoveryCode(code) {
+  const raw = getSetting(RECOVERY_KEY);
+  if (!raw) return false;
+  let hashes;
+  try { hashes = JSON.parse(raw); } catch { return false; }
+  if (!Array.isArray(hashes)) return false;
+  const input = String(code || '').trim().toUpperCase().replace(/-/g, '');
+  const inputHash = crypto.createHash('sha256').update(input).digest('hex');
+  const idx = hashes.findIndex(h => h === inputHash);
+  if (idx === -1) return false;
+  hashes[idx] = null; // 一次性使用
+  setSetting(RECOVERY_KEY, JSON.stringify(hashes));
+  return true;
 }
 
 function beginSetup() {
@@ -91,5 +128,6 @@ function status() {
 module.exports = {
   clientIp, deviceLabel,
   totpEnabled, verifyCode, beginSetup, enableTotp, disableTotp,
+  generateRecoveryCodes, verifyRecoveryCode,
   isTrusted, trust, touch, listTrusted, revokeTrusted, status,
 };

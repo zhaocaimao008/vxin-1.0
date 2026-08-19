@@ -21,8 +21,8 @@ export function Features() {
                   <span
                     className="inline-flex px-4 py-1.5 text-xs font-medium uppercase tracking-wide"
                     style={{
-                      background: '#F2E3D6',
-                      color: '#C4612F',
+                      background: 'rgba(20,184,166,0.14)',
+                      color: '#14B8A6',
                       borderRadius: '999px',
                       letterSpacing: '0.05em'
                     }}
@@ -35,7 +35,7 @@ export function Features() {
                       fontFamily: '"Playfair Display", "Noto Serif SC", serif',
                       fontSize: 'clamp(1.75rem, 3vw, 2.25rem)',
                       fontWeight: 400,
-                      color: '#1F2421',
+                      color: '#E6EDF3',
                       letterSpacing: '-0.01em',
                       lineHeight: 1.2
                     }}
@@ -47,7 +47,7 @@ export function Features() {
                     style={{
                       fontSize: '1rem',
                       fontWeight: 300,
-                      color: '#5C635D',
+                      color: '#94A3B8',
                       lineHeight: '1.7'
                     }}
                   >
@@ -60,7 +60,7 @@ export function Features() {
                         className="flex items-start gap-3"
                         style={{
                           fontSize: '0.9375rem',
-                          color: '#1F2421'
+                          color: '#E6EDF3'
                         }}
                       >
                         <span
@@ -69,8 +69,8 @@ export function Features() {
                             width: '20px',
                             height: '20px',
                             borderRadius: '999px',
-                            background: '#F2E3D6',
-                            color: '#C4612F',
+                            background: 'rgba(20,184,166,0.14)',
+                            color: '#14B8A6',
                             fontSize: '11px',
                             fontWeight: 600,
                             marginTop: '2px'
@@ -89,7 +89,7 @@ export function Features() {
                     className="warm-card relative aspect-[4/3] overflow-hidden"
                     style={{
                       borderRadius: '1.25rem',
-                      background: 'linear-gradient(135deg, #FBF9F5 0%, #F7F4EF 100%)'
+                      background: 'linear-gradient(135deg, #0F172A 0%, #0B1220 100%)'
                     }}
                   >
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -107,7 +107,7 @@ export function Features() {
                       className="absolute bottom-4 left-4 px-3 py-1.5 text-xs font-medium"
                       style={{
                         background: 'rgba(255, 255, 255, 0.9)',
-                        color: '#5C635D',
+                        color: '#94A3B8',
                         borderRadius: '8px',
                         backdropFilter: 'blur(8px)',
                         border: '1px solid rgba(231, 225, 215, 0.5)'

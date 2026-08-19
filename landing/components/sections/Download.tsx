@@ -21,25 +21,48 @@ export function Download() {
               <div
                 className="flex h-16 w-16 items-center justify-center text-3xl"
                 style={{
-                  background: '#F2E3D6',
+                  background: 'rgba(20,184,166,0.14)',
                   borderRadius: '1rem',
-                  border: '1px solid rgba(196, 97, 47, 0.12)'
+                  border: '1px solid rgba(20, 184, 166, 0.12)'
                 }}
               >
                 {p.icon}
               </div>
               <h3
                 className="mt-5 font-medium"
-                style={{ fontSize: '1.0625rem', color: '#1F2421', fontWeight: 500 }}
+                style={{ fontSize: '1.0625rem', color: '#E6EDF3', fontWeight: 500 }}
               >
                 {p.name}
               </h3>
               <p
                 className="mt-1.5"
-                style={{ fontSize: '0.875rem', color: '#5C635D', fontWeight: 300 }}
+                style={{ fontSize: '0.875rem', color: '#94A3B8', fontWeight: 300 }}
               >
                 {p.desc}
               </p>
+              {p.key === 'android' && (
+                <div className="mt-6">
+                  {/* 二维码：手机扫码直接下载 APK */}
+                  <img
+                    src="/downloads/vxin-android-qr.png"
+                    alt="v信 Android 下载二维码"
+                    width={132}
+                    height={132}
+                    style={{
+                      borderRadius: '0.75rem',
+                      background: '#FFFFFF',
+                      padding: '8px',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.2)'
+                    }}
+                  />
+                  <p
+                    style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 300, marginTop: '0.5rem' }}
+                  >
+                    扫码直接下载
+                  </p>
+                </div>
+              )}
               <div className="mt-8 w-full">
                 <Button
                   href={p.available ? p.href : undefined}
@@ -48,19 +71,19 @@ export function Download() {
                   download={p.key === 'android'}
                   className="w-full"
                   style={p.available ? {
-                    background: '#C4612F',
+                    background: '#14B8A6',
                     color: 'white',
                     borderRadius: '999px',
                     border: 'none',
                     fontWeight: 500,
                     fontSize: '0.9375rem',
                     padding: '0.75rem 1.5rem',
-                    boxShadow: '0 2px 6px rgba(196, 97, 47, 0.2)'
+                    boxShadow: '0 2px 6px rgba(20, 184, 166, 0.2)'
                   } : {
                     background: 'transparent',
                     color: '#9AA3A0',
                     borderRadius: '999px',
-                    border: '1px solid #E7E1D7',
+                    border: '1px solid rgba(255,255,255,0.08)',
                     fontWeight: 400,
                     fontSize: '0.9375rem',
                     padding: '0.75rem 1.5rem'

@@ -11,8 +11,8 @@ html {
 }
 
 body {
-  background: #F7F4EF;
-  color: #1F2421;
+  background: #0B1220;
+  color: #E6EDF3;
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   font-weight: 300;
   -webkit-font-smoothing: antialiased;
@@ -47,7 +47,7 @@ section[id] {
 /* Warm earthy design tokens */
 .warm-card {
   background: #FFFFFF;
-  border: 1px solid #E7E1D7;
+  border: 1px solid rgba(255,255,255,0.08);
   box-shadow: 0 1px 2px rgba(31, 36, 33, 0.04), 0 8px 24px rgba(31, 36, 33, 0.06);
   transition: all 0.2s ease;
 }
@@ -59,13 +59,13 @@ section[id] {
 
 /* Terracotta accent utilities */
 .text-terracotta {
-  color: #C4612F;
+  color: #14B8A6;
 }
 
 .bg-terracotta {
-  background: #C4612F;
+  background: #14B8A6;
 }
 
 .bg-terracotta-soft {
-  background: #F2E3D6;
+  background: rgba(20,184,166,0.14);
 }

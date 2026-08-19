@@ -107,3 +107,5 @@ scripts/__pycache__/
 
 # 生产凭据目录（APNs .p8 / Firebase admin / GeTui）——禁止入库
 backend-v2/.secrets/
+backups/
+backend-v2/backups/
