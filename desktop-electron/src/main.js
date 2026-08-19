@@ -802,8 +802,10 @@ function setupAutoUpdater() {
   });
 
   autoUpdater.on('error', (err) => {
-    log.error('更新错误:', err.message);
-    mainWindow?.webContents.send('update:error', err.message);
+    // 完整原始错误（HttpError/stack/URL 等）只写开发日志，绝不发给渲染层，
+    // 避免用户直接看到内部实现细节（服务器路径、库异常文本等）。
+    log.error('更新错误:', err && err.stack ? err.stack : err.message);
+    mainWindow?.webContents.send('update:error', '暂时无法检查更新，请稍后重试');
   });
 }
 
