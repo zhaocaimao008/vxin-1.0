@@ -66,7 +66,7 @@
   display: flex; align-items: center;
   gap: 16px; margin-top: 10px;
 }
-.electron-app .wc-moment-time { font-size: 12px; color: #A8ADB5; }
+.electron-app .wc-moment-time { font-size: 12px; color: var(--vx-text-muted); }
 .electron-app .wc-moment-action-btn {
   display: flex; align-items: center; gap: 4px;
   font-size: 13px; color: var(--vx-text-secondary);
@@ -169,16 +169,16 @@
 .electron-app .wc-moment-vis-opt:last-child { border-bottom: none; }
 
 /* Dark mode */
-body.dark-mode .electron-app .wc-moment-card { background: #202327; border-bottom-color: #32363D; }
-body.dark-mode .electron-app .wc-moment-card:hover { background: #252830; }
-body.dark-mode .electron-app .wc-moment-text { color: #F2F3F5; }
+body.dark-mode .electron-app .wc-moment-card { background: var(--vx-surface); border-bottom-color: var(--vx-border); }
+body.dark-mode .electron-app .wc-moment-card:hover { background: var(--vx-surface-raised); }
+body.dark-mode .electron-app .wc-moment-text { color: var(--vx-text-primary); }
 body.dark-mode .electron-app .wc-moment-likes,
-body.dark-mode .electron-app .wc-moment-comments { background: #292D32; }
-body.dark-mode .electron-app .wc-moment-comment { color: #F2F3F5; }
-body.dark-mode .electron-app .wc-moment-comment-field { background: #292D32; border-color: #32363D; color: #F2F3F5; }
-body.dark-mode .electron-app .wc-moment-notif-bar { background: #1B1E22; border-bottom-color: #32363D; }
-body.dark-mode .electron-app .wc-moment-notif-bar:hover { background: rgba(255,255,255,.06); }
-body.dark-mode .electron-app .wc-moment-notif-label { color: #F2F3F5; }
-body.dark-mode .electron-app .wc-moment-vis-opt { border-bottom-color: #32363D; }
-body.dark-mode .electron-app .wc-moment-vis-opt:hover { background: rgba(255,255,255,.06); }
-body.dark-mode .electron-app .wc-moment-delete:hover { background: rgba(255,255,255,.08); color: #A9AFB7; }
+body.dark-mode .electron-app .wc-moment-comments { background: var(--vx-surface-hover); }
+body.dark-mode .electron-app .wc-moment-comment { color: var(--vx-text-primary); }
+body.dark-mode .electron-app .wc-moment-comment-field { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
+body.dark-mode .electron-app .wc-moment-notif-bar { background: var(--vx-bg-secondary); border-bottom-color: var(--vx-border); }
+body.dark-mode .electron-app .wc-moment-notif-bar:hover { background: var(--vx-hover-overlay); }
+body.dark-mode .electron-app .wc-moment-notif-label { color: var(--vx-text-primary); }
+body.dark-mode .electron-app .wc-moment-vis-opt { border-bottom-color: var(--vx-border); }
+body.dark-mode .electron-app .wc-moment-vis-opt:hover { background: var(--vx-hover-overlay); }
+body.dark-mode .electron-app .wc-moment-delete:hover { background: var(--vx-hover-overlay-strong); color: var(--vx-text-secondary); }

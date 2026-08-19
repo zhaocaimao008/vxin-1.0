@@ -38,6 +38,38 @@
   --vx-disabled:    #C9CDD4;
   --vx-warning-soft: #FFFBE6;
 
+  /* ── 消息气泡（light）── */
+  --vx-bubble-mine:        #D6F3E3;
+  --vx-bubble-other-border: #E8EAED;
+
+  /* ── 表面衍生色（light）── */
+  --vx-surface-muted: #F1F2F4;
+  --vx-surface-sunken: #F5F6F8;
+  --vx-border-strong: #D5D8DC;
+  --vx-border-muted:  #D7DADF;
+  --vx-text-disabled: #D0D3D8;
+  --vx-badge-success: #3DDC84;
+  --vx-primary-deep:  #0E9A47;
+  --vx-danger-soft:   rgba(255,77,79,.06);
+  --vx-overlay:       rgba(0,0,0,.35);
+  --vx-overlay-strong: rgba(0,0,0,.5);
+
+  /* ── 效果色（hover/焦点/边框/toast）── */
+  --vx-hover-overlay:      rgba(0,0,0,.05);
+  --vx-hover-overlay-strong: rgba(0,0,0,.08);
+  --vx-focus-ring:         rgba(7,193,96,.2);
+  --vx-focus-ring-soft:    rgba(7,193,96,.12);
+  --vx-danger-deep:        #E63234;
+  --vx-danger-border:      rgba(255,77,79,.2);
+  --vx-warning-text:       #B37400;
+  --vx-warning-border:     rgba(250,173,20,.2);
+  --vx-toast-success-bg:   rgba(7,193,96,.9);
+  --vx-toast-error-bg:     rgba(255,77,79,.9);
+  --vx-border-success:     #DCF4E6;
+  --vx-text-soft:          #D8DCE3;
+  --vx-bubble-mine-text:   #1F2329;
+  --vx-primary-deep-2:     #0A9C48;
+
   /* ── Radius ── */
   --vx-r-xs: 4px;
   --vx-r-sm: 6px;
@@ -77,6 +109,38 @@ body.dark-mode .electron-app {
   --vx-primary-soft: rgba(7,193,96,.13);
   --vx-disabled:    #2A2D34;
   --vx-warning-soft: rgba(250,173,20,.14);
+
+  /* ── 消息气泡（dark）── */
+  --vx-bubble-mine:        rgba(7,193,96,.20);
+  --vx-bubble-other-border: #32363D;
+
+  /* ── 表面衍生色（dark）── */
+  --vx-surface-muted: #292D32;
+  --vx-surface-sunken: #0F1115;
+  --vx-border-strong: #3A3F47;
+  --vx-border-muted:  #292D33;
+  --vx-text-disabled: #5A5E66;
+  --vx-badge-success: #3DDC84;
+  --vx-primary-deep:  #0E9A47;
+  --vx-danger-soft:   rgba(255,77,79,.12);
+  --vx-overlay:       rgba(0,0,0,.5);
+  --vx-overlay-strong: rgba(0,0,0,.6);
+
+  /* ── 效果色（dark）── */
+  --vx-hover-overlay:      rgba(255,255,255,.06);
+  --vx-hover-overlay-strong: rgba(255,255,255,.08);
+  --vx-focus-ring:         rgba(7,193,96,.2);
+  --vx-focus-ring-soft:    rgba(7,193,96,.14);
+  --vx-danger-deep:        #E63234;
+  --vx-danger-border:      rgba(255,77,79,.25);
+  --vx-warning-text:       #B37400;
+  --vx-warning-border:     rgba(250,173,20,.2);
+  --vx-toast-success-bg:   rgba(7,193,96,.9);
+  --vx-toast-error-bg:     rgba(255,77,79,.9);
+  --vx-border-success:     rgba(7,193,96,.3);
+  --vx-text-soft:          #D0D3D8;
+  --vx-bubble-mine-text:   #E8EBF0;
+  --vx-primary-deep-2:     #0A9C48;
 
   --vx-shadow-sm:     0 2px 10px rgba(0,0,0,.18);
   --vx-shadow-md:     0 8px 28px rgba(0,0,0,.30);

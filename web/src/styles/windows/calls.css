@@ -107,12 +107,12 @@
 .electron-app .cm-ended-overlay {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(0,0,0,.5);
+  background: var(--vx-overlay-strong);
   z-index: 10;
 }
 .electron-app .cm-ended-text {
   font-size: 16px; font-weight: 500; color: var(--vx-text-inverse);
-  background: rgba(0,0,0,.5);
+  background: var(--vx-overlay-strong);
   padding: 10px 20px; border-radius: 10px;
 }
 
@@ -120,13 +120,13 @@
 .electron-app .cm-bubble {
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 8px 28px rgba(0,0,0,.35);
+  box-shadow: 0 8px 28px var(--vx-overlay);
 }
 .electron-app .cm-mini-hangup {
   background: var(--vx-danger) !important;
   border-radius: 50%;
 }
-.electron-app .cm-mini-hangup:hover { background: #E63234 !important; }
+.electron-app .cm-mini-hangup:hover { background: var(--vx-danger-deep) !important; }
 .electron-app .cm-bubble-audio-label {
   font-size: 12px;
   color: rgba(255,255,255,.8);
@@ -148,7 +148,7 @@
   font-size: 17px;
   font-weight: 600;
   color: var(--vx-text-inverse);
-  text-shadow: 0 1px 4px rgba(0,0,0,.5);
+  text-shadow: 0 1px 4px var(--vx-overlay-strong);
 }
 .electron-app .cm-video-status {
   font-size: 13px;

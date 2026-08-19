@@ -78,7 +78,7 @@
 /* Toggle */
 .electron-app .gi-toggle {
   width: 40px; height: 22px;
-  border-radius: 11px; background: #D7DADF;
+  border-radius: 11px; background: var(--vx-border-muted);
   border: none; cursor: pointer;
   position: relative; transition: background 120ms;
 }
@@ -96,7 +96,7 @@
   font-size: 11px; padding: 2px 6px;
   border-radius: 4px; font-weight: 500;
 }
-.electron-app .gi-badge-owner { background: rgba(250,173,20,.12); color: #B37400; }
+.electron-app .gi-badge-owner { background: var(--vx-warning-soft); color: var(--vx-warning-text); }
 .electron-app .gi-badge-admin { background: var(--vx-surface-active); color: #07C160; }
 
 /* Member item */
@@ -149,11 +149,11 @@
 .electron-app .gi-btn-kick {
   height: 26px; padding: 0 10px;
   font-size: 12px; border-radius: 4px;
-  color: var(--vx-danger); background: rgba(255,77,79,.06);
-  border: 1px solid rgba(255,77,79,.2);
+  color: var(--vx-danger); background: var(--vx-danger-soft);
+  border: 1px solid var(--vx-danger-border);
   cursor: pointer; transition: background 120ms;
 }
-.electron-app .gi-btn-kick:hover { background: rgba(255,77,79,.12); }
+.electron-app .gi-btn-kick:hover { background: var(--vx-danger-soft); }
 .electron-app .gi-name-edit {
   flex: 1; height: 32px; padding: 0 10px;
   border: 1.5px solid #07C160;
@@ -188,17 +188,17 @@
 .electron-app .gi-spinner-green { border-top-color: #07C160; }
 
 /* Dark mode */
-body.dark-mode .electron-app .gi-panel { background: #1B1E22; border-left-color: #32363D; }
-body.dark-mode .electron-app .gi-header { background: #1B1E22; border-bottom-color: #32363D; }
+body.dark-mode .electron-app .gi-panel { background: var(--vx-bg-secondary); border-left-color: var(--vx-border); }
+body.dark-mode .electron-app .gi-header { background: var(--vx-bg-secondary); border-bottom-color: var(--vx-border); }
 body.dark-mode .electron-app .gi-section,
-body.dark-mode .electron-app .gi-section-pad { background: #202327; }
-body.dark-mode .electron-app .gi-row { border-bottom-color: #292D33; }
-body.dark-mode .electron-app .gi-name { color: #F2F3F5; }
-body.dark-mode .electron-app .gi-mn { color: #F2F3F5; }
-body.dark-mode .electron-app .gi-mi:hover { background: rgba(255,255,255,.06); }
-body.dark-mode .electron-app .gi-mi { border-bottom-color: #292D33; }
-body.dark-mode .electron-app .gi-ann-textarea { background: #292D32; border-color: #32363D; color: #F2F3F5; }
-body.dark-mode .electron-app .gi-name-edit { background: #1B1E22; color: #F2F3F5; }
-body.dark-mode .electron-app .gi-toggle { background: #3A3F47; }
-body.dark-mode .electron-app .gi-badge-owner { background: rgba(250,173,20,.16); color: var(--vx-warning); }
-body.dark-mode .electron-app .gi-badge-admin { background: rgba(7,193,96,.16); color: #3DDC84; }
+body.dark-mode .electron-app .gi-section-pad { background: var(--vx-surface); }
+body.dark-mode .electron-app .gi-row { border-bottom-color: var(--vx-border-light); }
+body.dark-mode .electron-app .gi-name { color: var(--vx-text-primary); }
+body.dark-mode .electron-app .gi-mn { color: var(--vx-text-primary); }
+body.dark-mode .electron-app .gi-mi:hover { background: var(--vx-hover-overlay); }
+body.dark-mode .electron-app .gi-mi { border-bottom-color: var(--vx-border-light); }
+body.dark-mode .electron-app .gi-ann-textarea { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
+body.dark-mode .electron-app .gi-name-edit { background: var(--vx-bg-secondary); color: var(--vx-text-primary); }
+body.dark-mode .electron-app .gi-toggle { background: var(--vx-border-strong); }
+body.dark-mode .electron-app .gi-badge-owner { background: var(--vx-warning-soft); color: var(--vx-warning); }
+body.dark-mode .electron-app .gi-badge-admin { background: var(--vx-primary-soft); color: var(--vx-badge-success); }
