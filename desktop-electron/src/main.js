@@ -274,6 +274,12 @@ async function loadRemoteServerUrlInner() {
   for (const url of CONFIG_URLS) {
     try {
       const buf = await fetchBuffer(url);
+      // 竞态防护：fetch 期间（可能远超 5s 启动超时，后台仍在跑）用户手动切换了服务器
+      // → manual override 已置位，放弃本次远程覆盖，避免覆盖用户刚选择的自定义服务器。
+      if (store.get('serverUrlManual') === true) {
+        log.info(`[RemoteConfig] fetch 期间用户手动配置了服务器，放弃远程覆盖: ${SERVER_URL}`);
+        return;
+      }
       const cfg = JSON.parse(buf.toString('utf8'));
       const api = (cfg.api && String(cfg.api).trim()) || (cfg.socket && String(cfg.socket).trim()) || '';
       if (api && isValidServerUrl(api) && !isDeprecatedServerUrl(api)) {

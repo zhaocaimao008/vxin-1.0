@@ -235,7 +235,7 @@
   cursor: pointer; font-size: 14px;
   transition: background 120ms;
 }
-.electron-app .up-close-btn:hover { background: rgba(0,0,0,.55); }
+.electron-app .up-close-btn:hover { background: var(--vx-img-overlay-strong); }
 .electron-app .up-avatar-wrap {
   position: absolute;
   bottom: -28px; left: 20px;
@@ -441,5 +441,5 @@ body.dark-mode .electron-app .afm-result-item:hover { background: var(--vx-hover
 body.dark-mode .electron-app .afm-result-name { color: var(--vx-text-primary); }
 body.dark-mode .electron-app .cl-entry-icon-box { background: var(--vx-primary-soft); }
 body.dark-mode .electron-app .req-status-accepted { color: var(--vx-badge-success); background: var(--vx-primary-soft); }
-body.dark-mode .electron-app .req-status-rejected { color: #8E8E93; background: var(--vx-hover-overlay-strong); }
+body.dark-mode .electron-app .req-status-rejected { color: var(--vx-status-rejected); background: var(--vx-hover-overlay-strong); }
 body.dark-mode .electron-app .req-status-pending  { color: var(--vx-warning); background: var(--vx-warning-soft); }

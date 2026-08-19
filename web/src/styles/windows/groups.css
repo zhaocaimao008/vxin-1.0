@@ -66,13 +66,13 @@
 .electron-app .gi-av-img { border-radius: 10px; }
 .electron-app .gi-av-overlay {
   position: absolute; inset: 0;
-  background: rgba(0,0,0,.4);
+  background: var(--vx-img-overlay-soft);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
 }
 .electron-app .gi-av-icon { width: 20px; height: 20px; fill: var(--vx-text-inverse); }
-.electron-app .gi-av-hint { font-size: 11px; color: rgba(255,255,255,.9); margin-top: 3px; }
-.electron-app .gi-av-uploading { font-size: 11px; color: rgba(255,255,255,.9); }
+.electron-app .gi-av-hint { font-size: 11px; color: var(--vx-text-on-img); margin-top: 3px; }
+.electron-app .gi-av-uploading { font-size: 11px; color: var(--vx-text-on-img); }
 .electron-app .gi-av-input { display: none; }
 
 /* Toggle */

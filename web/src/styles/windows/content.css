@@ -98,7 +98,7 @@
 .electron-app .pf-avatar-wrap:hover { transform: translateY(-2px); }
 .electron-app .pf-avatar-edit {
   position: absolute; bottom: 0; left: 0; right: 0;
-  background: rgba(0,0,0,.45);
+  background: var(--vx-img-overlay);
   font-size: 11px; color: var(--vx-text-inverse);
   text-align: center; padding: 3px;
 }

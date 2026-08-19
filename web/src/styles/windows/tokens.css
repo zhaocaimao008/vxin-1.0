@@ -70,6 +70,13 @@
   --vx-bubble-mine-text:   #1F2329;
   --vx-primary-deep-2:     #0A9C48;
 
+  /* ── 媒体覆盖层（头像/图片上的遮罩，与主题无关）── */
+  --vx-img-overlay:        rgba(0,0,0,.45);
+  --vx-img-overlay-strong: rgba(0,0,0,.55);
+  --vx-img-overlay-soft:   rgba(0,0,0,.4);
+  --vx-text-on-img:        rgba(255,255,255,.9);
+  --vx-status-rejected:    #8E8E93;
+
   /* ── Radius ── */
   --vx-r-xs: 4px;
   --vx-r-sm: 6px;
@@ -141,6 +148,13 @@ body.dark-mode .electron-app {
   --vx-text-soft:          #D0D3D8;
   --vx-bubble-mine-text:   #E8EBF0;
   --vx-primary-deep-2:     #0A9C48;
+
+  /* ── 媒体覆盖层（dark，与 light 一致）── */
+  --vx-img-overlay:        rgba(0,0,0,.45);
+  --vx-img-overlay-strong: rgba(0,0,0,.55);
+  --vx-img-overlay-soft:   rgba(0,0,0,.4);
+  --vx-text-on-img:        rgba(255,255,255,.9);
+  --vx-status-rejected:    #8E8E93;
 
   --vx-shadow-sm:     0 2px 10px rgba(0,0,0,.18);
   --vx-shadow-md:     0 8px 28px rgba(0,0,0,.30);
