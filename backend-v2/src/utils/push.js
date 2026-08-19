@@ -283,7 +283,7 @@ async function pushNewMessage({ conversationId, senderId, senderName, content, t
 // ── APNs VoIP push（PushKit，走 firebase-admin 之外的独立通路）──────
 // firebase-admin/FCM 不代发 APNs VoIP（voip 类型 token 不是 FCM token），需直连
 // api.push.apple.com 用 HTTP/2 + APNs Provider Token（ES256 JWT）发送。
-const APNS_VOIP_TOPIC = 'com.vxin.app';
+const APNS_VOIP_TOPIC = 'com.vxin.app.voip';
 let apnsVoipJwtCache = null; // { token, iat } —— 同一 JWT 复用一段时间，避免每次推送都重新签名
 
 function getApnsVoipToken() {
