@@ -338,26 +338,27 @@ export default function Login() {
               '登录'
             )}
           </button>
-
-          {/* 用户协议：真实勾选状态，未勾选禁止提交；协议/隐私政策暂无落地页，链接点击不跳转 */}
-          <div className="auth-agreement-row">
-            <input
-              type="checkbox"
-              className="auth-agreement-box"
-              data-testid="login-agreement-checkbox"
-              checked={agreed}
-              onChange={e => setAgreed(e.target.checked)}
-            />
-            <p className="auth-agreement">
-              我已阅读并同意 <a href="#" onClick={e => e.preventDefault()}>《用户协议》</a> 和{' '}
-              <a href="#" onClick={e => e.preventDefault()}>《隐私政策》</a>
-            </p>
-          </div>
         </form>
 
         <p className="auth-footer">
           还没有账号？<Link to="/register" className="auth-link">立即注册</Link>
         </p>
+
+        {/* 用户协议：真实勾选状态，未勾选禁止提交；协议/隐私政策暂无落地页，链接点击不跳转
+            位置对齐参考图（图标参考同目录 Web登录页面-ref.png）：协议行在"立即注册"下方 */}
+        <div className="auth-agreement-row">
+          <input
+            type="checkbox"
+            className="auth-agreement-box"
+            data-testid="login-agreement-checkbox"
+            checked={agreed}
+            onChange={e => setAgreed(e.target.checked)}
+          />
+          <p className="auth-agreement">
+            我已阅读并同意 <a href="#" onClick={e => e.preventDefault()}>《用户协议》</a> 和{' '}
+            <a href="#" onClick={e => e.preventDefault()}>《隐私政策》</a>
+          </p>
+        </div>
 
         {/* 服务器切换 — 仅桌面端 */}
         {isElectron && (

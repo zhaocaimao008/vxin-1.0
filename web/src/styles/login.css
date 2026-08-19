@@ -7,7 +7,9 @@
    边框：#E3E7EB, 分割线 #EEF0F2
    危险色：#FF4D4F
 
-   登录页始终浅色，不受深色模式影响。
+   Dark Mode 覆盖见文件末尾 body.dark-mode .auth-page 区块，
+   与 styles/windows/tokens.css 的 dark 取值保持一致
+   （bg #15171A、surface #202327、text #F2F3F5/#A9AFB7、border #32363D）。
 ================================================================ */
 
 .auth-page {
@@ -563,4 +565,130 @@
   border-radius: 10px;
   font-size: 13px; line-height: 1.6;
   color: #5F6670;
+}
+
+/* ================================================================
+   Dark Mode — 与 styles/windows/tokens.css 的 dark 调色板对齐：
+   bg #15171A / surface(卡片) #202327 / text-primary #F2F3F5 /
+   text-secondary #A9AFB7 / border #32363D / primary（暗色下提亮）#2BB86E
+================================================================ */
+body.dark-mode .auth-page { background: #15171A; }
+body.dark-mode .auth-top-logo-text { color: #F2F3F5; }
+
+body.dark-mode .auth-split {
+  background: #202327;
+  box-shadow: 0 24px 64px rgba(0,0,0,.45), 0 4px 12px rgba(0,0,0,.3);
+}
+body.dark-mode .auth-split-left {
+  background: linear-gradient(135deg, #17251C 0%, #182420 25%, #191F20 50%, #1A1D1F 75%, #202327 100%);
+}
+body.dark-mode .auth-split-left::before { background: radial-gradient(ellipse at bottom, rgba(43,184,110,.16) 0%, transparent 70%); }
+body.dark-mode .auth-split-left::after  { background: radial-gradient(circle, rgba(43,184,110,.12) 0%, transparent 70%); }
+body.dark-mode .auth-split-left-dots    { background-image: radial-gradient(circle, rgba(43,184,110,.30) 1.4px, transparent 1.6px); }
+body.dark-mode .auth-split-right { background: #202327; }
+
+body.dark-mode .auth-brand-name { color: #F2F3F5; }
+body.dark-mode .auth-brand-desc { color: #A9AFB7; }
+
+body.dark-mode .auth-tab { color: #A9AFB7; }
+body.dark-mode .auth-tab.active { color: #2BB86E; }
+body.dark-mode .auth-tab.active::after { background: #2BB86E; }
+
+body.dark-mode .auth-accounts { background: #292D32; border-color: #32363D; }
+body.dark-mode .auth-accounts-header { border-bottom-color: #32363D; }
+body.dark-mode .auth-accounts-title,
+body.dark-mode .auth-accounts-count { color: #A9AFB7; }
+body.dark-mode .auth-account-row { border-bottom-color: #32363D; }
+body.dark-mode .auth-account-btn:hover { background: rgba(43,184,110,.12); }
+body.dark-mode .auth-account-name { color: #F2F3F5; }
+body.dark-mode .auth-account-id { color: #A9AFB7; }
+body.dark-mode .auth-account-remove { color: #A9AFB7; }
+body.dark-mode .auth-account-remove:hover { color: #FF6B6B; }
+
+body.dark-mode .auth-field-input-wrap {
+  background: #292D32;
+  border-color: #32363D;
+}
+body.dark-mode .auth-field.focused .auth-field-input-wrap {
+  border-color: #2BB86E;
+  background: #292D32;
+  box-shadow: 0 0 0 2px rgba(43,184,110,.16);
+}
+body.dark-mode .auth-field-icon { color: #A9AFB7; }
+body.dark-mode .auth-field.focused .auth-field-icon { color: #2BB86E; }
+body.dark-mode .auth-field-input { color: #F2F3F5; caret-color: #2BB86E; }
+body.dark-mode .auth-field-input::placeholder { color: #737A84; }
+body.dark-mode .auth-field-input:-webkit-autofill,
+body.dark-mode .auth-field-input:-webkit-autofill:hover,
+body.dark-mode .auth-field-input:-webkit-autofill:focus,
+body.dark-mode .auth-field-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #292D32 inset !important;
+  -webkit-text-fill-color: #F2F3F5 !important;
+  caret-color: #2BB86E !important;
+}
+body.dark-mode .auth-field-cc { color: #A9AFB7; border-left-color: #32363D; }
+body.dark-mode .auth-pwd-toggle { color: #A9AFB7; }
+body.dark-mode .auth-pwd-toggle:hover { color: #F2F3F5; }
+body.dark-mode .auth-verify-code-btn:disabled { color: #5A5E66; }
+
+body.dark-mode .auth-error {
+  background: rgba(255,107,107,.12);
+  border-color: rgba(255,107,107,.3);
+  color: #FF8A8A;
+}
+
+body.dark-mode .auth-remember { color: #A9AFB7; }
+body.dark-mode .auth-remember:hover { color: #F2F3F5; }
+body.dark-mode .auth-remember-box,
+body.dark-mode .auth-agreement-box {
+  border-color: #4A4F58;
+  background: #292D32;
+}
+body.dark-mode .auth-remember-box:checked,
+body.dark-mode .auth-agreement-box:checked {
+  background: #2BB86E;
+  border-color: #2BB86E;
+}
+body.dark-mode .auth-agreement { color: #A9AFB7; }
+body.dark-mode .auth-agreement a,
+body.dark-mode .auth-link { color: #2BB86E; }
+body.dark-mode .auth-agreement a:hover,
+body.dark-mode .auth-link:hover { color: #5FCC8E; }
+
+body.dark-mode .auth-submit { background: #2BB86E; box-shadow: 0 4px 16px rgba(43,184,110,.28); }
+body.dark-mode .auth-submit:hover:not(:disabled) { background: #5FCC8E; box-shadow: 0 8px 24px rgba(43,184,110,.34); }
+body.dark-mode .auth-submit:active:not(:disabled) { background: #07C160; }
+body.dark-mode .auth-submit:disabled { background: #32363D; color: #5A5E66; }
+
+body.dark-mode .auth-footer { color: #A9AFB7; }
+
+body.dark-mode .auth-server-toggle { color: #A9AFB7; }
+body.dark-mode .auth-server-toggle:hover { color: #F2F3F5; background: #292D32; }
+body.dark-mode .auth-server-panel { background: #292D32; border-color: #32363D; }
+body.dark-mode .auth-server-title { color: #A9AFB7; }
+body.dark-mode .auth-server-input { background: #1B1E22; border-color: #32363D; color: #F2F3F5; }
+body.dark-mode .auth-server-input::placeholder { color: #737A84; }
+body.dark-mode .auth-server-input:focus { border-color: #2BB86E; box-shadow: 0 0 0 2px rgba(43,184,110,.16); }
+body.dark-mode .auth-server-btn--cancel { background: #32363D; color: #A9AFB7; }
+body.dark-mode .auth-server-btn--cancel:hover { background: #3A3F47; }
+body.dark-mode .auth-server-btn--save { background: #2BB86E; color: #15171A; }
+body.dark-mode .auth-server-btn--save:hover { background: #5FCC8E; }
+body.dark-mode .auth-server-cancel { color: #A9AFB7; }
+body.dark-mode .auth-server-cancel:hover { color: #F2F3F5; }
+
+body.dark-mode .auth-lang-btn { color: #A9AFB7; }
+body.dark-mode .auth-lang-btn:hover { background: #292D32; color: #F2F3F5; }
+body.dark-mode .auth-lang-menu { background: #202327; border-color: #32363D; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+body.dark-mode .auth-lang-item { color: #F2F3F5; }
+body.dark-mode .auth-lang-item:hover { background: rgba(43,184,110,.14); }
+body.dark-mode .auth-lang-item.active { color: #2BB86E; }
+
+body.dark-mode .auth-page-footer { color: #A9AFB7; }
+body.dark-mode .auth-page-footer a { color: #A9AFB7; }
+body.dark-mode .auth-page-footer a:hover { color: #2BB86E; }
+
+body.dark-mode .auth-note {
+  background: rgba(43,184,110,.10);
+  border-color: rgba(43,184,110,.28);
+  color: #A9AFB7;
 }
