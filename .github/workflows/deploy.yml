@@ -168,6 +168,8 @@ jobs:
           chmod 600 .env 2>/dev/null || true
 
           echo "🚀 步骤 3: 重启应用（pm2: vxin-backend）"
+          # 旧进程名迁移：老服务器上是 vxin-server-v2，先删避免端口占用/双进程
+          pm2 delete vxin-server-v2 2>/dev/null || true
           pm2 restart vxin-backend --update-env || PORT=3002 pm2 start src/server.js --name vxin-backend
           pm2 save || true
 
@@ -192,6 +194,7 @@ jobs:
               git -C "$REPO_ROOT" reset --hard "$PREV_SHA"
               cd "$REPO_ROOT/web" && npm ci && npm run build || echo "⚠ 回滚 web 构建失败（前端可能保留新版 dist）"
               cd "$DEPLOY_PATH" && npm ci --omit=dev
+              pm2 delete vxin-server-v2 2>/dev/null || true
               pm2 restart vxin-backend --update-env || PORT=3002 pm2 start src/server.js --name vxin-backend
               pm2 save || true
               sleep 5
