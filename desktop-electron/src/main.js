@@ -491,21 +491,36 @@ function sanitizeBounds(raw) {
 }
 
 // ── 主窗口 ─────────────────────────────────────────────────
-// ── 页面加载：优先远程（服务器部署即热更新），失败回退本地打包版 ──
-// 远程模式：前端代码改动 → 构建部署到服务器 → 用户重启 App 即新版，
-// 无需重新下载安装包。本地 dist 仅作离线/服务器不可达时的兑底。
+// ── 页面加载：本地打包版优先（EXE 自带登录页，离线可用），远程兜底 ──
+// 注意：服务器根路径部署的是落地页(landing)，不是 web 登录页；若远程优先会
+// 打开落地页而非登录界面（曾因废弃地址 45.77.131.33 修复为正式域名后踩坑）。
+// 因此默认加载随包发行的 web/dist 登录页；仅当本地文件缺失/加载失败时
+// 才尝试远程（自定义服务器/特殊部署场景）。
 function loadAppPage() {
-  const remoteUrl = (SERVER_URL && /^https?:\/\//.test(SERVER_URL)) ? SERVER_URL : null;
-  if (!remoteUrl) {
-    mainWindow.loadFile(indexHtmlPath());
-    return;
-  }
-  mainWindow.loadURL(remoteUrl).catch((err) => {
-    log.warn('[Window] 远程页面加载失败，回退本地版本:', err.message);
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.loadFile(indexHtmlPath()).catch(() => {});
+  mainWindow.loadFile(indexHtmlPath()).catch((err) => {
+    log.warn('[Window] 本地页面加载失败，尝试远程版本:', err.message);
+    // 远程兑底仅对用户手动配置的自定义服务器生效（自定义部署根路径才是 web 应用）；
+    // 官方域名根路径是落地页(landing)，禁止远程兑底，避免再次打开落地页。
+    const manual = store.get('serverUrlManual') === true;
+    const remoteUrl = manual && SERVER_URL && /^https?:\/\//.test(SERVER_URL) ? SERVER_URL : null;
+    if (remoteUrl && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.loadURL(remoteUrl).catch(() => {});
     }
   });
+}
+
+// 本地/远程加载均失败时的兜底弹窗（重试或退出）
+function showLoadErrorDialog(errorDesc, errorCode) {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  dialog.showMessageBox(mainWindow, {
+    type: 'error', title: 'v信',
+    message: '界面加载失败',
+    detail: `错误：${errorDesc || errorCode}`,
+    buttons: ['重试', '退出'], defaultId: 0, cancelId: 1,
+  }).then(({ response }) => {
+    if (response === 0) loadAppPage();
+    else { isQuitting = true; app.quit(); }
+  }).catch(() => {});
 }
 
 function createWindow() {
@@ -562,7 +577,7 @@ function createWindow() {
     if (!isMainFrame || errorCode === -3 || !mainWindow) return;
     log.error('页面加载失败:', errorCode, errorDesc, url);
     if (/^https?:\/\//.test(url)) {
-      // 远程不可达 → 回退本地打包版本
+      // 远程兑底失败 → 回退本地打包版本
       mainWindow.loadFile(indexHtmlPath()).catch((e) => {
         log.error('本地回退也失败:', e.message);
         dialog.showMessageBox(mainWindow, {
@@ -576,16 +591,21 @@ function createWindow() {
         }).catch(() => {});
       });
     } else {
-      // 本地加载失败 → 直接弹窗
-      dialog.showMessageBox(mainWindow, {
-        type: 'error', title: 'v信',
-        message: '界面加载失败',
-        detail: `错误：${errorDesc || errorCode}`,
-        buttons: ['重试', '退出'], defaultId: 0, cancelId: 1,
-      }).then(({ response }) => {
-        if (response === 0) loadAppPage();
-        else { isQuitting = true; app.quit(); }
-      }).catch(() => {});
+      // 本地打包版失败 → 尝试远程兑底（仅用户手动配置的自定义服务器；官方域名根路径
+      // 是 landing 落地页，兑底只会再打开落地页，故不再尝试）
+      const manual = store.get('serverUrlManual') === true;
+      const remoteUrl = manual && SERVER_URL && /^https?:\/\//.test(SERVER_URL) ? SERVER_URL : null;
+      const tryRemote = () => {
+        if (remoteUrl && mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.loadURL(remoteUrl).catch(() => {
+            log.error('远程兑底也失败，弹窗提示');
+            showLoadErrorDialog(errorDesc, errorCode);
+          });
+        } else {
+          showLoadErrorDialog(errorDesc, errorCode);
+        }
+      };
+      tryRemote();
     }
   });
   mainWindow.webContents.on('render-process-gone', (_e, details) => {
