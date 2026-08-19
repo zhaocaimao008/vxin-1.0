@@ -68,6 +68,8 @@ struct ChatView: View {
         }
         .navigationTitle(vm.peerTyping ? "对方正在输入…" : (vm.title.isEmpty ? "聊天" : vm.title))
         .navigationBarTitleDisplayMode(.inline)
+        // 聊天页全屏沉浸：隐藏底部 TabBar，避免输入栏与 TabBar 挤压（问题1）
+        .toolbar(.hidden, for: .tabBar)
         .toast($vm.error)   // 发送/上传/收藏/转发等失败与"已收藏""已转发"等提示统一透出
         .toolbar {
             if isGroup {
@@ -478,21 +480,25 @@ struct ChatView: View {
             // 微信风格输入栏：[🎤][@?][输入框][😀][ + / 发送 ]
             HStack(spacing: 6) {
                 Button { onMicTap() } label: { Text(vm.recording ? "⏹" : "🎤").font(.title3) }
+                    .frame(width: 36, height: 36)   // 与输入框垂直居中对齐
                     .accessibilityIdentifier("chat-voice-btn")
                     .accessibilityLabel(vm.recording ? "停止录音" : "语音输入")
                 if vm.isGroup {
                     Button { showMentionPicker = true } label: { Text("@").font(.title3) }
+                        .frame(width: 32, height: 36)
                         .accessibilityLabel("提及成员")
                 }
                 TextField("输入消息…", text: $vm.input, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
                     .lineLimit(1...4)
+                    .frame(minHeight: 36)
                     .accessibilityIdentifier("chat-msg-input")
 
                 Button {
                     showStickerPanel.toggle()
                     if showStickerPanel { showFuncPanel = false; vm.loadStickers() }
                 } label: { Text(showStickerPanel ? "⌨️" : "😀").font(.title3) }
+                    .frame(width: 36, height: 36)
                     .accessibilityIdentifier("chat-emoji-btn")
                     .accessibilityLabel("表情")
 
@@ -503,6 +509,7 @@ struct ChatView: View {
                         if vm.sending { ProgressView() }
                         else { Image(systemName: "paperplane.fill").foregroundColor(.vxinGreen) }
                     }
+                    .frame(width: 36, height: 36)
                     .disabled(!hasText || vm.sending)
                     .accessibilityIdentifier("chat-send-btn")
                     .accessibilityLabel("发送")
@@ -514,11 +521,13 @@ struct ChatView: View {
                         Image(systemName: showFuncPanel ? "xmark.circle" : "plus.circle")
                             .font(.title2).foregroundColor(.vxinTextSecondary)
                     }
+                    .frame(width: 36, height: 36)
                     .accessibilityIdentifier("chat-more-btn")
                     .accessibilityLabel("更多功能")
                 }
             }
             .padding(8)
+            .background(Color(.systemBackground).ignoresSafeArea(edges: .bottom))   // 输入栏背景：深色模式自动适配；背景向下延伸到 Home Indicator 区域（内容仍留在 safe area 内）
 
             if showStickerPanel {
                 stickerEmojiPanel

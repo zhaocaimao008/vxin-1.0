@@ -158,6 +158,7 @@ fun ProfileScreen(
     onOpenFavorites: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onOpenProfileEdit: () -> Unit = {},
+    collectEnabled: Boolean = true, // 后台「收藏」开关，四端一致
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -268,8 +269,11 @@ fun ProfileScreen(
                 RowDivider()
                 SettingsRow(VxinIcons.Wallet, "我的钱包", onClick = onOpenWallet)
                 RowDivider()
-                SettingsRow(VxinIcons.Star, "收藏", onClick = onOpenFavorites)
-                RowDivider()
+                // 收藏：后台开关关闭即隐藏（四端一致）
+                if (collectEnabled) {
+                    SettingsRow(VxinIcons.Star, "收藏", onClick = onOpenFavorites)
+                    RowDivider()
+                }
                 SettingsRow(VxinIcons.PhoneCall, "通话记录", onClick = onOpenCallHistory)
                 RowDivider()
                 SettingsRow(VxinIcons.Devices, "登录设备管理", onClick = onOpenSessions)

@@ -97,6 +97,7 @@ private struct RowDivider: View {
 
 struct ProfileView: View {
     @EnvironmentObject private var session: SessionStore
+    @ObservedObject private var featureStore = FeatureStore.shared
     @State private var showEdit = false
     @State private var showLogout = false
     @State private var showSwitchAccount = false
@@ -146,11 +147,14 @@ struct ProfileView: View {
                     }
                     .buttonStyle(.plain)
                     RowDivider()
-                    NavigationLink(destination: FavoritesView()) {
-                        SettingsRow(icon: "star", title: "收藏")
+                    // 收藏：后台开关关闭即隐藏（四端一致）
+                    if featureStore.collect {
+                        NavigationLink(destination: FavoritesView()) {
+                            SettingsRow(icon: "star", title: "收藏")
+                        }
+                        .buttonStyle(.plain)
+                        RowDivider()
                     }
-                    .buttonStyle(.plain)
-                    RowDivider()
                     NavigationLink(destination: CallHistoryView()) {
                         SettingsRow(icon: "phone.arrow.up.right", title: "通话记录")
                     }

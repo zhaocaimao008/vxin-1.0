@@ -23,7 +23,7 @@ export default function Register() {
   const [showPwd, setShowPwd] = useState(false);
   const [agreed, setAgreed] = useState(false);
   // 是否需要邀请码由后台开关决定（GET /api/config）。默认 true，避免加载前误放行 UI。
-  const [inviteRequired, setInviteRequired] = useState(false); // 参考图显示邀请码为"选填"
+  const [inviteRequired, setInviteRequired] = useState(true); // 默认开启：拉取失败/未返回时保守显示邀请码，避免无码注册被误放行
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -94,11 +94,12 @@ export default function Register() {
         <path d="M6 9V6a4 4 0 018 0v3"/>
       </svg>
     )},
-    { key: 'inviteCode', label: '邀请码', type: 'text', inputMode: 'numeric', autocomplete: 'off', placeholder: '邀请码（选填）', maxLength: 6, optional: true, icon: (
+    // 后台关闭「注册需邀请码」后隐藏邀请码输入框（四端一致）；重新开启后恢复
+    ...(inviteRequired ? [{ key: 'inviteCode', label: '邀请码', type: 'text', inputMode: 'numeric', autocomplete: 'off', placeholder: '请输入邀请码', maxLength: 6, optional: false, icon: (
       <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M10 11a4 4 0 100-8 4 4 0 000 8zM3 18c0-3.3 3.1-6 7-6s7 2.7 7 6"/>
       </svg>
-    )},
+    ) }] : []),
   ];
 
   // 切换注册方式时清空错误

@@ -76,6 +76,8 @@ final class SocketService {
     let moments = PassthroughSubject<Void, Never>()
     /// 后台功能开关实时更新（config:updated）→ (群语音开, 群视频开)，UI 据此即时显隐按钮
     let configUpdated = PassthroughSubject<(groupVoiceCall: Bool, groupVideoCall: Bool), Never>()
+    /// 完整 feature flags 实时广播（config:updated → [String: Any]），FeatureStore 消费（动态/收藏/邀请码/群通话）
+    let featuresUpdated = PassthroughSubject<[String: Any], Never>()
 
     // ── WebRTC 通话信令 ──
     let callIncoming = PassthroughSubject<(from: String, type: String, callerName: String), Never>()
@@ -214,6 +216,7 @@ final class SocketService {
             let voice = (f?["groupVoiceCall"] as? Bool) ?? true
             let video = (f?["groupVideoCall"] as? Bool) ?? true
             self?.configUpdated.send((groupVoiceCall: voice, groupVideoCall: video))
+            self?.featuresUpdated.send(f ?? [:])
         }
         sock.on("user_online") { [weak self] data, _ in
             if let id = (data.first as? [String: Any])?["userId"] as? String, !id.isEmpty { self?.presence.send((id, true)) }

@@ -92,6 +92,8 @@ class AppViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching { configApi.getConfig() }.onSuccess { _features.value = it.features }
         }
+        // 后台改功能开关 → socket config:updated 实时热更新（动态/收藏等入口即时显隐，四端一致）
+        viewModelScope.launch { chatRepository.configUpdatedEvents.collect { _features.value = it } }
         // 首次加载 + 实时事件驱动刷新未读总数
         refreshUnread()
         viewModelScope.launch { chatRepository.incomingMessages.collect { refreshUnread() } }
@@ -218,8 +220,18 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0, appViewModel: App
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
-    // 底部 tab 已固定为 消息/通讯录/我，无需再按 features 开关过滤
-    val visibleTabs = TAB_ITEMS
+    // 底部 tab：动态 tab 按后台开关过滤（四端一致）。关闭后隐藏动态入口，仍可访问历史数据。
+    val visibleTabs = if (features.moments) TAB_ITEMS else TAB_ITEMS.filter { it.route != Routes.MOMENTS }
+
+    // 动态开关被后台关闭时，若当前正停在动态页则跳回消息页，避免空白页
+    androidx.compose.runtime.LaunchedEffect(features.moments, currentRoute) {
+        if (!features.moments && currentRoute == Routes.MOMENTS) {
+            navController.navigate(Routes.CONVERSATIONS) {
+                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+            }
+        }
+    }
 
     // 通知点击跳会话：navController 在这里已就绪，消费 PendingConversationHolder 并导航。
     // 立即置空 holder 防止重复触发（同一 convId 只导航一次）。
@@ -328,6 +340,7 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0, appViewModel: App
                     onOpenFavorites = { navController.navigate(Routes.FAVORITES) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS_HOME) },
                     onOpenProfileEdit = { navController.navigate(Routes.PROFILE_EDIT) },
+                    collectEnabled = features.collect,
                 )
             }
             composable(Routes.PROFILE_EDIT) {
