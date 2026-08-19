@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "301798014154",
-    "project_id": "vxin-a1230",
-    "storage_bucket": "vxin-a1230.firebasestorage.app"
+    "project_number": "994861818641",
+    "project_id": "vxin-chat",
+    "storage_bucket": "vxin-chat.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:301798014154:android:0e5f442546667e9d998833",
+        "mobilesdk_app_id": "1:994861818641:android:bba0c621a567968586a2b0",
         "android_client_info": {
           "package_name": "com.vxin.app"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBUIc71g2NIDr7-v7quisWS_6srASvfnxI"
+          "current_key": "AIzaSyCwuLqdT7-PpUT7n-SG7ubojOsAvCM080A"
         }
       ],
       "services": {
