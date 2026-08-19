@@ -720,7 +720,7 @@ export default function Home() {
   return (
     <div className={`wc-app${isMobile ? ' wc-mobile' : ''}`}>
 
-      {/* 左侧导航栏——Electron: Logo置顶/头像置底（对齐 Windows 三张参考图一致的结构）；
+      {/* 左侧导航栏——Electron: Logo置顶，账号切换已移入设置页（产品要求去掉底部重复入口）；
           Web: 头像置顶（对齐 Web主界面.jpg，与 Electron 不同，不能因 Windows 通过就当 Web 也通过） */}
       <div className="wc-sidebar">
         {isElectron ? (
@@ -763,7 +763,8 @@ export default function Home() {
             );
           })}
         </div>
-        {isElectron && <AccountSwitcher />}
+        {/* 底部账号切换头像已移除（产品要求）：桌面端账号切换/添加账户功能
+            迁到「设置 → 账号管理」，见 Profile.jsx 的 AccountSwitcher embedded 模式 */}
       </div>
 
       {/* 主内容区 */}

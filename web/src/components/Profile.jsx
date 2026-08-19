@@ -767,9 +767,23 @@ function AccountSwitcher({ user, accounts, login, switchAccount }) {
   const [loading, setLoading]   = useState(false);
   const phoneRef = useRef(null);
 
-  const doSwitch = (id) => {
+  // switchAccount 是 async 函数、成功时内部自己会 reload（见 AuthContext.jsx）；
+  // 之前这里写成 `if (switchAccount(id)) window.location.reload()` 是把返回的
+  // Promise 当同步布尔值判断（Promise 恒真），等于请求一发出、还没等结果就立刻
+  // reload，可能在切换生效前就刷新页面。改成 await + 失败回退密码登录表单，
+  // 与 components/AccountSwitcher.jsx 里同样场景的写法保持一致。
+  const doSwitch = async (id) => {
     if (id === user?.id) return;
-    if (switchAccount(id)) window.location.reload();
+    const acct = accounts.find(a => a.id === id);
+    try {
+      await switchAccount(id);
+    } catch {
+      // 免密切换失败 → 回退到密码登录表单，预填手机号（不在此处抢焦点：
+      // phoneRef 是渲染期在 .map() 内构造的回调间接可达，eslint-plugin-react-hooks
+      // 的 refs 规则会保守报警；表单展开后用户自己点击输入框即可，不影响可用性）。
+      setForm(f => ({ ...f, phone: acct?.user?.phone || '' }));
+      setShowForm(true);
+    }
   };
 
   const doAdd = async (e) => {
@@ -1388,9 +1402,12 @@ export default function Profile({ isMobile = false }) {
           </div>
         </>
       )}
-      {isMobile && (
+      {/* 账号管理/切换账号：此前只在移动端显示，桌面端的等价功能挂在侧栏底部的
+          独立头像按钮上（与主导航「设置」在同一根导航上并列，读起来像两个入口
+          做同一件事）。现在统一收进设置页——桌面端不再需要侧栏那个按钮。 */}
+      {(isMobile || window.__ELECTRON_CONFIG__) && (
         <>
-          <SLabel>账号</SLabel>
+          <SLabel>账号管理</SLabel>
           <div className="wc-section-pad">
             <AccountSwitcher user={user} accounts={accounts} login={login} switchAccount={switchAccount} />
           </div>
