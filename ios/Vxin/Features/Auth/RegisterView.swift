@@ -40,13 +40,16 @@ struct RegisterView: View {
                 // 参考图中的「验证码 / 获取验证码」字段：后端当前没有注册短信验证码接口，
                 // 属于「参考图有、后端无」的情况，按规范不伪造，故不实现该字段。
                 VxinPasswordAuthField(placeholder: "请输入密码（至少8位，含字母和数字）", text: $vm.password, accessibilityId: "register-password-input")
-                VxinAuthField(
-                    icon: "ticket",
-                    placeholder: vm.inviteRequired ? "请输入邀请码" : "请输入邀请码（选填）",
-                    text: $vm.inviteCode,
-                    keyboardType: .numberPad,
-                    accessibilityId: "register-invite-input"
-                )
+                // 后台关闭「注册需邀请码」后隐藏邀请码输入框（四端一致）；重新开启后恢复
+                if vm.inviteRequired {
+                    VxinAuthField(
+                        icon: "ticket",
+                        placeholder: "请输入邀请码",
+                        text: $vm.inviteCode,
+                        keyboardType: .numberPad,
+                        accessibilityId: "register-invite-input"
+                    )
+                }
 
                 if let error = vm.error {
                     Text(error)

@@ -110,14 +110,17 @@ fun RegisterScreen(
             onVisibleChange = { passwordVisible = it },
             testTag = "register-password-input",
         )
-        VxinAuthField(
-            icon = VxinIcons.Ticket,
-            value = state.inviteCode,
-            onValueChange = viewModel::onInviteCodeChange,
-            placeholder = if (state.inviteRequired) "请输入邀请码" else "请输入邀请码（选填）",
-            keyboardType = KeyboardType.Number,
-            testTag = "register-invite-input",
-        )
+        // 后台关闭「注册需邀请码」后隐藏邀请码输入框（四端一致）；重新开启后恢复
+        if (state.inviteRequired) {
+            VxinAuthField(
+                icon = VxinIcons.Ticket,
+                value = state.inviteCode,
+                onValueChange = viewModel::onInviteCodeChange,
+                placeholder = "请输入邀请码",
+                keyboardType = KeyboardType.Number,
+                testTag = "register-invite-input",
+            )
+        }
 
         if (state.error != null) {
             Spacer(Modifier.height(12.dp))

@@ -6,6 +6,7 @@ struct MainTabView: View {
 
     @State private var selectedTab = 0
     @Environment(\.scenePhase) private var scenePhase
+    @ObservedObject private var featureStore = FeatureStore.shared
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -26,15 +27,17 @@ struct MainTabView: View {
                 .accessibilityIdentifier("nav-tab-contacts")
                 .tag(1)
 
-            // ── Tab 3：动态 ─────────────────────────────────────
-            NavigationStack {
-                MomentsView()
+            // ── Tab 3：动态（后台开关关闭即隐藏，四端一致）──────
+            if featureStore.moments {
+                NavigationStack {
+                    MomentsView()
+                }
+                .tabItem {
+                    Label("动态", systemImage: "camera.fill")
+                }
+                .accessibilityIdentifier("nav-tab-moments")
+                .tag(2)
             }
-            .tabItem {
-                Label("动态", systemImage: "camera.fill")
-            }
-            .accessibilityIdentifier("nav-tab-moments")
-            .tag(2)
 
             // ── Tab 4：我的 ─────────────────────────────────────
             NavigationStack { ProfileView() }
@@ -45,6 +48,12 @@ struct MainTabView: View {
                 .tag(3)
         }
         .tint(.vxinBrand)
+        // 登录后拉取后台功能开关（动态/收藏等），socket config:updated 实时热更新
+        .task { await featureStore.refresh() }
+        // 动态 tab 被后台关闭时，若当前正停在动态页则跳回消息页，避免空白页
+        .onChange(of: featureStore.moments) { _, enabled in
+            if !enabled && selectedTab == 2 { selectedTab = 0 }
+        }
         // 点推送通知 → 跳回消息页
         .onReceive(NotificationCenter.default.publisher(for: .vxinOpenConversation)) { _ in
             selectedTab = 0

@@ -154,6 +154,9 @@ const _storedServerUrl = store.get('serverUrl');
 // SERVER_URL / API_ORIGIN / WS_ORIGIN 为 let：启动时 loadRemoteServerUrl() 可据远程配置更新。
 let SERVER_URL = isValidServerUrl(_storedServerUrl) ? _storedServerUrl : 'https://vxinchat.com';
 
+// 后台功能开关缓存（/api/config 的 features）。托盘菜单等主进程 UI 据此隐藏被后台关闭的入口。
+let serverFeatures = null;
+
 // ── 安全：仅允许读取 temp 目录下的截图文件 ──────────────────
 function isSafeReadPath(filePath) {
   const tmpDir = app.getPath('temp');
@@ -193,6 +196,23 @@ async function loadRemoteServerUrl() {
     // store/默认地址建窗，remote 配置若稍后到达仍会在下次冷启动生效。
     new Promise((resolve) => setTimeout(resolve, 5000)),
   ]);
+}
+
+// 拉取后台功能开关（/api/config → features），供托盘菜单等主进程 UI 按开关显隐入口。
+// 失败时保持 serverFeatures = null（保守默认：入口保留），不影响启动。
+// 带 3s 兜底超时，拉取失败/超时都不阻塞主窗口创建。
+async function loadServerFeatures() {
+  try {
+    const buf = await Promise.race([
+      fetchBuffer(`${SERVER_URL}/api/config`),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('features 拉取超时')), 3000)),
+    ]);
+    const cfg = JSON.parse(buf.toString('utf8'));
+    serverFeatures = (cfg && cfg.features) ? cfg.features : null;
+  } catch (e) {
+    log.warn('拉取后台功能开关失败，托盘菜单按默认显示:', e.message);
+    serverFeatures = null;
+  }
 }
 
 async function loadRemoteServerUrlInner() {
@@ -729,11 +749,23 @@ function createTray() {
   }
   tray.setToolTip('v信');
 
+  rebuildTrayMenu();
+
+  tray.on('double-click', () => { mainWindow?.show(); mainWindow?.focus(); });
+  tray.on('click', () => { mainWindow?.show(); mainWindow?.focus(); });  // 单击也打开（Windows 习惯）
+}
+
+// 重建托盘菜单（创建时与后台功能开关拉取完成后各调用一次）
+function rebuildTrayMenu() {
+  if (!tray || tray.isDestroyed?.()) return;
+
   // D4: 托盘快捷入口（一键跳转到各主功能页）
   const focusAndNavigate = (tab) => {
     mainWindow?.show(); mainWindow?.focus();
     mainWindow?.webContents?.send('navigate:tab', tab);
   };
+  // 动态/朋友圈：后台开关关闭即隐藏（四端一致）；拉取失败时保守保留入口
+  const momentsEnabled = serverFeatures ? serverFeatures.moments !== false : true;
   const contextMenu = Menu.buildFromTemplate([
     {
       label: '打开 v信',
@@ -743,7 +775,7 @@ function createTray() {
     // ── 快捷导航 ──────────────────────────────────────────────
     { label: '💬 消息',   click: () => focusAndNavigate('chat')     },
     { label: '👥 通讯录', click: () => focusAndNavigate('contacts') },
-    { label: '🌟 朋友圈', click: () => focusAndNavigate('moments')  },
+    ...(momentsEnabled ? [{ label: '🌟 朋友圈', click: () => focusAndNavigate('moments') }] : []),
     { type: 'separator' },
     {
       label: '检查更新',
@@ -772,8 +804,6 @@ function createTray() {
   ]);
 
   tray.setContextMenu(contextMenu);
-  tray.on('double-click', () => { mainWindow?.show(); mainWindow?.focus(); });
-  tray.on('click', () => { mainWindow?.show(); mainWindow?.focus(); });  // 单击也打开（Windows 习惯）
 }
 
 // ── 托盘图标闪烁（关到托盘时提示未读，不弹窗口，符合微信/QQ 习惯）──────
@@ -1160,6 +1190,11 @@ app.whenReady().then(async () => {
 
     setupSecurity();
     setupIPC();
+    // 拉取后台功能开关（动态/收藏等）供托盘菜单过滤入口；不 await——失败/慢后端绝不阻塞主窗口创建
+    loadServerFeatures().then(() => {
+      // 拉取完成后若托盘已建，重建菜单让朋友圈入口按最新开关显隐
+      if (tray) rebuildTrayMenu();
+    });
     createWindow();
     createTray();
     setupAutoUpdater();
