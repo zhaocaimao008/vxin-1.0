@@ -21,7 +21,7 @@ export const site = {
     // 安卓/Windows 指向自托管下载。文件名带版本号（vxin-android-<ver>.apk / vxin-windows-<ver>-setup.exe），
     // 发新版时更新文件名即可绕过 CDN 缓存，无需 purge（latest 链接会被 Cloudflare 缓存旧版本）。
     android: `${BASE}/downloads/vxin-android-8.0.5.apk`,
-    windows: `${BASE}/downloads/vxin-windows-8.0.5-setup.exe`,
+    windows: `${BASE}/downloads/vxin-windows-8.0.6-setup.exe`,
     // iOS 走 TestFlight 公开外部测试链接（审核已通过，公开链接已启用）
     ios: 'https://testflight.apple.com/join/JQw5bjEz',
     email: 'admin@vxin.app',
