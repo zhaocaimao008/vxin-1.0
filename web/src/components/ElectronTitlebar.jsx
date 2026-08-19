@@ -68,17 +68,21 @@ export default function ElectronTitlebar() {
         display: 'flex', alignItems: 'center', gap: 6,
         flex: 1, paddingLeft: 10, minWidth: 0,
       }}>
-        {/* v信 品牌图标 — 与 auth-brand-icon 相同的 V 形 */}
-        <div style={{
-          width: 18, height: 18, flexShrink: 0,
-          background: 'linear-gradient(135deg,#07C160,#058A44)',
-          borderRadius: 4,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <svg viewBox="0 0 18 18" width="10" height="10" fill="none">
-            <path d="M3 4.5 L9 13.5 L15 4.5"
-              stroke="white" strokeWidth="2.8"
-              strokeLinecap="round" strokeLinejoin="round"/>
+        {/* v信 品牌图标 — 新版绿色圆角方形 + 白色双聊天气泡，与 EXE/Login/侧栏
+            Logo 同一套矢量图（不用旧的单色 V 形勾勒 + 渐变，渐变本身也不符合
+            品牌规范）。 */}
+        <div style={{ width: 18, height: 18, flexShrink: 0, borderRadius: 4, overflow: 'hidden' }}>
+          <svg viewBox="0 0 100 100" fill="none" width="18" height="18">
+            <rect x="0" y="0" width="100" height="100" fill="#07C160"/>
+            <rect x="47.54" y="48.53" width="43.20" height="33.30" rx="11.30" fill="#07C160"/>
+            <polygon points="85.56,79.69 77.41,78.40 86.41,88.69" fill="#07C160"/>
+            <circle cx="86.41" cy="88.69" r="1.37" fill="#07C160"/>
+            <rect x="7.10" y="17.66" width="66.00" height="50.16" rx="15.05" fill="#fff"/>
+            <polygon points="15.02,64.85 26.31,63.07 13.83,77.32" fill="#fff"/>
+            <circle cx="13.83" cy="77.32" r="1.90" fill="#fff"/>
+            <rect x="49.34" y="50.33" width="39.60" height="29.70" rx="9.50" fill="#fff"/>
+            <polygon points="84.19,78.05 76.66,76.86 84.98,86.37" fill="#fff"/>
+            <circle cx="84.98" cy="86.37" r="1.27" fill="#fff"/>
           </svg>
         </div>
         <span style={{
