@@ -40,7 +40,10 @@
   --color-primary:        var(--brand-500);
   --color-primary-hover:  var(--brand-600);
   --color-primary-active: var(--brand-700);
-  --color-primary-muted:  var(--brand-50);
+  /* 四端 UI 改版 Design Tokens 方案（docs/ui-refactor/03）里确认的浅色数值，
+     与 --brand-50 (#E8F8EF) 非常接近但不是同一个值——此处按方案精确对齐
+     Android VxinBrandMuted / iOS vxinBrandMuted，故不复用 --brand-50 别名 */
+  --color-primary-muted:  #E6F9EF;
   --color-primary-rgb:    7, 193, 96;         /* 供 rgba() 使用 */
 
   /* ── 聊天气泡：我的气泡用品牌绿，他人气泡用 #F2F2F2 浅灰 ── */
@@ -94,6 +97,7 @@
   --icon-bg-newfriend:   #FA9D3B;   /* 新的朋友(暖橙) */
   --icon-bg-group:       #17B8A6;   /* 群聊(青碧) */
   --icon-bg-label:       #FF6B35;   /* 好友标签(珊瑚橙) */
+  --icon-bg-schedule:    #576B95;   /* 定时发送(聊天更多面板，原散落硬编码，收敛为令牌) */
 
   /* ── 信息类横幅（群公告 / 桌面更新条）──
      原散落纯蓝 #3B82F6/#EAF4FF 与旧紫色主色系割裂，
@@ -155,6 +159,9 @@
   --bg-input:             #FFFFFF;
   --bg-input-search:      #F0F0F0;   /* 搜索框：中性浅灰 */
 
+  /* 统一页面底色（"我的"/设置类整页背景，四端 Design Tokens 方案确认值） */
+  --bg-page:              #F7F8FA;
+
   /* 内容卡片 / 弹窗 */
   --bg-card:              #FFFFFF;
   --bg-card-hover:        #F7F8FA;   /* 卡片/次级按钮悬停底色 */
@@ -178,7 +185,11 @@
   --border-medium:  #C9CDD6;             /* 中等强度 */
   --border-strong:  rgba(0,0,0,.08);    /* 分区强调 */
   --border-focus:   var(--brand-500);    /* 输入框聚焦 */
-  --divider:        #ECEEF3;             /* 区块分隔线 */
+  /* 区块分隔线：四端 Design Tokens 方案确认值 #E9E9EC（1px，各处按 border-top/bottom:
+     1px solid var(--divider) 的既有写法直接消费，不需要单独的宽度 token）。
+     注：§12 Legacy Aliases 里曾有一份 #EBEBEB 的重复声明，在同一 :root 里排在
+     后面会覆盖这里——已在 §12 处删除那份重复声明，此处即为唯一生效值。 */
+  --divider:        #E9E9EC;
 
 /* ================================================================
    § 6  TYPOGRAPHY — 文字层级与颜色
@@ -187,6 +198,10 @@
   --text-title:       #111111;   /* 标题：v信辅助黑 */
   --text-primary:     #1A1A1A;   /* 正文 */
   --text-secondary:   #888888;   /* 辅助：时间、预览文字 */
+  /* 三级文字：四端 Design Tokens 方案确认值 #B0B4BB（原 §12 Legacy Aliases 里
+     有一份 #AAAAAA 的重复声明，同一 :root 内排在后面会把这里覆盖掉——已删除
+     那份重复声明，此处即为唯一生效值） */
+  --text-tertiary:    #B0B4BB;
   --text-muted:       #9AA3B0;   /* 弱化：占位符、禁用描述 */
   --text-disabled:    #C9CDD6;   /* 禁用 */
   --text-link:        var(--brand-500);
@@ -265,6 +280,15 @@
   --size-session: 64px;   /* 会话列表条目高度 */
   --size-avatar-session: 48px;  /* 会话列表头像（规范 48px） */
   --size-avatar-message: 36px;
+
+  /* ── 通用头像尺寸刻度（四端 Design Tokens 方案新增，对齐 Android/iOS 同名刻度）──
+     与上面两个既有的场景专属别名并存：--size-avatar-session/message 是历史上
+     已经在消息模块里被引用的具体场景值，这里新增的是"我的/通讯录/资料页"
+     要用的通用刻度，不改动前者的既有消费点。 */
+  --avatar-sm:  36px;   /* 小头像：紧凑列表行 */
+  --avatar-md:  44px;   /* 中头像：通讯录行 */
+  --avatar-lg:  64px;   /* 大头像：资料页头图、"我的"首页 */
+  --avatar-xl:  80px;   /* 超大头像：个人资料编辑页大图 */
 
 /* ================================================================
    § 8  BORDER RADIUS — 圆角规范
@@ -418,12 +442,10 @@
   --bg-active-hover:  var(--bg-panel-item-active-hover);
   --text-primary:     #1A1A1A;
   --text-secondary:   #888888;
-  --text-tertiary:    #AAAAAA;
   --text-placeholder: #AAAAAA;
   --border-color:     var(--border-default);
   --border-light:     var(--border-subtle);
   --border-strong:    rgba(0,0,0,.08);
-  --divider:          #EBEBEB;
   --font:             var(--font-sans);
   --font-msg:         var(--text-base);
   --font-name:        var(--text-base);

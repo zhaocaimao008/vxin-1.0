@@ -506,7 +506,7 @@ function LabelsTab({ labels, contacts, onBack, onUpdate }) {
                   <div className="wc-contact-item-name">{c.remark || c.username}</div>
                 </div>
                 <div className="lt-member-checkbox" style={{ border: `2px solid ${inLabel ? 'var(--green)' : 'var(--divider)'}`, background: inLabel ? 'var(--green)' : 'transparent' }}>
-                  {inLabel && <svg viewBox="0 0 24 24" width="12" height="12" fill="#fff"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
+                  {inLabel && <svg viewBox="0 0 24 24" width="12" height="12" fill="var(--gray-0)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
                 </div>
               </div>
             );
@@ -532,7 +532,7 @@ function LabelsTab({ labels, contacts, onBack, onUpdate }) {
       {labels.map(label => (
         <div key={label.id} className="wc-contact-item">
           <div className="lt-label-icon-box" style={{ background: label.color || '#07C160' }}>
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="#fff"><path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16z"/></svg>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="var(--gray-0)"><path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16z"/></svg>
           </div>
           <div className="cl-contact-info">
             <div className="wc-contact-item-name">{label.name}</div>
