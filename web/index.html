@@ -25,7 +25,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="v信" />
-    <meta name="theme-color" content="#16C55B" />
+    <meta name="theme-color" content="#07C160" />
     <link rel="apple-touch-icon" href="./icons/icon-192.png" />
     <link rel="icon" type="image/png" href="./favicon.png" />
 
@@ -40,51 +40,84 @@
                      'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        background: #1A2033;
-        color: #e8e8e8;
+        background: #F7F7F7;
+        color: #111111;
       }
       #root { height: 100%; }
 
-      /* ── 启动 Splash（React 挂载前防白屏）── */
+      /* ── 启动 Splash（React 挂载前防白屏 / 防错色闪烁）── */
       #app-splash {
         position: fixed; inset: 0; z-index: 9999;
         display: flex; flex-direction: column;
         align-items: center; justify-content: center;
-        background: #1A2033; gap: 16px;
+        background: #F7F7F7; gap: 16px;
       }
       #app-splash .logo {
         width: 64px; height: 64px; border-radius: 16px;
-        background: linear-gradient(135deg, #6D5AE6, #8A78EB);
+        background: #07C160;
         display: flex; align-items: center; justify-content: center;
-        font-size: 28px; font-weight: 700; color: #fff; letter-spacing: -1px;
-        box-shadow: 0 8px 24px rgba(109,90,230,.4);
+        box-shadow: 0 8px 24px rgba(7,193,96,.25);
       }
+      #app-splash .logo svg { width: 62%; height: 62%; }
       #app-splash .spin {
         width: 28px; height: 28px; border-radius: 50%;
-        border: 3px solid rgba(255,255,255,.12);
-        border-top-color: #8A78EB;
+        border: 3px solid rgba(7,193,96,.14);
+        border-top-color: #07C160;
         animation: appspin .75s linear infinite;
       }
       @keyframes appspin { to { transform: rotate(360deg); } }
 
       /* ── 首屏布局骨架（防止 CLS）── */
       :root {
-        --color-bg: #1A2033;
-        --color-sidebar: #141824;
-        --color-primary: #6D5AE6;
-        color-scheme: dark;
+        --color-bg: #F7F7F7;
+        --color-sidebar: #fff;
+        --color-primary: #07C160;
+        color-scheme: light;
       }
-      @media (prefers-color-scheme: light) {
-        :root { --color-bg: #f5f5f5; --color-sidebar: #fff; color-scheme: light; }
-        body { background: #f5f5f5; color: #1a1a1a; }
-        #app-splash { background: #f5f5f5; }
+      /* 已知主题偏好（用户在设置里选过 深色/浅色，或跟随系统且系统当前为深色）
+         由下方内联脚本在渲染前同步写入 html[data-theme]，避免首屏闪烁成错误配色。
+         没有该属性时才回退到 prefers-color-scheme（例如首次访问、清过 localStorage）。 */
+      html[data-theme="dark"] { color-scheme: dark; }
+      html[data-theme="dark"] body,
+      html[data-theme="dark"] #app-splash { background: #15171A; color: #F2F3F5; }
+      html[data-theme="dark"] #app-splash .spin { border-color: rgba(7,193,96,.18); border-top-color: #2BB86E; }
+      @media (prefers-color-scheme: dark) {
+        html:not([data-theme="light"]) { color-scheme: dark; }
+        html:not([data-theme="light"]) body,
+        html:not([data-theme="light"]) #app-splash { background: #15171A; color: #F2F3F5; }
+        html:not([data-theme="light"]) #app-splash .spin { border-color: rgba(7,193,96,.18); border-top-color: #2BB86E; }
       }
     </style>
+    <script>
+      // 同步读取已保存的主题偏好，在首帧绘制前打到 <html> 上，避免 splash
+      // 先闪一下与用户实际主题相反的配色（浅色用户看到深色一瞬 / 反之）。
+      // 与 SettingsContext.jsx 的存储口径保持一致：wc_theme = 'light'|'dark'|'auto'。
+      (function () {
+        try {
+          var t = localStorage.getItem('wc_theme');
+          var dark = t === 'dark' || (t !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.setAttribute('data-theme', 'dark');
+          else if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+        } catch (e) { /* 隐私模式等 localStorage 不可用时，回退到 prefers-color-scheme */ }
+      })();
+    </script>
   </head>
   <body>
     <div id="root">
       <div id="app-splash">
-        <div class="logo">v信</div>
+        <div class="logo" aria-hidden="true">
+          <svg viewBox="0 0 100 100" fill="none">
+            <rect x="47.8" y="48.4" width="27.6" height="21.6" rx="7.56" fill="#07C160"/>
+            <polygon points="72.09,68.7 67.15,67.92 72.61,74.16" fill="#07C160"/>
+            <circle cx="72.61" cy="74.16" r="0.83" fill="#07C160"/>
+            <rect x="24" y="30.4" width="40" height="30.4" rx="9.12" fill="#fff"/>
+            <polygon points="28.8,59 35.64,57.92 28.08,66.56" fill="#fff"/>
+            <circle cx="28.08" cy="66.56" r="1.15" fill="#fff"/>
+            <rect x="49.6" y="50.2" width="24" height="18" rx="5.76" fill="#fff"/>
+            <polygon points="70.72,67 66.16,66.28 71.2,72.04" fill="#fff"/>
+            <circle cx="71.2" cy="72.04" r="0.77" fill="#fff"/>
+          </svg>
+        </div>
         <div class="spin"></div>
       </div>
     </div>

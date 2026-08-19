@@ -725,7 +725,18 @@ export default function Home() {
       <div className="wc-sidebar">
         {isElectron ? (
           <div className="wc-sidebar-logo" aria-hidden="true">
-            <svg viewBox="0 0 46 46" fill="none"><path d="M8 11 L23 35 L38 11" stroke="#07C160" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>
+            <svg viewBox="0 0 100 100" fill="none">
+              <rect x="0" y="0" width="100" height="100" rx="22" fill="#07C160"/>
+              <rect x="47.8" y="48.4" width="27.6" height="21.6" rx="7.56" fill="#07C160"/>
+              <polygon points="72.09,68.7 67.15,67.92 72.61,74.16" fill="#07C160"/>
+              <circle cx="72.61" cy="74.16" r="0.83" fill="#07C160"/>
+              <rect x="24" y="30.4" width="40" height="30.4" rx="9.12" fill="#fff"/>
+              <polygon points="28.8,59 35.64,57.92 28.08,66.56" fill="#fff"/>
+              <circle cx="28.08" cy="66.56" r="1.15" fill="#fff"/>
+              <rect x="49.6" y="50.2" width="24" height="18" rx="5.76" fill="#fff"/>
+              <polygon points="70.72,67 66.16,66.28 71.2,72.04" fill="#fff"/>
+              <circle cx="71.2" cy="72.04" r="0.77" fill="#fff"/>
+            </svg>
           </div>
         ) : (
           <AccountSwitcher />

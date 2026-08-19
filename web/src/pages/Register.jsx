@@ -116,13 +116,16 @@ export default function Register() {
           <div className="auth-brand">
             <div className="auth-brand-logo">
               <svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
-                <circle cx="35" cy="40" r="28" fill="#07C160"/>
-                <circle cx="35" cy="40" r="28" fill="#07C160" opacity="0.9"/>
-                <ellipse cx="28" cy="35" rx="4" ry="5" fill="white"/>
-                <ellipse cx="42" cy="35" rx="4" ry="5" fill="white"/>
-                <circle cx="65" cy="55" r="22" fill="#07C160"/>
-                <ellipse cx="59" cy="50" rx="3" ry="4" fill="white"/>
-                <ellipse cx="71" cy="50" rx="3" ry="4" fill="white"/>
+                <rect x="0" y="0" width="100" height="100" rx="22" fill="#07C160"/>
+                <rect x="47.8" y="48.4" width="27.6" height="21.6" rx="7.56" fill="#07C160"/>
+                <polygon points="72.09,68.7 67.15,67.92 72.61,74.16" fill="#07C160"/>
+                <circle cx="72.61" cy="74.16" r="0.83" fill="#07C160"/>
+                <rect x="24" y="30.4" width="40" height="30.4" rx="9.12" fill="#fff"/>
+                <polygon points="28.8,59 35.64,57.92 28.08,66.56" fill="#fff"/>
+                <circle cx="28.08" cy="66.56" r="1.15" fill="#fff"/>
+                <rect x="49.6" y="50.2" width="24" height="18" rx="5.76" fill="#fff"/>
+                <polygon points="70.72,67 66.16,66.28 71.2,72.04" fill="#fff"/>
+                <circle cx="71.2" cy="72.04" r="0.77" fill="#fff"/>
               </svg>
             </div>
             <h1 className="auth-brand-name auth-brand-name--brand">v信</h1>
