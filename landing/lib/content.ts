@@ -18,9 +18,10 @@ export const site = {
   links: {
     // 网页版 = 根路径的 Web 应用（同源 /api 反代，见 BUILD.md）
     webApp: `${BASE}/app/`,
-    // 安卓/Windows 指向自托管下载（CDN 零依赖，出新版只需替换文件）
-    android: `${BASE}/downloads/vxin-android-latest.apk`,
-    windows: `${BASE}/downloads/vxin-windows-latest.exe`,
+    // 安卓/Windows 指向自托管下载。文件名带版本号（vxin-android-<ver>.apk / vxin-windows-<ver>-setup.exe），
+    // 发新版时更新文件名即可绕过 CDN 缓存，无需 purge（latest 链接会被 Cloudflare 缓存旧版本）。
+    android: `${BASE}/downloads/vxin-android-8.0.5.apk`,
+    windows: `${BASE}/downloads/vxin-windows-8.0.5-setup.exe`,
     // iOS 走 TestFlight 公开外部测试链接（审核已通过，公开链接已启用）
     ios: 'https://testflight.apple.com/join/JQw5bjEz',
     email: 'admin@vxin.app',
