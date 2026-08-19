@@ -9,16 +9,21 @@
 
 | 端 | 版本真相源文件 | 字段 | 当前版本 |
 |----|--------------|------|---------|
-| 桌面端（Windows/Mac/Linux） | `desktop-electron/package.json` | `version` | 2.0.57 |
-| 桌面端渲染层内嵌 | `desktop-electron/src/package.json` | `version` | 与上一致（2.0.57） |
-| Web 前端 | `web/package.json` | `version` | 2.0.19 |
-| 后端 | `backend-v2/package.json` | `version` | 2.0.0 |
-| Android | `android/app/build.gradle.kts` | `versionName` / `versionCode` | 1.0.50 / code 51 |
-| iOS | `ios/project.yml` | `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` | 1.0.33 / build 32 |
-| 后端发现配置 | `vxin-config/config.json` | `version` | 2.0.1 |
+| 桌面端（Windows/Mac/Linux） | `desktop-electron/package.json` | `version` | 8.0.8 |
+| 桌面端渲染层内嵌 | `desktop-electron/src/package.json` | `version` | 与上一致（8.0.8，本文件自身不参与打包版本号，仅保持不漂移） |
+| Web 前端 | `web/package.json` | `version` | 8.0.13 |
+| 后端 | `backend-v2/package.json` | `version` | 8.0.0 |
+| Android | `android/app/build.gradle.kts` | `versionName` / `versionCode` | 8.0.6 / code 59 |
+| iOS | `ios/project.yml` | `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` | 8.0.2 / build 35 |
 
 > 桌面端走 electron-updater：`latest.yml` 的 `version` **必须**等于
 > `desktop-electron/package.json` 的 `version`，且每次发布**必须递增**，否则客户端认为「无更新」。
+>
+> 更新源实际路径见 `deploy/nginx-vxin.conf.example` 的 `/downloads/` location
+> （生产 alias 到 `/var/www/vxin-download/`）；发布产物由
+> `.github/workflows/windows-build.yml` 部署到 `/var/www/vxin-download/`
+> （安装包，落地页直链）与 `/var/www/vxin-download/updates/`
+> （`latest.yml` + `.blockmap`，electron-updater 拉取源）。
 
 ## 2. Tag 命名规范：带端前缀，各触发各的发布
 
@@ -39,7 +44,7 @@
 3. 打 tag：`git tag -a desktop-v<新版本> -m "..." && git push origin desktop-v<新版本>`。
 4. `windows-build.yml` 自动：Windows 打包 → 上传 `.exe`/`latest.yml`/`.blockmap`
    → SCP 部署到香港服务器 `/var/www/downloads/updates/`。
-5. 验证 `https://dipsin.com/downloads/updates/latest.yml` 的 `version` 已是新版本。
+5. 验证 `https://vxinchat.com/downloads/updates/latest.yml` 的 `version` 已是新版本。
 
 安卓同理，改 `versionName`/`versionCode` → 打 `android-v<版本>` tag。
 
