@@ -972,8 +972,25 @@ async function clearBrowserCache() {
   await Promise.all(keys.map(k => caches.delete(k)));
 }
 
-/* ── 个人资料详情页（渐变 Hero + 卡片信息） ── */
-function ProfileDetail({ user, updateUser, onBack, navigateTo }) {
+// 加入时间：users.created_at 是秒级 unix 时间戳，纯展示格式化，不依赖 time.js 里
+// 那几个"相对时间/消息分割线"专用的格式化函数（语义不一样，硬凑反而别扭）。
+function formatJoinDate(ts) {
+  if (!ts) return '';
+  const d = new Date(ts * 1000);
+  if (Number.isNaN(d.getTime())) return '';
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+const IcoUserRow = () => <Ico d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>;
+const IcoIdRow   = () => <Ico d="M21 5H3c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 12H3V7h18v10zM6 15h6v-1.5H6V15zm0-3h9v-1.5H6V12zm0-3h9V7.5H6V9z"/>;
+const IcoBioRow  = () => <Ico d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>;
+
+/* ── 个人资料详情页（渐变 Hero + 卡片信息） ──
+   desktop=true：桌面 Web(≥768、排除 Electron)专属大卡片版式，对齐 Web个人资料页.jpg；
+   默认 false 就是移动端/Electron 原有单栏版式，逻辑（头像上传/复制v信号）两边共用。 */
+function ProfileDetail({ user, updateUser, onBack, navigateTo, desktop = false }) {
   const fileRef = useRef(null);
   const [uploading, setUploading] = useState(false);
 
@@ -1016,6 +1033,50 @@ function ProfileDetail({ user, updateUser, onBack, navigateTo }) {
     }
     setUploading(false);
   };
+
+  if (desktop) {
+    return (
+      <PageBg>
+        <PageHeader title="个人资料" />
+        <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
+
+        <div className="wc-section-pad">
+          <Card className="wc-profile-hero">
+            <div className="wc-profile-hero-avatar-wrap" role="button" tabIndex={0}
+              onClick={handleAvatarClick} onKeyDown={e => activateOnKey(handleAvatarClick)(e)}
+              aria-label="更换头像">
+              <Avatar src={user?.avatar} name={user?.username} size={84} style={{ borderRadius: 'var(--radius-md)' }} />
+              <span className="wc-profile-hero-cam" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M9 3l-1.83 2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2h-3.17L15 3H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+              </span>
+              {uploading && <div className="pf-avatar-uploading">上传中…</div>}
+            </div>
+            <div className="wc-profile-hero-info">
+              <div className="wc-profile-hero-name">{user?.username || '未设置昵称'}</div>
+              {user?.wechat_id && <div className="wc-profile-hero-account">{user.wechat_id}</div>}
+              <div className="wc-profile-hero-bio">{user?.bio || '这个人很酷，还没有签名'}</div>
+              {!!user?.created_at && (
+                <div className="wc-profile-hero-joined">加入 v信：{formatJoinDate(user.created_at)}</div>
+              )}
+            </div>
+          </Card>
+        </div>
+
+        <div className="wc-section-pad">
+          <Card>
+            <CRow icon={<IcoUserRow />} bg="var(--color-primary)" label="用户名"
+              value={user?.username || ''} onClick={() => navigateTo?.('edit-name')} />
+            <CRow icon={<IcoIdRow />} bg="var(--icon-bg-invite)" label="微信号"
+              value={user?.wechat_id || ''} onClick={user?.wechat_id ? copyVid : undefined} />
+            <CRow icon={<IcoBioRow />} bg="var(--icon-bg-schedule)" label="个性签名"
+              value={user?.bio || '未设置'} onClick={() => navigateTo?.('edit-bio')} />
+            <CRow icon={<IcoPhoneRow />} bg="var(--icon-bg-phone)" label="手机"
+              value={maskPhone(user?.phone)} onClick={() => navigateTo?.('change-phone')} />
+          </Card>
+        </div>
+      </PageBg>
+    );
+  }
 
   return (
     <PageBg>
@@ -1408,7 +1469,7 @@ function WebSettingsShell({ user, updateUser, navigateTo, logout }) {
         {section === 'notifications' && <NotificationSettings />}
         {section === 'general'       && <GeneralSettings />}
         {section === 'shortcuts'     && <ShortcutSettings />}
-        {section === 'profile'       && <ProfileDetail user={user} updateUser={updateUser} navigateTo={navigateTo} />}
+        {section === 'profile'       && <ProfileDetail user={user} updateUser={updateUser} navigateTo={navigateTo} desktop />}
         {section === 'about'         && <AboutPanel />}
       </div>
     </div>
