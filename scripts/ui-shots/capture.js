@@ -114,6 +114,15 @@ const ME_SINGLE_COL_SELECTORS = [
   ['crow-rows', '.wc-crow'],
 ];
 
+// profile-page 改版：桌面「个人资料」大卡片 + 信息列表回归用
+const PROFILE_DETAIL_SELECTORS = [
+  ['hero', '.wc-profile-hero'],
+  ['hero-avatar', '.wc-profile-hero-avatar-wrap'],
+  ['hero-name', '.wc-profile-hero-name'],
+  ['cards', '.wc-settings-content .wc-card'],
+  ['crow-rows', '.wc-settings-content .wc-crow'],
+];
+
 const CONTACTS_SELECTORS = [
   ['panel', '.cl-panel'],
   ['alpha-index', '.wc-alpha-index'],
@@ -201,7 +210,12 @@ const CHATWINDOW_SELECTORS = [
   if (WANT_BOXES) boxesDouble = await collectBoxes(page, ME_DOUBLE_COL_SELECTORS);
 
   const profileNav = page.locator('.wc-settings-nav-item', { hasText: '个人资料' });
-  if (await profileNav.count()) { await profileNav.click(); await shot(page, '05b-me-profiledetail'); }
+  let boxesProfileDetail = null;
+  if (await profileNav.count()) {
+    await profileNav.click();
+    await shot(page, '05b-me-profiledetail');
+    if (WANT_BOXES) boxesProfileDetail = await collectBoxes(page, PROFILE_DETAIL_SELECTORS);
+  }
   const privacyNav = page.locator('.wc-settings-nav-item', { hasText: '隐私设置' });
   if (await privacyNav.count()) { await privacyNav.click(); await shot(page, '05c-settings-privacy'); }
   const notifNav = page.locator('.wc-settings-nav-item', { hasText: '通知设置' });
@@ -217,13 +231,21 @@ const CHATWINDOW_SELECTORS = [
   let boxesSingle = null;
   if (WANT_BOXES) boxesSingle = await collectBoxes(page, ME_SINGLE_COL_SELECTORS);
 
+  // profile-page 改版：移动端单栏的个人资料详情页原样未动，点进去确认没被牵连
+  const meHeader = page.locator('.wc-me-header');
+  if (await meHeader.count()) {
+    await meHeader.click();
+    await page.waitForTimeout(300);
+    await shot(page, '06b-me-profiledetail-mobile');
+  }
+
   // contacts-page 改版：窄视口(<768) 联系人页应保持现状单栏 ContactList，
   // 不应出现桌面右栏(.cop-panel)——回归确认两栏新版式没有漏判断进移动端。
   await page.locator('[data-testid="nav-tab-contacts"]').click().catch(() => {});
   await shot(page, '07-contacts-singlecolumn');
 
   if (WANT_BOXES) {
-    fs.writeFileSync(path.join(OUT, `${PREFIX}-boxes.json`), JSON.stringify({ double: boxesDouble, single: boxesSingle, contacts: boxesContacts, chatWindow: boxesChatWindow }, null, 2));
+    fs.writeFileSync(path.join(OUT, `${PREFIX}-boxes.json`), JSON.stringify({ double: boxesDouble, single: boxesSingle, contacts: boxesContacts, chatWindow: boxesChatWindow, profileDetail: boxesProfileDetail }, null, 2));
     console.log('  ✓', `${PREFIX}-boxes.json`);
   }
 

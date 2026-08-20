@@ -152,8 +152,8 @@ async function updateProfile(userId, { username, bio }) {
   }
   await cache.del(cache.keys.user(userId));
   presence.dropProfile(userId); // 刷新在线状态中的昵称缓存，避免发消息时仍用旧名字
-  // 与 getMe 一致返回 phone（自己的资料接口），避免客户端整体替换时丢失手机号
-  return db.prepare('SELECT id,username,phone,avatar,bio,wechat_id,cover_photo FROM users WHERE id=?').get(userId);
+  // 与 getMe 一致返回 phone/created_at（自己的资料接口），避免客户端整体替换时丢失手机号或加入时间
+  return db.prepare('SELECT id,username,phone,avatar,bio,wechat_id,cover_photo,created_at FROM users WHERE id=?').get(userId);
 }
 
 async function setAvatar(userId, url) {

@@ -61,6 +61,7 @@ const SCREEN_LABELS = {
   single: '我的（单栏卡片列表）',
   contacts: '通讯录',
   chatWindow: '聊天详情页',
+  profileDetail: '个人资料详情页（桌面）',
 };
 const screens = Object.keys(SCREEN_LABELS).filter(s => before[s] || after[s]);
 let md = '';

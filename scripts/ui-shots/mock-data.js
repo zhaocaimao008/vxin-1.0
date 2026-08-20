@@ -6,7 +6,8 @@
  */
 
 const NORMAL = {
-  me: { id: 1, username: '张小雅', wechat_id: 'xiaoya_2024', vxin_id: 'xiaoya_2024', avatar: '', bio: '设计是解决问题的艺术', phone: '138****0001' },
+  // created_at：profile-page 改版新增"加入 v信"展示用，固定成 2023-03-15，跟设计稿示例值一致好对照
+  me: { id: 1, username: '张小雅', wechat_id: 'xiaoya_2024', vxin_id: 'xiaoya_2024', avatar: '', bio: '设计是解决问题的艺术', phone: '138****0001', created_at: Math.floor(new Date('2023-03-15T00:00:00Z').getTime() / 1000) },
   conversations: [
     { id: 1, type: 'private', name: '张小雅', avatar: '', lastMessage: '好的，稍后我把资料发给你~', lastMessageType: 'text', lastTime: Math.floor(Date.now() / 1000) - 300, unreadCount: 0, pinned: true, muted: false, otherUserId: 2 },
     { id: 2, type: 'group', name: '产品设计组', avatar: '', lastMessage: '李明: 新版的设计稿已更新', lastMessageType: 'text', lastTime: Math.floor(Date.now() / 1000) - 1200, unreadCount: 3, pinned: false, muted: false, memberCount: 8 },

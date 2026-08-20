@@ -75,6 +75,7 @@ function serializeUser(u) {
     id: u.id, username: u.username, phone: u.phone,
     avatar: u.avatar || '', bio: u.bio || '',
     wechat_id: u.wechat_id || '', cover_photo: u.cover_photo || '',
+    created_at: u.created_at,
   };
 }
 
@@ -184,7 +185,7 @@ async function login(body = {}) {
 }
 
 function getMe(userId) {
-  const user = db.prepare('SELECT id,username,phone,avatar,bio,wechat_id,cover_photo FROM users WHERE id=?').get(userId);
+  const user = db.prepare('SELECT id,username,phone,avatar,bio,wechat_id,cover_photo,created_at FROM users WHERE id=?').get(userId);
   return user ? serializeUser(user) : null;
 }
 
