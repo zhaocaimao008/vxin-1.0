@@ -35,7 +35,10 @@ const NORMAL = {
 
 // 边界值集合：超长昵称（中/英各一）、空态、缺失可选字段（avatar/bio 等 null/undefined）。
 const EDGE = {
-  me: { id: 1, username: '张小雅', wechat_id: 'xiaoya_2024', vxin_id: 'xiaoya_2024', avatar: null, bio: undefined, phone: '138****0001' },
+  // settings-page 改版：username 拉长测试账号信息卡片头像行的换行/截断，
+  // phone 换成未打码的真实格式号码测试 maskPhone() 打码逻辑（NORMAL 数据集里那个
+  // '138****0001' 本身已经带星号，测不出 maskPhone() 是否正确处理原始号码）。
+  me: { id: 1, username: '张小雅的设计工作室日常账号超长昵称测试专用', wechat_id: 'xiaoya_2024', vxin_id: 'xiaoya_2024', avatar: null, bio: undefined, phone: '+8613800001234' },
   conversations: [
     // 超长中文昵称（40+ 字符）
     { id: 1, type: 'private', name: '张小雅的设计工作室日常沟通与项目进度同步专用会话窗口这是一个非常长的名字测试', avatar: '', lastMessage: '这是一条特别特别特别特别特别特别特别特别特别特别长的消息预览文本用来测试是否会把布局撑开或者被正确截断显示省略号', lastMessageType: 'text', lastTime: Math.floor(Date.now() / 1000) - 300, unreadCount: 999, pinned: true, muted: false, otherUserId: 2 },
