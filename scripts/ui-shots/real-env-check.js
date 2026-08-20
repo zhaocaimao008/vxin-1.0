@@ -53,8 +53,16 @@ async function redactPhones(page) {
 }
 
 async function shot(page, name) {
+  // 先等页面稳定（含异步拉取的手机号等字段），再打码，再等一拍确认没有
+  // 后续渲染又把号码写回去，最后再打码一次兜底，才截图——单次打码在
+  // 手机号字段异步加载完成之前跑，会跟数据到达产生竞态从而漏打码
+  // （这条经验来自本机截图工具早期一次真实事故：账号与安全页手机号明文
+  // 渲染过一次，当场发现丢弃重截，这里把时序修牢，不再单纯依赖一次打码）。
+  await page.waitForTimeout(700);
   await redactPhones(page);
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(400);
+  await redactPhones(page);
+  await page.waitForTimeout(150);
   await page.screenshot({ path: path.join(OUT, `${name}.png`) });
   console.log('  ✓', `${name}.png`);
 }
