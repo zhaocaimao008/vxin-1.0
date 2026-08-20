@@ -6,8 +6,9 @@ import { estimateHeight, REPLY_MEDIA_HEIGHT, REPLY_TEXT_HEIGHT } from './estimat
 // → 「回复图片后再发文字，文字渲染进回复图片消息里」。
 const mk = (msg) => ({ type: 'message', msg });
 
-// 单行文本首帧高度 = 行 padding(13) + 气泡上下 padding(22) + 1 行文本(22) = 57
-const SINGLE_LINE_TEXT = 57;
+// 单行文本首帧高度 = 行 padding(13) + 气泡上下 padding(22) + 1 行文本(22)
+//   + chat-window 改版新增的气泡内时间戳行(16) = 73
+const SINGLE_LINE_TEXT = 73;
 
 describe('estimateHeight — 引用预览必须并入首帧高度', () => {
   it('单行纯文本消息 = 57(实测行高)，无引用附加', () => {

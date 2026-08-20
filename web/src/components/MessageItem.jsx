@@ -9,6 +9,18 @@ import { getAspect, rememberAspect } from '../utils/imgDimCache';
 import { linkify } from '../utils/linkify';
 import { IcoFile, IcoRedPacket, IcoTransfer } from './Icons';
 
+// chat-window 改版：气泡内右下角时间戳只需要 HH:MM，不带日期——formatFull() 对非
+// 当天消息会返回"昨天 HH:MM"/"M月D日 HH:MM"这种带日期的长字符串，塞进气泡角落的小
+// 时间戳位会跟设计稿（每条消息都只显示 10:23 这种纯时间）对不上，所以气泡内联时间戳
+// 单独用这个只取 HH:MM 的小函数，不复用 formatFull（气泡的 title 悬浮提示仍用
+// formatFull，那里需要完整日期）。
+function formatBubbleTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+}
+
 // 图片加载失败占位图（过期/被删的云文件）：灰底 + 可见文字，保证不显示浏览器裂图
 const IMG_BROKEN = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
   "<svg xmlns='http://www.w3.org/2000/svg' width='120' height='90'>" +
@@ -49,6 +61,49 @@ const MessageItem = memo(function MessageItem({ item, cbRef, measure }) {
   const showDelivered = isMine && msg._delivered && convType === 'private' && !msg._read;
   // 定时消息标记：由后端调度器发出的消息带 is_scheduled=1
   const isScheduled   = !!msg.is_scheduled;
+
+  // 已读/发送状态图标：逻辑完全不变，只是渲染位置按 msg.type 二选一（见下方使用处）。
+  const readReceiptEl = isMine ? (
+    msg._status === 'sending' ? (
+      <div className="wc-msg-read"><span className="wc-msg-spinner" /></div>
+    ) : msg._status === 'error' ? (
+      <div
+        className="wc-msg-read wc-msg-status-error-icon"
+        data-testid="msg-send-failed"
+        title="发送失败，点击重发"
+        role="button" tabIndex={0} aria-label="发送失败，点击重发"
+        onClick={() => cbs.retryMessage(msg)}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cbs.retryMessage(msg); } }}
+      >❗</div>
+    ) : isLastMine && convType === 'private' ? (
+      showRead ? (
+        /* 双勾-已读：绿色 */
+        <div className="wc-msg-read wc-msg-status-read" data-testid="msg-read-status" title="已读">
+          <svg className="wc-tick-icon wc-tick-read" viewBox="0 0 18 12" aria-hidden="true">
+            <path d="M1 6l4 4L12 1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            <path d="M6 10l4-9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            <path d="M10 1l6 9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+          </svg>
+        </div>
+      ) : showDelivered ? (
+        /* 双勾-已送达：灰色 */
+        <div className="wc-msg-read wc-msg-status-delivered" title="已送达">
+          <svg className="wc-tick-icon wc-tick-delivered" viewBox="0 0 18 12" aria-hidden="true">
+            <path d="M1 6l4 4L12 1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            <path d="M6 10l4-9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            <path d="M10 1l6 9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+          </svg>
+        </div>
+      ) : (
+        /* 单勾-已发送 */
+        <div className="wc-msg-read wc-msg-status-sent" title="已发送">
+          <svg className="wc-tick-icon wc-tick-sent" viewBox="0 0 12 10" aria-hidden="true">
+            <path d="M1 5l3.5 3.5L11 1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+          </svg>
+        </div>
+      )
+    ) : null
+  ) : null;
 
   const canClickAvatar = (() => {
     if (isMine || convType !== 'group') return true;
@@ -119,47 +174,10 @@ const MessageItem = memo(function MessageItem({ item, cbRef, measure }) {
           >{msg.senderName}</div>
         )}
         <div className="wc-msg-bubble-wrap">
-          {isMine && (
-            msg._status === 'sending' ? (
-              <div className="wc-msg-read"><span className="wc-msg-spinner" /></div>
-            ) : msg._status === 'error' ? (
-              <div
-                className="wc-msg-read wc-msg-status-error-icon"
-                data-testid="msg-send-failed"
-                title="发送失败，点击重发"
-                role="button" tabIndex={0} aria-label="发送失败，点击重发"
-                onClick={() => cbs.retryMessage(msg)}
-                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cbs.retryMessage(msg); } }}
-              >❗</div>
-            ) : isLastMine && convType === 'private' ? (
-              showRead ? (
-                /* 双勾-已读：绿色 */
-                <div className="wc-msg-read wc-msg-status-read" data-testid="msg-read-status" title="已读">
-                  <svg className="wc-tick-icon wc-tick-read" viewBox="0 0 18 12" aria-hidden="true">
-                    <path d="M1 6l4 4L12 1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                    <path d="M6 10l4-9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                    <path d="M10 1l6 9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                  </svg>
-                </div>
-              ) : showDelivered ? (
-                /* 双勾-已送达：灰色 */
-                <div className="wc-msg-read wc-msg-status-delivered" title="已送达">
-                  <svg className="wc-tick-icon wc-tick-delivered" viewBox="0 0 18 12" aria-hidden="true">
-                    <path d="M1 6l4 4L12 1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                    <path d="M6 10l4-9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                    <path d="M10 1l6 9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                  </svg>
-                </div>
-              ) : (
-                /* 单勾-已发送 */
-                <div className="wc-msg-read wc-msg-status-sent" title="已发送">
-                  <svg className="wc-tick-icon wc-tick-sent" viewBox="0 0 12 10" aria-hidden="true">
-                    <path d="M1 5l3.5 3.5L11 1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                  </svg>
-                </div>
-              )
-            ) : null
-          )}
+          {/* chat-window 改版：文本消息的已读标记挪进气泡内部右下角(见下方
+              wc-msg-time-small)，非文本消息(图片/文件/红包等，本轮不动)保持原来
+              挂在气泡外侧的位置——readReceiptEl 只算一次，两处按 msg.type 二选一用。 */}
+          {isMine && msg.type !== 'text' && readReceiptEl}
           {/* 定时消息标记：气泡左上角「定时」角标 */}
           {isScheduled && (
             <span
@@ -202,10 +220,20 @@ const MessageItem = memo(function MessageItem({ item, cbRef, measure }) {
               </div>
             )}
             {msg.type === 'text' && (
-              <span>
-                {linkify(msg.content)}
-                {msg.edited ? <span className="wc-msg-edited" data-testid="msg-edited-flag" style={{ color: isMine ? 'rgba(0,0,0,.35)' : 'var(--text-tertiary)' }}>已编辑</span> : null}
-              </span>
+              <>
+                <span>
+                  {linkify(msg.content)}
+                  {msg.edited ? <span className="wc-msg-edited" data-testid="msg-edited-flag" style={{ color: isMine ? 'rgba(0,0,0,.35)' : 'var(--text-tertiary)' }}>已编辑</span> : null}
+                </span>
+                {/* chat-window 改版：气泡内右下角时间戳 + (己方)已读标记，
+                    只对文本消息生效——图片/文件等媒体卡片本轮不动，样式不受影响。
+                    estimateHeight.js 的 TEXT_TIMESTAMP_ROW_HEIGHT 常量必须和这行的
+                    实际高度保持一致，否则虚拟列表首帧行高估算会跟真实渲染脱节。 */}
+                <div className="wc-msg-time-small" data-testid="msg-inline-time">
+                  <span>{msg.created_at ? formatBubbleTime(msg.created_at * 1000) : ''}</span>
+                  {readReceiptEl}
+                </div>
+              </>
             )}
             {msg.type === 'image' && (() => {
               const imgSrc = mediaUrl(msg.file_url);

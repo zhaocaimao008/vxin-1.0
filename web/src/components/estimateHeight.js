@@ -29,6 +29,10 @@ const TEXT_ROW_PAD = 13;
 const TEXT_ROW_PAD_CONSECUTIVE = 3;
 const TEXT_BUBBLE_VPAD = 22;
 const TEXT_LINE_HEIGHT = 22;
+// chat-window 改版：文本气泡内新增右下角时间戳行(.wc-msg-time-small)。
+// CSS 实测：margin-top 2px + line-height:1×font-size 11px ≈ 13px，取整到 16px
+// 给已读勾号(10px 高)留一点余量——宁高勿低，避免下一行压进时间戳。
+const TEXT_TIMESTAMP_ROW_HEIGHT = 16;
 // 每行可容纳的「列数」(CJK/全角计 2 列，其余计 1 列)。偏保守(按较窄气泡取值)，
 // 宁可对长消息略高估(仅轻微收缩，无重叠)也不低估(会重叠)；短消息稳定判为 1 行。
 const TEXT_COLS_PER_LINE = 26;
@@ -85,8 +89,9 @@ export function estimateHeight(item) {
   else if (msg.type === 'sticker') base = 140 + MEDIA_ROW_PAD_BOTTOM;
   else {
     // 文本(及未知类型兜底)：按内容行数精确估算，首帧即贴近真实高度 → 发送不抖、长文不叠。
+    // chat-window 改版新增气泡内时间戳行，两种消息类型都有(不分 mine/other)，固定加一份。
     const rowPad = item.consecutive ? TEXT_ROW_PAD_CONSECUTIVE : TEXT_ROW_PAD;
-    base = rowPad + TEXT_BUBBLE_VPAD + estimateTextLines(msg.content) * TEXT_LINE_HEIGHT;
+    base = rowPad + TEXT_BUBBLE_VPAD + estimateTextLines(msg.content) * TEXT_LINE_HEIGHT + TEXT_TIMESTAMP_ROW_HEIGHT;
   }
 
   return base + replyAdd;

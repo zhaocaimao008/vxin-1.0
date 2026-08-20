@@ -47,7 +47,12 @@ const EDGE = {
   conversationsEmpty: [],
   messages: [
     { id: 101, conversation_id: 1, sender_id: 1, type: 'text', content: '正常长度的消息', created_at: Math.floor(Date.now() / 1000) - 700, read: true },
-    { id: 102, conversation_id: 1, sender_id: 2, type: 'text', content: '这是一条用来测试超长文本换行与容器是否会被撑开的消息内容这是一条用来测试超长文本换行与容器是否会被撑开的消息内容这是一条用来测试超长文本换行与容器是否会被撑开的消息内容ThisIsAVeryLongEnglishWordWithoutAnyNaturalBreakPointToTestOverflow', created_at: Math.floor(Date.now() / 1000) - 300, read: true },
+    { id: 102, conversation_id: 1, sender_id: 2, type: 'text', content: '这是一条用来测试超长文本换行与容器是否会被撑开的消息内容这是一条用来测试超长文本换行与容器是否会被撑开的消息内容这是一条用来测试超长文本换行与容器是否会被撑开的消息内容ThisIsAVeryLongEnglishWordWithoutAnyNaturalBreakPointToTestOverflow', created_at: Math.floor(Date.now() / 1000) - 295, read: true },
+    // 连续同向消息（同一 sender_id、间隔 <300s）：验证 consecutive 行样式下
+    // 气泡内时间戳/已读标记不会跟相邻气泡挤压重叠。
+    { id: 103, conversation_id: 1, sender_id: 2, type: 'text', content: '连续消息一', created_at: Math.floor(Date.now() / 1000) - 290, read: true },
+    { id: 104, conversation_id: 1, sender_id: 2, type: 'text', content: '连续消息二', created_at: Math.floor(Date.now() / 1000) - 285, read: true },
+    { id: 105, conversation_id: 1, sender_id: 2, type: 'text', content: '连续消息三', created_at: Math.floor(Date.now() / 1000) - 280, read: true },
   ],
   contacts: [
     // 超长中文昵称
