@@ -2483,7 +2483,7 @@ body:not(.dark-mode) .wc-discover {
   transform: translateX(0);
   transition: transform var(--dur) var(--ease);
 }
-.wc-switch.on { background: var(--green); }
+.wc-switch.on { background: var(--color-primary); }
 .wc-switch.on span { transform: translateX(18px); }
 .wc-switch:active { transform: scale(.96); }
 
@@ -3194,6 +3194,62 @@ body.dark-mode .wc-msg-time span { background: rgba(255,255,255,.08); }
 .wc-crow-desc { font-size: var(--text-sm); color: var(--text-tertiary); margin-top: 2px; line-height: 1.4; }
 .wc-crow-value { font-size: var(--text-meta); color: var(--text-tertiary); flex-shrink: 0; }
 .wc-crow-value-gap { margin-right: var(--sp-1h); }
+
+/* ── settings-page 改版：账号信息卡片头像行 + 行内小按钮 ──
+   头像+昵称+v信号 那一行不是图标方块，跟 CRow 结构对不上，单独一个小 flex 行；
+   小按钮(编辑资料/修改/管理/退出登录/清除)复用跟 CRow 一样的 padding 节奏，
+   注销账号是同一个按钮的红色变体，颜色沿用已有的 --color-badge / --color-badge-rgb。 */
+.wc-account-info-row {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: 13px var(--sp-3h); border-bottom: 1px solid var(--border-color);
+}
+.wc-account-info-name { flex: 1; min-width: 0; }
+.wc-crow-btn {
+  padding: 6px 14px; border-radius: var(--radius-md);
+  font-size: var(--text-sm2); font-weight: var(--font-medium);
+  background: var(--bg-card, #fff); border: 1px solid var(--border-color);
+  color: var(--text-primary); cursor: pointer; flex-shrink: 0;
+  transition: background var(--dur-fast);
+}
+.wc-crow-btn:hover { background: var(--bg-hover); }
+.wc-crow-btn:disabled { opacity: .6; cursor: not-allowed; }
+.wc-crow-btn-danger {
+  color: var(--color-badge);
+  border-color: rgba(var(--color-badge-rgb), .4);
+  background: rgba(var(--color-badge-rgb), .06);
+}
+.wc-crow-btn-danger:hover { background: rgba(var(--color-badge-rgb), .12); }
+
+/* 账号注销确认弹窗里的警告文案块 */
+.wc-delete-account-warning {
+  font-size: var(--text-sm2); line-height: 1.6; color: var(--text-secondary);
+  background: rgba(var(--color-badge-rgb), .06);
+  border: 1px solid rgba(var(--color-badge-rgb), .2);
+  border-radius: var(--radius-md); padding: var(--sp-3);
+}
+.wc-delete-account-warning strong { color: var(--color-badge); }
+
+/* ── settings-page 改版：设置菜单栏窄视口(≤767px)折叠成下拉 ──
+   跟 Home.jsx 里 isMobile 判定用的同一个 768 断点(window.innerWidth<768)对齐，
+   不新引入阈值。WebSettingsShell 只在 !isMobile 时渲染(即宽度≥768px才可达)，
+   这条规则理论上只有在窗口从宽拖到窄、resize 事件还没让 isMobile 状态更新的
+   那一瞬间才可能命中——但按用户要求还是做上，成本很低，且能防住 Electron
+   以浏览器模式打开或者浏览器缩放导致的边缘情况。 */
+@media (max-width: 767px) {
+  .wc-settings-shell { flex-direction: column; }
+  .wc-settings-nav {
+    width: 100%; flex: 0 0 auto; height: auto; max-height: none;
+    border-right: none; border-bottom: 1px solid var(--border-color);
+  }
+  .wc-settings-nav-title {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    background: transparent; border: none; cursor: pointer;
+  }
+  .wc-settings-nav-title .wc-chevron { transform: rotate(90deg); transition: transform 150ms; }
+  .wc-settings-nav.collapsed .wc-settings-nav-title .wc-chevron { transform: rotate(0deg); }
+  .wc-settings-nav.collapsed #wc-settings-nav-list { display: none; }
+  .wc-settings-content { width: 100%; }
+}
 
 /* ── SVG helpers ── */
 .wc-chevron { width: 14px; height: 14px; fill: var(--text-tertiary); flex-shrink: 0; }

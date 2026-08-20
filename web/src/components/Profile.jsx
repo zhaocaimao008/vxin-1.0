@@ -8,7 +8,7 @@ import { goLogin } from '../utils/url';
 import { showConfirm, showToast } from '../utils/toast';
 import { copyToClipboard } from '../utils/clipboard';
 import { timeoutSignal } from '../utils/config';
-import { IcoDesktop as IcoDeviceDesktop, IcoMobile as IcoDeviceMobile } from './Icons';
+import { IcoDesktop as IcoDeviceDesktop, IcoMobile as IcoDeviceMobile, IcoClose } from './Icons';
 
 /* ─── 小工具 ─── */
 // role="button" 的 div 应同时支持 Enter 和空格触发（空格默认会滚动页面，需 preventDefault）
@@ -41,6 +41,12 @@ const IcoBell    = () => <Ico d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c
 const IcoShield  = () => <Ico d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>;
 const IcoServer  = () => <Ico d="M4 1h16a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1zm0 8h16a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1v-4a1 1 0 011-1zm0 8h16a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1v-4a1 1 0 011-1zM6 4a1 1 0 100 2 1 1 0 000-2zm0 8a1 1 0 100 2 1 1 0 000-2zm0 8a1 1 0 100 2 1 1 0 000-2z"/>;
 const IcoKeyboard = () => <Ico d="M20 5H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 5H5v-2h2v2zm0-3H5v-2h2v2zm0-3H5V8h2v2zm10 6H7v-2h10v2zm0-3h-2v-2h2v2zm0-3h-2V8h2v2zm3 6h-2v-2h2v2zm0-3h-2v-2h2v2zm0-3h-2V8h2v2z"/>;
+// 设置页「账号信息」分组新增图标（chat-window/settings-page 改版沿用同一套 Ico 包装）
+const IcoPhoneRow = () => <Ico d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>;
+const IcoKeyRow   = () => <Ico d="M12.65 10A5.99 5.99 0 0 0 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6a5.99 5.99 0 0 0 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>;
+const IcoLockRow  = () => <Ico d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm3 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>;
+const IcoGlobeRow = () => <Ico d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56A8.03 8.03 0 0 1 18.93 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.81 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.987 7.987 0 0 1 5.07 16zm2.95-8H5.07a7.987 7.987 0 0 1 4.33-3.56C8.8 5.55 8.34 6.75 8.02 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/>;
+const IcoTrashRow = () => <Ico d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>;
 /* ─── 通用 UI 零件 ─── */
 function PageBg({ children }) {
   return <div className="wc-page-bg">{children}</div>;
@@ -274,6 +280,92 @@ function ChangePhone({ user, updateUser, onBack }) {
         </Card>
         {error && <div className="wc-edit-error" role="alert">{error}</div>}
         <div className="wc-edit-hint">换绑后请使用新手机号登录</div>
+      </div>
+    </PageBg>
+  );
+}
+
+/* ── 修改登录密码（settings-page 改版新增 UI，调用已有的 PUT /api/auth/change-password，
+     不新增后端）。密码规则跟后端 auth.service.js changePassword() 校验一致：
+     至少 8 位且需同时包含字母和数字，具体错误文案由后端返回，这里只做基本非空校验。── */
+function ChangePassword({ onBack }) {
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const save = async () => {
+    if (saving) return;
+    if (!oldPassword || !newPassword) { setError('请填写完整'); return; }
+    if (newPassword !== confirmPassword) { setError('两次输入的新密码不一致'); return; }
+    setSaving(true);
+    setError('');
+    try {
+      // 响应里的 token 只有 Bearer 客户端（Electron/移动端）需要覆盖本地存储；
+      // 本组件只在纯浏览器 WebSettingsShell 里可达（Cookie 鉴权），改密后端已经
+      // 顺带刷新了 Cookie（见 auth.controller.js changePassword），这里无需处理 token。
+      await axios.put('/api/auth/change-password', { oldPassword, newPassword });
+      showToast('密码已修改', 'success');
+      onBack();
+    } catch (err) {
+      setError(err.response?.data?.error || '修改失败，请重试');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <PageBg>
+      <PageHeader title="修改登录密码" onBack={onBack}
+        right={
+          <button className="wc-save-btn" onClick={save} disabled={saving}>
+            {saving ? '保存中' : '保存'}
+          </button>
+        }
+      />
+      <div className="wc-edit-pad">
+        <Card>
+          <div style={{ padding: 'var(--sp-3) var(--sp-4)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+            <div>
+              <label htmlFor="cpw-old" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>当前密码</label>
+              <input
+                id="cpw-old" type="password"
+                value={oldPassword}
+                onChange={e => { setOldPassword(e.target.value); setError(''); }}
+                placeholder="请输入当前密码"
+                aria-label="当前密码"
+                className="wc-edit-input"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label htmlFor="cpw-new" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>新密码</label>
+              <input
+                id="cpw-new" type="password"
+                value={newPassword}
+                onChange={e => { setNewPassword(e.target.value); setError(''); }}
+                placeholder="至少 8 位，需包含字母和数字"
+                aria-label="新密码"
+                className="wc-edit-input"
+              />
+            </div>
+            <div>
+              <label htmlFor="cpw-confirm" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>确认新密码</label>
+              <input
+                id="cpw-confirm" type="password"
+                value={confirmPassword}
+                onChange={e => { setConfirmPassword(e.target.value); setError(''); }}
+                onKeyDown={e => e.key === 'Enter' && save()}
+                placeholder="请再次输入新密码"
+                aria-label="确认新密码"
+                className="wc-edit-input"
+              />
+            </div>
+          </div>
+        </Card>
+        {error && <div className="wc-edit-error" role="alert">{error}</div>}
+        <div className="wc-edit-hint">修改后需重新登录，其他已登录设备会被强制下线</div>
       </div>
     </PageBg>
   );
@@ -871,6 +963,15 @@ async function doLogout(logout) {
   goLogin();
 }
 
+// 清除本地 Cache Storage（settings-page 改版：从 GeneralSettings 抽成共享函数，
+// 供「通用设置」和新的「账号与安全 → 其他」分组的「清除缓存」行共用同一份真实逻辑，
+// 不新增行为，只是避免在两处重复写一样的 caches.keys()/delete）。
+async function clearBrowserCache() {
+  if (!window.caches) return;
+  const keys = await caches.keys();
+  await Promise.all(keys.map(k => caches.delete(k)));
+}
+
 /* ── 个人资料详情页（渐变 Hero + 卡片信息） ── */
 function ProfileDetail({ user, updateUser, onBack, navigateTo }) {
   const fileRef = useRef(null);
@@ -1058,12 +1159,7 @@ function GeneralSettings({ onBack }) {
   const clearCache = async () => {
     if (!await showConfirm('将清除本地图片等缓存，不影响服务器上的聊天记录。')) return;
     setClearing(true);
-    try {
-      if (window.caches) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map(k => caches.delete(k)));
-      }
-    } catch { /* ignore */ }
+    try { await clearBrowserCache(); } catch { /* ignore */ }
     await refreshCacheSize();
     setClearing(false);
   };
@@ -1120,20 +1216,145 @@ function AboutPanel({ onBack }) {
   );
 }
 
-/* ── 账号与安全（组合已有的手机号/设备管理/退出登录，不新增业务逻辑） ── */
-function AccountSecurityPanel({ user, navigateTo, logout, onBack }) {
+// 手机号展示打码：+8613800005678 / 13800005678 → +86 138****5678，纯前端格式化，
+// 不改数据本身（settings-page 改版按设计稿视觉对齐，不是新业务逻辑）。
+function maskPhone(phone) {
+  if (!phone) return '未绑定';
+  const m = String(phone).match(/^(\+?\d{0,3})?(\d{3})\d{4}(\d{4})$/);
+  if (!m) return phone; // 格式不认识就原样显示，不瞎猜
+  const [, cc, head, tail] = m;
+  return `${cc ? cc + ' ' : ''}${head}****${tail}`;
+}
+
+/* ── 账号注销二次确认弹窗：先文字确认一次(showConfirm)，这里是第二步——
+   收集密码 + 醒目的不可恢复警告，真正调用 POST /api/auth/delete-account。
+   后端要求 body 里必须有 password（见 auth.controller.js deleteAccount），不是别的字段。── */
+function DeleteAccountModal({ onClose, logout }) {
+  const [password, setPassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState('');
+
+  const confirmDelete = async () => {
+    if (deleting) return;
+    if (!password) { setError('请输入登录密码确认'); return; }
+    setDeleting(true);
+    setError('');
+    try {
+      await axios.post('/api/auth/delete-account', { password });
+      // 后端已清 Cookie + 拉黑当前 token；前端调 logout() 清本地状态后跳登录页，
+      // 跟 doLogout 走的是同一套收尾（Service Worker 退订等），账号已经不存在了不用等确认。
+      await logout();
+      goLogin();
+    } catch (err) {
+      setError(err.response?.data?.error || '注销失败，请检查密码后重试');
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="wc-modal-overlay" onClick={e => e.target === e.currentTarget && !deleting && onClose()}>
+      <div className="wc-modal" role="dialog" aria-modal="true" aria-label="注销账号确认">
+        <div className="wc-modal-header">
+          <span className="wc-modal-title">注销账号</span>
+          <button className="wc-modal-close" onClick={onClose} disabled={deleting} aria-label="关闭"><IcoClose size={18} /></button>
+        </div>
+        <div className="wc-modal-body">
+          <div className="wc-delete-account-warning" role="alert">
+            此操作将<strong>永久删除</strong>你的账号，聊天记录、联系人、群组等所有数据都会被清除，
+            <strong>无法恢复，也无法找回</strong>。请谨慎操作。
+          </div>
+          <div style={{ marginTop: 'var(--sp-3)' }}>
+            <label htmlFor="del-acc-pass" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>输入登录密码以确认</label>
+            <input
+              id="del-acc-pass" type="password"
+              value={password}
+              onChange={e => { setPassword(e.target.value); setError(''); }}
+              onKeyDown={e => e.key === 'Enter' && confirmDelete()}
+              placeholder="请输入登录密码"
+              aria-label="登录密码"
+              className="wc-edit-input"
+              autoFocus
+              style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: 'var(--sp-2h)' }}
+            />
+          </div>
+          {error && <div className="wc-edit-error" role="alert" style={{ marginTop: 'var(--sp-2)' }}>{error}</div>}
+        </div>
+        <div className="wc-modal-footer">
+          <button className="wc-modal-btn secondary" onClick={onClose} disabled={deleting}>取消</button>
+          <button className="wc-modal-btn danger" onClick={confirmDelete} disabled={deleting || !password}>
+            {deleting ? '注销中…' : '永久注销'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── 账号与安全：账号信息 / 安全设置 / 其他 三个分组白卡片，对齐 Web设置页.jpg ──
+   每一行都复用已有的真实功能入口/接口，没有新增后端。「邮箱」行(数据库无此字段)和
+   「登录保护」开关(前后端都没有这功能)按已确认的方案去掉，不做假 UI。
+   「已认证」徽章设计稿有画，但全仓库找不到 verified/已认证 字段——同样不摆假状态，
+   头像行只显示昵称，不加徽章(我自己的判断，跟去掉邮箱/登录保护是同一个道理，供你复核)。── */
+function AccountSecurityPanel({ user, navigateTo, logout }) {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [clearingCache, setClearingCache] = useState(false);
+
+  const handleDeleteAccountClick = async () => {
+    if (!(await showConfirm('账号注销后不可恢复，所有聊天记录、联系人、群组数据都会被永久清除。确定要继续吗？'))) return;
+    setShowDeleteModal(true);
+  };
+
+  const handleClearCache = async () => {
+    if (!(await showConfirm('将清除本地图片等缓存，不影响服务器上的聊天记录。'))) return;
+    setClearingCache(true);
+    try { await clearBrowserCache(); } catch { /* ignore */ }
+    setClearingCache(false);
+    showToast('缓存已清除', 'success');
+  };
+
   return (
     <PageBg>
-      <PageHeader title="账号与安全" onBack={onBack} />
+      <PageHeader title="账号与安全" />
+
+      <SLabel>账号信息</SLabel>
       <div className="wc-section-pad">
         <Card>
-          <CRow icon={<IcoDesktop />} bg="var(--icon-bg-neutral)" label="手机号" value={user?.phone || '未绑定'} onClick={() => navigateTo('change-phone')} />
-          <CRow icon={<IcoDesktop />} bg="var(--icon-bg-neutral)" label="设备管理" desc="查看同时登录的设备" onClick={() => navigateTo('devices')} />
+          <div className="wc-account-info-row">
+            <Avatar src={user?.avatar} name={user?.username} size={44} />
+            <div className="wc-account-info-name">
+              <div className="wc-crow-label">{user?.username || '未设置昵称'}</div>
+              {user?.wechat_id && <div className="wc-crow-desc">v信号：{user.wechat_id}</div>}
+            </div>
+            <button className="wc-crow-btn" onClick={() => navigateTo('profile-detail')}>编辑资料</button>
+          </div>
+          <CRow icon={<IcoPhoneRow />} bg="var(--icon-bg-phone)" label="手机号" value={maskPhone(user?.phone)}
+            right={<button className="wc-crow-btn" onClick={() => navigateTo('change-phone')}>修改</button>} />
+          <CRow icon={<IcoKeyRow />} bg="var(--icon-bg-newfriend)" label="登录密码" value="********"
+            right={<button className="wc-crow-btn" onClick={() => navigateTo('change-password')}>修改</button>} />
         </Card>
       </div>
-      <div className="wc-logout-div">
-        <button className="wc-logout-btn" onClick={() => doLogout(logout)}>退出登录</button>
+
+      <SLabel>安全设置</SLabel>
+      <div className="wc-section-pad">
+        <Card>
+          <CRow icon={<IcoDeviceMobile />} bg="var(--icon-bg-device)" label="设备管理" desc="管理已登录的设备"
+            right={<button className="wc-crow-btn" onClick={() => navigateTo('devices')}>管理</button>} />
+          <CRow icon={<IcoLockRow />} bg="var(--color-badge)" label="账号注销" danger desc="永久注销账号，所有数据将被清除"
+            right={<button className="wc-crow-btn wc-crow-btn-danger" onClick={handleDeleteAccountClick}>注销账号</button>} />
+        </Card>
       </div>
+
+      <SLabel>其他</SLabel>
+      <div className="wc-section-pad">
+        <Card>
+          <CRow icon={<IcoGlobeRow />} bg="var(--icon-bg-neutral)" label="v信网页版" desc="在浏览器中使用 v信"
+            right={<button className="wc-crow-btn" onClick={() => doLogout(logout)}>退出登录</button>} />
+          <CRow icon={<IcoTrashRow />} bg="var(--icon-bg-newfriend)" label="清除缓存" desc="释放存储空间，不会删除聊天记录"
+            right={<button className="wc-crow-btn" onClick={handleClearCache} disabled={clearingCache}>{clearingCache ? '清除中…' : '清除'}</button>} />
+        </Card>
+      </div>
+
+      {showDeleteModal && <DeleteAccountModal onClose={() => setShowDeleteModal(false)} logout={logout} />}
     </PageBg>
   );
 }
@@ -1142,35 +1363,52 @@ function AccountSecurityPanel({ user, navigateTo, logout, onBack }) {
 function WebSettingsShell({ user, updateUser, navigateTo, logout }) {
   // 默认选中「账号与安全」，对齐 Web设置页.jpg 从左侧「设置」rail 进入时的默认态
   const [section, setSection] = useState('account');
+  // 菜单栏窄视口折叠(≤767px，跟 Home.jsx 里 isMobile 判定用的同一个 768 断点对齐，
+  // 不新引入阈值)：点「设置」标题展开/收起菜单列表。≥768px 时这个状态不参与渲染
+  // (CSS 只在 @media (max-width:767px) 里生效)，默认展开对宽屏零影响。
+  const [navExpanded, setNavExpanded] = useState(true);
 
+  // settings-page 改版：菜单栏从 6 项扩到 7 项，顺序对齐 Web设置页.jpg / Web个人资料页.jpg——
+  // 两张设计稿「个人资料」是否算独立菜单项画得不一致，以画了独立整屏内容的
+  // Web个人资料页.jpg 为准，保留为独立项（排在「快捷键」后、「关于v信」前）。
+  // 「聊天设置」「文件管理」设计稿里有画，但现有代码没有对应的全局页面/接口支撑，
+  // 是空壳——按已确认的方案不放进菜单。
   const NAV = [
-    { key: 'profile',       label: '个人资料', icon: <IcoDesktop /> },
     { key: 'account',       label: '账号与安全', icon: <IcoShield /> },
     { key: 'privacy',       label: '隐私设置', icon: <IcoShield /> },
     { key: 'notifications', label: '通知设置', icon: <IcoBell /> },
     { key: 'general',       label: '通用设置', icon: <IcoDesktop /> },
+    { key: 'shortcuts',     label: '快捷键', icon: <IcoKeyboard /> },
+    { key: 'profile',       label: '个人资料', icon: <IcoDesktop /> },
     { key: 'about',         label: '关于 v信', icon: <IcoServer /> },
   ];
 
   return (
     <div className="wc-settings-shell">
-      <div className="wc-settings-nav">
-        <div className="wc-settings-nav-title">设置</div>
-        {NAV.map(item => (
-          <button key={item.key} type="button"
-            className={`wc-settings-nav-item${section === item.key ? ' active' : ''}`}
-            onClick={() => setSection(item.key)}>
-            <span className="wc-settings-nav-icon">{item.icon}</span>
-            {item.label}
-          </button>
-        ))}
+      <div className={`wc-settings-nav${navExpanded ? '' : ' collapsed'}`}>
+        <button type="button" className="wc-settings-nav-title" onClick={() => setNavExpanded(v => !v)}
+          aria-expanded={navExpanded} aria-controls="wc-settings-nav-list">
+          设置
+          <ChevronRight />
+        </button>
+        <div id="wc-settings-nav-list">
+          {NAV.map(item => (
+            <button key={item.key} type="button"
+              className={`wc-settings-nav-item${section === item.key ? ' active' : ''}`}
+              onClick={() => { setSection(item.key); setNavExpanded(false); }}>
+              <span className="wc-settings-nav-icon">{item.icon}</span>
+              {item.label}
+            </button>
+          ))}
+        </div>
       </div>
       <div className="wc-settings-content">
-        {section === 'profile'       && <ProfileDetail user={user} updateUser={updateUser} navigateTo={navigateTo} />}
         {section === 'account'       && <AccountSecurityPanel user={user} navigateTo={navigateTo} logout={logout} />}
         {section === 'privacy'       && <PrivacySettings user={user} />}
         {section === 'notifications' && <NotificationSettings />}
         {section === 'general'       && <GeneralSettings />}
+        {section === 'shortcuts'     && <ShortcutSettings />}
+        {section === 'profile'       && <ProfileDetail user={user} updateUser={updateUser} navigateTo={navigateTo} />}
         {section === 'about'         && <AboutPanel />}
       </div>
     </div>
@@ -1306,6 +1544,7 @@ export default function Profile({ isMobile = false }) {
   if (subPage === 'edit-name')     return <EditName user={user} updateUser={updateUser} onBack={() => setSubPage(null)} />;
   if (subPage === 'edit-bio')      return <EditBio user={user} updateUser={updateUser} onBack={() => setSubPage(null)} />;
   if (subPage === 'change-phone')  return <ChangePhone user={user} updateUser={updateUser} onBack={() => setSubPage(null)} />;
+  if (subPage === 'change-password') return <ChangePassword onBack={() => setSubPage(null)} />;
   if (subPage === 'wallet')        return <Wallet onBack={() => setSubPage(null)} />;
   if (subPage === 'invite')        return <InviteFriends onBack={() => setSubPage(null)} />;
   if (subPage === 'devices')       return <DeviceList onBack={() => setSubPage(null)} />;

@@ -101,6 +101,10 @@ const ME_DOUBLE_COL_SELECTORS = [
   ['nav-items', '.wc-settings-nav-item'],
   ['content', '.wc-settings-content'],
   ['cards', '.wc-settings-content .wc-card'],
+  // settings-page 改版：账号与安全分组卡片(账号信息/安全设置/其他)回归用
+  ['slabels', '.wc-settings-content .wc-slabel'],
+  ['crow-rows', '.wc-settings-content .wc-crow'],
+  ['account-info-row', '.wc-account-info-row'],
 ];
 
 const ME_SINGLE_COL_SELECTORS = [
