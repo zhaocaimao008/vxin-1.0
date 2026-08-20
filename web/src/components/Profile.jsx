@@ -239,7 +239,7 @@ function ChangePhone({ user, updateUser, onBack }) {
       />
       <div className="wc-edit-pad">
         <Card>
-          <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ padding: 'var(--sp-3) var(--sp-4)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
             <div>
               <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: 4 }}>当前手机号</div>
               <div style={{ fontSize: 'var(--text-base)', color: 'var(--text-primary)' }}>{user?.phone || '未绑定'}</div>
@@ -334,12 +334,12 @@ function Wallet({ onBack }) {
       <PageHeader title="我的钱包" onBack={onBack}
         right={<button className="wc-save-btn" onClick={() => { setShowRecharge(v => !v); setError(''); }}>{showRecharge ? '取消' : '充值'}</button>} />
       <div className="wc-section-pad">
-        <Card style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '28px 16px', gap: 6 }}>
+        <Card style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '28px var(--sp-4)', gap: 'var(--sp-1h)' }}>
           <div style={{ fontSize: 'var(--text-sm2)', color: 'var(--text-secondary)' }}>金币余额</div>
           <div style={{ fontSize: 'var(--text-display-xl)', fontWeight: 700, color: 'var(--green)' }}>{loading ? '…' : (balance ?? '—')}</div>
         </Card>
         {showRecharge && (
-          <Card style={{ marginTop: 12, padding: '12px 16px', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <Card style={{ marginTop: 'var(--sp-3)', padding: 'var(--sp-3) var(--sp-4)', display: 'flex', gap: 'var(--sp-2)', alignItems: 'center' }}>
             <input
               type="number" min="1" max="100000"
               placeholder="充值金币数量（1-100000）"
@@ -413,12 +413,12 @@ function InviteFriends({ onBack }) {
     <PageBg>
       <PageHeader title="邀请好友" onBack={onBack} />
       <div className="wc-section-pad">
-        <Card style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '28px 16px', gap: 10 }}>
+        <Card style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '28px var(--sp-4)', gap: 'var(--sp-2h)' }}>
           <div style={{ fontSize: 'var(--text-sm2)', color: 'var(--text-secondary)' }}>我的专属邀请码</div>
           <div style={{ fontSize: 'var(--text-display-xl)', fontWeight: 700, letterSpacing: 6, color: 'var(--green)', userSelect: 'text' }}>
             {loading ? '……' : (data?.code || '—')}
           </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap', justifyContent: 'center' }}>
             <button className="wc-save-btn" onClick={() => copyText(data?.code, 'code')} disabled={!data?.code}>
               {copied === 'code' ? '已复制' : '复制邀请码'}
             </button>
@@ -435,7 +435,7 @@ function InviteFriends({ onBack }) {
       </div>
 
       <div className="wc-section-pad">
-        <Card style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 16px', gap: 4 }}>
+        <Card style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 'var(--sp-5) var(--sp-4)', gap: 'var(--sp-1)' }}>
           <div style={{ fontSize: 'var(--text-sm2)', color: 'var(--text-secondary)' }}>已成功邀请</div>
           <div style={{ fontSize: 28, fontWeight: 700 }}>{loading ? '…' : (data?.invitedCount ?? 0)} 人</div>
         </Card>
@@ -1260,7 +1260,7 @@ function ShortcutSettings({ onBack }) {
                 <div style={{ fontWeight: 'var(--font-medium)', fontSize: 'var(--text-base)' }}>{label}</div>
                 <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginTop: 2 }}>{desc}</div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexShrink: 0 }}>
                 <kbd className={`wc-shortcut-kbd${isRec ? ' wc-shortcut-kbd--recording' : ''}`}
                   aria-label={isRec ? '正在录制…' : `当前快捷键：${displayAccel(current)}`}>
                   {isRec ? '请按键…' : (displayAccel(current) || '未设置')}
