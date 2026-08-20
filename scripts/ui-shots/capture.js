@@ -119,6 +119,11 @@ const CONTACTS_SELECTORS = [
   ['alpha-index', '.wc-alpha-index'],
   ['items', '.wc-contact-item'],
   ['item-names', '.wc-contact-item-name'],
+  // contacts-page 改版：桌面右栏「全部联系人」详情面板回归用
+  ['overview-panel', '.cop-panel'],
+  ['overview-tabs', '.cop-tab'],
+  ['overview-rows', '.cop-row'],
+  ['overview-names', '.cop-name'],
 ];
 
 // chat-window 改版回归用：既盯住聊天主区改了的元素，也盯住聊天区以外的
@@ -211,6 +216,11 @@ const CHATWINDOW_SELECTORS = [
   await shot(page, '06-me-singlecolumn');
   let boxesSingle = null;
   if (WANT_BOXES) boxesSingle = await collectBoxes(page, ME_SINGLE_COL_SELECTORS);
+
+  // contacts-page 改版：窄视口(<768) 联系人页应保持现状单栏 ContactList，
+  // 不应出现桌面右栏(.cop-panel)——回归确认两栏新版式没有漏判断进移动端。
+  await page.locator('[data-testid="nav-tab-contacts"]').click().catch(() => {});
+  await shot(page, '07-contacts-singlecolumn');
 
   if (WANT_BOXES) {
     fs.writeFileSync(path.join(OUT, `${PREFIX}-boxes.json`), JSON.stringify({ double: boxesDouble, single: boxesSingle, contacts: boxesContacts, chatWindow: boxesChatWindow }, null, 2));
