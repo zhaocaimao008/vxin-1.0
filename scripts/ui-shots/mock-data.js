@@ -5,6 +5,21 @@
  * 用于验证布局在极端真实数据下不塌。
  */
 
+// 4x4 纯色 PNG data URI（9 种不同色，避免 MomentCard 图片 key={src} 撞车报重复 key 警告）
+// —— moments 截图用的图片占位符，mediaUrl() 对 data: 直接原样返回，不用真起一个静态
+// 资源服务器就能让图片九宫格真的渲染出来（而不是 onError 隐藏成空白）。
+const MOCK_IMGS = [
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAFElEQVR4nGOs2NLDAANMDEgANwcAVuABwMTE1cUAAAAASUVORK5CYII=',
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAFElEQVR4nGPsWXCCAQaYGJAAbg4AYnAB/J47BFUAAAAASUVORK5CYII=',
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAFElEQVR4nGM8Ma2CAQaYGJAAbg4AXSAB3gl2wNoAAAAASUVORK5CYII=',
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAFElEQVR4nGNccGIBAwwwMSAB3BwAZpQCEGhI9OIAAAAASUVORK5CYII=',
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAFElEQVR4nGPc0rOFAQaYGJAAbg4AYqwB/NWw7rAAAAAASUVORK5CYII=',
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAFElEQVR4nGPs2XKCAQaYGJAAbg4AZlgCEFHtJa8AAAAASUVORK5CYII=',
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAFElEQVR4nGM8saWHAQaYGJAAbg4AZtACENu+P8AAAAAASUVORK5CYII=',
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAFElEQVR4nGNcsOAEAwwwMSAB3BwAZmwCEMO+4sMAAAAASUVORK5CYII=',
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAFElEQVR4nGM80bOAAQaYGJAAbg4AYtQB/OtQkSEAAAAASUVORK5CYII=',
+];
+
 const NORMAL = {
   // created_at：profile-page 改版新增"加入 v信"展示用，固定成 2023-03-15，跟设计稿示例值一致好对照
   me: { id: 1, username: '张小雅', wechat_id: 'xiaoya_2024', vxin_id: 'xiaoya_2024', avatar: '', bio: '设计是解决问题的艺术', phone: '138****0001', created_at: Math.floor(new Date('2023-03-15T00:00:00Z').getTime() / 1000) },
@@ -35,6 +50,30 @@ const NORMAL = {
     { id: 4, username: '安然', role: 'member', avatar: '' },
     { id: 5, username: '陈晨', role: 'member', avatar: '' },
   ],
+  // moments-page 改版：桌面动态页截图用，带图/纯文字各一条，覆盖赞/评论展示
+  moments: [
+    {
+      id: 'm1', user_id: 2, author: { username: '张小雅', avatar: '' },
+      content: '周末爬了梧桐山，山顶的风景真的太治愈了～生活不止眼前的忙碌，还有诗和远方',
+      images: [MOCK_IMGS[0], MOCK_IMGS[1], MOCK_IMGS[2]], liked: true, likeCount: 56,
+      likes: [{ user_id: 3, username: '李明' }, { user_id: 4, username: '安然' }],
+      commentCount: 2,
+      comments: [
+        { id: 'c1', user_id: 3, username: '李明', content: '风景真不错！' },
+        { id: 'c2', user_id: 1, username: '张小雅', content: '下次一起去呀', reply_to_username: '李明' },
+      ],
+      created_at: Math.floor(Date.now() / 1000) - 7200,
+    },
+    {
+      id: 'm2', user_id: 3, author: { username: '李明', avatar: '' },
+      content: '最近在学摄影，随手拍了一张晚霞，分享给大家',
+      images: [MOCK_IMGS[3]], liked: false, likeCount: 32,
+      likes: [{ user_id: 2, username: '张小雅' }],
+      commentCount: 12, comments: [{ id: 'c3', user_id: 2, username: '张小雅', content: '拍得真好！' }],
+      created_at: Math.floor(Date.now() / 1000) - 90000,
+    },
+  ],
+  momentsEmpty: [],
 };
 
 // 边界值集合：超长昵称（中/英各一）、空态、缺失可选字段（avatar/bio 等 null/undefined）。
@@ -71,6 +110,18 @@ const EDGE = {
   groupMembersSingle: [
     { id: 1, username: '张小雅', role: 'owner', avatar: '' },
   ],
+  // 超长正文（测试"查看全文"折叠）+ 9 张图（测试九宫格满格）+ 缺失点赞/评论字段
+  moments: [
+    {
+      id: 'm1', user_id: 2,
+      author: { username: '张小雅的设计工作室日常沟通与项目进度同步专用联系人这是一个非常长的备注名字测试', avatar: null },
+      content: '这是一段特别特别特别特别特别特别特别特别特别特别特别特别特别特别特别特别特别特别长的动态正文用来测试超过限制后是否正确折叠成查看全文按钮ThisIsAVeryLongEnglishWordWithoutAnyNaturalBreakPointToTestOverflow',
+      images: MOCK_IMGS,
+      liked: false, likeCount: 0, likes: [], commentCount: 0, comments: undefined,
+      created_at: Math.floor(Date.now() / 1000) - 300,
+    },
+  ],
+  momentsEmpty: [],
 };
 
 module.exports = { NORMAL, EDGE };

@@ -222,9 +222,15 @@ function MomentsSkeleton() {
   );
 }
 
-export default function Moments() {
+// desktop=true：桌面 Web(≥768、排除 Electron)专属两栏版式(发布入口+tab | 更宽的 feed)，
+// 对齐 Web动态页.jpg——设计稿里的话题/关注/附近/热门话题/推荐关注/收藏/转发/位置标签/排序切换
+// 均无后端支撑（无 follows 表、无 topic 表、moments 无地理字段、collections 不支持 type='moment'、
+// timeline() 只有一种排序），按已确认规则全部不做，仅保留"全部/我的"两个真实 tab + 换宽容器。
+// 默认 false 就是移动端/Electron 原有单栏版式，逻辑完全共用。
+export default function Moments({ desktop = false }) {
   const { user } = useAuth();
   const meId = user?.id;
+  const [tab, setTab] = useState('all'); // 'all' | 'mine' —— 非 desktop 模式下没有切换 UI，恒为 'all'
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -250,23 +256,23 @@ export default function Moments() {
   useEffect(() => { imagesRef.current = images; }, [images]);
   useEffect(() => () => { imagesRef.current.forEach(img => URL.revokeObjectURL(img.previewUrl)); }, []);
 
-  // 重试/刷新用（显示转圈后重拉）
+  // 重试/刷新/切 tab 共用：'mine' 复用现成的 GET /api/moments/user/:userId(看自己），
+  // 'all' 是原有 timeline。tab 变化时这个 callback 引用跟着变，下面的 effect 会自动重拉。
   const load = useCallback(() => {
     setLoading(true);
-    axios.get('/api/moments')
+    const url = tab === 'mine' && meId ? `/api/moments/user/${meId}` : '/api/moments';
+    axios.get(url)
       .then(r => { setList(r.data); setLoadError(false); })
       .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
-  }, []);
-  // 初次挂载拉取：loading 初值已为 true，effect 内不做同步 setState（避免级联渲染）
+  }, [tab, meId]);
+  // 初次挂载 + tab 切换时拉取：load 引用随 tab/meId 变化，effect 只是跟着调用它，
+  // 不在这里重复一份 fetch 逻辑。
   useEffect(() => {
-    let alive = true;
-    axios.get('/api/moments')
-      .then(r => { if (alive) { setList(r.data); setLoadError(false); } })
-      .catch(() => { if (alive) setLoadError(true); })
-      .finally(() => { if (alive) setLoading(false); });
-    return () => { alive = false; };
-  }, []);
+    if (tab === 'mine' && !meId) return; // 等 meId 就绪，避免打一发 /user/undefined
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- tab 切换需要重新触发网络请求并重置 loading，不是可以去掉的派生状态
+    load();
+  }, [tab, meId, load]);
 
   // 朋友圈"最近 N 天可见"设置初值
   useEffect(() => {
@@ -494,7 +500,7 @@ export default function Moments() {
     } catch (e) { showToast(e.response?.data?.error || '删除失败', 'error'); }
   }, []);
 
-  return (
+  const content = (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* 互动通知入口 */}
       <div className="wc-moment-notif-bar" onClick={openNotif} role="button" tabIndex={0}
@@ -707,6 +713,30 @@ export default function Moments() {
         )}
       </div>
 
+    </div>
+  );
+
+  if (!desktop) return content;
+
+  return (
+    <div className="wc-moments-desktop">
+      <div className="wc-moments-side">
+        <button className="wc-moments-publish-btn" onClick={() => setComposing(true)}>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          发布动态
+        </button>
+        <div className="wc-moments-tabs" role="tablist" aria-label="动态筛选">
+          <button type="button" role="tab" aria-selected={tab === 'all'}
+            className={`wc-moments-tab${tab === 'all' ? ' active' : ''}`}
+            onClick={() => setTab('all')}>全部动态</button>
+          <button type="button" role="tab" aria-selected={tab === 'mine'}
+            className={`wc-moments-tab${tab === 'mine' ? ' active' : ''}`}
+            onClick={() => setTab('mine')}>我的动态</button>
+        </div>
+      </div>
+      <div className="wc-moments-main">
+        {content}
+      </div>
     </div>
   );
 }

@@ -777,6 +777,15 @@ export default function Home() {
           <div className="wc-settings-full">
             <Profile isMobile={false} />
           </div>
+        ) : tab === 'moments' && !isElectron && !isMobile ? (
+          /* 动态：Web 桌面浏览器用两栏布局占满整个主内容区（发布入口+tab | 更宽的 feed，
+             对齐 Web动态页.jpg，砍掉无后端支撑的话题/关注/附近/热门话题/推荐关注等）；
+             Electron/移动端不受影响，走下面 renderMain() 里现有的单栏 Moments。 */
+          <div className="wc-moments-full">
+            <Suspense fallback={<div className="wc-lazy-pane" />}>
+              <Moments desktop />
+            </Suspense>
+          </div>
         ) : (
         <>
         {/* 面板区（固定顶栏 + 内容） */}

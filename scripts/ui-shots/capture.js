@@ -45,7 +45,7 @@ function json(route, body, status = 200) {
   route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 }
 
-async function installMocks(page, { emptyConversations = false, emptyContacts = false, singleMember = false, emptyMessages = false } = {}) {
+async function installMocks(page, { emptyConversations = false, emptyContacts = false, singleMember = false, emptyMessages = false, emptyMoments = false } = {}) {
   await page.route('**/config.json', route => route.abort());
   await page.route('**/socket.io/**', route => route.abort());
   await page.route('**/api/**', route => {
@@ -61,7 +61,11 @@ async function installMocks(page, { emptyConversations = false, emptyContacts = 
     if (p === '/api/users/me/blocked') return json(route, []);
     if (p === '/api/messages/my-groups') return json(route, [{ id: 2, name: D.conversations[1]?.name || '产品设计组', avatar: '', memberCount: D.conversations[1]?.memberCount || 8 }]);
     if (p === '/api/friend-labels') return json(route, [{ id: 1, name: '同事', color: '#07C160', memberCount: 3 }]);
-    if (p === '/api/users/me/settings') return json(route, { addByVxinId: true, addByPhone: true, requireVerify: true, noDirectGroupInvite: false, profileVisible: true, blockUnknownMessages: false });
+    if (p === '/api/users/me/settings') return json(route, { addByVxinId: true, addByPhone: true, requireVerify: true, noDirectGroupInvite: false, profileVisible: true, blockUnknownMessages: false, momentsVisibleDays: 0 });
+    // moments-page 改版：/api/moments(全部) 和 /api/moments/user/:id(我的 tab)复用同一份 mock 列表
+    if (p === '/api/moments') return json(route, emptyMoments ? [] : D.moments);
+    if (/^\/api\/moments\/user\/[^/]+$/.test(p)) return json(route, emptyMoments ? [] : D.moments);
+    if (p === '/api/moments/notifications/unread-count') return json(route, { count: 0 });
     const allMembers = D.groupMembers || D.groupMembersSingle || NORMAL.groupMembers;
     if (p.includes('/groups/2') || p.includes('/group-settings') || p.includes('/conversation/2')) {
       const members = singleMember ? (D.groupMembersSingle || [allMembers[0]]) : allMembers;
@@ -112,6 +116,15 @@ const ME_SINGLE_COL_SELECTORS = [
   ['me-header', '.wc-me-header'],
   ['cards', '.wc-card'],
   ['crow-rows', '.wc-crow'],
+];
+
+// moments-page 改版：桌面「动态」两栏版式回归用
+const MOMENTS_SELECTORS = [
+  ['full', '.wc-moments-full'],
+  ['side', '.wc-moments-side'],
+  ['tabs', '.wc-moments-tab'],
+  ['main', '.wc-moments-main'],
+  ['cards', '.wc-moment-card'],
 ];
 
 // profile-page 改版：桌面「个人资料」大卡片 + 信息列表回归用
@@ -165,6 +178,7 @@ const CHATWINDOW_SELECTORS = [
     emptyContacts: arg('empty-contacts', false),
     singleMember: arg('single-member', false),
     emptyMessages: arg('empty-messages', false),
+    emptyMoments: arg('empty-moments', false),
   });
 
   await page.goto(`http://localhost:${PORT}/app/`, { waitUntil: 'domcontentloaded', timeout: 20000 });
@@ -223,6 +237,15 @@ const CHATWINDOW_SELECTORS = [
   const generalNav = page.locator('.wc-settings-nav-item', { hasText: '通用设置' });
   if (await generalNav.count()) { await generalNav.click(); await shot(page, '05e-settings-general'); }
 
+  // 动态：宽视口 -> 桌面两栏版式(发布入口+全部/我的 tab | 更宽的 feed)
+  await page.locator('[data-testid="nav-tab-moments"]').click().catch(() => {});
+  await page.waitForTimeout(500);
+  await shot(page, '08-moments-desktop');
+  let boxesMoments = null;
+  if (WANT_BOXES) boxesMoments = await collectBoxes(page, MOMENTS_SELECTORS);
+  const mineTab = page.locator('.wc-moments-tab', { hasText: '我的动态' });
+  if (await mineTab.count()) { await mineTab.click(); await page.waitForTimeout(500); await shot(page, '08b-moments-mine-tab'); }
+
   // 我的：窄视口 -> 单栏卡片列表
   await page.setViewportSize({ width: 480, height: 900 });
   await page.waitForTimeout(500);
@@ -244,8 +267,13 @@ const CHATWINDOW_SELECTORS = [
   await page.locator('[data-testid="nav-tab-contacts"]').click().catch(() => {});
   await shot(page, '07-contacts-singlecolumn');
 
+  // moments-page 改版：窄视口(<768) 动态页应保持现状单栏 Moments，
+  // 不应出现桌面两栏(.wc-moments-full)——回归确认没有漏判断进移动端。
+  await page.locator('[data-testid="nav-tab-moments"]').click().catch(() => {});
+  await shot(page, '09-moments-singlecolumn');
+
   if (WANT_BOXES) {
-    fs.writeFileSync(path.join(OUT, `${PREFIX}-boxes.json`), JSON.stringify({ double: boxesDouble, single: boxesSingle, contacts: boxesContacts, chatWindow: boxesChatWindow, profileDetail: boxesProfileDetail }, null, 2));
+    fs.writeFileSync(path.join(OUT, `${PREFIX}-boxes.json`), JSON.stringify({ double: boxesDouble, single: boxesSingle, contacts: boxesContacts, chatWindow: boxesChatWindow, profileDetail: boxesProfileDetail, moments: boxesMoments }, null, 2));
     console.log('  ✓', `${PREFIX}-boxes.json`);
   }
 
