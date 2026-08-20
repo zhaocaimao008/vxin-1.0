@@ -4940,6 +4940,16 @@ body.dark-mode .wc-contacts-alpha { background: rgba(7,193,96,.10); }
   font-size: var(--text-base);
   font-weight: 500;
   color: var(--text-primary);
+  /* 单行截断 + 省略号：修复超长昵称/备注名被硬裁切（无省略号）或换行撑高
+     行高两个问题。父级 .cl-contact-info 已有 flex:1;min-width:0，这里只需
+     补齐本元素自身缺失的 white-space/overflow/text-overflow 三项。
+     注意：这个 class 除了套在 <div> 上（联系人/群聊/标签行，本来就是块级，
+     不需要也不应该加 display:block）之外，EntryRow（"新的朋友"等入口行）
+     用的是 <span>——加 display:block 会把它从行内"内容多宽占多宽"
+     变成块级"撑满容器"，boundingBox 校验会测出来，属于误伤，不加。 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .wc-contact-item-sub {
   font-size: var(--text-xs);

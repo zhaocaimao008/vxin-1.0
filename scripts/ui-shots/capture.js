@@ -110,6 +110,13 @@ const ME_SINGLE_COL_SELECTORS = [
   ['crow-rows', '.wc-crow'],
 ];
 
+const CONTACTS_SELECTORS = [
+  ['panel', '.cl-panel'],
+  ['alpha-index', '.wc-alpha-index'],
+  ['items', '.wc-contact-item'],
+  ['item-names', '.wc-contact-item-name'],
+];
+
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -145,6 +152,8 @@ const ME_SINGLE_COL_SELECTORS = [
 
   await page.locator('[data-testid="nav-tab-contacts"]').click();
   await shot(page, '03-contactlist');
+  let boxesContacts = null;
+  if (WANT_BOXES) boxesContacts = await collectBoxes(page, CONTACTS_SELECTORS);
 
   const firstContactRow = page.locator('.wc-contact-item').filter({ hasNotText: '新的朋友' }).filter({ hasNotText: '群聊' }).filter({ hasNotText: '添加好友' }).filter({ hasNotText: '黑名单' }).filter({ hasNotText: '好友标签' }).filter({ hasNotText: '文件传输助手' }).first();
   if (await firstContactRow.count()) {
@@ -178,7 +187,7 @@ const ME_SINGLE_COL_SELECTORS = [
   if (WANT_BOXES) boxesSingle = await collectBoxes(page, ME_SINGLE_COL_SELECTORS);
 
   if (WANT_BOXES) {
-    fs.writeFileSync(path.join(OUT, `${PREFIX}-boxes.json`), JSON.stringify({ double: boxesDouble, single: boxesSingle }, null, 2));
+    fs.writeFileSync(path.join(OUT, `${PREFIX}-boxes.json`), JSON.stringify({ double: boxesDouble, single: boxesSingle, contacts: boxesContacts }, null, 2));
     console.log('  ✓', `${PREFIX}-boxes.json`);
   }
 

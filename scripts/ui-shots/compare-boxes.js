@@ -56,12 +56,17 @@ function compareScreen(screenName, beforeScreen, afterScreen) {
   return { rows, shifted };
 }
 
-const screens = ['double', 'single'];
+const SCREEN_LABELS = {
+  double: '我的（WebSettingsShell 双栏）',
+  single: '我的（单栏卡片列表）',
+  contacts: '通讯录',
+};
+const screens = Object.keys(SCREEN_LABELS).filter(s => before[s] || after[s]);
 let md = '';
 let allShifted = [];
 for (const s of screens) {
   const { rows, shifted } = compareScreen(s, before[s], after[s]);
-  md += `\n## ${s === 'double' ? '我的（WebSettingsShell 双栏）' : '我的（单栏卡片列表）'}\n\n`;
+  md += `\n## ${SCREEN_LABELS[s]}\n\n`;
   md += '| 元素 | before | after | 是否位移(>1px) |\n|---|---|---|---|\n';
   for (const r of rows) md += `| ${r.join(' | ')} |\n`;
   allShifted = allShifted.concat(shifted);
