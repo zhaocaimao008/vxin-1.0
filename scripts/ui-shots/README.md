@@ -24,6 +24,7 @@ cd ../scripts/ui-shots
 node capture.js --port 4175 --prefix after --out /tmp/shots
 node capture.js --port 4175 --prefix after-edge --dataset edge --out /tmp/shots
 # 边界值数据集下想单独看空态/单人群，再加 --empty-conversations / --empty-contacts / --single-member
+# 想单独看某会话消息列表为空的聊天详情页，再加 --empty-messages
 ```
 
 ## 2. Before/After 对照（结构位移比对）

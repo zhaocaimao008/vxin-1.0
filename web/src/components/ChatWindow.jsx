@@ -115,10 +115,12 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
   // 'emoji' | 'stickers' | 'more' | null
   const [activePanel, setActivePanel] = useState(null);
   const showEmoji    = activePanel === 'emoji';
-  const showStickers = activePanel === 'stickers';
   const showMore     = activePanel === 'more';
   const closePanels  = useCallback(() => setActivePanel(null), []);
   const togglePanel  = useCallback((p) => setActivePanel(cur => (cur === p ? null : p)), []);
+  // 表情/表情包合并进同一个工具栏按钮（chat-window 改版）：内部用一个小标签页切换，
+  // EmojiPicker/StickerPanel 两个组件本身不改，只是不再各占一个工具栏按钮。
+  const [emojiPanelTab, setEmojiPanelTab] = useState('emoji'); // 'emoji' | 'stickers'
   const [recording, setRecording] = useState(false);
   const [showGroupInfo, setShowGroupInfo] = useState(false);
   const [members, setMembers] = useState([]);
@@ -2378,26 +2380,15 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
       ) : (
       /* ── Input area ── */
       <div className="wc-input-area" ref={inputAreaRef}>
-        {/* Toolbar */}
+        {/* Toolbar — chat-window 改版：固定 4 个入口(表情/图片/文件/更多)，对齐设计稿数量。
+            表情包并入"表情"面板内部标签页；语音输入挪到发送区(见 footer)；发红包、
+            Electron 截图挪进"更多"面板，功能与原处理函数完全不变，只是入口搬家。 */}
         <div className="wc-input-toolbar">
           <button
             className={`wc-tool-btn${showEmoji ? ' active' : ''}`}
             title="表情" aria-label="表情" aria-expanded={showEmoji}
             onClick={() => togglePanel('emoji')}
           ><IcoEmoji /></button>
-
-          <button
-            className={`wc-tool-btn${showStickers ? ' active' : ''}`}
-            title="表情包" aria-label="表情包" aria-expanded={showStickers}
-            onClick={() => togglePanel('stickers')}
-          ><svg viewBox="0 0 24 24" className="wc-tool-svg"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h10l6-6V5c0-1.1-.9-2-2-2zM9 11c-.83 0-1.5-.67-1.5-1.5S8.17 8 9 8s1.5.67 1.5 1.5S9.83 11 9 11zm3.5 5c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5zM15 11c-.83 0-1.5-.67-1.5-1.5S14.17 8 15 8s1.5.67 1.5 1.5S15.83 11 15 11zm-1 9.5V15h5.5L14 20.5z"/></svg></button>
-
-          <button
-            className={`wc-tool-btn${voiceMode ? ' active' : ''}`}
-            title={voiceMode ? '切换文字' : '语音输入'}
-            aria-label={voiceMode ? '切换文字输入' : '语音输入'}
-            onClick={() => dispatchCompose({ type: 'TOGGLE_VOICE' })}
-          ><IcoMic /></button>
 
           <label className="wc-tool-btn wc-tool-label" title="图片" aria-label="发送图片">
             <IcoImage />
@@ -2415,23 +2406,6 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
               onChange={handleFileUpload}
             />
           </label>
-
-          {/* 截图按钮（Electron 桌面端） */}
-          {window.__ELECTRON_CONFIG__ && (
-            <button
-              className="wc-tool-btn"
-              title="截图（快捷键可在 设置 → 快捷键 中自定义）"
-              aria-label="截图"
-              onClick={() => { captureAndSendScreenshot(); }}
-            ><svg viewBox="0 0 24 24" className="wc-tool-svg"><path d="M3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2zm16 0v14H5V5h14zm-2 4.5c0 .83-.67 1.5-1.5 1.5S14 10.33 14 9.5 14.67 8 15.5 8s1.5.67 1.5 1.5zM12 19l5-6H7l5 6z"/></svg></button>
-          )}
-
-          <button
-            className="wc-tool-btn"
-            title="发红包"
-            aria-label="发红包"
-            onClick={() => { setShowRedPacket(true); closePanels(); }}
-          ><svg viewBox="0 0 24 24" style={{ width: 22, height: 22, fill: 'currentColor' }}><path d="M19 6h-2V4c0-.9-.7-1.7-1.6-1.9.4-1.2 1.5-2 2.9-2 1.7 0 3 1.3 3 3 0 .5-.1 1-.3 1.4h.9c.6 0 1.2.4 1.2 1v2c0 .6-.5 1-1.2 1zm-2 4h4v8.5c0 1-.8 1.9-1.8 1.9H2.8C1.8 20.4 1 19.5 1 18.5V6c0-.5.3-1 .8-1.4L17 4v6zM4 14c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm10 0c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2z"/></svg></button>
 
           <button
             className={`wc-tool-btn${showMore ? ' active' : ''}`}
@@ -2466,6 +2440,12 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
               { bg:'var(--icon-bg-neutral)', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'var(--text-inverse)'}}><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>, label:'名片', action: openCardPicker },
               // 定时发送：把输入框当前文本设为定时消息，到点自动发出
               { bg:'var(--icon-bg-schedule)', testid:'chat-schedule-btn', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'var(--text-inverse)'}}><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>, label:'定时发送', action: () => { closePanels(); openScheduleModal(); } },
+              // 发红包：原工具栏一级入口，chat-window 改版收进"更多"，处理函数不变
+              { bg:'var(--color-badge, #FA5151)', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'var(--text-inverse)'}}><path d="M19 6h-2V4c0-.9-.7-1.7-1.6-1.9.4-1.2 1.5-2 2.9-2 1.7 0 3 1.3 3 3 0 .5-.1 1-.3 1.4h.9c.6 0 1.2.4 1.2 1v2c0 .6-.5 1-1.2 1zm-2 4h4v8.5c0 1-.8 1.9-1.8 1.9H2.8C1.8 20.4 1 19.5 1 18.5V6c0-.5.3-1 .8-1.4L17 4v6zM4 14c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm10 0c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2z"/></svg>, label:'发红包', action: () => { setShowRedPacket(true); closePanels(); } },
+              // 截图（Electron 桌面端）：原工具栏入口，chat-window 改版收进"更多"，同一处理函数
+              ...(window.__ELECTRON_CONFIG__ ? [
+                { bg:'var(--icon-bg-neutral)', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'var(--text-inverse)'}}><path d="M3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2zm16 0v14H5V5h14zm-2 4.5c0 .83-.67 1.5-1.5 1.5S14 10.33 14 9.5 14.67 8 15.5 8s1.5.67 1.5 1.5zM12 19l5-6H7l5 6z"/></svg>, label:'截图', action: () => { closePanels(); captureAndSendScreenshot(); } },
+              ] : []),
               ...(conversation.type === 'private' ? [
                 { bg:'var(--color-primary)', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'var(--text-inverse)'}}><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>, label:'转账', action: () => { setShowTransfer(true); closePanels(); } },
               ] : []),
@@ -2478,9 +2458,29 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
           </div>
         )}
 
-        {/* Emoji panel */}
-        {showEmoji && <Suspense fallback={<InlineSkeleton height={280} />}><EmojiPicker onSelect={e => { dispatchCompose({ type: 'APPEND_INPUT', text: e }); textareaRef.current?.focus(); }} /></Suspense>}
-        {showStickers && <Suspense fallback={<InlineSkeleton height={280} />}><StickerPanel onSend={sendSticker} /></Suspense>}
+        {/* Emoji panel — 表情/表情包合并成一个入口，内部用标签页切换；
+            EmojiPicker/StickerPanel 两个组件本身不改，只是外面多包一层标签切换 */}
+        {showEmoji && (
+          <div className="wc-emoji-combined">
+            <div className="wc-emoji-combined-tabs" role="tablist" aria-label="表情/表情包">
+              <button
+                type="button" role="tab" aria-selected={emojiPanelTab === 'emoji'}
+                className={`wc-emoji-combined-tab${emojiPanelTab === 'emoji' ? ' active' : ''}`}
+                onClick={() => setEmojiPanelTab('emoji')}
+              >表情</button>
+              <button
+                type="button" role="tab" aria-selected={emojiPanelTab === 'stickers'}
+                className={`wc-emoji-combined-tab${emojiPanelTab === 'stickers' ? ' active' : ''}`}
+                onClick={() => setEmojiPanelTab('stickers')}
+              >表情包</button>
+            </div>
+            <Suspense fallback={<InlineSkeleton height={280} />}>
+              {emojiPanelTab === 'emoji'
+                ? <EmojiPicker onSelect={e => { dispatchCompose({ type: 'APPEND_INPUT', text: e }); textareaRef.current?.focus(); }} />
+                : <StickerPanel onSend={sendSticker} />}
+            </Suspense>
+          </div>
+        )}
 
         {/* Text / Voice input — 始终显示；桌面端 More 面板是叠加在输入框上方的紧凑面板，
             不像移动端那样替换掉输入框，所以桌面端即使 showMore 也不隐藏（Send 按钮不能消失）*/}
@@ -2549,23 +2549,37 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
                 />
               </div>
             )}
-            {!voiceMode && (
-              <div className="wc-input-footer">
-                {/* 接近 2000 字上限时才提示,避免超长被静默截断而用户不知 */}
-                {input.length >= 1800 && (
-                  <span className="wc-input-counter" aria-live="polite"
-                    style={{ marginRight: 'auto', fontSize: 'var(--text-sm)', color: input.length >= 2000 ? 'var(--color-badge)' : 'var(--text-tertiary)' }}>
-                    {input.length}/2000
-                  </span>
-                )}
+            {/* Footer 常驻渲染（文字态和语音态都显示）：语音圆钮原本是工具栏里的
+                "语音输入"切换按钮，chat-window 改版把它挪到这里、紧挨发送按钮左侧，
+                改成圆形，功能(TOGGLE_VOICE)完全不变——同时它也是语音态下唯一能切回
+                文字输入的入口，必须常驻，不能只在文字态渲染。 */}
+            <div className="wc-input-footer">
+              {!voiceMode && input.length >= 1800 && (
+                /* 接近 2000 字上限时才提示,避免超长被静默截断而用户不知 */
+                <span className="wc-input-counter" aria-live="polite"
+                  style={{ marginRight: 'auto', fontSize: 'var(--text-sm)', color: input.length >= 2000 ? 'var(--color-badge)' : 'var(--text-tertiary)' }}>
+                  {input.length}/2000
+                </span>
+              )}
+              <button
+                className={`wc-voice-toggle-btn${voiceMode ? ' active' : ''}`}
+                title={voiceMode ? '切换文字' : '语音输入'}
+                aria-label={voiceMode ? '切换文字输入' : '语音输入'}
+                onClick={() => dispatchCompose({ type: 'TOGGLE_VOICE' })}
+              ><IcoMic /></button>
+              {!voiceMode && (
                 <button
                   data-testid="chat-send-btn"
                   className={`wc-send-btn${input.trim() ? ' active' : ''}`}
                   onClick={sendMessage}
                   disabled={!input.trim()}
-                >发送</button>
-              </div>
-            )}
+                >
+                  发送
+                  {/* 下拉箭头：本轮只做视觉，不带菜单、不加交互 */}
+                  <svg className="wc-send-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5z"/></svg>
+                </button>
+              )}
+            </div>
           </>
         )}
       </div>

@@ -696,6 +696,11 @@ body.dark-mode .wc-conv-filter-tab.active { background: rgba(var(--color-primary
   position: relative;
 }
 
+/* chat-window 改版：消息区必须能被压缩到比内容矮，否则 flex 子项默认
+   min-height:auto 会撑开父级 .wc-chat，把固定高度的输入区顶走/压扁。
+   JSX 里这个 div 的 inline style 只写了 flex:1+overflow:hidden，没写这条。 */
+.wc-messages-wrap { min-height: 0; }
+
 .wc-msg-time {
   text-align: center;
   padding: 10px 0 6px;
@@ -933,6 +938,18 @@ body.dark-mode .wc-msg-status-delivered { color: rgba(255,255,255,.42); }
 }
 /* 我方气泡内时间用半透明白 */
 .wc-msg-bubble.mine .wc-msg-time-small { color: rgba(255,255,255,.55); }
+/* chat-window 改版：已读/发送状态勾号挪进气泡内（原来贴在气泡外的中性背景上，
+   现在坐在绿色气泡上），需要重新提供对比色，否则绿底配绿勾/深灰勾看不清。
+   .wc-msg-read 原来靠 margin-bottom:2px 对齐外层 align-items:flex-end 的容器，
+   这里父级是 align-items:center，去掉这个 margin 避免视觉上偏高一点。 */
+.wc-msg-time-small .wc-msg-read { margin-bottom: 0; }
+.wc-msg-bubble.mine .wc-msg-time-small .wc-msg-status-read { color: #fff; }
+.wc-msg-bubble.mine .wc-msg-time-small .wc-msg-status-delivered,
+.wc-msg-bubble.mine .wc-msg-time-small .wc-msg-status-sent { color: rgba(255,255,255,.6); }
+.wc-msg-bubble.mine .wc-msg-time-small .wc-msg-spinner {
+  border-color: rgba(255,255,255,.3);
+  border-top-color: rgba(255,255,255,.8);
+}
 
 /* ── 图片 ── */
 .wc-msg-image {
@@ -1025,6 +1042,25 @@ body.dark-mode .wc-msg-status-delivered { color: rgba(255,255,255,.42); }
   transition: padding var(--dur-fast) var(--ease);
 }
 
+/* chat-window 改版：桌面端输入区改成白色圆角浮卡，四周留白，不再通栏贴边。
+   高度不写死成 height:150px——"更多"/"表情"面板是撑高 wc-input-area 的正常流
+   内容（展开时会把输入框往下推，不是浮层覆盖），写死高度会把这两个面板裁掉。
+   flex-shrink:0（已在上面）+ 工具栏(36)+输入框(~66)+发送区(~48) 三段内容自身
+   高度自然稳定在设计稿目测的 ~150px 区间，不随窗口高度变化而拉伸。
+   只作用于桌面端 .wc-app:not(.wc-mobile)：移动端(.m-chat-page)是完全独立的
+   DOM 分支，不会命中这个选择器，本轮不改移动端。 */
+.wc-app:not(.wc-mobile) .wc-input-area {
+  background: var(--bg-card, #fff);
+  margin: 0 var(--sp-4) var(--sp-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.wc-app:not(.wc-mobile) .wc-input-area:focus-within {
+  border-color: rgba(var(--color-primary-rgb), .35);
+}
+
 /* 工具栏 — 微信原版无内分隔线 */
 .wc-input-toolbar {
   display: flex;
@@ -1048,6 +1084,27 @@ body.dark-mode .wc-msg-status-delivered { color: rgba(255,255,255,.42); }
 .wc-tool-btn.active { background: var(--color-primary-muted); color: var(--color-primary); }
 .wc-tool-btn svg { width: 18px; height: 18px; fill: currentColor; transition: transform var(--dur-fast); }
 .wc-tool-svg { width: 22px; height: 22px; fill: currentColor; }
+
+/* chat-window 改版：表情/表情包合并面板的标签页（EmojiPicker/StickerPanel 组件本身不改） */
+.wc-emoji-combined-tabs {
+  display: flex;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.wc-emoji-combined-tab {
+  padding: var(--sp-1h) var(--sp-1);
+  font-size: var(--text-sm2);
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color var(--dur-fast), border-color var(--dur-fast);
+}
+.wc-emoji-combined-tab.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  font-weight: var(--font-medium);
+}
 
 /* 输入框区域：微信风格圆角容器 */
 .wc-input-box {
@@ -1111,6 +1168,29 @@ body.dark-mode .wc-msg-status-delivered { color: rgba(255,255,255,.42); }
   transform: translateY(-1px);
 }
 .wc-send-btn.active:active { transform: translateY(0); box-shadow: 0 2px 6px rgba(var(--color-primary-rgb), .3); }
+
+/* chat-window 改版：发送按钮内的下拉箭头——纯视觉，不带菜单/不加交互 */
+.wc-send-arrow { width: 16px; height: 16px; fill: currentColor; margin-left: 2px; vertical-align: -3px; }
+
+/* chat-window 改版：语音输入圆钮，原是工具栏里的"语音输入"按钮，挪到发送区
+   紧挨发送按钮左侧，改成圆形。功能(TOGGLE_VOICE)和 .wc-tool-btn 完全一致，
+   只是常驻在 footer 里（文字态/语音态都显示——语音态下它是切回文字的唯一入口）。 */
+.wc-voice-toggle-btn {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-search);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.wc-voice-toggle-btn svg { width: 18px; height: 18px; fill: currentColor; }
+.wc-voice-toggle-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.wc-voice-toggle-btn.active { background: var(--color-primary-muted); color: var(--color-primary); }
 
 /* 语音按钮 */
 .wc-voice-btn {
@@ -2314,7 +2394,7 @@ body {
 
 .wc-input-area {
   background: var(--bg-chat);
-  border-top: 1px solid rgba(0,0,0,.08) !important;
+  border-top: 1px solid rgba(0,0,0,.08);
 }
 .wc-tool-btn,
 .wc-send-btn,
@@ -2656,7 +2736,6 @@ body:not(.dark-mode) .wc-discover {
 .wc-panel,
 .wc-panel-topbar,
 .wc-chat-header,
-.wc-input-area,
 .wc-profile-card,
 .wc-menu-section,
 .wc-discover-section,
@@ -2664,6 +2743,9 @@ body:not(.dark-mode) .wc-discover {
 .wc-modal {
   background: var(--bg-modal, #fff) !important;
 }
+/* .wc-input-area 从上面这组 !important 重置里摘出来：chat-window 改版桌面端要用
+   --bg-card 做浮卡背景，被 !important 强制成 --bg-modal 会没法覆盖（移动端背景
+   仍由 §输入区域—紧凑毛玻璃 media query 里的 !important 规则单独兜底，不受影响）。 */
 
 /* ============================================================
    v信 2.0 UI 精细化补丁

@@ -45,7 +45,7 @@ function json(route, body, status = 200) {
   route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 }
 
-async function installMocks(page, { emptyConversations = false, emptyContacts = false, singleMember = false } = {}) {
+async function installMocks(page, { emptyConversations = false, emptyContacts = false, singleMember = false, emptyMessages = false } = {}) {
   await page.route('**/config.json', route => route.abort());
   await page.route('**/socket.io/**', route => route.abort());
   await page.route('**/api/**', route => {
@@ -54,7 +54,7 @@ async function installMocks(page, { emptyConversations = false, emptyContacts = 
     if (p === '/api/config') return json(route, { features: { moments: true, collect: true, inviteRequired: false } });
     if (p === '/api/messages/conversations') return json(route, emptyConversations ? [] : D.conversations);
     if (p === '/api/messages/unread-counts') return json(route, { chats: 4, contacts: 0 });
-    if (/^\/api\/messages\/\d+$/.test(p)) return json(route, D.messages);
+    if (/^\/api\/messages\/\d+$/.test(p)) return json(route, emptyMessages ? [] : D.messages);
     if (p === '/api/users/contacts') return json(route, emptyContacts ? [] : D.contacts);
     if (p === '/api/users/friend-requests') return json(route, []);
     if (p === '/api/users/friend-requests/sent') return json(route, []);
@@ -117,6 +117,24 @@ const CONTACTS_SELECTORS = [
   ['item-names', '.wc-contact-item-name'],
 ];
 
+// chat-window 改版回归用：既盯住聊天主区改了的元素，也盯住聊天区以外的
+// 结构(sidebar/会话列表面板/顶栏)确认零位移——后者不应因为这轮改动产生任何偏移。
+const CHATWINDOW_SELECTORS = [
+  ['sidebar', '.wc-sidebar'],
+  ['conv-panel', '.wc-panel'],
+  ['chat-header', '.wc-chat-header'],
+  ['messages-wrap', '.wc-messages-wrap'],
+  ['input-area', '.wc-input-area'],
+  ['input-toolbar', '.wc-input-toolbar'],
+  ['toolbar-btns', '.wc-input-toolbar .wc-tool-btn'],
+  ['input-box', '.wc-input-box'],
+  ['input-footer', '.wc-input-footer'],
+  ['voice-toggle-btn', '.wc-voice-toggle-btn'],
+  ['send-btn', '.wc-send-btn'],
+  ['msg-bubbles', '.wc-msg-bubble'],
+  ['msg-avatars', '.wc-msg-avatar'],
+];
+
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -128,6 +146,7 @@ const CONTACTS_SELECTORS = [
     emptyConversations: arg('empty-conversations', false),
     emptyContacts: arg('empty-contacts', false),
     singleMember: arg('single-member', false),
+    emptyMessages: arg('empty-messages', false),
   });
 
   await page.goto(`http://localhost:${PORT}/app/`, { waitUntil: 'domcontentloaded', timeout: 20000 });
@@ -136,9 +155,12 @@ const CONTACTS_SELECTORS = [
   await page.locator('[data-testid="nav-tab-chats"]').click();
   await shot(page, '01-chatlist');
 
+  let boxesChatWindow = null;
   if (await page.locator('[data-testid="conv-item-1"]').count()) {
     await page.locator('[data-testid="conv-item-1"]').click();
+    await page.waitForTimeout(400);
     await shot(page, '02-chatwindow');
+    if (WANT_BOXES) boxesChatWindow = await collectBoxes(page, CHATWINDOW_SELECTORS);
   }
 
   if (await page.locator('[data-testid="conv-item-2"]').count()) {
@@ -187,7 +209,7 @@ const CONTACTS_SELECTORS = [
   if (WANT_BOXES) boxesSingle = await collectBoxes(page, ME_SINGLE_COL_SELECTORS);
 
   if (WANT_BOXES) {
-    fs.writeFileSync(path.join(OUT, `${PREFIX}-boxes.json`), JSON.stringify({ double: boxesDouble, single: boxesSingle, contacts: boxesContacts }, null, 2));
+    fs.writeFileSync(path.join(OUT, `${PREFIX}-boxes.json`), JSON.stringify({ double: boxesDouble, single: boxesSingle, contacts: boxesContacts, chatWindow: boxesChatWindow }, null, 2));
     console.log('  ✓', `${PREFIX}-boxes.json`);
   }
 
