@@ -18,12 +18,15 @@ const NORMAL = {
     { id: 102, conversation_id: 1, sender_id: 2, type: 'text', content: '好的，正在整理中，稍后发你。', created_at: Math.floor(Date.now() / 1000) - 650, read: true },
     { id: 103, conversation_id: 1, sender_id: 2, type: 'text', content: '好的，稍后我把资料发给你~', created_at: Math.floor(Date.now() / 1000) - 300, read: true },
   ],
+  // status 字段名对齐真实接口(contacts.service.js 返回 u.status)，
+  // 用于验证首屏在线态播种(seedOnlineIds)——之前这里叫 online，
+  // 前端谁都不读，播种逻辑在 mock 下测不出效果。
   contacts: [
-    { id: 2, username: '张小雅', remark: '', wechat_id: 'xiaoya_2024', avatar: '', bio: '设计是解决问题的艺术', online: true },
-    { id: 3, username: '李明', remark: '', wechat_id: 'liming88', avatar: '', bio: '', online: false },
-    { id: 4, username: '安然', remark: '', wechat_id: 'anran_', avatar: '', bio: '', online: false },
-    { id: 5, username: '陈晨', remark: '', wechat_id: 'chenchen', avatar: '', bio: '', online: true },
-    { id: 6, username: '艾琳', remark: '', wechat_id: 'irene_w', avatar: '', bio: '', online: false },
+    { id: 2, username: '张小雅', remark: '', wechat_id: 'xiaoya_2024', avatar: '', bio: '设计是解决问题的艺术', status: 'online' },
+    { id: 3, username: '李明', remark: '', wechat_id: 'liming88', avatar: '', bio: '', status: 'offline' },
+    { id: 4, username: '安然', remark: '', wechat_id: 'anran_', avatar: '', bio: '', status: 'offline' },
+    { id: 5, username: '陈晨', remark: '', wechat_id: 'chenchen', avatar: '', bio: '', status: 'online' },
+    { id: 6, username: '艾琳', remark: '', wechat_id: 'irene_w', avatar: '', bio: '', status: 'offline' },
   ],
   groupMembers: [
     { id: 1, username: '张小雅', role: 'owner', avatar: '' },
@@ -59,9 +62,9 @@ const EDGE = {
   ],
   contacts: [
     // 超长中文昵称
-    { id: 2, username: '张小雅的设计工作室日常沟通与项目进度同步专用联系人这是一个非常长的备注名字测试', remark: '', wechat_id: 'xiaoya_2024', avatar: null, bio: '这是一段特别特别特别特别特别特别特别特别长的个性签名文本用来测试布局', online: true },
+    { id: 2, username: '张小雅的设计工作室日常沟通与项目进度同步专用联系人这是一个非常长的备注名字测试', remark: '', wechat_id: 'xiaoya_2024', avatar: null, bio: '这是一段特别特别特别特别特别特别特别特别长的个性签名文本用来测试布局', status: 'online' },
     // 超长英文昵称
-    { id: 3, username: 'AVeryLongEnglishUsernameWithoutAnyNaturalBreakPointForOverflowTesting', remark: '', wechat_id: 'liming88', avatar: undefined, bio: undefined, online: false },
+    { id: 3, username: 'AVeryLongEnglishUsernameWithoutAnyNaturalBreakPointForOverflowTesting', remark: '', wechat_id: 'liming88', avatar: undefined, bio: undefined, status: undefined },
   ],
   contactsEmpty: [],
   groupMembersSingle: [

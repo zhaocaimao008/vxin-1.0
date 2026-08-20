@@ -10,6 +10,7 @@ const AddFriendModal = lazy(() => import('./AddFriendModal'));
 import { showToast, showConfirm } from '../utils/toast';
 import { firstLetter, comparePinyin } from '../utils/pinyin';
 import { formatLastOnline } from '../utils/time';
+import { seedOnlineIds } from '../utils/contactsStatus';
 
 /* ── 主组件 ── */
 export default function ContactList({ onStartChat, searchQuery = '', addFriendRequest = 0, onAddFriendConsumed }) {
@@ -32,7 +33,13 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
 
   // 统一兜底成数组：若接口异常返回非数组，避免下方 .filter/.map 抛错导致整页白屏
   const fetchContacts = useCallback(() =>
-    axios.get('/api/users/contacts').then(r => setContacts(Array.isArray(r.data) ? r.data : [])).catch(() => setContacts([]))
+    axios.get('/api/users/contacts').then(r => {
+      const list = Array.isArray(r.data) ? r.data : [];
+      setContacts(list);
+      // 接口本身就带了真实 status，用它播种在线集合——否则页面刚打开、
+      // 对方早已在线但还没触发新的 user_online 事件时，会被误判成离线。
+      setOnlineIds(prev => seedOnlineIds(prev, list));
+    }).catch(() => setContacts([]))
       .finally(() => setContactsLoaded(true)), []);
   const fetchRequests = useCallback(() =>
     axios.get('/api/users/friend-requests').then(r => setRequests(Array.isArray(r.data) ? r.data : [])).catch(() => setRequests([])), []);

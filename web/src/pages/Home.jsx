@@ -7,6 +7,7 @@ import ChatList from '../components/ChatList';
 import ChatWindowBoundary from '../components/ChatWindowBoundary';
 // 非首屏组件懒加载（首屏仅需 ChatList，其余按需加载节省 ~80KB 初始包）
 const ContactList  = lazy(() => import('../components/ContactList'));
+const ContactsOverviewPanel = lazy(() => import('../components/ContactsOverviewPanel'));
 const Profile      = lazy(() => import('../components/Profile'));
 const GlobalSearch = lazy(() => import('../components/GlobalSearch'));
 // 非常驻的重型面板/模态框懒加载，减小首屏 chunk（各自本地 Suspense 兜底）
@@ -817,8 +818,16 @@ export default function Home() {
           </div>
         )}
 
-        {/* 聊天区 */}
-        {(!isMobile || showChat) && (
+        {/* 联系人：Web 桌面浏览器右栏用「全部联系人」详情面板占住聊天区位置
+            （对齐 Web联系人页.jpg / Windows联系人页.jpg）；Electron/移动端不受影响，
+            走下面原有的聊天区结构（现有单栏 ContactList 已经比较贴近苹果/安卓设计稿，不动）。 */}
+        {tab === 'contacts' && !isElectron && !isMobile ? (
+          <Suspense fallback={<div className="wc-lazy-pane" />}>
+            <ContactsOverviewPanel onStartChat={handleSelectConv} onStartCall={handleStartCall} />
+          </Suspense>
+        ) : (
+        /* 聊天区 */
+        (!isMobile || showChat) && (
           <div className="home-chat-area">
             {activeConv
               ? (
@@ -831,6 +840,7 @@ export default function Home() {
               : <WcEmpty />
             }
           </div>
+        )
         )}
         </>
         )}
