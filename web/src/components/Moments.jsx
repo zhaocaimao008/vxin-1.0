@@ -22,7 +22,10 @@ function ago(sec) {
 const CONTENT_LIMIT = 120;
 
 /* 单条动态（memo：仅当本卡片数据 m 变化时才重渲染，点赞/评论不再重刷整个 feed）*/
-const MomentCard = memo(function MomentCard({ m, meId, onLike, onComment, onDelete, onDeleteComment, onLoadComments, onReport, onEdit }) {
+// desktop：仅桌面两栏版式为 true。凡是 desktop 分支专属的 JSX（"…"菜单、名字下方时间行、
+// 右下角图标操作栏）都是全新的分支代码路径，desktop=false 时走原有移动端/Electron 结构，
+// 字节级不变——不是同一段 DOM 靠 CSS 换皮，避免误伤已上线的移动端视觉。
+const MomentCard = memo(function MomentCard({ m, meId, desktop, onLike, onComment, onDelete, onDeleteComment, onLoadComments, onReport, onEdit }) {
   const [commenting, setCommenting] = useState(false);
   const [text, setText] = useState('');
   const [replyTo, setReplyTo] = useState(null); // { userId, username } | null：回复某条评论
@@ -31,6 +34,14 @@ const MomentCard = memo(function MomentCard({ m, meId, onLike, onComment, onDele
   const [expanded, setExpanded] = useState(false);
   const [lightbox, setLightbox] = useState(null); // { urls, idx } | null
   const [likePop, setLikePop] = useState(false);  // 主动点赞时心跳动画（仅点击触发，避免 feed 加载已赞项乱跳）
+  const [menuOpen, setMenuOpen] = useState(false); // 桌面版"…"菜单开关（仅 desktop 用）
+  const menuRef = useRef(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDocClick = e => { if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false); };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [menuOpen]);
 
   const viewAllComments = async () => {
     setLoadingComments(true);
@@ -54,9 +65,13 @@ const MomentCard = memo(function MomentCard({ m, meId, onLike, onComment, onDele
     setCommenting(true);
   };
 
-  // 微信九宫格规则：恰好 4 张时排成 2×2，其余按 1/2/3 列
+  // 移动端/Electron：微信九宫格规则，恰好 4 张时排成 2×2，其余按 1/2/3 列（不变）。
+  // 桌面：feed 容器更宽，对齐 Web动态页.jpg 里 4 张图一排的版式，desktop 分支单独计算列数，
+  // 不改动上面这条移动端规则本身。
   const imgCount = m.images?.length || 0;
-  const gridCols = imgCount === 4 ? 2 : (imgCount ? Math.min(imgCount, 3) : 1);
+  const gridCols = desktop
+    ? (imgCount ? Math.min(imgCount, 4) : 1)
+    : (imgCount === 4 ? 2 : (imgCount ? Math.min(imgCount, 3) : 1));
 
   return (
     <div className="wc-moment-card">
@@ -64,7 +79,26 @@ const MomentCard = memo(function MomentCard({ m, meId, onLike, onComment, onDele
       <div className="wc-moment-body">
         <div className="wc-moment-header">
           <span className="wc-moment-name">{m.author?.username || '用户'}</span>
-          {m.user_id === meId ? (
+          {desktop ? (
+            <div className="wc-moment-menu-wrap" ref={menuRef}>
+              <button className="wc-moment-menu-btn" aria-label="更多" aria-haspopup="menu" aria-expanded={menuOpen}
+                onClick={() => setMenuOpen(v => !v)}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+              </button>
+              {menuOpen && (
+                <div className="wc-moment-menu-pop" role="menu">
+                  {m.user_id === meId ? (
+                    <>
+                      <button className="wc-moment-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); onEdit(m); }}>编辑</button>
+                      <button className="wc-moment-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); onDelete(m); }}>删除</button>
+                    </>
+                  ) : (
+                    <button className="wc-moment-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); onReport(m); }}>举报</button>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : m.user_id === meId ? (
             <span style={{ display: 'inline-flex', gap: 8 }}>
               <button className="wc-moment-delete" onClick={() => onEdit(m)}>编辑</button>
               <button className="wc-moment-delete" onClick={() => onDelete(m)}>删除</button>
@@ -73,6 +107,7 @@ const MomentCard = memo(function MomentCard({ m, meId, onLike, onComment, onDele
             <button className="wc-moment-delete" onClick={() => onReport(m)}>举报</button>
           )}
         </div>
+        {desktop && <div className="wc-moment-meta">{ago(m.created_at)}</div>}
         {m.content && (() => {
           const needsTruncate = m.content.length > CONTENT_LIMIT;
           const display = needsTruncate && !expanded ? m.content.slice(0, CONTENT_LIMIT) + '…' : m.content;
@@ -126,8 +161,8 @@ const MomentCard = memo(function MomentCard({ m, meId, onLike, onComment, onDele
             url={lightbox.urls[lightbox.idx]} onClose={() => setLightbox(null)} />
         )}
 
-        <div className="wc-moment-actions">
-          <span className="wc-moment-time">{ago(m.created_at)}</span>
+        <div className={`wc-moment-actions${desktop ? ' wc-moment-actions-desktop' : ''}`}>
+          {!desktop && <span className="wc-moment-time">{ago(m.created_at)}</span>}
           <button
             className={`wc-moment-action-btn${m.liked ? ' liked' : ''}`}
             onClick={() => { if (!m.liked) { setLikePop(true); setTimeout(() => setLikePop(false), 360); } onLike(m); }}
@@ -502,6 +537,18 @@ export default function Moments({ desktop = false }) {
 
   const content = (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* 桌面标题行：呼应设计稿的"全部动态/我的动态"页面标题 + 刷新（复用现有 GET 重新拉取，
+          不是假 UI）。排序下拉"最新发布"因为只有一种排序，不做。仅 desktop 分支渲染。 */}
+      {desktop && (
+        <div className="wc-moments-heading">
+          <span className="wc-moments-heading-title">{tab === 'mine' ? '我的动态' : '全部动态'}</span>
+          <button className="wc-moments-refresh-btn" onClick={load} disabled={loading} aria-label="刷新" title="刷新">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" className={loading ? 'wc-moments-refresh-spin' : undefined}>
+              <path d="M17.65 6.35A7.95 7.95 0 0012 4a8 8 0 108 8h-2a6 6 0 11-1.76-4.24L13 11h7V4l-2.35 2.35z"/>
+            </svg>
+          </button>
+        </div>
+      )}
       {/* 互动通知入口 */}
       <div className="wc-moment-notif-bar" onClick={openNotif} role="button" tabIndex={0}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openNotif(); } }}>
@@ -706,7 +753,7 @@ export default function Moments({ desktop = false }) {
           <div role="status" className="wc-moment-state" style={{ padding: 60 }}>还没有动态，发布第一条吧</div>
         ) : (
           list.map(m => (
-            <MomentCard key={m.id} m={m} meId={meId}
+            <MomentCard key={m.id} m={m} meId={meId} desktop={desktop}
               onLike={onLike} onComment={onComment} onDelete={onDelete} onDeleteComment={onDeleteComment}
               onLoadComments={onLoadComments} onReport={onReport} onEdit={onEdit} />
           ))

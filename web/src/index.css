@@ -3207,6 +3207,61 @@ body.dark-mode .wc-msg-time span { background: rgba(255,255,255,.08); }
 .wc-moments-tab.active { background: var(--color-primary-muted); color: var(--color-primary); font-weight: var(--font-semibold); }
 .wc-moments-main { flex: 1; min-width: 0; height: 100%; overflow: hidden; max-width: 720px; margin: 0 auto; }
 
+/* ── moments-page 改版：卡片样式对齐设计稿（本轮）──
+   以下规则要么是仅 desktop 分支渲染才会出现的新 class（heading / meta / 更多菜单 /
+   actions-desktop），要么显式限定在 .wc-moments-main 祖先下（图片网格宽度覆盖）——
+   移动端与 Electron 不会命中这些选择器，零视觉变化。 */
+.wc-moments-heading {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--sp-3) 18px 10px; flex-shrink: 0;
+}
+.wc-moments-heading-title { font-size: var(--text-lg); font-weight: var(--font-semibold); color: var(--text-primary); }
+.wc-moments-refresh-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: var(--radius-md);
+  background: none; border: none; cursor: pointer; color: var(--text-tertiary);
+  transition: background 120ms, color 120ms;
+}
+.wc-moments-refresh-btn:hover { background: var(--bg-hover); color: var(--text-secondary); }
+.wc-moments-refresh-btn:disabled { cursor: default; opacity: .6; }
+.wc-moments-refresh-spin { animation: wcMomentsSpin .8s linear infinite; }
+@keyframes wcMomentsSpin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .wc-moments-refresh-spin { animation: none; } }
+
+/* 名字下方时间行（桌面版：地点因无 location 字段，不留空位） */
+.wc-moment-meta { font-size: var(--text-sm); color: var(--text-tertiary); margin-top: 1px; }
+
+/* "…" 更多菜单（桌面版：编辑/删除/举报） */
+.wc-moment-menu-wrap { position: relative; }
+.wc-moment-menu-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 22px; border-radius: var(--radius-sm);
+  background: none; border: none; cursor: pointer; color: var(--text-tertiary);
+  transition: background 120ms, color 120ms;
+}
+.wc-moment-menu-btn:hover { background: var(--bg-hover); color: var(--text-secondary); }
+.wc-moment-menu-pop {
+  position: absolute; top: 26px; right: 0; z-index: 5; min-width: 96px;
+  background: var(--bg-card, #fff); border: 1px solid var(--border-color);
+  border-radius: var(--radius-md); box-shadow: var(--elev-dropdown);
+  padding: 4px; display: flex; flex-direction: column;
+}
+.wc-moment-menu-item {
+  text-align: left; padding: 7px 10px; border-radius: var(--radius-sm);
+  background: none; border: none; cursor: pointer; font-family: inherit;
+  font-size: var(--text-sm2); color: var(--text-primary);
+}
+.wc-moment-menu-item:hover { background: var(--bg-hover); }
+
+/* 操作栏：桌面版右下角图标+数字，去掉左侧时间（已挪到名字下方） */
+.wc-moment-actions-desktop { justify-content: flex-end; gap: 22px; }
+
+/* 图片网格：桌面 feed 更宽，取消移动端 300px 宽度上限，按可用宽度铺满 */
+.wc-moments-main .wc-moment-images { max-width: none; }
+.wc-moments-main .wc-moment-images.single img.wc-moment-single-img {
+  max-width: 100%; max-height: 420px;
+}
+
 /* ── Section Label ── */
 .wc-slabel { padding: var(--sp-4) var(--sp-4) var(--sp-1h); font-size: var(--text-sm); color: var(--text-tertiary); font-weight: var(--font-medium); letter-spacing: .5px; text-transform: uppercase; }
 
