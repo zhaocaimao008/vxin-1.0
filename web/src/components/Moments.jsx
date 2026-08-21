@@ -22,7 +22,10 @@ function ago(sec) {
 const CONTENT_LIMIT = 120;
 
 /* 单条动态（memo：仅当本卡片数据 m 变化时才重渲染，点赞/评论不再重刷整个 feed）*/
-const MomentCard = memo(function MomentCard({ m, meId, onLike, onComment, onDelete, onDeleteComment, onLoadComments, onReport, onEdit }) {
+// desktop：仅桌面两栏版式为 true。凡是 desktop 分支专属的 JSX（"…"菜单、名字下方时间行、
+// 右下角图标操作栏）都是全新的分支代码路径，desktop=false 时走原有移动端/Electron 结构，
+// 字节级不变——不是同一段 DOM 靠 CSS 换皮，避免误伤已上线的移动端视觉。
+const MomentCard = memo(function MomentCard({ m, meId, desktop, onLike, onComment, onDelete, onDeleteComment, onLoadComments, onReport, onEdit }) {
   const [commenting, setCommenting] = useState(false);
   const [text, setText] = useState('');
   const [replyTo, setReplyTo] = useState(null); // { userId, username } | null：回复某条评论
@@ -31,6 +34,14 @@ const MomentCard = memo(function MomentCard({ m, meId, onLike, onComment, onDele
   const [expanded, setExpanded] = useState(false);
   const [lightbox, setLightbox] = useState(null); // { urls, idx } | null
   const [likePop, setLikePop] = useState(false);  // 主动点赞时心跳动画（仅点击触发，避免 feed 加载已赞项乱跳）
+  const [menuOpen, setMenuOpen] = useState(false); // 桌面版"…"菜单开关（仅 desktop 用）
+  const menuRef = useRef(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDocClick = e => { if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false); };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [menuOpen]);
 
   const viewAllComments = async () => {
     setLoadingComments(true);
@@ -54,9 +65,13 @@ const MomentCard = memo(function MomentCard({ m, meId, onLike, onComment, onDele
     setCommenting(true);
   };
 
-  // 微信九宫格规则：恰好 4 张时排成 2×2，其余按 1/2/3 列
+  // 移动端/Electron：微信九宫格规则，恰好 4 张时排成 2×2，其余按 1/2/3 列（不变）。
+  // 桌面：feed 容器更宽，对齐 Web动态页.jpg 里 4 张图一排的版式，desktop 分支单独计算列数，
+  // 不改动上面这条移动端规则本身。
   const imgCount = m.images?.length || 0;
-  const gridCols = imgCount === 4 ? 2 : (imgCount ? Math.min(imgCount, 3) : 1);
+  const gridCols = desktop
+    ? (imgCount ? Math.min(imgCount, 4) : 1)
+    : (imgCount === 4 ? 2 : (imgCount ? Math.min(imgCount, 3) : 1));
 
   return (
     <div className="wc-moment-card">
@@ -64,7 +79,26 @@ const MomentCard = memo(function MomentCard({ m, meId, onLike, onComment, onDele
       <div className="wc-moment-body">
         <div className="wc-moment-header">
           <span className="wc-moment-name">{m.author?.username || '用户'}</span>
-          {m.user_id === meId ? (
+          {desktop ? (
+            <div className="wc-moment-menu-wrap" ref={menuRef}>
+              <button className="wc-moment-menu-btn" aria-label="更多" aria-haspopup="menu" aria-expanded={menuOpen}
+                onClick={() => setMenuOpen(v => !v)}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+              </button>
+              {menuOpen && (
+                <div className="wc-moment-menu-pop" role="menu">
+                  {m.user_id === meId ? (
+                    <>
+                      <button className="wc-moment-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); onEdit(m); }}>编辑</button>
+                      <button className="wc-moment-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); onDelete(m); }}>删除</button>
+                    </>
+                  ) : (
+                    <button className="wc-moment-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); onReport(m); }}>举报</button>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : m.user_id === meId ? (
             <span style={{ display: 'inline-flex', gap: 8 }}>
               <button className="wc-moment-delete" onClick={() => onEdit(m)}>编辑</button>
               <button className="wc-moment-delete" onClick={() => onDelete(m)}>删除</button>
@@ -73,6 +107,7 @@ const MomentCard = memo(function MomentCard({ m, meId, onLike, onComment, onDele
             <button className="wc-moment-delete" onClick={() => onReport(m)}>举报</button>
           )}
         </div>
+        {desktop && <div className="wc-moment-meta">{ago(m.created_at)}</div>}
         {m.content && (() => {
           const needsTruncate = m.content.length > CONTENT_LIMIT;
           const display = needsTruncate && !expanded ? m.content.slice(0, CONTENT_LIMIT) + '…' : m.content;
@@ -126,8 +161,8 @@ const MomentCard = memo(function MomentCard({ m, meId, onLike, onComment, onDele
             url={lightbox.urls[lightbox.idx]} onClose={() => setLightbox(null)} />
         )}
 
-        <div className="wc-moment-actions">
-          <span className="wc-moment-time">{ago(m.created_at)}</span>
+        <div className={`wc-moment-actions${desktop ? ' wc-moment-actions-desktop' : ''}`}>
+          {!desktop && <span className="wc-moment-time">{ago(m.created_at)}</span>}
           <button
             className={`wc-moment-action-btn${m.liked ? ' liked' : ''}`}
             onClick={() => { if (!m.liked) { setLikePop(true); setTimeout(() => setLikePop(false), 360); } onLike(m); }}
@@ -222,9 +257,15 @@ function MomentsSkeleton() {
   );
 }
 
-export default function Moments() {
+// desktop=true：桌面 Web(≥768、排除 Electron)专属两栏版式(发布入口+tab | 更宽的 feed)，
+// 对齐 Web动态页.jpg——设计稿里的话题/关注/附近/热门话题/推荐关注/收藏/转发/位置标签/排序切换
+// 均无后端支撑（无 follows 表、无 topic 表、moments 无地理字段、collections 不支持 type='moment'、
+// timeline() 只有一种排序），按已确认规则全部不做，仅保留"全部/我的"两个真实 tab + 换宽容器。
+// 默认 false 就是移动端/Electron 原有单栏版式，逻辑完全共用。
+export default function Moments({ desktop = false }) {
   const { user } = useAuth();
   const meId = user?.id;
+  const [tab, setTab] = useState('all'); // 'all' | 'mine' —— 非 desktop 模式下没有切换 UI，恒为 'all'
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -250,23 +291,23 @@ export default function Moments() {
   useEffect(() => { imagesRef.current = images; }, [images]);
   useEffect(() => () => { imagesRef.current.forEach(img => URL.revokeObjectURL(img.previewUrl)); }, []);
 
-  // 重试/刷新用（显示转圈后重拉）
+  // 重试/刷新/切 tab 共用：'mine' 复用现成的 GET /api/moments/user/:userId(看自己），
+  // 'all' 是原有 timeline。tab 变化时这个 callback 引用跟着变，下面的 effect 会自动重拉。
   const load = useCallback(() => {
     setLoading(true);
-    axios.get('/api/moments')
+    const url = tab === 'mine' && meId ? `/api/moments/user/${meId}` : '/api/moments';
+    axios.get(url)
       .then(r => { setList(r.data); setLoadError(false); })
       .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
-  }, []);
-  // 初次挂载拉取：loading 初值已为 true，effect 内不做同步 setState（避免级联渲染）
+  }, [tab, meId]);
+  // 初次挂载 + tab 切换时拉取：load 引用随 tab/meId 变化，effect 只是跟着调用它，
+  // 不在这里重复一份 fetch 逻辑。
   useEffect(() => {
-    let alive = true;
-    axios.get('/api/moments')
-      .then(r => { if (alive) { setList(r.data); setLoadError(false); } })
-      .catch(() => { if (alive) setLoadError(true); })
-      .finally(() => { if (alive) setLoading(false); });
-    return () => { alive = false; };
-  }, []);
+    if (tab === 'mine' && !meId) return; // 等 meId 就绪，避免打一发 /user/undefined
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- tab 切换需要重新触发网络请求并重置 loading，不是可以去掉的派生状态
+    load();
+  }, [tab, meId, load]);
 
   // 朋友圈"最近 N 天可见"设置初值
   useEffect(() => {
@@ -494,8 +535,20 @@ export default function Moments() {
     } catch (e) { showToast(e.response?.data?.error || '删除失败', 'error'); }
   }, []);
 
-  return (
+  const content = (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* 桌面标题行：呼应设计稿的"全部动态/我的动态"页面标题 + 刷新（复用现有 GET 重新拉取，
+          不是假 UI）。排序下拉"最新发布"因为只有一种排序，不做。仅 desktop 分支渲染。 */}
+      {desktop && (
+        <div className="wc-moments-heading">
+          <span className="wc-moments-heading-title">{tab === 'mine' ? '我的动态' : '全部动态'}</span>
+          <button className="wc-moments-refresh-btn" onClick={load} disabled={loading} aria-label="刷新" title="刷新">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" className={loading ? 'wc-moments-refresh-spin' : undefined}>
+              <path d="M17.65 6.35A7.95 7.95 0 0012 4a8 8 0 108 8h-2a6 6 0 11-1.76-4.24L13 11h7V4l-2.35 2.35z"/>
+            </svg>
+          </button>
+        </div>
+      )}
       {/* 互动通知入口 */}
       <div className="wc-moment-notif-bar" onClick={openNotif} role="button" tabIndex={0}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openNotif(); } }}>
@@ -700,13 +753,37 @@ export default function Moments() {
           <div role="status" className="wc-moment-state" style={{ padding: 60 }}>还没有动态，发布第一条吧</div>
         ) : (
           list.map(m => (
-            <MomentCard key={m.id} m={m} meId={meId}
+            <MomentCard key={m.id} m={m} meId={meId} desktop={desktop}
               onLike={onLike} onComment={onComment} onDelete={onDelete} onDeleteComment={onDeleteComment}
               onLoadComments={onLoadComments} onReport={onReport} onEdit={onEdit} />
           ))
         )}
       </div>
 
+    </div>
+  );
+
+  if (!desktop) return content;
+
+  return (
+    <div className="wc-moments-desktop">
+      <div className="wc-moments-side">
+        <button className="wc-moments-publish-btn" onClick={() => setComposing(true)}>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          发布动态
+        </button>
+        <div className="wc-moments-tabs" role="tablist" aria-label="动态筛选">
+          <button type="button" role="tab" aria-selected={tab === 'all'}
+            className={`wc-moments-tab${tab === 'all' ? ' active' : ''}`}
+            onClick={() => setTab('all')}>全部动态</button>
+          <button type="button" role="tab" aria-selected={tab === 'mine'}
+            className={`wc-moments-tab${tab === 'mine' ? ' active' : ''}`}
+            onClick={() => setTab('mine')}>我的动态</button>
+        </div>
+      </div>
+      <div className="wc-moments-main">
+        {content}
+      </div>
     </div>
   );
 }
