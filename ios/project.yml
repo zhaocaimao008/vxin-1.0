@@ -18,6 +18,9 @@ packages:
   WebRTC:
     url: https://github.com/stasel/WebRTC
     from: "125.0.0"
+  Lottie:
+    url: https://github.com/airbnb/lottie-ios
+    from: "4.4.3"
 
 targets:
   Vxin:
@@ -31,6 +34,7 @@ targets:
       - package: Firebase
         product: FirebaseMessaging
       - package: WebRTC
+      - package: Lottie
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.vxin.app
