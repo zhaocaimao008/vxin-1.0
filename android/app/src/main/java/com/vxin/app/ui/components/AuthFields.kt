@@ -31,10 +31,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.vxin.app.ui.VxinIcons
-import com.vxin.app.ui.theme.VxinBrand
-import com.vxin.app.ui.theme.VxinDivider
-import com.vxin.app.ui.theme.VxinTextPrimary
-import com.vxin.app.ui.theme.VxinTextSecondary
+import com.vxin.app.ui.theme.VxinAuthBorder
+import com.vxin.app.ui.theme.VxinAuthGold
+import com.vxin.app.ui.theme.VxinAuthPlaceholder
+import com.vxin.app.ui.theme.VxinAuthTextMuted
 import com.vxin.app.ui.theme.VxinTextSize
 
 /**
@@ -52,7 +52,7 @@ fun VxinAuthField(
     testTag: String = "",
     trailing: @Composable (() -> Unit)? = null,
 ) {
-    val dividerColor = VxinDivider
+    val dividerColor = VxinAuthBorder
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -67,19 +67,19 @@ fun VxinAuthField(
             },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, contentDescription = null, tint = VxinTextSecondary, modifier = Modifier.size(20.dp))
+        Icon(icon, contentDescription = null, tint = VxinAuthTextMuted, modifier = Modifier.size(20.dp))
         Box(Modifier.padding(start = 10.dp).weight(1f)) {
             if (value.isEmpty()) {
-                Text(placeholder, color = VxinTextSecondary, fontSize = VxinTextSize.base)
+                Text(placeholder, color = VxinAuthPlaceholder, fontSize = VxinTextSize.base)
             }
             BasicTextField(
                 value = value,
                 onValueChange = onValueChange,
                 singleLine = true,
-                textStyle = LocalTextStyle.current.copy(fontSize = VxinTextSize.base, color = VxinTextPrimary),
+                textStyle = LocalTextStyle.current.copy(fontSize = VxinTextSize.base, color = Color.White),
                 keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
                 visualTransformation = visualTransformation,
-                cursorBrush = androidx.compose.ui.graphics.SolidColor(VxinBrand),
+                cursorBrush = androidx.compose.ui.graphics.SolidColor(VxinAuthGold),
                 modifier = Modifier.fillMaxWidth().testTag(testTag),
             )
         }
@@ -111,7 +111,7 @@ fun VxinPasswordField(
             Icon(
                 if (visible) VxinIcons.Eye else VxinIcons.EyeOff,
                 contentDescription = if (visible) "隐藏密码" else "显示密码",
-                tint = VxinTextSecondary,
+                tint = VxinAuthTextMuted,
                 modifier = Modifier
                     .size(20.dp)
                     .clickable(
@@ -123,7 +123,7 @@ fun VxinPasswordField(
     )
 }
 
-/** 圆形勾选框：绿色实心 + 白色对勾（选中）/ 描边空心（未选中）。 */
+/** 圆形勾选框：金色实心 + 黑色对勾（选中）/ 描边空心（未选中）。 */
 @Composable
 fun VxinRoundCheckbox(
     checked: Boolean,
@@ -136,8 +136,8 @@ fun VxinRoundCheckbox(
             .size(18.dp)
             .clip(CircleShape)
             .then(
-                if (checked) Modifier.background(VxinBrand)
-                else Modifier.border(width = 1.5.dp, color = VxinTextSecondary.copy(alpha = 0.5f), shape = CircleShape)
+                if (checked) Modifier.background(VxinAuthGold)
+                else Modifier.border(width = 1.5.dp, color = VxinAuthBorder, shape = CircleShape)
             )
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -147,7 +147,7 @@ fun VxinRoundCheckbox(
         contentAlignment = Alignment.Center,
     ) {
         if (checked) {
-            Icon(VxinIcons.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(11.dp))
+            Icon(VxinIcons.Check, contentDescription = null, tint = Color.Black, modifier = Modifier.size(11.dp))
         }
     }
 }

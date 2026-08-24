@@ -1,7 +1,7 @@
 package com.vxin.app.feature.auth
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,20 +31,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.vxin.app.R
 import com.vxin.app.ui.VxinIcons
 import com.vxin.app.ui.components.VxinAuthField
+import com.vxin.app.ui.components.VxinLogoMark
 import com.vxin.app.ui.components.VxinPasswordField
 import com.vxin.app.ui.components.VxinRoundCheckbox
-import com.vxin.app.ui.theme.VxinBrand
+import com.vxin.app.ui.theme.VxinAuthBg
+import com.vxin.app.ui.theme.VxinAuthBorder
+import com.vxin.app.ui.theme.VxinAuthGold
+import com.vxin.app.ui.theme.VxinAuthPlaceholder
+import com.vxin.app.ui.theme.VxinAuthSurface
+import com.vxin.app.ui.theme.VxinAuthTextSecondary
 import com.vxin.app.ui.theme.VxinRadius
-import com.vxin.app.ui.theme.VxinTextSecondary
 import com.vxin.app.ui.theme.VxinTextSize
 
 @Composable
@@ -59,27 +62,21 @@ fun RegisterScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(VxinAuthBg)
             .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 32.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(24.dp))
-        androidx.compose.foundation.layout.Box(
-            modifier = Modifier
-                .size(68.dp)
-                .clip(RoundedCornerShape(VxinRadius.xl)),
-        ) {
-            Image(
-                painter = painterResource(R.mipmap.ic_launcher_foreground),
-                contentDescription = "v信",
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
+        // 品牌 Logo：黑金标记（与 Web/iOS 登录页同一套扁平化简版标记，2026-08-24 四端品牌统一）
+        VxinLogoMark(modifier = Modifier.size(68.dp))
         Spacer(Modifier.height(14.dp))
-        Text("v信", fontSize = VxinTextSize.displaySm, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+        Text("v信", fontSize = VxinTextSize.displaySm, fontWeight = FontWeight.Bold, color = Color.White)
         Spacer(Modifier.height(4.dp))
-        Text("注册新账号", fontSize = VxinTextSize.lg, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
+        Text("注册新账号", fontSize = VxinTextSize.lg, fontWeight = FontWeight.SemiBold, color = Color.White)
+        Spacer(Modifier.height(6.dp))
+        Text("连接 · 沟通 · 未来", fontSize = VxinTextSize.sm2, color = VxinAuthTextSecondary)
         Spacer(Modifier.height(24.dp))
 
         // 昵称：参考图未展示此字段，但后端 register() 强制要求 username，移除会导致注册失败——
@@ -98,7 +95,7 @@ fun RegisterScreen(
             placeholder = "请输入手机号",
             keyboardType = KeyboardType.Phone,
             testTag = "register-phone-input",
-            trailing = { Text("+86", color = VxinTextSecondary, fontSize = VxinTextSize.base) },
+            trailing = { Text("+86", color = VxinAuthTextSecondary, fontSize = VxinTextSize.base) },
         )
         // 参考图中的「验证码 / 获取验证码」字段：后端当前没有注册短信验证码能力（无 sendCode 接口），
         // 属于「参考图有、后端无」的情况，按规范不伪造，故不实现该字段。
@@ -141,27 +138,33 @@ fun RegisterScreen(
                 .height(50.dp)
                 .testTag("register-submit-btn"),
         ) {
+            val submitEnabled = state.canSubmit && agreed
             androidx.compose.foundation.layout.Box(
                 Modifier
                     .fillMaxWidth()
                     .height(50.dp)
                     .clip(RoundedCornerShape(VxinRadius.pill))
-                    .background(if (state.canSubmit && agreed) VxinBrand else VxinTextSecondary.copy(alpha = 0.35f)),
+                    .background(VxinAuthSurface)
+                    .border(
+                        width = 1.5.dp,
+                        color = if (submitEnabled) VxinAuthGold else VxinAuthBorder,
+                        shape = RoundedCornerShape(VxinRadius.pill),
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
                 if (state.loading) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = VxinAuthGold, strokeWidth = 2.dp)
                 } else {
-                    Text("注册", color = Color.White, fontWeight = FontWeight.SemiBold)
+                    Text("注册", color = if (submitEnabled) VxinAuthGold else VxinAuthPlaceholder, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
 
         Spacer(Modifier.height(16.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("已有账号? ", color = VxinTextSecondary, fontSize = VxinTextSize.sm2)
+            Text("已有账号? ", color = VxinAuthTextSecondary, fontSize = VxinTextSize.sm2)
             TextButton(onClick = onBack, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
-                Text("去登录", color = VxinBrand, fontSize = VxinTextSize.sm2, fontWeight = FontWeight.Medium)
+                Text("去登录", color = VxinAuthGold, fontSize = VxinTextSize.sm2, fontWeight = FontWeight.Medium)
             }
         }
 
@@ -169,7 +172,7 @@ fun RegisterScreen(
         Row(verticalAlignment = Alignment.CenterVertically) {
             VxinRoundCheckbox(checked = agreed, onCheckedChange = { agreed = it }, testTag = "register-agreement-checkbox")
             Spacer(Modifier.width(8.dp))
-            Text("我已阅读并同意《用户协议》和《隐私政策》", fontSize = VxinTextSize.xs, color = VxinTextSecondary)
+            Text("我已阅读并同意《用户协议》和《隐私政策》", fontSize = VxinTextSize.xs, color = VxinAuthTextSecondary)
         }
         Spacer(Modifier.height(16.dp))
     }

@@ -46,3 +46,15 @@ val VxinPageBg    = Color(0xFFF5F5F7)   // spec #F5F5F7
 val VxinDivider   = Color(0xFFE9E9EC)   // spec #E9E9EC
 val VxinIconGray  = Color(0xFF2C2C2E)   // spec #2C2C2E
 val VxinRedLogout = Color(0xFFFF3B30)   // spec #FF3B30
+
+// ── 登录/注册/找回密码 黑金品牌主题专用色（2026-08-24 四端品牌统一）──────────
+// 仅供 feature/auth 三个屏幕 + AuthFields 组件使用，不影响 App 内其余页面
+// （聊天/设置等仍是 VxinBrand 绿，--color-primary 同款约束见 Web login.css）。
+val VxinAuthBg          = Color(0xFF000000)
+val VxinAuthSurface     = Color(0xFF141414)
+val VxinAuthGold        = Color(0xFFFFD700)
+val VxinAuthGoldHover   = Color(0xFFFFC72C)
+val VxinAuthBorder      = Color(0xFF2A2A2A)
+val VxinAuthTextSecondary = Color(0xFFCCCCCC)   // 品牌规范辅助文字色
+val VxinAuthTextMuted   = Color(0xFF8A8478)
+val VxinAuthPlaceholder = Color(0xFF6B6459)
