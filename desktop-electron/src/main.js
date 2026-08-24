@@ -126,6 +126,7 @@ const NO_AUTO_OPEN_EXTS = new Set([
 ]);
 
 let mainWindow = null;
+let splashWindow = null;
 let tray = null;
 let _trayBaseIcon = null;    // 托盘正常态图标缓存（闪烁时还原用）
 let _trayFlashTimer = null;  // 托盘闪烁定时器句柄
@@ -490,6 +491,50 @@ function sanitizeBounds(raw) {
   };
 }
 
+// ── V信 品牌启动窗口 ───────────────────────────────────────────
+// 现象：loadRemoteServerUrl()（远程 config 拉取，兜底超时 5s）+ clearRenderCaches() 在
+// createWindow() 之前执行，这段时间里进程已启动但没有任何窗口——双击图标后长时间无
+// 反应，表现为"白屏/闪烁/启动延迟"（main.js 里已有的已知现象，见上方相关注释）。
+// splash 窗口在 whenReady() 最开头立即创建/展示，填补这段空窗期；主窗口
+// ready-to-show（或既有的 10s 强制显示兜底）触发时关闭，不改变、不延迟原有的
+// 远程配置拉取/CSP 装配/主窗口创建顺序。
+// 独立 partition（非 defaultSession）：不经过 setupSecurity() 挂在 defaultSession 上的
+// 严格 CSP（那份 CSP 的内联脚本哈希白名单只按 web/dist/index.html 现算，会误伤
+// splash.html 自己的内联 <script>/<style>）；splash.html 是随包静态资源、无外部请求、
+// 无用户数据，用独立 partition 隔离足够安全（仍保持 contextIsolation/sandbox/无 nodeIntegration）。
+function createSplashWindow() {
+  splashWindow = new BrowserWindow({
+    width: 360,
+    height: 360,
+    frame: false,
+    resizable: false,
+    movable: false,
+    show: false,
+    transparent: false,
+    backgroundColor: '#000000',
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    icon: path.join(__dirname, process.platform === 'win32' ? '../assets/icon.ico' : '../assets/icon.png'),
+    webPreferences: {
+      partition: 'splash-window',
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: process.env.VISUAL_AUDIT ? false : true,  // 与 mainWindow 一致：Visual audit 模式下禁用沙箱（仅测试）
+    },
+  });
+  splashWindow.once('ready-to-show', () => splashWindow?.show());
+  splashWindow.on('closed', () => { splashWindow = null; });
+  splashWindow.loadFile(path.join(__dirname, '../assets/splash.html')).catch((e) => {
+    log.warn('[Splash] 加载失败(忽略，不影响主窗口):', e.message);
+  });
+}
+
+function closeSplashWindow() {
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    splashWindow.close();
+  }
+}
+
 // ── 主窗口 ─────────────────────────────────────────────────
 // ── 页面加载：本地打包版优先（EXE 自带登录页，离线可用），远程兜底 ──
 // 注意：服务器根路径部署的是落地页(landing)，不是 web 登录页；若远程优先会
@@ -512,6 +557,7 @@ function loadAppPage() {
 // 本地/远程加载均失败时的兜底弹窗（重试或退出）
 function showLoadErrorDialog(errorDesc, errorCode) {
   if (!mainWindow || mainWindow.isDestroyed()) return;
+  closeSplashWindow();   // 加载彻底失败要弹错误对话框：不能让品牌启动窗口停留挡住它
   dialog.showMessageBox(mainWindow, {
     type: 'error', title: 'v信',
     message: '界面加载失败',
@@ -621,6 +667,7 @@ function createWindow() {
     // 恢复最大化状态
     if (savedState.isMaximized) mainWindow.maximize();
     mainWindow.show();
+    closeSplashWindow();   // 主窗口已可显示：品牌启动窗口完成使命，关闭
     // ── D3: 延迟 15s 再检查更新（避免影响启动体验）───────────────
     setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 15000);
   };
@@ -1268,6 +1315,7 @@ async function clearRenderCaches() {
 }
 
 app.whenReady().then(async () => {
+    createSplashWindow();   // 第一件事：先给用户一个窗口看，填补远程配置拉取/缓存清理期间的空窗期
     if (store.get('autoLaunch')) {
       app.setLoginItemSettings({ openAtLogin: true });
     }
