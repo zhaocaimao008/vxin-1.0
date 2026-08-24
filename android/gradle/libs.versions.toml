@@ -24,6 +24,7 @@ googleServices = "4.4.2"
 firebaseBom = "33.5.1"
 getui = "3.2.15.0"
 junit = "4.13.2"
+lottieCompose = "6.4.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -58,6 +59,7 @@ webrtc = { group = "io.github.webrtc-sdk", name = "android", version.ref = "webr
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging-ktx" }
 getui-sdk = { group = "com.getui", name = "gtsdk", version.ref = "getui" }
+lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", version.ref = "lottieCompose" }
 
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 

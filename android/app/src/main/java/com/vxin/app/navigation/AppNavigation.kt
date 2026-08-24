@@ -25,6 +25,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -39,6 +40,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.vxin.app.R
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.vxin.app.core.auth.AuthState
 import com.vxin.app.core.auth.SessionManager
 import com.vxin.app.core.update.UpdateChecker
@@ -171,16 +177,29 @@ private object Routes {
     fun inviteMembers(conversationId: String) = "inviteMembers/$conversationId"
 }
 
+// 品牌启动动画最短展示时长：即便 SessionManager 会话恢复很快（缓存 token + 快网），
+// 也保证 V信 品牌动画的核心内容（Logo 出现→标题→标语，0~1.4s 内完成，见
+// brand/vxin/README.md 动画时序）完整播放一遍，不因秒过而"一闪而过"。
+// 会话恢复更慢时，不受此值限制——SplashScreen 会随 authState 保持展示，
+// 动画本身在 1.4s~3.0s 区间设计为"保持最终状态"，正好覆盖这段等待。
+private const val MIN_SPLASH_DURATION_MS = 1800L
+
 @Composable
 fun AppNavigation(appViewModel: AppViewModel = hiltViewModel()) {
     val authState by appViewModel.authState.collectAsStateWithLifecycle()
     val features by appViewModel.features.collectAsStateWithLifecycle()
     val unreadTotal by appViewModel.unreadTotal.collectAsStateWithLifecycle()
 
-    when (authState) {
-        is AuthState.Loading -> SplashScreen()
-        is AuthState.Authenticated -> MainFlow(features, unreadTotal)
-        is AuthState.Unauthenticated -> AuthFlow()
+    var minSplashElapsed by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(MIN_SPLASH_DURATION_MS)
+        minSplashElapsed = true
+    }
+
+    when {
+        authState is AuthState.Loading || !minSplashElapsed -> SplashScreen()
+        authState is AuthState.Authenticated -> MainFlow(features, unreadTotal)
+        else -> AuthFlow()
     }
 }
 
@@ -489,40 +508,66 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0, appViewModel: App
     }
 }
 
+/**
+ * V信 品牌启动页：黑底 + 金色 Lottie 动画（brand/vxin/lottie/vxin_intro.json，180帧@60fps/3s，
+ * res/raw/vxin_intro.json）。仅在 AuthState.Loading 期间展示，不改变、不延迟 Session 恢复
+ * /Firebase/个推/Socket 的初始化顺序——这些均已在 VxinApp.onCreate / SessionManager.init
+ * 中独立于 UI 运行，本屏幕只决定"这段等待期间画面上显示什么"。
+ * 动画资源加载失败（compositionResult.isFailure，如 JSON 损坏）时兜底为原纯色+文字启动态，
+ * 保证任何情况下都不会白屏/崩溃。
+ */
 @Composable
 private fun SplashScreen() {
-    val brandGreen = androidx.compose.ui.graphics.Color(0xFF16C55B)
+    val brandBlack = androidx.compose.ui.graphics.Color(0xFF000000)
     val white = androidx.compose.ui.graphics.Color.White
+    val compositionResult = rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.vxin_intro))
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(brandGreen),
+            .background(brandBlack),
         contentAlignment = Alignment.Center,
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            // v信 Logo
-            Text(
-                text = "v信",
-                color = white,
-                style = androidx.compose.material3.MaterialTheme.typography.displaySmall,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            // 品牌标语
-            Text(
-                text = "安全 · 私密 · 畅聊",
-                color = white.copy(alpha = 0.72f),
-                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-            )
-            Spacer(modifier = Modifier.height(44.dp))
-            // 加载指示器
-            CircularProgressIndicator(
-                color = white.copy(alpha = 0.65f),
-                strokeWidth = 2.dp,
-                modifier = Modifier.size(22.dp),
-            )
+        if (compositionResult.isFailure) {
+            // Lottie 加载失败兜底：保留原有纯色+文字启动态
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text(
+                    text = "v信",
+                    color = white,
+                    style = androidx.compose.material3.MaterialTheme.typography.displaySmall,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "安全 · 私密 · 畅聊",
+                    color = white.copy(alpha = 0.72f),
+                    style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                )
+                Spacer(modifier = Modifier.height(44.dp))
+                CircularProgressIndicator(
+                    color = white.copy(alpha = 0.65f),
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+        } else {
+            val composition = compositionResult.value
+            if (composition != null) {
+                val progress by animateLottieCompositionAsState(
+                    composition = composition,
+                    iterations = 1,
+                    speed = 1f,
+                )
+                LottieAnimation(
+                    composition = composition,
+                    progress = { progress },
+                    modifier = Modifier.size(240.dp),
+                )
+            }
+            // composition == null 且未失败：JSON 正在解析中（<1帧，5KB 体积极快），
+            // 此时保持纯黑背景即可，避免与最终动画帧之间出现内容闪烁。
         }
     }
 }

@@ -125,6 +125,9 @@ dependencies {
     // Image loading
     implementation(libs.coil.compose)
 
+    // 品牌启动动画（V信 Brand System）
+    implementation(libs.lottie.compose)
+
     // 扫码（Google Code Scanner，按需下载模块，免相机权限）
     implementation(libs.play.services.code.scanner)
 
