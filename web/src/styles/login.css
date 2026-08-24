@@ -1,15 +1,15 @@
 /* ================================================================
-   V信 登录/注册页 — 精修 Color/Theme 对齐最终参考图
+   V信 登录/注册页 — 黑金科技品牌（2026-08-24 品牌视觉统一）
 
-   品牌绿：#07C160 (hover: #06AD56, pressed: #059B4D)
-   页面背景：#F7F8FA
-   文字：主标题 #1F2329, 副标题 #5F6670, 辅助 #8A8F98, 占位 #AEB4BC
-   边框：#E3E7EB, 分割线 #EEF0F2
-   危险色：#FF4D4F
+   品牌金：#FFD700 (hover: #FFC72C, pressed: #E0A800)
+   背景：#000000 / 卡片 #0d0d0d / 输入区 #141414
+   文字：主标题 #FFFFFF, 副标题/正文 #CCCCCC, 占位 #6B6459
+   边框：#2A2A2A
+   危险色：#FF4D4F（功能色，不随品牌改变）
 
-   Dark Mode 覆盖见文件末尾 body.dark-mode .auth-page 区块，
-   与 styles/windows/tokens.css 的 dark 取值保持一致
-   （bg #15171A、surface #202327、text #F2F3F5/#A9AFB7、border #32363D）。
+   仅本文件（Login.jsx / Register.jsx 专用），不影响 App 内其余页面的
+   --color-primary（那是全局 token，聊天/设置等页面仍是 v信绿，按需求
+   只统一登录/注册页的品牌视觉）。
 ================================================================ */
 
 .auth-page {
@@ -18,7 +18,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #F7F8FA;
+  background: #000000;
   position: relative;
   overflow-x: hidden;
   overflow-y: auto;
@@ -41,7 +41,7 @@
 .electron-app .auth-top-logo { display: none; }
 .auth-top-logo-icon { width: 26px; height: 26px; display: flex; }
 .auth-top-logo-icon svg { width: 100%; height: 100%; }
-.auth-top-logo-text { font-size: 18px; font-weight: 700; color: #1F2329; letter-spacing: -0.3px; }
+.auth-top-logo-text { font-size: 18px; font-weight: 700; color: #FFFFFF; letter-spacing: -0.3px; }
 
 /* ── 分屏容器 ── */
 .auth-split {
@@ -51,10 +51,10 @@
   max-width: 1440px;
   min-height: 640px;
   display: flex;
-  background: #FFFFFF;
+  background: #0d0d0d;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 24px 64px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.06);
+  box-shadow: 0 24px 64px rgba(0,0,0,.55), 0 0 0 1px rgba(255,215,0,.06), 0 4px 12px rgba(0,0,0,.4);
   animation: authIn 0.32s cubic-bezier(.22,.68,0,1.2) both;
 }
 @keyframes authIn {
@@ -62,7 +62,7 @@
   to   { opacity: 1; transform: translateY(0)  scale(1);    }
 }
 
-/* ── 左侧品牌插画栏：白底+淡淡薄荷绿渐变 ── */
+/* ── 左侧品牌插画栏：黑金科技背景（深黑渐变 + 极细金色科技线 + 柔光）── */
 .auth-split-left {
   flex: 0 0 45%;
   position: relative;
@@ -71,16 +71,20 @@
   align-items: center;
   justify-content: center;
   padding: 40px;
-  background: linear-gradient(135deg, #EDF9F2 0%, #F3FBF6 25%, #F8FCFA 50%, #FBFDFC 75%, #FFFFFF 100%);
+  background:
+    repeating-linear-gradient(115deg, rgba(255,215,0,.035) 0px, rgba(255,215,0,.035) 1px, transparent 1px, transparent 64px),
+    repeating-linear-gradient(25deg, rgba(255,215,0,.025) 0px, rgba(255,215,0,.025) 1px, transparent 1px, transparent 84px),
+    radial-gradient(ellipse 80% 55% at 50% 12%, rgba(255,193,7,.12) 0%, transparent 62%),
+    linear-gradient(160deg, #050505 0%, #0d0b08 45%, #0a0908 70%, #000000 100%);
   overflow: hidden;
 }
-/* 装饰波浪线（伪元素，纯 CSS，不引外部图片） */
+/* 装饰光晕（伪元素，纯 CSS，不引外部图片） */
 .auth-split-left::before {
   content: '';
   position: absolute;
   left: -10%; bottom: -15%;
   width: 130%; height: 55%;
-  background: radial-gradient(ellipse at bottom, rgba(7,193,96,.12) 0%, transparent 70%);
+  background: radial-gradient(ellipse at bottom, rgba(255,193,7,.10) 0%, transparent 70%);
   pointer-events: none;
 }
 .auth-split-left::after {
@@ -89,16 +93,16 @@
   right: -60px; top: -60px;
   width: 220px; height: 220px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(7,193,96,.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255,193,7,.09) 0%, transparent 70%);
   pointer-events: none;
 }
-/* 左下角点阵装饰：opacity 0.18～0.30 */
+/* 左下角金色粒子点阵：opacity 0.18～0.30 */
 .auth-split-left-dots {
   position: absolute;
   left: -8%; bottom: -6%;
   width: 70%; height: 55%;
   pointer-events: none;
-  background-image: radial-gradient(circle, rgba(7,193,96,.30) 1.4px, transparent 1.6px);
+  background-image: radial-gradient(circle, rgba(255,215,0,.32) 1.4px, transparent 1.6px);
   background-size: 16px 16px;
   -webkit-mask-image: radial-gradient(ellipse 100% 90% at 15% 85%, #000 0%, #000 35%, transparent 72%);
   mask-image: radial-gradient(ellipse 100% 90% at 15% 85%, #000 0%, #000 35%, transparent 72%);
@@ -113,7 +117,7 @@
   padding: 48px 56px;
   overflow-y: auto;
   min-width: 0;
-  background: #FFFFFF;
+  background: #0d0d0d;
 }
 
 /* 窄窗口（如 Electron 最小尺寸附近）收起左侧插画栏，保证表单可用 */
@@ -148,7 +152,7 @@
   position: relative;
   z-index: 1;
   width: 100%; height: 100%;
-  filter: drop-shadow(0 6px 16px rgba(255,183,0,.28));
+  filter: drop-shadow(0 6px 20px rgba(255,215,0,.35));
 }
 .auth-brand-logo {
   display: inline-flex;
@@ -162,12 +166,12 @@
   position: relative;
   z-index: 1;
   width: 100%; height: 100%;
-  filter: drop-shadow(0 4px 12px rgba(255,183,0,.20));
+  filter: drop-shadow(0 4px 16px rgba(255,215,0,.28));
 }
 .auth-brand-name {
   font-size: 30px;
   font-weight: 700;
-  color: #1F2329;
+  color: #FFFFFF;
   margin-bottom: 8px;
   letter-spacing: -0.5px;
   line-height: 1.1;
@@ -175,7 +179,7 @@
 .auth-brand-name--brand { font-size: 30px; }
 .auth-brand-desc {
   font-size: 14px;
-  color: #8A8F98;
+  color: #CCCCCC;
   letter-spacing: .3px;
 }
 
@@ -188,7 +192,7 @@
 .auth-tab {
   font-size: 16px;
   font-weight: 600;
-  color: #8A8F98;
+  color: #8A8478;
   padding-bottom: 8px;
   position: relative;
   cursor: pointer;
@@ -196,56 +200,56 @@
   background: transparent;
   border: none;
 }
-.auth-tab.active { color: #07C160; }
+.auth-tab.active { color: #FFD700; }
 .auth-tab.active::after {
   content: '';
   position: absolute;
   left: 0; bottom: 0;
   width: 32px; height: 2px;
-  background: #07C160;
+  background: #FFD700;
   border-radius: 1px;
 }
 
 /* ── 最近登录 ── */
 .auth-accounts {
-  background: #F7F8FA;
+  background: #141414;
   border-radius: 14px;
   margin-bottom: 16px;
   overflow: hidden;
-  border: 1px solid #E3E7EB;
+  border: 1px solid #2A2A2A;
 }
 .auth-accounts-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 10px 16px;
-  border-bottom: 1px solid #EEF0F2;
+  border-bottom: 1px solid #232323;
 }
-.auth-accounts-title { font-size: 11px; color: #8A8F98; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; }
-.auth-accounts-count  { font-size: 11px; color: #8A8F98; }
-.auth-account-row { display: flex; align-items: center; border-bottom: 1px solid #EEF0F2; }
+.auth-accounts-title { font-size: 11px; color: #8A8478; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; }
+.auth-accounts-count  { font-size: 11px; color: #8A8478; }
+.auth-account-row { display: flex; align-items: center; border-bottom: 1px solid #232323; }
 .auth-account-row:last-child { border-bottom: none; }
 .auth-account-btn {
   flex: 1; display: flex; align-items: center; gap: 12px;
   padding: 11px 16px; text-align: left; cursor: pointer;
   transition: background 120ms ease; min-width: 0;
 }
-.auth-account-btn:hover { background: rgba(7,193,96,.06); }
+.auth-account-btn:hover { background: rgba(255,215,0,.07); }
 .auth-account-avatar {
   width: 36px; height: 36px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #07C160, #059B4D);
-  color: #FFFFFF;
+  background: linear-gradient(135deg, #FFD700, #E0A800);
+  color: #000000;
   display: flex; align-items: center; justify-content: center;
   font-size: 15px; font-weight: 700;
   flex-shrink: 0;
 }
 .auth-account-info { min-width: 0; flex: 1; }
-.auth-account-name { display: block; font-size: 14px; color: #1F2329; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.auth-account-id   { display: block; font-size: 11px; color: #8A8F98; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auth-account-name { display: block; font-size: 14px; color: #FFFFFF; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auth-account-id   { display: block; font-size: 11px; color: #8A8478; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .auth-account-remove {
   width: 40px; height: 44px; display: flex; align-items: center; justify-content: center;
-  color: #8A8F98; font-size: 13px; cursor: pointer;
+  color: #8A8478; font-size: 13px; cursor: pointer;
   transition: color 120ms; flex-shrink: 0;
 }
 .auth-account-remove:hover { color: #FF4D4F; }
@@ -272,84 +276,84 @@
   gap: 10px;
   height: 52px;
   padding: 0 16px;
-  background: #FFFFFF;
-  border: 1px solid #E3E7EB;
+  background: #141414;
+  border: 1px solid #2A2A2A;
   border-radius: 12px;
   box-sizing: border-box;
   transition: border-color 120ms, background 120ms, box-shadow 120ms;
 }
 .auth-field.focused .auth-field-input-wrap {
-  border-color: #07C160;
-  background: #FFFFFF;
-  box-shadow: 0 0 0 2px rgba(7,193,96,0.08);
+  border-color: #FFD700;
+  background: #171717;
+  box-shadow: 0 0 0 2px rgba(255,215,0,0.12);
 }
 .auth-field-icon {
   width: 18px; height: 18px;
-  color: #8A8F98;
+  color: #8A8478;
   flex-shrink: 0;
   transition: color 120ms;
 }
-.auth-field.focused .auth-field-icon { color: #07C160; }
+.auth-field.focused .auth-field-icon { color: #FFD700; }
 .auth-field-input {
   flex: 1;
   font-size: 15px;
-  color: #1F2329;
+  color: #FFFFFF;
   background: transparent;
   border: none; outline: none;
   min-width: 0;
   font-family: inherit;
-  caret-color: #07C160;
+  caret-color: #FFD700;
 }
-.auth-field-input::placeholder { color: #AEB4BC; }
+.auth-field-input::placeholder { color: #6B6459; }
 
-/* 覆盖浏览器 autofill 蓝灰背景，保持白色 */
+/* 覆盖浏览器 autofill 蓝灰背景，保持与输入框一致的深色 */
 .auth-field-input:-webkit-autofill,
 .auth-field-input:-webkit-autofill:hover,
 .auth-field-input:-webkit-autofill:focus,
 .auth-field-input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px #FFFFFF inset !important;
-  -webkit-text-fill-color: #1F2329 !important;
-  caret-color: #07C160 !important;
+  -webkit-box-shadow: 0 0 0 30px #141414 inset !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+  caret-color: #FFD700 !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 
 /* 手机号国家区号（静态展示，当前仅支持中国区号，非可切换下拉） */
 .auth-field-cc {
   display: flex; align-items: center; gap: 3px;
-  font-size: 14px; color: #5F6670;
-  flex-shrink: 0; padding-left: 8px; border-left: 1px solid #E3E7EB;
+  font-size: 14px; color: #CCCCCC;
+  flex-shrink: 0; padding-left: 8px; border-left: 1px solid #2A2A2A;
 }
 
 /* 密码显示切换 */
 .auth-pwd-toggle {
   background: none; border: none; cursor: pointer; padding: 0;
-  color: #8A8F98; display: flex; align-items: center;
+  color: #8A8478; display: flex; align-items: center;
   flex-shrink: 0; transition: color 120ms;
 }
-.auth-pwd-toggle:hover { color: #5F6670; }
+.auth-pwd-toggle:hover { color: #CCCCCC; }
 
 /* 获取验证码按钮 */
 .auth-verify-code-btn {
   background: none; border: none; cursor: pointer; padding: 0;
-  color: #07C160; font-size: 14px; font-weight: 500;
+  color: #FFD700; font-size: 14px; font-weight: 500;
   flex-shrink: 0; transition: opacity 120ms;
   white-space: nowrap;
 }
 .auth-verify-code-btn:hover:not(:disabled) { opacity: 0.8; }
 .auth-verify-code-btn:disabled {
-  color: #AEB4BC;
+  color: #5A544A;
   cursor: not-allowed;
   opacity: 0.6;
 }
 
-/* ── 错误提示 ── */
+/* ── 错误提示（功能色，不随品牌改变） ── */
 .auth-error {
   display: flex; align-items: center; gap: 8px;
   padding: 10px 14px;
-  background: #FFF0F0;
-  border: 1px solid rgba(255,77,79,.22);
+  background: rgba(255,77,79,.12);
+  border: 1px solid rgba(255,77,79,.3);
   border-radius: 10px;
-  color: #FF4D4F;
+  color: #FF8A8A;
   font-size: 13px;
   margin-bottom: 14px;
   animation: authErrIn .18s ease;
@@ -367,42 +371,44 @@
 }
 .auth-remember {
   display: flex; align-items: center; gap: 7px;
-  font-size: 13px; color: #5F6670;
+  font-size: 13px; color: #CCCCCC;
   cursor: pointer; user-select: none; transition: color 120ms;
 }
-.auth-remember:hover { color: #1F2329; }
+.auth-remember:hover { color: #FFFFFF; }
 .auth-remember-box { flex-shrink: 0; }
 
-/* ── 登录/注册按钮 ── */
+/* ── 登录/注册按钮：黑底金字（非纯绿实心，走描边+柔光，呼应黑金科技感）── */
 .auth-submit {
   width: 100%;
   height: 48px;
-  background: #07C160;
-  color: #FFFFFF;
+  background: #141414;
+  color: #FFD700;
   border-radius: 24px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  border: none;
-  transition: background 120ms, transform 120ms, box-shadow 120ms;
+  border: 1.5px solid #FFD700;
+  transition: background 120ms, transform 120ms, box-shadow 120ms, border-color 120ms;
   display: flex; align-items: center; justify-content: center;
   letter-spacing: .3px;
-  box-shadow: 0 4px 16px rgba(7,193,96,.30);
+  box-shadow: 0 4px 16px rgba(255,215,0,.16);
 }
 .auth-submit:hover:not(:disabled) {
-  background: #06AD56;
+  background: #1a1a1a;
+  border-color: #FFC72C;
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(7,193,96,.38);
+  box-shadow: 0 8px 24px rgba(255,215,0,.26);
 }
 .auth-submit:active:not(:disabled) {
-  background: #059B4D;
+  background: #0a0a0a;
   transform: translateY(0);
 }
 .auth-submit:disabled {
-  background: #E3E7EB;
+  background: #141414;
+  border-color: #3A3A3A;
   box-shadow: none;
   cursor: not-allowed;
-  color: #AEB4BC;
+  color: #5A544A;
   opacity: 1;
 }
 
@@ -410,8 +416,8 @@
 .auth-spinner {
   display: inline-block;
   width: 20px; height: 20px;
-  border: 2px solid rgba(255,255,255,.35);
-  border-top-color: #FFFFFF;
+  border: 2px solid rgba(255,215,0,.3);
+  border-top-color: #FFD700;
   border-radius: 50%;
   animation: authSpin .65s linear infinite;
 }
@@ -422,10 +428,10 @@
   text-align: center;
   margin-top: 20px;
   font-size: 13px;
-  color: #5F6670;
+  color: #CCCCCC;
 }
-.auth-link { color: #07C160; font-weight: 500; text-decoration: none; transition: color 120ms; }
-.auth-link:hover { color: #06AD56; text-decoration: none; }
+.auth-link { color: #FFD700; font-weight: 500; text-decoration: none; transition: color 120ms; }
+.auth-link:hover { color: #FFC72C; text-decoration: none; }
 
 /* ── 用户协议：真实可勾选（对齐 34 图，未勾选禁止提交），链接暂无落地页故不跳转 ── */
 .auth-agreement-row {
@@ -440,16 +446,16 @@
   appearance: none; -webkit-appearance: none;
   width: 16px; height: 16px;
   border-radius: 50%;
-  border: 1.5px solid #E3E7EB;
-  background: #FFFFFF;
+  border: 1.5px solid #3A3A3A;
+  background: #141414;
   cursor: pointer;
   position: relative;
   transition: background 120ms, border-color 120ms;
 }
 .auth-remember-box:checked,
 .auth-agreement-box:checked {
-  background: #07C160;
-  border-color: #07C160;
+  background: #FFD700;
+  border-color: #FFD700;
 }
 .auth-remember-box:checked::after,
 .auth-agreement-box:checked::after {
@@ -457,50 +463,50 @@
   position: absolute;
   left: 4.5px; top: 1.5px;
   width: 4px; height: 7px;
-  border: solid #FFFFFF;
+  border: solid #000000;
   border-width: 0 1.5px 1.5px 0;
   transform: rotate(45deg);
 }
 .auth-agreement {
   font-size: 12px;
-  color: #8A8F98;
+  color: #8A8478;
   line-height: 1.6;
   margin: 0;
 }
-.auth-agreement a { color: #07C160; text-decoration: none; }
-.auth-agreement a:hover { color: #06AD56; }
+.auth-agreement a { color: #FFD700; text-decoration: none; }
+.auth-agreement a:hover { color: #FFC72C; }
 
 /* ── 服务器切换（Electron）── */
 .auth-server { margin-top: 20px; text-align: center; }
 .auth-server-toggle {
   background: none; border: none;
-  color: #8A8F98; font-size: 12px;
+  color: #8A8478; font-size: 12px;
   cursor: pointer; padding: 6px 10px;
   border-radius: 6px;
   transition: color 120ms, background 120ms;
 }
-.auth-server-toggle:hover { color: #5F6670; background: #F7F8FA; }
+.auth-server-toggle:hover { color: #CCCCCC; background: #141414; }
 .auth-server-panel {
-  background: #F7F8FA;
-  border: 1px solid #E3E7EB;
+  background: #141414;
+  border: 1px solid #2A2A2A;
   border-radius: 12px;
   padding: 16px;
   text-align: left;
   animation: authIn .2s ease;
 }
-.auth-server-title { font-size: 12px; color: #5F6670; margin-bottom: 8px; }
+.auth-server-title { font-size: 12px; color: #CCCCCC; margin-bottom: 8px; }
 .auth-server-input {
   width: 100%; box-sizing: border-box;
   padding: 10px 12px;
   font-size: 13px;
-  background: #FFFFFF;
-  border: 1px solid #E3E7EB;
+  background: #0d0d0d;
+  border: 1px solid #2A2A2A;
   border-radius: 8px;
-  color: #1F2329; outline: none;
+  color: #FFFFFF; outline: none;
   font-family: inherit;
 }
-.auth-server-input:focus { border-color: #07C160; box-shadow: 0 0 0 2px rgba(7,193,96,0.08); }
-.auth-server-input::placeholder { color: #AEB4BC; }
+.auth-server-input:focus { border-color: #FFD700; box-shadow: 0 0 0 2px rgba(255,215,0,0.12); }
+.auth-server-input::placeholder { color: #6B6459; }
 .auth-server-result { font-size: 12px; margin-top: 6px; }
 .auth-server-btns { display: flex; gap: 8px; margin-top: 12px; }
 .auth-server-btn {
@@ -510,185 +516,120 @@
   cursor: pointer; border: none;
   transition: background 120ms, opacity 120ms;
 }
-.auth-server-btn--cancel { background: #E3E7EB; color: #5F6670; }
-.auth-server-btn--cancel:hover { background: #D4D8DD; }
-.auth-server-btn--save { background: #07C160; color: #FFFFFF; }
-.auth-server-btn--save:hover { background: #06AD56; }
+.auth-server-btn--cancel { background: #2A2A2A; color: #CCCCCC; }
+.auth-server-btn--cancel:hover { background: #333333; }
+.auth-server-btn--save { background: #FFD700; color: #000000; }
+.auth-server-btn--save:hover { background: #FFC72C; }
 .auth-server-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .auth-server-cancel {
   display: block; width: 100%;
   margin-top: 8px; background: none; border: none;
-  color: #8A8F98; font-size: 12px;
+  color: #8A8478; font-size: 12px;
   cursor: pointer; padding: 6px;
   transition: color 120ms;
 }
-.auth-server-cancel:hover { color: #5F6670; }
+.auth-server-cancel:hover { color: #CCCCCC; }
 
 /* ── 语言切换（页面右上角，真实 i18n） ── */
 .auth-lang-switch { position: absolute; top: 20px; right: 24px; z-index: 5; }
 .auth-lang-btn {
   display: inline-flex; align-items: center; gap: 4px;
   background: none; border: none; cursor: pointer;
-  font-size: 13px; color: #5F6670;
+  font-size: 13px; color: #CCCCCC;
   padding: 6px 8px; border-radius: 6px;
 }
-.auth-lang-btn:hover { background: #F7F8FA; color: #1F2329; }
+.auth-lang-btn:hover { background: #141414; color: #FFFFFF; }
 .auth-lang-menu {
   position: absolute; top: calc(100% + 4px); right: 0;
-  background: #FFFFFF; border: 1px solid #E3E7EB;
-  border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.10);
+  background: #141414; border: 1px solid #2A2A2A;
+  border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.5);
   overflow: hidden; min-width: 120px;
 }
 .auth-lang-item {
   display: block; width: 100%; text-align: left;
   padding: 9px 14px; background: none; border: none; cursor: pointer;
-  font-size: 13px; color: #1F2329;
+  font-size: 13px; color: #FFFFFF;
 }
-.auth-lang-item:hover { background: rgba(7,193,96,.06); }
-.auth-lang-item.active { color: #07C160; font-weight: 600; }
+.auth-lang-item:hover { background: rgba(255,215,0,.08); }
+.auth-lang-item.active { color: #FFD700; font-weight: 600; }
 
 /* ── 页脚（仅 Web，Electron 无浏览器地址栏概念，隐藏） ── */
 .auth-page-footer {
   position: relative; z-index: 1;
   text-align: center; margin-top: 20px;
-  font-size: 12px; color: #8A8F98;
+  font-size: 12px; color: #8A8478;
 }
-.auth-page-footer a { color: #8A8F98; text-decoration: none; margin: 0 2px; }
-.auth-page-footer a:hover { color: #07C160; }
+.auth-page-footer a { color: #8A8478; text-decoration: none; margin: 0 2px; }
+.auth-page-footer a:hover { color: #FFD700; }
 
 /* ── auth-note (邀请码说明) ── */
 .auth-note {
   display: flex; align-items: flex-start; gap: 8px;
   margin-bottom: 16px; padding: 10px 14px;
-  background: #F1FBF5;
-  border: 1px solid rgba(7,193,96,.22);
+  background: rgba(255,215,0,.08);
+  border: 1px solid rgba(255,215,0,.22);
   border-radius: 10px;
   font-size: 13px; line-height: 1.6;
-  color: #5F6670;
+  color: #CCCCCC;
 }
 
 /* ================================================================
-   Dark Mode — 与 styles/windows/tokens.css 的 dark 调色板对齐：
-   bg #15171A / surface(卡片) #202327 / text-primary #F2F3F5 /
-   text-secondary #A9AFB7 / border #32363D / primary（暗色下提亮）#2BB86E
+   Dark Mode — 登录页本身已是黑金深色主题，与 App 内浏览偏好（亮/暗）
+   无关，切换 body.dark-mode 时保持同一套黑金视觉，不再回退成绿色。
+   （原先这里是一整套独立的绿色 dark 调色板，现改为与上方默认规则
+   一致，仅保留必须覆盖的少数选择器，避免不同暗色调之间打架。）
 ================================================================ */
-body.dark-mode .auth-page { background: #15171A; }
-body.dark-mode .auth-top-logo-text { color: #F2F3F5; }
+body.dark-mode .auth-page { background: #000000; }
+body.dark-mode .auth-top-logo-text { color: #FFFFFF; }
 
 body.dark-mode .auth-split {
-  background: #202327;
-  box-shadow: 0 24px 64px rgba(0,0,0,.45), 0 4px 12px rgba(0,0,0,.3);
+  background: #0d0d0d;
+  box-shadow: 0 24px 64px rgba(0,0,0,.6), 0 0 0 1px rgba(255,215,0,.06), 0 4px 12px rgba(0,0,0,.4);
 }
-body.dark-mode .auth-split-left {
-  background: linear-gradient(135deg, #17251C 0%, #182420 25%, #191F20 50%, #1A1D1F 75%, #202327 100%);
-}
-body.dark-mode .auth-split-left::before { background: radial-gradient(ellipse at bottom, rgba(43,184,110,.16) 0%, transparent 70%); }
-body.dark-mode .auth-split-left::after  { background: radial-gradient(circle, rgba(43,184,110,.12) 0%, transparent 70%); }
-body.dark-mode .auth-split-left-dots    { background-image: radial-gradient(circle, rgba(43,184,110,.30) 1.4px, transparent 1.6px); }
-body.dark-mode .auth-split-right { background: #202327; }
+body.dark-mode .auth-split-right { background: #0d0d0d; }
 
-body.dark-mode .auth-brand-name { color: #F2F3F5; }
-body.dark-mode .auth-brand-desc { color: #A9AFB7; }
+body.dark-mode .auth-brand-name { color: #FFFFFF; }
+body.dark-mode .auth-brand-desc { color: #CCCCCC; }
 
-body.dark-mode .auth-tab { color: #A9AFB7; }
-body.dark-mode .auth-tab.active { color: #2BB86E; }
-body.dark-mode .auth-tab.active::after { background: #2BB86E; }
+body.dark-mode .auth-tab { color: #8A8478; }
+body.dark-mode .auth-tab.active { color: #FFD700; }
+body.dark-mode .auth-tab.active::after { background: #FFD700; }
 
-body.dark-mode .auth-accounts { background: #292D32; border-color: #32363D; }
-body.dark-mode .auth-accounts-header { border-bottom-color: #32363D; }
-body.dark-mode .auth-accounts-title,
-body.dark-mode .auth-accounts-count { color: #A9AFB7; }
-body.dark-mode .auth-account-row { border-bottom-color: #32363D; }
-body.dark-mode .auth-account-btn:hover { background: rgba(43,184,110,.12); }
-body.dark-mode .auth-account-name { color: #F2F3F5; }
-body.dark-mode .auth-account-id { color: #A9AFB7; }
-body.dark-mode .auth-account-remove { color: #A9AFB7; }
-body.dark-mode .auth-account-remove:hover { color: #FF6B6B; }
+body.dark-mode .auth-account-btn:hover { background: rgba(255,215,0,.08); }
 
-body.dark-mode .auth-field-input-wrap {
-  background: #292D32;
-  border-color: #32363D;
-}
 body.dark-mode .auth-field.focused .auth-field-input-wrap {
-  border-color: #2BB86E;
-  background: #292D32;
-  box-shadow: 0 0 0 2px rgba(43,184,110,.16);
+  border-color: #FFD700;
+  box-shadow: 0 0 0 2px rgba(255,215,0,.14);
 }
-body.dark-mode .auth-field-icon { color: #A9AFB7; }
-body.dark-mode .auth-field.focused .auth-field-icon { color: #2BB86E; }
-body.dark-mode .auth-field-input { color: #F2F3F5; caret-color: #2BB86E; }
-body.dark-mode .auth-field-input::placeholder { color: #737A84; }
+body.dark-mode .auth-field.focused .auth-field-icon { color: #FFD700; }
+body.dark-mode .auth-field-input { caret-color: #FFD700; }
 body.dark-mode .auth-field-input:-webkit-autofill,
 body.dark-mode .auth-field-input:-webkit-autofill:hover,
 body.dark-mode .auth-field-input:-webkit-autofill:focus,
 body.dark-mode .auth-field-input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px #292D32 inset !important;
-  -webkit-text-fill-color: #F2F3F5 !important;
-  caret-color: #2BB86E !important;
-}
-body.dark-mode .auth-field-cc { color: #A9AFB7; border-left-color: #32363D; }
-body.dark-mode .auth-pwd-toggle { color: #A9AFB7; }
-body.dark-mode .auth-pwd-toggle:hover { color: #F2F3F5; }
-body.dark-mode .auth-verify-code-btn:disabled { color: #5A5E66; }
-
-body.dark-mode .auth-error {
-  background: rgba(255,107,107,.12);
-  border-color: rgba(255,107,107,.3);
-  color: #FF8A8A;
+  caret-color: #FFD700 !important;
 }
 
-body.dark-mode .auth-remember { color: #A9AFB7; }
-body.dark-mode .auth-remember:hover { color: #F2F3F5; }
-body.dark-mode .auth-remember-box,
-body.dark-mode .auth-agreement-box {
-  border-color: #4A4F58;
-  background: #292D32;
-}
 body.dark-mode .auth-remember-box:checked,
 body.dark-mode .auth-agreement-box:checked {
-  background: #2BB86E;
-  border-color: #2BB86E;
+  background: #FFD700;
+  border-color: #FFD700;
 }
-body.dark-mode .auth-agreement { color: #A9AFB7; }
 body.dark-mode .auth-agreement a,
-body.dark-mode .auth-link { color: #2BB86E; }
+body.dark-mode .auth-link { color: #FFD700; }
 body.dark-mode .auth-agreement a:hover,
-body.dark-mode .auth-link:hover { color: #5FCC8E; }
+body.dark-mode .auth-link:hover { color: #FFC72C; }
 
-body.dark-mode .auth-submit { background: #2BB86E; box-shadow: 0 4px 16px rgba(43,184,110,.28); }
-body.dark-mode .auth-submit:hover:not(:disabled) { background: #5FCC8E; box-shadow: 0 8px 24px rgba(43,184,110,.34); }
-body.dark-mode .auth-submit:active:not(:disabled) { background: #07C160; }
-body.dark-mode .auth-submit:disabled { background: #32363D; color: #5A5E66; }
+body.dark-mode .auth-submit { background: #141414; border-color: #FFD700; color: #FFD700; box-shadow: 0 4px 16px rgba(255,215,0,.16); }
+body.dark-mode .auth-submit:hover:not(:disabled) { background: #1a1a1a; border-color: #FFC72C; box-shadow: 0 8px 24px rgba(255,215,0,.26); }
+body.dark-mode .auth-submit:active:not(:disabled) { background: #0a0a0a; }
+body.dark-mode .auth-submit:disabled { background: #141414; border-color: #3A3A3A; color: #5A544A; }
 
-body.dark-mode .auth-footer { color: #A9AFB7; }
+body.dark-mode .auth-server-input:focus { border-color: #FFD700; box-shadow: 0 0 0 2px rgba(255,215,0,.14); }
+body.dark-mode .auth-server-btn--save { background: #FFD700; color: #000000; }
+body.dark-mode .auth-server-btn--save:hover { background: #FFC72C; }
 
-body.dark-mode .auth-server-toggle { color: #A9AFB7; }
-body.dark-mode .auth-server-toggle:hover { color: #F2F3F5; background: #292D32; }
-body.dark-mode .auth-server-panel { background: #292D32; border-color: #32363D; }
-body.dark-mode .auth-server-title { color: #A9AFB7; }
-body.dark-mode .auth-server-input { background: #1B1E22; border-color: #32363D; color: #F2F3F5; }
-body.dark-mode .auth-server-input::placeholder { color: #737A84; }
-body.dark-mode .auth-server-input:focus { border-color: #2BB86E; box-shadow: 0 0 0 2px rgba(43,184,110,.16); }
-body.dark-mode .auth-server-btn--cancel { background: #32363D; color: #A9AFB7; }
-body.dark-mode .auth-server-btn--cancel:hover { background: #3A3F47; }
-body.dark-mode .auth-server-btn--save { background: #2BB86E; color: #15171A; }
-body.dark-mode .auth-server-btn--save:hover { background: #5FCC8E; }
-body.dark-mode .auth-server-cancel { color: #A9AFB7; }
-body.dark-mode .auth-server-cancel:hover { color: #F2F3F5; }
+body.dark-mode .auth-lang-item.active { color: #FFD700; }
+body.dark-mode .auth-lang-item:hover { background: rgba(255,215,0,.1); }
 
-body.dark-mode .auth-lang-btn { color: #A9AFB7; }
-body.dark-mode .auth-lang-btn:hover { background: #292D32; color: #F2F3F5; }
-body.dark-mode .auth-lang-menu { background: #202327; border-color: #32363D; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
-body.dark-mode .auth-lang-item { color: #F2F3F5; }
-body.dark-mode .auth-lang-item:hover { background: rgba(43,184,110,.14); }
-body.dark-mode .auth-lang-item.active { color: #2BB86E; }
-
-body.dark-mode .auth-page-footer { color: #A9AFB7; }
-body.dark-mode .auth-page-footer a { color: #A9AFB7; }
-body.dark-mode .auth-page-footer a:hover { color: #2BB86E; }
-
-body.dark-mode .auth-note {
-  background: rgba(43,184,110,.10);
-  border-color: rgba(43,184,110,.28);
-  color: #A9AFB7;
-}
+body.dark-mode .auth-page-footer a:hover { color: #FFD700; }

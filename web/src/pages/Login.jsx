@@ -150,7 +150,7 @@ export default function Login() {
         </div>
         <div className="auth-split-right">
       <div className="auth-container">
-        <h1 className="auth-brand-name" style={{ fontSize: 24, textAlign: 'center', marginBottom: 6 }}>欢迎登录 <span style={{ color: 'var(--color-primary, #07C160)' }}>v信</span></h1>
+        <h1 className="auth-brand-name" style={{ fontSize: 24, textAlign: 'center', marginBottom: 6 }}>欢迎登录 <span style={{ color: '#FFD700' }}>v信</span></h1>
         <p className="auth-brand-desc" style={{ textAlign: 'center', marginBottom: 24 }}>安全连接每一刻，畅享沟通新体验</p>
 
         {/* 登录方式切换：手机登录 | v信登录 */}
