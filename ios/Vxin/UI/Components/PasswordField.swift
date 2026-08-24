@@ -15,13 +15,15 @@ struct PasswordField: View {
         HStack(spacing: 8) {
             Group {
                 if visible {
-                    TextField(placeholder, text: $text)
+                    TextField("", text: $text, prompt: Text(placeholder).foregroundColor(.vxinAuthPlaceholder))
                         .textContentType(textContentType)
                 } else {
-                    SecureField(placeholder, text: $text)
+                    SecureField("", text: $text, prompt: Text(placeholder).foregroundColor(.vxinAuthPlaceholder))
                         .textContentType(textContentType)
                 }
             }
+            .foregroundColor(.white)
+            .tint(.vxinAuthGold)
             .focused($focused)
             .autocorrectionDisabled()
             .textInputAutocapitalization(.never)
@@ -33,7 +35,7 @@ struct PasswordField: View {
                 focused = true
             } label: {
                 Image(systemName: visible ? "eye.slash" : "eye")
-                    .foregroundColor(.vxinTextSecondary)
+                    .foregroundColor(.vxinAuthTextMuted)
             }
             .buttonStyle(.borderless)
             .accessibilityLabel(visible ? "隐藏密码" : "显示密码")
@@ -42,7 +44,7 @@ struct PasswordField: View {
         .frame(minHeight: 36)
         .background(
             RoundedRectangle(cornerRadius: VxinRadius.sm)
-                .stroke(Color.gray.opacity(0.4), lineWidth: 1)
+                .stroke(Color.vxinAuthBorder, lineWidth: 1)
         )
     }
 }

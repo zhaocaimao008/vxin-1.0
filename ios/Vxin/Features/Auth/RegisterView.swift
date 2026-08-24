@@ -11,19 +11,17 @@ struct RegisterView: View {
             VStack(spacing: 16) {
                 Spacer(minLength: 24)
 
-                ZStack {
-                    RoundedRectangle(cornerRadius: VxinRadius.lg, style: .continuous)
-                        .fill(LinearGradient(colors: [.vxinBrandLight, .vxinBrandDark],
-                                             startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .frame(width: 68, height: 68)
-                        .shadow(color: .vxinBrand.opacity(0.4), radius: 10, y: 5)
-                    Image(systemName: "bubble.left.and.bubble.right.fill")
-                        .font(.system(size: 28)).foregroundColor(.white)
-                }
-                .padding(.bottom, 4)
+                // 品牌 Logo：黑金标记（与 Web/Android 登录页同一套扁平化简版标记，2026-08-24 四端品牌统一）
+                VxinLogoMark()
+                    .frame(width: 68, height: 68)
+                    .padding(.bottom, 4)
                 Text("注册新账号")
                     .font(.title2.bold())
-                    .foregroundColor(.primary)
+                    .foregroundColor(.white)
+                    .padding(.bottom, 4)
+                Text("连接 · 沟通 · 未来")
+                    .font(.footnote)
+                    .foregroundColor(.vxinAuthTextSecondary)
                     .padding(.bottom, 12)
 
                 // 昵称：参考图未展示此字段，但后端 register() 强制要求 username，
@@ -35,7 +33,7 @@ struct RegisterView: View {
                     text: $vm.phone,
                     keyboardType: .phonePad,
                     accessibilityId: "register-phone-input",
-                    trailing: AnyView(Text("+86").foregroundColor(.vxinTextSecondary))
+                    trailing: AnyView(Text("+86").foregroundColor(.vxinAuthTextSecondary))
                 )
                 // 参考图中的「验证码 / 获取验证码」字段：后端当前没有注册短信验证码接口，
                 // 属于「参考图有、后端无」的情况，按规范不伪造，故不实现该字段。
@@ -60,31 +58,26 @@ struct RegisterView: View {
 
                 Button(action: vm.register) {
                     ZStack {
-                        if vm.loading { ProgressView().tint(.white) }
+                        if vm.loading { ProgressView().tint(.vxinAuthGold) }
                         else { Text("注册").bold() }
                     }
                     .frame(maxWidth: .infinity, minHeight: 50)
-                    .background(
-                        Group {
-                            if vm.canRegister && agreed {
-                                LinearGradient(colors: [.vxinBrandLight, .vxinBrandDark],
-                                               startPoint: .leading, endPoint: .trailing)
-                            } else {
-                                Color.vxinTextSecondary.opacity(0.35)
-                            }
-                        }
-                    )
-                    .foregroundColor(.white)
+                    .background(Color.vxinAuthSurface)
+                    .foregroundColor(vm.canRegister && agreed ? .vxinAuthGold : .vxinAuthPlaceholder)
                     .clipShape(RoundedRectangle(cornerRadius: VxinRadius.pill, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: VxinRadius.pill, style: .continuous)
+                            .strokeBorder(vm.canRegister && agreed ? Color.vxinAuthGold : Color.vxinAuthBorder, lineWidth: 1.5)
+                    )
                 }
                 .disabled(!vm.canRegister || !agreed)
                 .padding(.top, 8)
                 .accessibilityIdentifier("register-submit-btn")
 
                 HStack(spacing: 4) {
-                    Text("已有账号?").foregroundColor(.vxinTextSecondary)
+                    Text("已有账号?").foregroundColor(.vxinAuthTextSecondary)
                     Button("去登录") { dismiss() }
-                        .foregroundColor(.vxinBrand)
+                        .foregroundColor(.vxinAuthGold)
                         .fontWeight(.medium)
                 }
                 .font(.footnote)
@@ -94,7 +87,7 @@ struct RegisterView: View {
                     VxinRoundCheckbox(checked: $agreed, accessibilityId: "register-agreement-checkbox")
                     Text("我已阅读并同意《用户协议》和《隐私政策》")
                         .font(.caption2)
-                        .foregroundColor(.vxinTextSecondary)
+                        .foregroundColor(.vxinAuthTextSecondary)
                 }
                 .padding(.top, 4)
 
@@ -102,6 +95,10 @@ struct RegisterView: View {
             }
             .padding(.horizontal, 32)
         }
+        .background(Color.vxinAuthBg)
+        .scrollContentBackground(.hidden)
+        .toolbarBackground(Color.vxinAuthBg, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .navigationTitle("注册")
         .navigationBarTitleDisplayMode(.inline)
         .task { await vm.loadConfig() }

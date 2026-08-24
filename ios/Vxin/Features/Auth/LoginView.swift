@@ -25,30 +25,21 @@ struct LoginView: View {
                                 Text("返回")
                             }
                         }
-                        .foregroundColor(.vxinBrand)
+                        .foregroundColor(.vxinAuthGold)
                         Spacer()
                     }
                 }
                 Spacer(minLength: 32)
 
-                // 品牌 Logo：项目暂无独立可在内容区引用的 Logo 图片资源（只有 AppIcon），
-                // 沿用既有的品牌渐变徽章 + SF Symbol 方案，不从参考图截取 Logo。
-                ZStack {
-                    RoundedRectangle(cornerRadius: VxinRadius.xl, style: .continuous)
-                        .fill(LinearGradient(colors: [.vxinBrandLight, .vxinBrandDark],
-                                             startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .frame(width: 76, height: 76)
-                        .shadow(color: .vxinBrand.opacity(0.4), radius: 12, y: 6)
-                    Image(systemName: "bubble.left.and.bubble.right.fill")
-                        .font(.system(size: 32))
-                        .foregroundColor(.white)
-                }
+                // 品牌 Logo：黑金标记（与 Web/Android 登录页同一套扁平化简版标记，2026-08-24 四端品牌统一）
+                VxinLogoMark()
+                    .frame(width: 76, height: 76)
                 Text("v信")
                     .font(.system(size: VxinFontSize.displayLg, weight: .bold))
-                    .foregroundColor(.primary)
-                Text("连接世界 · 沟通无限")
+                    .foregroundColor(.white)
+                Text("连接 · 沟通 · 未来")
                     .font(.subheadline)
-                    .foregroundColor(.vxinTextSecondary)
+                    .foregroundColor(.vxinAuthTextSecondary)
                     .padding(.bottom, 20)
 
                 // 登录方式切换
@@ -57,9 +48,9 @@ struct LoginView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("手机登录")
                                 .font(.headline)
-                                .foregroundColor(vm.loginMode == .phone ? .vxinTextPrimary : .vxinTextSecondary)
+                                .foregroundColor(vm.loginMode == .phone ? .vxinAuthGold : .vxinAuthTextSecondary)
                             if vm.loginMode == .phone {
-                                Rectangle().fill(Color.vxinBrand).frame(width: 56, height: 2)
+                                Rectangle().fill(Color.vxinAuthGold).frame(width: 56, height: 2)
                             }
                         }
                     }
@@ -67,9 +58,9 @@ struct LoginView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("v信登录")
                                 .font(.headline)
-                                .foregroundColor(vm.loginMode == .vxin ? .vxinTextPrimary : .vxinTextSecondary)
+                                .foregroundColor(vm.loginMode == .vxin ? .vxinAuthGold : .vxinAuthTextSecondary)
                             if vm.loginMode == .vxin {
-                                Rectangle().fill(Color.vxinBrand).frame(width: 56, height: 2)
+                                Rectangle().fill(Color.vxinAuthGold).frame(width: 56, height: 2)
                             }
                         }
                     }
@@ -84,7 +75,7 @@ struct LoginView: View {
                         text: $vm.phone,
                         keyboardType: .phonePad,
                         accessibilityId: "login-phone-input",
-                        trailing: AnyView(Text("+86").foregroundColor(.vxinTextSecondary))
+                        trailing: AnyView(Text("+86").foregroundColor(.vxinAuthTextSecondary))
                     )
                 } else {
                     VxinAuthField(
@@ -102,12 +93,12 @@ struct LoginView: View {
                         VxinRoundCheckbox(checked: $rememberPhone, accessibilityId: "login-remember-checkbox")
                         Text(vm.loginMode == .phone ? "记住手机号" : "记住v信号")
                             .font(.footnote)
-                            .foregroundColor(.vxinTextSecondary)
+                            .foregroundColor(.vxinAuthTextSecondary)
                     }
                     Spacer()
                     NavigationLink("忘记密码?") { ForgotPasswordView() }
                         .font(.footnote)
-                        .foregroundColor(.vxinTextSecondary)
+                        .foregroundColor(.vxinAuthTextSecondary)
                 }
                 .padding(.top, 4)
 
@@ -121,31 +112,26 @@ struct LoginView: View {
 
                 Button(action: vm.login) {
                     ZStack {
-                        if vm.loading { ProgressView().tint(.white) }
+                        if vm.loading { ProgressView().tint(.vxinAuthGold) }
                         else { Text("登录").bold() }
                     }
                     .frame(maxWidth: .infinity, minHeight: 50)
-                    .background(
-                        Group {
-                            if vm.canLogin && agreed {
-                                LinearGradient(colors: [.vxinBrandLight, .vxinBrandDark],
-                                               startPoint: .leading, endPoint: .trailing)
-                            } else {
-                                Color.vxinTextSecondary.opacity(0.35)
-                            }
-                        }
-                    )
-                    .foregroundColor(.white)
+                    .background(Color.vxinAuthSurface)
+                    .foregroundColor(vm.canLogin && agreed ? .vxinAuthGold : .vxinAuthPlaceholder)
                     .clipShape(RoundedRectangle(cornerRadius: VxinRadius.pill, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: VxinRadius.pill, style: .continuous)
+                            .strokeBorder(vm.canLogin && agreed ? Color.vxinAuthGold : Color.vxinAuthBorder, lineWidth: 1.5)
+                    )
                 }
                 .disabled(!vm.canLogin || !agreed)
                 .padding(.top, 8)
                 .accessibilityIdentifier("login-submit-btn")
 
                 HStack(spacing: 4) {
-                    Text("还没有账号?").foregroundColor(.vxinTextSecondary)
+                    Text("还没有账号?").foregroundColor(.vxinAuthTextSecondary)
                     NavigationLink("立即注册") { RegisterView() }
-                        .foregroundColor(.vxinBrand)
+                        .foregroundColor(.vxinAuthGold)
                         .fontWeight(.medium)
                 }
                 .font(.footnote)
@@ -156,29 +142,36 @@ struct LoginView: View {
                     // 《用户协议》《隐私政策》暂无落地页（与 Web 端 Register.jsx 现状一致：占位链接，点击不跳转）
                     Text("我已阅读并同意《用户协议》和《隐私政策》")
                         .font(.caption2)
-                        .foregroundColor(.vxinTextSecondary)
+                        .foregroundColor(.vxinAuthTextSecondary)
                 }
                 .padding(.top, 4)
 
                 Button(showServerConfig ? "收起" : "切换服务器") { showServerConfig.toggle() }
                     .font(.caption)
-                    .foregroundColor(.vxinTextSecondary)
+                    .foregroundColor(.vxinAuthTextSecondary)
                     .padding(.top, 4)
 
                 if showServerConfig {
-                    TextField("服务器地址", text: $vm.serverURL)
+                    TextField("", text: $vm.serverURL, prompt: Text("服务器地址").foregroundColor(.vxinAuthPlaceholder))
+                        .foregroundColor(.white)
+                        .tint(.vxinAuthGold)
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled(true)
-                        .textFieldStyle(.roundedBorder)
+                        .padding(8)
+                        .overlay(RoundedRectangle(cornerRadius: VxinRadius.sm).stroke(Color.vxinAuthBorder, lineWidth: 1))
                     Button("保存") { vm.saveServerURL(); showServerConfig = false }
-                        .foregroundColor(.vxinBrand)
+                        .foregroundColor(.vxinAuthGold)
                 }
 
                 Spacer(minLength: 24)
             }
             .padding(.horizontal, 32)
         }
+        .background(Color.vxinAuthBg)
+        .scrollContentBackground(.hidden)
+        .toolbarBackground(Color.vxinAuthBg, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .onChange(of: vm.authedUser) { user in
             if let user {
                 session.onAuthenticated(user)

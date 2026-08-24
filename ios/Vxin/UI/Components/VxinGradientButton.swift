@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// v信 主按钮：品牌绿渐变实心药丸 + 加载态（对齐 Web / Android VxinGradientButton）。
-/// 统一各处 CTA 视觉。
+/// v信 找回密码页主按钮：黑底金字描边（对齐 Web .auth-submit / Android AuthGoldButton）。
+/// 仅供 ForgotPasswordView 使用（App 内其余按钮各自有独立样式，未共用本组件）。
 struct VxinGradientButton: View {
     let title: String
     var loading: Bool = false
@@ -11,23 +11,18 @@ struct VxinGradientButton: View {
     var body: some View {
         Button(action: action) {
             ZStack {
-                if loading { ProgressView().tint(.white) }
+                if loading { ProgressView().tint(.vxinAuthGold) }
                 else { Text(title).bold() }
             }
             .frame(maxWidth: .infinity, minHeight: 50)
-            .background(
-                Group {
-                    if enabled {
-                        LinearGradient(colors: [.vxinBrandLight, .vxinBrandDark],
-                                       startPoint: .leading, endPoint: .trailing)
-                    } else {
-                        Color.vxinTextSecondary.opacity(0.4)
-                    }
-                }
-            )
-            .foregroundColor(.white)
+            .background(Color.vxinAuthSurface)
+            .foregroundColor(enabled ? .vxinAuthGold : .vxinAuthPlaceholder)
             .clipShape(RoundedRectangle(cornerRadius: VxinRadius.pill, style: .continuous))
-            .shadow(color: enabled ? .vxinBrand.opacity(0.35) : .clear, radius: 8, y: 4)
+            .overlay(
+                RoundedRectangle(cornerRadius: VxinRadius.pill, style: .continuous)
+                    .strokeBorder(enabled ? Color.vxinAuthGold : Color.vxinAuthBorder, lineWidth: 1.5)
+            )
+            .shadow(color: enabled ? Color.vxinAuthGold.opacity(0.18) : .clear, radius: 8, y: 4)
         }
         .disabled(!enabled || loading)
     }

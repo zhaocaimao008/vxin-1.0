@@ -32,6 +32,18 @@ extension Color {
 
     // ── 卡面 ─────────────────────────────────────────────────────────────
     static let vxinCard = Color(.secondarySystemBackground)
+
+    // ── 登录/注册/找回密码 黑金品牌主题专用色（2026-08-24 四端品牌统一）──────
+    // 仅供 Features/Auth 三个视图 + AuthFields/PasswordField/VxinGradientButton
+    // 组件使用，不影响 App 内其余页面（聊天/设置等仍是 vxinBrand 绿）。
+    static let vxinAuthBg            = Color(red: 0x00/255, green: 0x00/255, blue: 0x00/255)
+    static let vxinAuthSurface       = Color(red: 0x14/255, green: 0x14/255, blue: 0x14/255)
+    static let vxinAuthGold          = Color(red: 0xFF/255, green: 0xD7/255, blue: 0x00/255)
+    static let vxinAuthGoldHover     = Color(red: 0xFF/255, green: 0xC7/255, blue: 0x2C/255)
+    static let vxinAuthBorder        = Color(red: 0x2A/255, green: 0x2A/255, blue: 0x2A/255)
+    static let vxinAuthTextSecondary = Color(red: 0xCC/255, green: 0xCC/255, blue: 0xCC/255)
+    static let vxinAuthTextMuted     = Color(red: 0x8A/255, green: 0x84/255, blue: 0x78/255)
+    static let vxinAuthPlaceholder   = Color(red: 0x6B/255, green: 0x64/255, blue: 0x59/255)
 }
 
 extension LinearGradient {

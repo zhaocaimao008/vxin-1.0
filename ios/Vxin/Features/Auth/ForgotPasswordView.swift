@@ -9,28 +9,27 @@ struct ForgotPasswordView: View {
         VStack(spacing: 16) {
             Spacer()
 
-            // 品牌 Logo 徽章（与登录/注册页一致）
-            ZStack {
-                RoundedRectangle(cornerRadius: VxinRadius.lg, style: .continuous)
-                    .fill(LinearGradient(colors: [.vxinBrandLight, .vxinBrandDark],
-                                         startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .frame(width: 64, height: 64)
-                    .shadow(color: .vxinBrand.opacity(0.4), radius: 10, y: 5)
-                Image(systemName: "lock.rotation")
-                    .font(.system(size: 26)).foregroundColor(.white)
-            }
-            .padding(.bottom, 4)
+            // 品牌 Logo：黑金标记（与登录/注册页一致，2026-08-24 四端品牌统一）
+            VxinLogoMark()
+                .frame(width: 64, height: 64)
+                .padding(.bottom, 4)
             Text("找回密码")
                 .font(.title.bold())
-                .foregroundColor(.primary)
+                .foregroundColor(.white)
                 .padding(.bottom, 16)
 
-            TextField("手机号", text: $vm.phone)
+            TextField("", text: $vm.phone, prompt: Text("手机号").foregroundColor(.vxinAuthPlaceholder))
+                .foregroundColor(.white)
+                .tint(.vxinAuthGold)
                 .keyboardType(.phonePad)
-                .textFieldStyle(.roundedBorder)
-            TextField("邀请码（6位数字）", text: $vm.inviteCode)
+                .padding(8)
+                .overlay(RoundedRectangle(cornerRadius: VxinRadius.sm).stroke(Color.vxinAuthBorder, lineWidth: 1))
+            TextField("", text: $vm.inviteCode, prompt: Text("邀请码（6位数字）").foregroundColor(.vxinAuthPlaceholder))
+                .foregroundColor(.white)
+                .tint(.vxinAuthGold)
                 .keyboardType(.numberPad)
-                .textFieldStyle(.roundedBorder)
+                .padding(8)
+                .overlay(RoundedRectangle(cornerRadius: VxinRadius.sm).stroke(Color.vxinAuthBorder, lineWidth: 1))
             PasswordField(placeholder: "新密码（≥8位，含字母和数字）", text: $vm.resetNewPassword,
                           textContentType: .newPassword)
 
@@ -43,7 +42,7 @@ struct ForgotPasswordView: View {
             if vm.resetDone {
                 Text("✓ 密码已重置，请用新密码登录")
                     .font(.footnote)
-                    .foregroundColor(.vxinGreen)
+                    .foregroundColor(.vxinAuthGold)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
@@ -54,6 +53,9 @@ struct ForgotPasswordView: View {
             Spacer()
         }
         .padding(.horizontal, 32)
+        .background(Color.vxinAuthBg)
+        .toolbarBackground(Color.vxinAuthBg, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .navigationTitle("找回密码")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: vm.resetDone) { done in
