@@ -42,7 +42,7 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .electron-app .gs-highlight,
-.electron-app span.gs-highlight { color: #0D9EB8; font-weight: 500; }
+.electron-app span.gs-highlight { color: #07C160; font-weight: 500; }
 .electron-app .gs-msg-meta {
   font-size: 12px; color: var(--vx-text-secondary); margin-bottom: 2px;
   display: flex; align-items: center; gap: 6px;
@@ -79,7 +79,7 @@
 }
 .electron-app .pf-hero-bg {
   position: absolute; inset: 0;
-  background: linear-gradient(135deg, #0D9EB8 0%, var(--vx-primary-deep-2) 100%);
+  background: linear-gradient(135deg, #07C160 0%, var(--vx-primary-deep-2) 100%);
 }
 .electron-app .pf-hero-bg::after {
   content: '';
@@ -152,7 +152,7 @@
   transition: border-color 120ms, background 120ms;
 }
 .electron-app .wc-edit-input:focus {
-  background: var(--vx-surface); border-color: #0D9EB8; outline: none;
+  background: var(--vx-surface); border-color: #07C160; outline: none;
 }
 .electron-app .wc-edit-input::placeholder { color: var(--vx-text-muted); }
 .electron-app .wc-edit-textarea {
@@ -213,7 +213,7 @@
 .electron-app .wc-device-info { font-size: 12px; color: var(--vx-text-secondary); margin-top: 2px; }
 .electron-app .wc-device-icon { font-size: 20px; }
 .electron-app .wc-badge-current {
-  font-size: 11px; color: #0D9EB8;
+  font-size: 11px; color: #07C160;
   background: var(--vx-surface-active); border-radius: 4px;
   padding: 2px 6px;
 }
@@ -248,8 +248,8 @@
   font-size: 13px; color: var(--vx-text-primary);
   transition: border-color 120ms;
 }
-.electron-app .wc-appearance-btn.active { border-color: #0D9EB8; color: #0D9EB8; }
-.electron-app .wc-appearance-btn:hover { border-color: #0D9EB8; }
+.electron-app .wc-appearance-btn.active { border-color: #07C160; color: #07C160; }
+.electron-app .wc-appearance-btn:hover { border-color: #07C160; }
 .electron-app .wc-appearance-emoji { font-size: 24px; }
 
 /* Font size */
@@ -261,7 +261,7 @@
   border-radius: 8px; cursor: pointer;
   transition: border-color 120ms;
 }
-.electron-app .wc-font-btn.active { border-color: #0D9EB8; }
+.electron-app .wc-font-btn.active { border-color: #07C160; }
 .electron-app .wc-font-preview { font-weight: 600; color: var(--vx-text-primary); }
 .electron-app .wc-font-label { font-size: 11px; color: var(--vx-text-secondary); }
 .electron-app .wc-font-demo {
@@ -286,7 +286,7 @@
   border-radius: 8px; font-size: 13px; color: var(--vx-text-primary);
 }
 .electron-app .wc-server-input:focus {
-  border-color: #0D9EB8; background: var(--vx-surface); outline: none;
+  border-color: #07C160; background: var(--vx-surface); outline: none;
 }
 
 /* Account add row */
@@ -301,7 +301,7 @@
 .electron-app .wc-add-name { font-size: 14px; font-weight: 500; color: var(--vx-text-primary); }
 .electron-app .wc-add-phone { font-size: 12px; color: var(--vx-text-secondary); margin-top: 2px; }
 .electron-app .wc-add-switch {
-  font-size: 12px; color: #0D9EB8; flex-shrink: 0;
+  font-size: 12px; color: #07C160; flex-shrink: 0;
 }
 .electron-app .wc-add-icon-wrap {
   width: 40px; height: 40px; border-radius: 10px;
@@ -321,10 +321,10 @@
   border-radius: 8px; font-size: 14px; color: var(--vx-text-primary);
   width: 100%; box-sizing: border-box;
 }
-.electron-app .wc-add-form-input:focus { border-color: #0D9EB8; background: var(--vx-surface); outline: none; }
+.electron-app .wc-add-form-input:focus { border-color: #07C160; background: var(--vx-surface); outline: none; }
 .electron-app .wc-add-form-error { font-size: 12px; color: var(--vx-danger); }
 .electron-app .wc-add-form-submit {
-  height: 36px; background: #0D9EB8; color: var(--vx-text-inverse);
+  height: 36px; background: #07C160; color: var(--vx-text-inverse);
   border-radius: 8px; font-size: 14px; font-weight: 500;
   border: none; cursor: pointer; transition: background 120ms;
 }
@@ -347,7 +347,7 @@ html.electron-app:has(body.dark-mode) .wc-settings-row { border-bottom-color: va
 html.electron-app:has(body.dark-mode) .wc-settings-glass-block { background: var(--vx-surface); border-color: var(--vx-border); }
 html.electron-app:has(body.dark-mode) .wc-settings-profile-card { background: var(--vx-surface); border-bottom-color: var(--vx-border); }
 html.electron-app:has(body.dark-mode) .wc-edit-input { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }
-html.electron-app:has(body.dark-mode) .wc-edit-input:focus { background: var(--vx-bg-secondary); border-color: #0D9EB8; }
+html.electron-app:has(body.dark-mode) .wc-edit-input:focus { background: var(--vx-bg-secondary); border-color: #07C160; }
 html.electron-app:has(body.dark-mode) .wc-device-item { border-bottom-color: var(--vx-border-light); }
 html.electron-app:has(body.dark-mode) .wc-device-name { color: var(--vx-text-primary); }
 html.electron-app:has(body.dark-mode) .wc-appearance-btn { background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary); }

@@ -4,11 +4,11 @@
 ================================================================ */
 .electron-app {
   /* ── Primary（对齐 34 图 UI 规范 / Web design-tokens.css --brand-500）── */
-  --vx-primary:        #0D9EB8;
-  --vx-primary-hover:  #0B839C;
-  --vx-primary-active: #096B80;
-  --vx-primary-soft:   #E6F7FA;
-  --vx-primary-rgb:    13, 158, 184;
+  --vx-primary:        #07C160;
+  --vx-primary-hover:  #06A652;
+  --vx-primary-active: #058A44;
+  --vx-primary-soft:   #E8F8EF;
+  --vx-primary-rgb:    7, 193, 96;
 
   /* ── Backgrounds ── */
   --vx-bg:           #F7F8FA;
@@ -34,7 +34,7 @@
   --vx-danger:  #FF4D4F;
   --vx-warning: #FAAD14;
   --vx-info:    #1677FF;
-  --vx-success: #0D9EB8;
+  --vx-success: #07C160;
   --vx-disabled:    #C9CDD4;
   --vx-warning-soft: #FFFBE6;
 
@@ -49,7 +49,7 @@
   --vx-border-muted:  #D7DADF;
   --vx-text-disabled: #D0D3D8;
   --vx-badge-success: #3DDC84;
-  --vx-primary-deep:  #096B80;
+  --vx-primary-deep:  #0E9A47;
   --vx-danger-soft:   rgba(255,77,79,.06);
   --vx-overlay:       rgba(0,0,0,.35);
   --vx-overlay-strong: rgba(0,0,0,.5);
@@ -57,18 +57,18 @@
   /* ── 效果色（hover/焦点/边框/toast）── */
   --vx-hover-overlay:      rgba(0,0,0,.05);
   --vx-hover-overlay-strong: rgba(0,0,0,.08);
-  --vx-focus-ring:         rgba(13,158,184,.2);
-  --vx-focus-ring-soft:    rgba(13,158,184,.12);
+  --vx-focus-ring:         rgba(7,193,96,.2);
+  --vx-focus-ring-soft:    rgba(7,193,96,.12);
   --vx-danger-deep:        #E63234;
   --vx-danger-border:      rgba(255,77,79,.2);
   --vx-warning-text:       #B37400;
   --vx-warning-border:     rgba(250,173,20,.2);
-  --vx-toast-success-bg:   rgba(13,158,184,.9);
+  --vx-toast-success-bg:   rgba(7,193,96,.9);
   --vx-toast-error-bg:     rgba(255,77,79,.9);
   --vx-border-success:     #DCF4E6;
   --vx-text-soft:          #D8DCE3;
   --vx-bubble-mine-text:   #1F2329;
-  --vx-primary-deep-2:     #075464;
+  --vx-primary-deep-2:     #0A9C48;
 
   /* ── 媒体覆盖层（头像/图片上的遮罩，与主题无关）── */
   --vx-img-overlay:        rgba(0,0,0,.45);
@@ -109,7 +109,7 @@ html.electron-app:has(body.dark-mode) {
 
   --vx-surface:        #202327;
   --vx-surface-hover:  #292D32;
-  --vx-surface-active: rgba(13,158,184,.14);
+  --vx-surface-active: rgba(7,193,96,.14);
   --vx-surface-raised: #252830;
 
   --vx-text-primary:   #F2F3F5;
@@ -119,12 +119,12 @@ html.electron-app:has(body.dark-mode) {
   --vx-border:       #32363D;
   --vx-border-light: #292D33;
 
-  --vx-primary-soft: rgba(13,158,184,.13);
+  --vx-primary-soft: rgba(7,193,96,.13);
   --vx-disabled:    #2A2D34;
   --vx-warning-soft: rgba(250,173,20,.14);
 
   /* ── 消息气泡（dark）── */
-  --vx-bubble-mine:        rgba(13,158,184,.20);
+  --vx-bubble-mine:        rgba(7,193,96,.20);
   --vx-bubble-other-border: #32363D;
 
   /* ── 表面衍生色（dark）── */
@@ -134,7 +134,7 @@ html.electron-app:has(body.dark-mode) {
   --vx-border-muted:  #292D33;
   --vx-text-disabled: #5A5E66;
   --vx-badge-success: #3DDC84;
-  --vx-primary-deep:  #096B80;
+  --vx-primary-deep:  #0E9A47;
   --vx-danger-soft:   rgba(255,77,79,.12);
   --vx-overlay:       rgba(0,0,0,.5);
   --vx-overlay-strong: rgba(0,0,0,.6);
@@ -142,18 +142,18 @@ html.electron-app:has(body.dark-mode) {
   /* ── 效果色（dark）── */
   --vx-hover-overlay:      rgba(255,255,255,.06);
   --vx-hover-overlay-strong: rgba(255,255,255,.08);
-  --vx-focus-ring:         rgba(13,158,184,.2);
-  --vx-focus-ring-soft:    rgba(13,158,184,.14);
+  --vx-focus-ring:         rgba(7,193,96,.2);
+  --vx-focus-ring-soft:    rgba(7,193,96,.14);
   --vx-danger-deep:        #E63234;
   --vx-danger-border:      rgba(255,77,79,.25);
   --vx-warning-text:       #B37400;
   --vx-warning-border:     rgba(250,173,20,.2);
-  --vx-toast-success-bg:   rgba(13,158,184,.9);
+  --vx-toast-success-bg:   rgba(7,193,96,.9);
   --vx-toast-error-bg:     rgba(255,77,79,.9);
-  --vx-border-success:     rgba(13,158,184,.3);
+  --vx-border-success:     rgba(7,193,96,.3);
   --vx-text-soft:          #D0D3D8;
   --vx-bubble-mine-text:   #E8EBF0;
-  --vx-primary-deep-2:     #075464;
+  --vx-primary-deep-2:     #0A9C48;
 
   /* ── 媒体覆盖层（dark，与 light 一致）── */
   --vx-img-overlay:        rgba(0,0,0,.45);

@@ -96,7 +96,7 @@ export default function AndroidUpdatePrompt() {
             style={{
               flex: 1,
               padding: '12px 24px',
-              background: '#0D9EB8',
+              background: '#07C160',
               color: '#fff',
               border: 'none',
               borderRadius: '8px',
@@ -105,8 +105,8 @@ export default function AndroidUpdatePrompt() {
               cursor: 'pointer',
               transition: 'background 0.3s'
             }}
-            onMouseEnter={(e) => e.target.style.background = '#0B839C'}
-            onMouseLeave={(e) => e.target.style.background = '#0D9EB8'}
+            onMouseEnter={(e) => e.target.style.background = '#11A047'}
+            onMouseLeave={(e) => e.target.style.background = '#07C160'}
           >
             立即下载
           </button>

@@ -116,10 +116,10 @@ export default function Register() {
           <div className="auth-brand">
             <div className="auth-brand-logo">
               <svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
-                <rect x="0" y="0" width="100" height="100" rx="22" fill="#0D9EB8"/>
-                <rect x="47.54" y="48.53" width="43.20" height="33.30" rx="11.30" fill="#0D9EB8"/>
-                <polygon points="85.56,79.69 77.41,78.40 86.41,88.69" fill="#0D9EB8"/>
-                <circle cx="86.41" cy="88.69" r="1.37" fill="#0D9EB8"/>
+                <rect x="0" y="0" width="100" height="100" rx="22" fill="#07C160"/>
+                <rect x="47.54" y="48.53" width="43.20" height="33.30" rx="11.30" fill="#07C160"/>
+                <polygon points="85.56,79.69 77.41,78.40 86.41,88.69" fill="#07C160"/>
+                <circle cx="86.41" cy="88.69" r="1.37" fill="#07C160"/>
                 <rect x="7.10" y="17.66" width="66.00" height="50.16" rx="15.05" fill="#fff"/>
                 <polygon points="15.02,64.85 26.31,63.07 13.83,77.32" fill="#fff"/>
                 <circle cx="13.83" cy="77.32" r="1.90" fill="#fff"/>

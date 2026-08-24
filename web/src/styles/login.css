@@ -1,7 +1,7 @@
 /* ================================================================
    V信 登录/注册页 — 精修 Color/Theme 对齐最终参考图
 
-   品牌青：#0D9EB8 (hover: #0B839C, pressed: #096B80)
+   品牌绿：#07C160 (hover: #06AD56, pressed: #059B4D)
    页面背景：#F7F8FA
    文字：主标题 #1F2329, 副标题 #5F6670, 辅助 #8A8F98, 占位 #AEB4BC
    边框：#E3E7EB, 分割线 #EEF0F2
@@ -80,7 +80,7 @@
   position: absolute;
   left: -10%; bottom: -15%;
   width: 130%; height: 55%;
-  background: radial-gradient(ellipse at bottom, rgba(13,158,184,.12) 0%, transparent 70%);
+  background: radial-gradient(ellipse at bottom, rgba(7,193,96,.12) 0%, transparent 70%);
   pointer-events: none;
 }
 .auth-split-left::after {
@@ -89,7 +89,7 @@
   right: -60px; top: -60px;
   width: 220px; height: 220px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(13,158,184,.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(7,193,96,.08) 0%, transparent 70%);
   pointer-events: none;
 }
 /* 左下角点阵装饰：opacity 0.18～0.30 */
@@ -98,7 +98,7 @@
   left: -8%; bottom: -6%;
   width: 70%; height: 55%;
   pointer-events: none;
-  background-image: radial-gradient(circle, rgba(13,158,184,.30) 1.4px, transparent 1.6px);
+  background-image: radial-gradient(circle, rgba(7,193,96,.30) 1.4px, transparent 1.6px);
   background-size: 16px 16px;
   -webkit-mask-image: radial-gradient(ellipse 100% 90% at 15% 85%, #000 0%, #000 35%, transparent 72%);
   mask-image: radial-gradient(ellipse 100% 90% at 15% 85%, #000 0%, #000 35%, transparent 72%);
@@ -148,7 +148,7 @@
   position: relative;
   z-index: 1;
   width: 100%; height: 100%;
-  filter: drop-shadow(0 6px 16px rgba(13,158,184,.28));
+  filter: drop-shadow(0 6px 16px rgba(7,193,96,.28));
 }
 .auth-brand-logo {
   display: inline-flex;
@@ -162,7 +162,7 @@
   position: relative;
   z-index: 1;
   width: 100%; height: 100%;
-  filter: drop-shadow(0 4px 12px rgba(13,158,184,.20));
+  filter: drop-shadow(0 4px 12px rgba(7,193,96,.20));
 }
 .auth-brand-name {
   font-size: 30px;
@@ -196,13 +196,13 @@
   background: transparent;
   border: none;
 }
-.auth-tab.active { color: #0D9EB8; }
+.auth-tab.active { color: #07C160; }
 .auth-tab.active::after {
   content: '';
   position: absolute;
   left: 0; bottom: 0;
   width: 32px; height: 2px;
-  background: #0D9EB8;
+  background: #07C160;
   border-radius: 1px;
 }
 
@@ -230,11 +230,11 @@
   padding: 11px 16px; text-align: left; cursor: pointer;
   transition: background 120ms ease; min-width: 0;
 }
-.auth-account-btn:hover { background: rgba(13,158,184,.06); }
+.auth-account-btn:hover { background: rgba(7,193,96,.06); }
 .auth-account-avatar {
   width: 36px; height: 36px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #0D9EB8, #096B80);
+  background: linear-gradient(135deg, #07C160, #059B4D);
   color: #FFFFFF;
   display: flex; align-items: center; justify-content: center;
   font-size: 15px; font-weight: 700;
@@ -279,9 +279,9 @@
   transition: border-color 120ms, background 120ms, box-shadow 120ms;
 }
 .auth-field.focused .auth-field-input-wrap {
-  border-color: #0D9EB8;
+  border-color: #07C160;
   background: #FFFFFF;
-  box-shadow: 0 0 0 2px rgba(13,158,184,0.08);
+  box-shadow: 0 0 0 2px rgba(7,193,96,0.08);
 }
 .auth-field-icon {
   width: 18px; height: 18px;
@@ -289,7 +289,7 @@
   flex-shrink: 0;
   transition: color 120ms;
 }
-.auth-field.focused .auth-field-icon { color: #0D9EB8; }
+.auth-field.focused .auth-field-icon { color: #07C160; }
 .auth-field-input {
   flex: 1;
   font-size: 15px;
@@ -298,7 +298,7 @@
   border: none; outline: none;
   min-width: 0;
   font-family: inherit;
-  caret-color: #0D9EB8;
+  caret-color: #07C160;
 }
 .auth-field-input::placeholder { color: #AEB4BC; }
 
@@ -309,7 +309,7 @@
 .auth-field-input:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0 30px #FFFFFF inset !important;
   -webkit-text-fill-color: #1F2329 !important;
-  caret-color: #0D9EB8 !important;
+  caret-color: #07C160 !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 
@@ -331,7 +331,7 @@
 /* 获取验证码按钮 */
 .auth-verify-code-btn {
   background: none; border: none; cursor: pointer; padding: 0;
-  color: #0D9EB8; font-size: 14px; font-weight: 500;
+  color: #07C160; font-size: 14px; font-weight: 500;
   flex-shrink: 0; transition: opacity 120ms;
   white-space: nowrap;
 }
@@ -377,7 +377,7 @@
 .auth-submit {
   width: 100%;
   height: 48px;
-  background: #0D9EB8;
+  background: #07C160;
   color: #FFFFFF;
   border-radius: 24px;
   font-size: 15px;
@@ -387,15 +387,15 @@
   transition: background 120ms, transform 120ms, box-shadow 120ms;
   display: flex; align-items: center; justify-content: center;
   letter-spacing: .3px;
-  box-shadow: 0 4px 16px rgba(13,158,184,.30);
+  box-shadow: 0 4px 16px rgba(7,193,96,.30);
 }
 .auth-submit:hover:not(:disabled) {
-  background: #0B839C;
+  background: #06AD56;
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(13,158,184,.38);
+  box-shadow: 0 8px 24px rgba(7,193,96,.38);
 }
 .auth-submit:active:not(:disabled) {
-  background: #096B80;
+  background: #059B4D;
   transform: translateY(0);
 }
 .auth-submit:disabled {
@@ -424,8 +424,8 @@
   font-size: 13px;
   color: #5F6670;
 }
-.auth-link { color: #0D9EB8; font-weight: 500; text-decoration: none; transition: color 120ms; }
-.auth-link:hover { color: #0B839C; text-decoration: none; }
+.auth-link { color: #07C160; font-weight: 500; text-decoration: none; transition: color 120ms; }
+.auth-link:hover { color: #06AD56; text-decoration: none; }
 
 /* ── 用户协议：真实可勾选（对齐 34 图，未勾选禁止提交），链接暂无落地页故不跳转 ── */
 .auth-agreement-row {
@@ -448,8 +448,8 @@
 }
 .auth-remember-box:checked,
 .auth-agreement-box:checked {
-  background: #0D9EB8;
-  border-color: #0D9EB8;
+  background: #07C160;
+  border-color: #07C160;
 }
 .auth-remember-box:checked::after,
 .auth-agreement-box:checked::after {
@@ -467,8 +467,8 @@
   line-height: 1.6;
   margin: 0;
 }
-.auth-agreement a { color: #0D9EB8; text-decoration: none; }
-.auth-agreement a:hover { color: #0B839C; }
+.auth-agreement a { color: #07C160; text-decoration: none; }
+.auth-agreement a:hover { color: #06AD56; }
 
 /* ── 服务器切换（Electron）── */
 .auth-server { margin-top: 20px; text-align: center; }
@@ -499,7 +499,7 @@
   color: #1F2329; outline: none;
   font-family: inherit;
 }
-.auth-server-input:focus { border-color: #0D9EB8; box-shadow: 0 0 0 2px rgba(13,158,184,0.08); }
+.auth-server-input:focus { border-color: #07C160; box-shadow: 0 0 0 2px rgba(7,193,96,0.08); }
 .auth-server-input::placeholder { color: #AEB4BC; }
 .auth-server-result { font-size: 12px; margin-top: 6px; }
 .auth-server-btns { display: flex; gap: 8px; margin-top: 12px; }
@@ -512,8 +512,8 @@
 }
 .auth-server-btn--cancel { background: #E3E7EB; color: #5F6670; }
 .auth-server-btn--cancel:hover { background: #D4D8DD; }
-.auth-server-btn--save { background: #0D9EB8; color: #FFFFFF; }
-.auth-server-btn--save:hover { background: #0B839C; }
+.auth-server-btn--save { background: #07C160; color: #FFFFFF; }
+.auth-server-btn--save:hover { background: #06AD56; }
 .auth-server-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .auth-server-cancel {
   display: block; width: 100%;
@@ -544,8 +544,8 @@
   padding: 9px 14px; background: none; border: none; cursor: pointer;
   font-size: 13px; color: #1F2329;
 }
-.auth-lang-item:hover { background: rgba(13,158,184,.06); }
-.auth-lang-item.active { color: #0D9EB8; font-weight: 600; }
+.auth-lang-item:hover { background: rgba(7,193,96,.06); }
+.auth-lang-item.active { color: #07C160; font-weight: 600; }
 
 /* ── 页脚（仅 Web，Electron 无浏览器地址栏概念，隐藏） ── */
 .auth-page-footer {
@@ -554,14 +554,14 @@
   font-size: 12px; color: #8A8F98;
 }
 .auth-page-footer a { color: #8A8F98; text-decoration: none; margin: 0 2px; }
-.auth-page-footer a:hover { color: #0D9EB8; }
+.auth-page-footer a:hover { color: #07C160; }
 
 /* ── auth-note (邀请码说明) ── */
 .auth-note {
   display: flex; align-items: flex-start; gap: 8px;
   margin-bottom: 16px; padding: 10px 14px;
   background: #F1FBF5;
-  border: 1px solid rgba(13,158,184,.22);
+  border: 1px solid rgba(7,193,96,.22);
   border-radius: 10px;
   font-size: 13px; line-height: 1.6;
   color: #5F6670;
@@ -570,7 +570,7 @@
 /* ================================================================
    Dark Mode — 与 styles/windows/tokens.css 的 dark 调色板对齐：
    bg #15171A / surface(卡片) #202327 / text-primary #F2F3F5 /
-   text-secondary #A9AFB7 / border #32363D / primary（暗色下提亮）#33B2C9
+   text-secondary #A9AFB7 / border #32363D / primary（暗色下提亮）#2BB86E
 ================================================================ */
 body.dark-mode .auth-page { background: #15171A; }
 body.dark-mode .auth-top-logo-text { color: #F2F3F5; }
@@ -582,24 +582,24 @@ body.dark-mode .auth-split {
 body.dark-mode .auth-split-left {
   background: linear-gradient(135deg, #17251C 0%, #182420 25%, #191F20 50%, #1A1D1F 75%, #202327 100%);
 }
-body.dark-mode .auth-split-left::before { background: radial-gradient(ellipse at bottom, rgba(51,178,201,.16) 0%, transparent 70%); }
-body.dark-mode .auth-split-left::after  { background: radial-gradient(circle, rgba(51,178,201,.12) 0%, transparent 70%); }
-body.dark-mode .auth-split-left-dots    { background-image: radial-gradient(circle, rgba(51,178,201,.30) 1.4px, transparent 1.6px); }
+body.dark-mode .auth-split-left::before { background: radial-gradient(ellipse at bottom, rgba(43,184,110,.16) 0%, transparent 70%); }
+body.dark-mode .auth-split-left::after  { background: radial-gradient(circle, rgba(43,184,110,.12) 0%, transparent 70%); }
+body.dark-mode .auth-split-left-dots    { background-image: radial-gradient(circle, rgba(43,184,110,.30) 1.4px, transparent 1.6px); }
 body.dark-mode .auth-split-right { background: #202327; }
 
 body.dark-mode .auth-brand-name { color: #F2F3F5; }
 body.dark-mode .auth-brand-desc { color: #A9AFB7; }
 
 body.dark-mode .auth-tab { color: #A9AFB7; }
-body.dark-mode .auth-tab.active { color: #33B2C9; }
-body.dark-mode .auth-tab.active::after { background: #33B2C9; }
+body.dark-mode .auth-tab.active { color: #2BB86E; }
+body.dark-mode .auth-tab.active::after { background: #2BB86E; }
 
 body.dark-mode .auth-accounts { background: #292D32; border-color: #32363D; }
 body.dark-mode .auth-accounts-header { border-bottom-color: #32363D; }
 body.dark-mode .auth-accounts-title,
 body.dark-mode .auth-accounts-count { color: #A9AFB7; }
 body.dark-mode .auth-account-row { border-bottom-color: #32363D; }
-body.dark-mode .auth-account-btn:hover { background: rgba(51,178,201,.12); }
+body.dark-mode .auth-account-btn:hover { background: rgba(43,184,110,.12); }
 body.dark-mode .auth-account-name { color: #F2F3F5; }
 body.dark-mode .auth-account-id { color: #A9AFB7; }
 body.dark-mode .auth-account-remove { color: #A9AFB7; }
@@ -610,13 +610,13 @@ body.dark-mode .auth-field-input-wrap {
   border-color: #32363D;
 }
 body.dark-mode .auth-field.focused .auth-field-input-wrap {
-  border-color: #33B2C9;
+  border-color: #2BB86E;
   background: #292D32;
-  box-shadow: 0 0 0 2px rgba(51,178,201,.16);
+  box-shadow: 0 0 0 2px rgba(43,184,110,.16);
 }
 body.dark-mode .auth-field-icon { color: #A9AFB7; }
-body.dark-mode .auth-field.focused .auth-field-icon { color: #33B2C9; }
-body.dark-mode .auth-field-input { color: #F2F3F5; caret-color: #33B2C9; }
+body.dark-mode .auth-field.focused .auth-field-icon { color: #2BB86E; }
+body.dark-mode .auth-field-input { color: #F2F3F5; caret-color: #2BB86E; }
 body.dark-mode .auth-field-input::placeholder { color: #737A84; }
 body.dark-mode .auth-field-input:-webkit-autofill,
 body.dark-mode .auth-field-input:-webkit-autofill:hover,
@@ -624,7 +624,7 @@ body.dark-mode .auth-field-input:-webkit-autofill:focus,
 body.dark-mode .auth-field-input:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0 30px #292D32 inset !important;
   -webkit-text-fill-color: #F2F3F5 !important;
-  caret-color: #33B2C9 !important;
+  caret-color: #2BB86E !important;
 }
 body.dark-mode .auth-field-cc { color: #A9AFB7; border-left-color: #32363D; }
 body.dark-mode .auth-pwd-toggle { color: #A9AFB7; }
@@ -646,18 +646,18 @@ body.dark-mode .auth-agreement-box {
 }
 body.dark-mode .auth-remember-box:checked,
 body.dark-mode .auth-agreement-box:checked {
-  background: #33B2C9;
-  border-color: #33B2C9;
+  background: #2BB86E;
+  border-color: #2BB86E;
 }
 body.dark-mode .auth-agreement { color: #A9AFB7; }
 body.dark-mode .auth-agreement a,
-body.dark-mode .auth-link { color: #33B2C9; }
+body.dark-mode .auth-link { color: #2BB86E; }
 body.dark-mode .auth-agreement a:hover,
-body.dark-mode .auth-link:hover { color: #64CADC; }
+body.dark-mode .auth-link:hover { color: #5FCC8E; }
 
-body.dark-mode .auth-submit { background: #33B2C9; box-shadow: 0 4px 16px rgba(51,178,201,.28); }
-body.dark-mode .auth-submit:hover:not(:disabled) { background: #64CADC; box-shadow: 0 8px 24px rgba(51,178,201,.34); }
-body.dark-mode .auth-submit:active:not(:disabled) { background: #0D9EB8; }
+body.dark-mode .auth-submit { background: #2BB86E; box-shadow: 0 4px 16px rgba(43,184,110,.28); }
+body.dark-mode .auth-submit:hover:not(:disabled) { background: #5FCC8E; box-shadow: 0 8px 24px rgba(43,184,110,.34); }
+body.dark-mode .auth-submit:active:not(:disabled) { background: #07C160; }
 body.dark-mode .auth-submit:disabled { background: #32363D; color: #5A5E66; }
 
 body.dark-mode .auth-footer { color: #A9AFB7; }
@@ -668,11 +668,11 @@ body.dark-mode .auth-server-panel { background: #292D32; border-color: #32363D; 
 body.dark-mode .auth-server-title { color: #A9AFB7; }
 body.dark-mode .auth-server-input { background: #1B1E22; border-color: #32363D; color: #F2F3F5; }
 body.dark-mode .auth-server-input::placeholder { color: #737A84; }
-body.dark-mode .auth-server-input:focus { border-color: #33B2C9; box-shadow: 0 0 0 2px rgba(51,178,201,.16); }
+body.dark-mode .auth-server-input:focus { border-color: #2BB86E; box-shadow: 0 0 0 2px rgba(43,184,110,.16); }
 body.dark-mode .auth-server-btn--cancel { background: #32363D; color: #A9AFB7; }
 body.dark-mode .auth-server-btn--cancel:hover { background: #3A3F47; }
-body.dark-mode .auth-server-btn--save { background: #33B2C9; color: #15171A; }
-body.dark-mode .auth-server-btn--save:hover { background: #64CADC; }
+body.dark-mode .auth-server-btn--save { background: #2BB86E; color: #15171A; }
+body.dark-mode .auth-server-btn--save:hover { background: #5FCC8E; }
 body.dark-mode .auth-server-cancel { color: #A9AFB7; }
 body.dark-mode .auth-server-cancel:hover { color: #F2F3F5; }
 
@@ -680,15 +680,15 @@ body.dark-mode .auth-lang-btn { color: #A9AFB7; }
 body.dark-mode .auth-lang-btn:hover { background: #292D32; color: #F2F3F5; }
 body.dark-mode .auth-lang-menu { background: #202327; border-color: #32363D; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
 body.dark-mode .auth-lang-item { color: #F2F3F5; }
-body.dark-mode .auth-lang-item:hover { background: rgba(51,178,201,.14); }
-body.dark-mode .auth-lang-item.active { color: #33B2C9; }
+body.dark-mode .auth-lang-item:hover { background: rgba(43,184,110,.14); }
+body.dark-mode .auth-lang-item.active { color: #2BB86E; }
 
 body.dark-mode .auth-page-footer { color: #A9AFB7; }
 body.dark-mode .auth-page-footer a { color: #A9AFB7; }
-body.dark-mode .auth-page-footer a:hover { color: #33B2C9; }
+body.dark-mode .auth-page-footer a:hover { color: #2BB86E; }
 
 body.dark-mode .auth-note {
-  background: rgba(51,178,201,.10);
-  border-color: rgba(51,178,201,.28);
+  background: rgba(43,184,110,.10);
+  border-color: rgba(43,184,110,.28);
   color: #A9AFB7;
 }

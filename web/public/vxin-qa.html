@@ -16,10 +16,10 @@
 tailwind.config = {
   theme: { extend: {
     colors: {
-      'wx-green':  '#0D9EB8',
+      'wx-green':  '#07C160',
       'wx-bg':     '#EDEDED',
       'wx-dark':   '#1E1E1E',
-      'wx-active': '#C9EDF3',
+      'wx-active': '#C7ECD3',
       'wx-blue':   '#5569FF',
       'wx-title':  '#223354',
       'wx-body':   '#5C6B8A',
@@ -57,7 +57,7 @@ button{cursor:pointer;border:none;background:none;outline:none;font-family:inher
   content:'';position:absolute;
   left:0;top:50%;transform:translateY(-50%);
   width:3px;height:20px;
-  background:#0D9EB8;border-radius:0 2px 2px 0;
+  background:#07C160;border-radius:0 2px 2px 0;
 }
 .nav-btn svg{width:22px;height:22px;fill:rgba(255,255,255,.38);transition:fill .08s}
 .nav-btn:hover svg{fill:rgba(255,255,255,.62)}
@@ -117,7 +117,7 @@ button{cursor:pointer;border:none;background:none;outline:none;font-family:inher
   <!-- ── 左侧导航栏 68px ── -->
   <aside style="width:68px;min-width:68px;background:#1E1E1E;display:flex;flex-direction:column;align-items:center;z-index:10;flex-shrink:0">
     <div style="margin:16px 0 10px;cursor:pointer" title="个人信息">
-      <div style="width:36px;height:36px;border-radius:6px;background:linear-gradient(135deg,#0D9EB8,#0D9EB8);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#fff">我</div>
+      <div style="width:36px;height:36px;border-radius:6px;background:linear-gradient(135deg,#07C160,#0ABF50);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#fff">我</div>
     </div>
     <nav style="flex:1;width:100%;display:flex;flex-direction:column">
       <button class="nav-btn" title="聊天" onclick="location.href='/'"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/></svg></button>

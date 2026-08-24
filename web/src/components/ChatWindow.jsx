@@ -2149,7 +2149,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
           <span style={{ fontSize: 'var(--text-base)' }}>
             {groupCallInvite.fromName || '群成员'} 发起了群{groupCallInvite.type === 'video' ? '视频' : '语音'}通话
           </span>
-          <button onClick={joinGroupCall} style={{ background: 'var(--color-primary,#0D9EB8)', color: 'var(--text-inverse)', border: 0, borderRadius: 'var(--radius-input)', padding: '6px 14px', cursor: 'pointer' }}>加入</button>
+          <button onClick={joinGroupCall} style={{ background: 'var(--color-primary,#07C160)', color: 'var(--text-inverse)', border: 0, borderRadius: 'var(--radius-input)', padding: '6px 14px', cursor: 'pointer' }}>加入</button>
           <button onClick={() => setGroupCallInvite(null)} style={{ background: 'transparent', color: 'rgba(255,255,255,.6)', border: 0, cursor: 'pointer' }}>忽略</button>
         </div>
       )}

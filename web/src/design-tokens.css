@@ -15,49 +15,49 @@
 
    双色系逻辑
      · Brand Blue   #1677FF — UI 框架：按钮、链接、选中态
-     · Aqua 青碧 #0D9EB8 — 品牌主色与消息气泡：清爽、现代（2026-08 去微信化换肤）
+     · Chat Green   #10A96B — 消息气泡：亲和、温暖、延续 IM 记忆
    ================================================================ */
 
 /* ================================================================
-   § 1  BRAND — 青碧 Vxin Aqua
-   主色 #0D9EB8，辅助 #111111 / #F5F5F5 / #FFFFFF
+   § 1  BRAND — v信绿 Vxin Green
+   主色 #07C160，辅助 #111111 / #F5F5F5 / #FFFFFF
    简洁、清爽、高辨识度的即时通讯品牌色系。
    ================================================================ */
 :root {
-  /* 青碧主色阶（2026-08 去微信化换肤） */
-  --brand-50:    #E6F7FA;
-  --brand-100:   #C6EDF4;
-  --brand-200:   #98DFEA;
-  --brand-300:   #64CADC;
-  --brand-400:   #33B2C9;
-  --brand-500:   #0D9EB8;   /* ← 主品牌色 青碧 */
-  --brand-600:   #0B839C;
-  --brand-700:   #096B80;
-  --brand-800:   #075464;
-  --brand-900:   #05404D;
+  /* v信绿主色阶 */
+  --brand-50:    #E8F8EF;
+  --brand-100:   #D1F1DF;
+  --brand-200:   #A3E3BF;
+  --brand-300:   #5FCC8E;
+  --brand-400:   #2BB86E;
+  --brand-500:   #07C160;   /* ← 主品牌色 v信绿 */
+  --brand-600:   #06A652;
+  --brand-700:   #058A44;
+  --brand-800:   #046D36;
+  --brand-900:   #035128;
 
   /* 语义别名 */
   --color-primary:        var(--brand-500);
   --color-primary-hover:  var(--brand-600);
   --color-primary-active: var(--brand-700);
   /* 四端 UI 改版 Design Tokens 方案（docs/ui-refactor/03）里确认的浅色数值，
-     与 --brand-50 (#E6F7FA) 非常接近但不是同一个值——此处按方案精确对齐
+     与 --brand-50 (#E8F8EF) 非常接近但不是同一个值——此处按方案精确对齐
      Android VxinBrandMuted / iOS vxinBrandMuted，故不复用 --brand-50 别名 */
-  --color-primary-muted:  #E5F8FB;
-  --color-primary-rgb:    13, 158, 184;         /* 供 rgba() 使用 */
+  --color-primary-muted:  #E6F9EF;
+  --color-primary-rgb:    7, 193, 96;         /* 供 rgba() 使用 */
 
-  /* ── 聊天气泡：我的气泡用品牌青，他人气泡用 #F2F2F2 浅灰 ── */
+  /* ── 聊天气泡：我的气泡用品牌绿，他人气泡用 #F2F2F2 浅灰 ── */
   --bubble-mine:     var(--color-primary);
   --bubble-mine-rgb: var(--color-primary-rgb);
   --bubble-other:    #F2F2F2;
   --shadow-bubble-other-soft: 0 1px 3px rgba(0,0,0,.06), 0 1px 6px rgba(0,0,0,.04);
-  /* 品牌青气泡内用白色文字，对比度充足 */
+  /* 品牌绿气泡内用白色文字，对比度充足 */
   --bubble-mine-text: #FFFFFF;
-  --bubble-mine-link: #C6EDF4;
+  --bubble-mine-link: #D1F1DF;
 
   /* 品牌渐变（绿→浅绿）：我方气泡、侧栏头像、确认按钮等使用 */
-  --grad-brand:       linear-gradient(135deg, #0D9EB8 0%, #33B2C9 100%);
-  --grad-brand-soft:  linear-gradient(135deg, rgba(13,158,184,.12), rgba(51,178,201,.08));
+  --grad-brand:       linear-gradient(135deg, #07C160 0%, #2BB86E 100%);
+  --grad-brand-soft:  linear-gradient(135deg, rgba(7,193,96,.12), rgba(43,184,110,.08));
 
 /* ================================================================
    § 2  SEMANTIC COLORS — 状态语义色
@@ -87,8 +87,8 @@
   --rp-orange:           #F4511E;   /* 红包专用橙(喜庆固定品牌色,明暗一致) */
   --rp-orange-alt:       #F9A825;   /* 红包渐变辅助金橙 */
   /* 转账/收款卡片：微信支付绿(货币语义固定色,明暗一致,收敛原散落硬编码) */
-  --pay-green:           #0D9EB8;
-  --pay-green-alt:       #0FA5BE;   /* 转账卡片渐变亮端（原微信支付绿，随去微信化换肤） */
+  --pay-green:           #07C160;
+  --pay-green-alt:       #09BB07;   /* 转账卡片渐变亮端 */
 
   /* 我的页 — 功能行图标底色(原散落硬编码，收敛为令牌) */
   --icon-bg-wallet:      #F0A020;   /* 钱包/金币 */
@@ -155,7 +155,7 @@
   --bg-messages:          #F5F5F5;   /* 聊天区：辅助浅灰 */
   /* 消息画布：极淡绿调，干净通透 */
   --bg-messages-canvas:
-    radial-gradient(900px 600px at 88% -8%, rgba(13,158,184,.03) 0%, transparent 60%),
+    radial-gradient(900px 600px at 88% -8%, rgba(7,193,96,.03) 0%, transparent 60%),
     linear-gradient(180deg, #F5F5F5 0%, #F0F0F0 100%);
 
   /* 输入区 */
@@ -429,16 +429,16 @@
    ================================================================ */
   --green:            var(--bubble-mine);
   --green-rgb:        var(--bubble-mine-rgb);
-  --green-hover:      #0B839C;   /* brand-600 */
+  --green-hover:      #06A652;   /* brand-600 */
   --link-color:       var(--brand-500);
-  --link:             #096B80;   /* brand-700，消息内链接深绿 */
+  --link:             #058A44;   /* brand-700，消息内链接深绿 */
   --bg-panel:         #FFFFFF;
   --bg-panel-header:  #FFFFFF;
   --bg-chat:          #FFFFFF;
   --bg-chat-header:   #FFFFFF;
   --bg-input:         #FFFFFF;
   --bg-search:        var(--bg-input-search);
-  --bg-msg-mine:      var(--color-primary);   /* 品牌青气泡 */
+  --bg-msg-mine:      var(--color-primary);   /* v信绿气泡 */
   --bg-msg-other:     var(--bubble-other);
   --bg-hover:         rgba(0, 0, 0, .04);
   --bg-active:        var(--bg-panel-item-active);
@@ -473,12 +473,12 @@
    § 13  DARK MODE
    ================================================================ */
 body.dark-mode {
-  /* Brand（深色下主色稍亮，保持青色可读性）*/
-  --color-primary:       #33B2C9;   /* = brand-400 提亮 */
-  --color-primary-hover: #64CADC;   /* = brand-300 */
-  --color-primary-active:#0D9EB8;   /* = brand-500 */
-  --color-primary-rgb:   51, 178, 201;
-  --color-primary-muted: rgba(51, 178, 201, .14);
+  /* Brand（深色下主色稍亮，保持绿色可读性）*/
+  --color-primary:       #2BB86E;   /* = brand-400 提亮 */
+  --color-primary-hover: #5FCC8E;   /* = brand-300 */
+  --color-primary-active:#07C160;   /* = brand-500 */
+  --color-primary-rgb:   43, 184, 110;
+  --color-primary-muted: rgba(43, 184, 110, .14);
 
   /* Bubble */
   --bubble-mine:         var(--color-primary);
@@ -519,7 +519,7 @@ body.dark-mode {
   --bg-messages:          #0E0E10;
   /* 暗色画布：极淡绿辉光，替代死黑，气泡浮起 */
   --bg-messages-canvas:
-    radial-gradient(900px 600px at 88% -8%, rgba(13,158,184,.06) 0%, transparent 60%),
+    radial-gradient(900px 600px at 88% -8%, rgba(7,193,96,.06) 0%, transparent 60%),
     linear-gradient(180deg, #101014 0%, #0C0C0F 100%);
   /* 暗色下他人气泡：深灰卡片色，而非纯白 */
   --bubble-other:         #26262A;
@@ -529,10 +529,10 @@ body.dark-mode {
   --bg-card:              #2C2C2E;
   --bg-card-hover:        #3A3A3C;   /* 暗色卡片/次级按钮悬停 */
   --bg-modal:             #1C1C1E;
-  --bg-success-tint:      rgba(13, 158, 184, .16);  /* 暗色下绿态浅底 */
+  --bg-success-tint:      rgba(7, 193, 96, .16);  /* 暗色下绿态浅底 */
   --bg-ctx-menu:          #2C2C2E;   /* 暗色右键菜单与卡片同底 */
 
-  /* 信息类横幅（暗色）：品牌青 tint，比浅色更透以贴合深底 */
+  /* 信息类横幅（暗色）：品牌绿 tint，比浅色更透以贴合深底 */
   --info-banner-bg:       rgba(var(--color-primary-rgb), .12);
   --info-banner-bg-soft:  rgba(var(--color-primary-rgb), .08);
   --info-banner-border:   rgba(var(--color-primary-rgb), .30);
@@ -556,8 +556,8 @@ body.dark-mode {
   --text-secondary:   #8E8E93;
   --text-muted:       #636366;
   --text-disabled:    #48484A;
-  --text-link:        #64CADC;   /* 暗色链接：浅青，与 品牌青同色系 */
-  --text-link-hover:  #98DFEA;
+  --text-link:        #5FCC8E;   /* 暗色链接：浅绿，与 v信绿同色系 */
+  --text-link-hover:  #A3E3BF;
 
   /* Grays（深色模式下中性灰镜像）*/
   --gray-50:   #1A1A1C;
@@ -581,7 +581,7 @@ body.dark-mode {
   --shadow-nav: 2px 0 20px rgba(0, 0, 0, .40);
   --shadow-bubble-mine:  none;
   --shadow-bubble-other: none;
-  --ring-primary: 0 0 0 3px rgba(51, 178, 201, .22);  /* 跟随 品牌青 */
+  --ring-primary: 0 0 0 3px rgba(43, 184, 110, .22);  /* 跟随 v信绿 */
   --ring-danger:  0 0 0 3px rgba(255, 107, 107, .20);
 
   /* Glass 毛玻璃（深色模式） */
@@ -594,10 +594,10 @@ body.dark-mode {
   /* Legacy aliases (dark) */
   --green:          var(--bubble-mine);
   --green-rgb:      var(--bubble-mine-rgb);
-  --green-hover:    var(--color-primary-hover);  /* 原 #096B80 是遗留绿色，暗色下主色 hover 会误变绿，改为跟随品牌主色 */
+  --green-hover:    var(--color-primary-hover);  /* 原 #1F8044 是遗留绿色，暗色下主色 hover 会误变绿，改为跟随品牌主色 */
   --link-color:     var(--color-primary);
-  --link:           #64CADC;   /* 暗色下消息内链接：浅青，与 品牌青同色系 */
-  --bg-msg-mine:    var(--color-primary);   /* 暗色下我方气泡：跟随品牌青 */
+  --link:           #5FCC8E;   /* 暗色下消息内链接：浅绿，与 v信绿同色系 */
+  --bg-msg-mine:    var(--color-primary);   /* 暗色下我方气泡：跟随品牌绿 */
   --bg-msg-other:   var(--bg-input-search);   /* 暗色他人气泡：深灰搜索框色（原 var(--bubble-other)=#26262A，index.css 覆盖为 #2C2C2E，此处对齐零回归）*/
   --bg-active:      var(--bg-panel-item-active);
   --bg-active-hover:var(--bg-panel-item-active-hover);

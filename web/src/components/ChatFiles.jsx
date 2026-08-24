@@ -20,12 +20,12 @@ const TABS = [
 ];
 
 const IcoFile = () => (
-  <svg viewBox="0 0 24 24" style={{ width: 28, height: 28, fill: 'rgba(13,158,184,.55)' }}>
+  <svg viewBox="0 0 24 24" style={{ width: 28, height: 28, fill: 'rgba(7,193,96,.55)' }}>
     <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
   </svg>
 );
 const IcoVideo = () => (
-  <svg viewBox="0 0 24 24" style={{ width: 28, height: 28, fill: 'rgba(13,158,184,.55)' }}>
+  <svg viewBox="0 0 24 24" style={{ width: 28, height: 28, fill: 'rgba(7,193,96,.55)' }}>
     <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
   </svg>
 );
@@ -228,7 +228,7 @@ export default function ChatFiles({ convId, onClose }) {
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.background = 'var(--bg-card-hover)';
-                e.currentTarget.style.boxShadow = '0 2px 8px rgba(13,158,184,.12)';
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(7,193,96,.12)';
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.background = 'var(--bg-card)';
@@ -238,7 +238,7 @@ export default function ChatFiles({ convId, onClose }) {
               {/* 缩略图 / 图标 */}
               <div style={{
                 flexShrink: 0, width: 46, height: 46, borderRadius: 'var(--radius-sm)', overflow: 'hidden',
-                background: 'rgba(13,158,184,.09)',
+                background: 'rgba(7,193,96,.09)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 {item.type === 'image' ? (

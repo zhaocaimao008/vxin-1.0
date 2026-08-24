@@ -76,8 +76,8 @@ export default function CallHistory({ onOpenChat }) {
       ) : list.length === 0 ? (
         <div className="ch-empty" role="status">
           <svg viewBox="0 0 48 48" width="48" height="48" fill="none" className="ch-empty-ico">
-            <circle cx="24" cy="24" r="22" fill="rgba(13,158,184,.08)"/>
-            <path d="M16.6 20.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V30c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L16.6 20.8z" fill="rgba(13,158,184,.35)"/>
+            <circle cx="24" cy="24" r="22" fill="rgba(7,193,96,.08)"/>
+            <path d="M16.6 20.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V30c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L16.6 20.8z" fill="rgba(7,193,96,.35)"/>
           </svg>
           <span>暂无通话记录</span>
         </div>

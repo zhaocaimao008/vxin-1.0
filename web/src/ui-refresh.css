@@ -10,24 +10,24 @@
 
 /* ── § 1  全局 Token 覆盖（仅 Electron 下生效）── */
 .electron-app {
-  /* 主色（青碧） */
-  --brand-500:            #0D9EB8;
-  --brand-400:            #0B839C;
-  --brand-600:            #0B839C;
-  --color-primary:        #0D9EB8;
-  --color-primary-hover:  #0B839C;
-  --color-primary-active: #0B839C;
-  --color-primary-muted:  #E5F8FB;
-  --color-primary-rgb:    13, 158, 184;
-  --green:                #0D9EB8;
-  --green-rgb:            13, 158, 184;
-  --green-hover:          #0B839C;
+  /* 主绿 */
+  --brand-500:            #07C160;
+  --brand-400:            #06A652;
+  --brand-600:            #11A04A;
+  --color-primary:        #07C160;
+  --color-primary-hover:  #06A652;
+  --color-primary-active: #11A04A;
+  --color-primary-muted:  #EAF8EF;
+  --color-primary-rgb:    7, 193, 96;
+  --green:                #07C160;
+  --green-rgb:            7, 193, 96;
+  --green-hover:          #06A652;
 
-  /* 气泡：我方用浅青而非纯青，文字用深色 */
-  --bubble-mine:          #BFE9F1;
-  --bubble-mine-rgb:      191, 233, 241;
+  /* 气泡：我方用浅绿而非纯绿，文字用深色 */
+  --bubble-mine:          #CFF3D9;
+  --bubble-mine-rgb:      207, 243, 217;
   --bubble-mine-text:     #1F2329;
-  --bubble-mine-link:     #0B839C;
+  --bubble-mine-link:     #0d7a38;
 
   /* 背景 */
   --bg-app:               #F7F8FA;
@@ -153,7 +153,7 @@
   width: 42px;
   height: 42px;
   border-radius: 10px;
-  background: #0D9EB8;
+  background: #07C160;
 }
 
 /* AccountSwitcher 头像适配 —— .electron-app 双类选择器特异性已高于基础 .as-avatar-img/
@@ -207,10 +207,10 @@
 .electron-app .wc-sidebar-btn:active { transform: scale(0.95); }
 
 /* Active */
-.electron-app .wc-sidebar-btn.active { background: rgba(13,158,184,0.14); }
-.electron-app .wc-sidebar-btn.active:hover { background: rgba(13,158,184,0.20); }
-.electron-app .wc-sidebar-btn.active .icon svg { fill: #0D9EB8; }
-.electron-app .wc-sidebar-btn.active .wc-sidebar-label { color: #0D9EB8; font-weight: 600; }
+.electron-app .wc-sidebar-btn.active { background: rgba(7,193,96,0.14); }
+.electron-app .wc-sidebar-btn.active:hover { background: rgba(7,193,96,0.20); }
+.electron-app .wc-sidebar-btn.active .icon svg { fill: #07C160; }
+.electron-app .wc-sidebar-btn.active .wc-sidebar-label { color: #07C160; font-weight: 600; }
 
 /* 左侧绿色指示条 */
 .electron-app .wc-sidebar-btn.active::before {
@@ -223,7 +223,7 @@
   width: 3px;
   height: 28px;
   border-radius: 0 3px 3px 0;
-  background: #0D9EB8;
+  background: #07C160;
 }
 
 /* 角标 */
@@ -311,12 +311,12 @@
   position: absolute;
   left: 0; top: 0; bottom: 0;
   width: 3px;
-  background: #0D9EB8;
+  background: #07C160;
   border-radius: 0 3px 3px 0;
 }
 
 /* 置顶 */
-.electron-app .wc-chat-item.pinned:not(.active) { background: rgba(13,158,184,0.03); }
+.electron-app .wc-chat-item.pinned:not(.active) { background: rgba(7,193,96,0.03); }
 .electron-app .wc-chat-item.pinned:not(.active)::before { display: none; }
 .electron-app .wc-chat-item.pinned:not(.active):hover { background: #F3F5F7; }
 
@@ -338,7 +338,7 @@
 }
 .electron-app .wc-chat-item.active .wc-chat-item-badge {
   border-color: #EAF8EF;
-  background: #0D9EB8;
+  background: #07C160;
 }
 .electron-app .wc-chat-item-badge.muted { background: #C0C0C0; }
 
@@ -354,7 +354,7 @@
 .electron-app .wc-chat-item-time { font-size: 12px; color: #A8ADB5; }
 .electron-app .wc-chat-item-preview { font-size: 13px; color: #8A8F98; }
 .electron-app .wc-chat-item-draft { color: #FF4D4F; }
-.electron-app .wc-chat-item-mention { color: #0D9EB8; }
+.electron-app .wc-chat-item-mention { color: #07C160; }
 .electron-app .wc-chat-item.active .wc-chat-item-name { color: #1F2329; font-weight: 600; }
 .electron-app .wc-chat-item.active .wc-chat-item-preview,
 .electron-app .wc-chat-item.active .wc-chat-item-time { color: #8A8F98; }
@@ -363,7 +363,7 @@
 .electron-app .wc-online-dot {
   width: 10px;
   height: 10px;
-  background: #0D9EB8;
+  background: #07C160;
   border: 2px solid #FAFBFC;
 }
 .electron-app .wc-chat-item.active .wc-online-dot { border-color: #EAF8EF; }
@@ -387,7 +387,7 @@
   box-shadow: none;
 }
 .electron-app .wc-chat-header-name { font-size: 18px; font-weight: 600; color: #1F2329; }
-.electron-app .wc-chat-header-sub { font-size: 12px; color: #0D9EB8; margin-top: 2px; }
+.electron-app .wc-chat-header-sub { font-size: 12px; color: #07C160; margin-top: 2px; }
 .electron-app .wc-chat-header-right { gap: 2px; }
 .electron-app .wc-chat-header-btn {
   width: 36px;
@@ -421,7 +421,7 @@
 }
 /* 自己气泡 */
 .electron-app .wc-msg-row.mine .wc-msg-bubble {
-  background: #BFE9F1;
+  background: #CFF3D9;
   color: #1F2329;
   border: none;
   border-radius: 12px 4px 12px 12px;
@@ -431,8 +431,8 @@
 }
 
 /* 气泡链接色 */
-.electron-app .wc-msg-row.mine .wc-msg-bubble a { color: #0B839C; }
-.electron-app .wc-msg-row:not(.mine) .wc-msg-bubble a { color: #0D9EB8; }
+.electron-app .wc-msg-row.mine .wc-msg-bubble a { color: #0d7a38; }
+.electron-app .wc-msg-row:not(.mine) .wc-msg-bubble a { color: #07C160; }
 
 /* 消息头像圆角 */
 .electron-app .wc-msg-avatar img,
@@ -475,7 +475,7 @@
 }
 .electron-app .wc-tool-btn:hover { background: #F1F2F4; color: #1F2329; transform: none; }
 .electron-app .wc-tool-btn:active { background: #E8EAED; transform: none; }
-.electron-app .wc-tool-btn.active { background: #EAF8EF; color: #0D9EB8; }
+.electron-app .wc-tool-btn.active { background: #EAF8EF; color: #07C160; }
 .electron-app .wc-tool-btn svg { width: 20px; height: 20px; fill: currentColor; }
 .electron-app .wc-tool-svg { width: 20px; height: 20px; fill: currentColor; }
 
@@ -497,7 +497,7 @@
   font-size: 14px;
   color: #1F2329;
   line-height: 1.6;
-  caret-color: #0D9EB8;
+  caret-color: #07C160;
 }
 .electron-app .wc-textarea::placeholder { color: #B0B4BB; }
 
@@ -521,12 +521,12 @@
   box-shadow: none;
 }
 .electron-app .wc-send-btn.active {
-  background: #0D9EB8;
+  background: #07C160;
   cursor: pointer;
   box-shadow: none;
 }
-.electron-app .wc-send-btn.active:hover { background: #0B839C; transform: none; box-shadow: none; }
-.electron-app .wc-send-btn.active:active { background: #0B839C; transform: none; }
+.electron-app .wc-send-btn.active:hover { background: #06A652; transform: none; box-shadow: none; }
+.electron-app .wc-send-btn.active:active { background: #11A04A; transform: none; }
 
 /* ── § 16  空状态 ── */
 .electron-app .we-empty { background: #F7F8FA; }
@@ -540,8 +540,8 @@
 .electron-app .wc-modal-header { border-bottom: 1px solid #EAECF0; }
 .electron-app .wc-modal-title { font-size: 16px; font-weight: 600; color: #1F2329; }
 .electron-app .cgm-content { border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.12); }
-.electron-app .cgm-create { background: #0D9EB8; border-radius: 8px; }
-.electron-app .cgm-create:hover { background: #0B839C; }
+.electron-app .cgm-create { background: #07C160; border-radius: 8px; }
+.electron-app .cgm-create:hover { background: #06A652; }
 .electron-app .cgm-create:disabled { background: #C9CDD4; }
 
 /* ── § 18  右键菜单 / 下拉 ── */
@@ -603,7 +603,7 @@
   --bg-panel:             #1C1C1E;
   --bg-panel-header:      #1C1C1E;
   --bg-panel-item-hover:  rgba(255,255,255,0.06);
-  --bg-panel-item-active: rgba(13,158,184,0.14);
+  --bg-panel-item-active: rgba(7,193,96,0.14);
   --bg-chat:              #111111;
   --bg-chat-header:       #1C1C1E;
   --bg-messages:          #0E0E10;
@@ -617,8 +617,8 @@
 }
 html.electron-app:has(body.dark-mode) .wc-sidebar { background: #111111; }
 html.electron-app:has(body.dark-mode) .wc-sidebar-badge { border-color: #111111; }
-html.electron-app:has(body.dark-mode) .wc-sidebar-btn.active { background: rgba(13,158,184,0.14); }
-html.electron-app:has(body.dark-mode) .wc-sidebar-btn.active::before { background: #0D9EB8; }
+html.electron-app:has(body.dark-mode) .wc-sidebar-btn.active { background: rgba(7,193,96,0.14); }
+html.electron-app:has(body.dark-mode) .wc-sidebar-btn.active::before { background: #07C160; }
 html.electron-app:has(body.dark-mode) .wc-panel { background: #1C1C1E; border-right-color: #3A3A3C; }
 html.electron-app:has(body.dark-mode) .wc-panel-topbar { background: #1C1C1E; border-bottom-color: #3A3A3C; }
 html.electron-app:has(body.dark-mode) .wc-search { background: #2C2C2E; border: none; box-shadow: none; }
@@ -626,12 +626,12 @@ html.electron-app:has(body.dark-mode) .wc-search:focus-within { background: #3A3
 html.electron-app:has(body.dark-mode) .wc-search input { color: #D0D3D8; }
 html.electron-app:has(body.dark-mode) .wc-chat-item { border-bottom-color: #2A2A2C; }
 html.electron-app:has(body.dark-mode) .wc-chat-item:hover { background: rgba(255,255,255,0.06); }
-html.electron-app:has(body.dark-mode) .wc-chat-item.active { background: rgba(13,158,184,0.14); }
+html.electron-app:has(body.dark-mode) .wc-chat-item.active { background: rgba(7,193,96,0.14); }
 html.electron-app:has(body.dark-mode) .wc-chat-item-name { color: #D0D3D8; }
 html.electron-app:has(body.dark-mode) .wc-chat-item-badge { border-color: #1C1C1E; }
 html.electron-app:has(body.dark-mode) .wc-chat-item-unread-dot { border-color: #1C1C1E; }
-html.electron-app:has(body.dark-mode) .wc-chat-item.active .wc-chat-item-badge { border-color: rgba(13,158,184,0.14); }
-html.electron-app:has(body.dark-mode) .wc-online-dot { border-color: #1C1C1E; background: #0D9EB8; }
+html.electron-app:has(body.dark-mode) .wc-chat-item.active .wc-chat-item-badge { border-color: rgba(7,193,96,0.14); }
+html.electron-app:has(body.dark-mode) .wc-online-dot { border-color: #1C1C1E; background: #07C160; }
 html.electron-app:has(body.dark-mode) .home-chat-area { background: #111111; }
 html.electron-app:has(body.dark-mode) .wc-chat-header { background: #1C1C1E; border-bottom-color: #3A3A3C; }
 html.electron-app:has(body.dark-mode) .wc-chat-header-name { color: #E5E5EA; }
@@ -639,7 +639,7 @@ html.electron-app:has(body.dark-mode) .wc-chat-header-btn:hover { background: rg
 html.electron-app:has(body.dark-mode) .wc-messages,
 html.electron-app:has(body.dark-mode) .wc-messages-virt { background: #0E0E10; }
 html.electron-app:has(body.dark-mode) .wc-msg-row.mine .wc-msg-bubble {
-  background: rgba(13,158,184,0.22);
+  background: rgba(7,193,96,0.22);
   color: #E5E5EA;
   border: none;
 }
@@ -652,7 +652,7 @@ html.electron-app:has(body.dark-mode) .wc-input-area { background: #1C1C1E; bord
 html.electron-app:has(body.dark-mode) .wc-textarea { color: #D0D3D8; }
 html.electron-app:has(body.dark-mode) .wc-tool-btn { color: #8E8E93; }
 html.electron-app:has(body.dark-mode) .wc-tool-btn:hover { background: rgba(255,255,255,0.08); color: #E5E5EA; }
-html.electron-app:has(body.dark-mode) .wc-send-btn.active { background: #0D9EB8; }
+html.electron-app:has(body.dark-mode) .wc-send-btn.active { background: #07C160; }
 html.electron-app:has(body.dark-mode) .we-empty { background: #0E0E10; }
 html.electron-app:has(body.dark-mode) .wc-ctx-menu,
 html.electron-app:has(body.dark-mode) .home-add-dropdown {
@@ -668,13 +668,13 @@ html.electron-app:has(body.dark-mode) .home-add-divider { background: #3A3A3C; }
 /* Bug2 补充：§21 首版遗漏的浅色残留（hover/active/disabled + 骨架屏） */
 html.electron-app:has(body.dark-mode) .wc-icon-btn:hover { background: rgba(255,255,255,0.08); color: #E5E5EA; }
 html.electron-app:has(body.dark-mode) .wc-icon-btn:active { background: rgba(255,255,255,0.12); }
-html.electron-app:has(body.dark-mode) .wc-chat-item.active:hover { background: rgba(13,158,184,0.20); }
+html.electron-app:has(body.dark-mode) .wc-chat-item.active:hover { background: rgba(7,193,96,0.20); }
 html.electron-app:has(body.dark-mode) .wc-chat-item-badge.muted { background: #5A5A5E; }
 html.electron-app:has(body.dark-mode) .wc-chat-item.pinned:not(.active) { background: rgba(255,255,255,0.03); }
 html.electron-app:has(body.dark-mode) .wc-chat-item.pinned:not(.active):hover { background: rgba(255,255,255,0.06); }
 html.electron-app:has(body.dark-mode) .wc-chat-header-btn:active { background: rgba(255,255,255,0.12); }
 html.electron-app:has(body.dark-mode) .wc-chat-header-btn.active { background: rgba(255,255,255,0.08); color: #E5E5EA; }
 html.electron-app:has(body.dark-mode) .wc-tool-btn:active { background: rgba(255,255,255,0.12); }
-html.electron-app:has(body.dark-mode) .wc-tool-btn.active { background: rgba(13,158,184,0.18); color: #0D9EB8; }
+html.electron-app:has(body.dark-mode) .wc-tool-btn.active { background: rgba(7,193,96,0.18); color: #07C160; }
 html.electron-app:has(body.dark-mode) .wc-skel-avatar,
 html.electron-app:has(body.dark-mode) .wc-skel { background: #2C2C2E; }
