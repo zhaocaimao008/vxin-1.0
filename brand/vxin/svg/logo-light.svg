@@ -1,0 +1,77 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 浅色主题金色渐变 -->
+    <linearGradient id="goldGradientLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="25%" style="stop-color:#FFA500;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#FF8C00;stop-opacity:1" />
+      <stop offset="75%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFA500;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- 浅色科技轨道渐变 -->
+    <linearGradient id="techRingGradientLight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#E0E0E0;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#B0B0B0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E0E0E0;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- 粒子发光滤镜 -->
+    <filter id="particleGlowLight" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- 背景圆 - 白色 -->
+  <circle cx="256" cy="256" r="240" fill="#FFFFFF" />
+
+  <!-- 科技轨道 - 外环 -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="url(#techRingGradientLight)" stroke-width="2" opacity="0.8" />
+
+  <!-- 科技轨道 - 中环 -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="url(#techRingGradientLight)" stroke-width="1.5" opacity="0.6" stroke-dasharray="10,5" />
+
+  <!-- 科技轨道 - 内环 -->
+  <circle cx="256" cy="256" r="160" fill="none" stroke="url(#techRingGradientLight)" stroke-width="1" opacity="0.4" stroke-dasharray="5,10" />
+
+  <!-- 金色粒子 -->
+  <g filter="url(#particleGlowLight)">
+    <circle cx="150" cy="180" r="3" fill="#FFD700" opacity="0.9" />
+    <circle cx="180" cy="140" r="2" fill="#FFA500" opacity="0.8" />
+    <circle cx="320" cy="170" r="2.5" fill="#FFD700" opacity="0.85" />
+    <circle cx="350" cy="200" r="1.5" fill="#FF8C00" opacity="0.75" />
+    <circle cx="130" cy="280" r="2" fill="#FFD700" opacity="0.8" />
+    <circle cx="370" cy="300" r="2" fill="#FFA500" opacity="0.85" />
+    <circle cx="160" cy="350" r="1.5" fill="#FFD700" opacity="0.75" />
+    <circle cx="340" cy="380" r="2.5" fill="#FF8C00" opacity="0.9" />
+  </g>
+
+  <!-- 聊天气泡背景 -->
+  <path d="M 160 140 Q 160 120 180 120 L 332 120 Q 352 120 352 140 L 352 290 Q 352 310 332 310 L 220 310 L 170 350 L 170 310 L 180 310 Q 160 310 160 290 Z"
+        fill="#F5F5F5" stroke="url(#goldGradientLight)" stroke-width="2" opacity="0.9" />
+
+  <!-- 金色 V 字母 -->
+  <g transform="translate(256, 215)">
+    <path d="M -60 -50 L -20 50 L 20 50 L 60 -50 L 30 -50 L 0 10 L -30 -50 Z"
+          fill="url(#goldGradientLight)" stroke="#FFD700" stroke-width="2" />
+
+    <!-- V 字母能量光晕 -->
+    <path d="M -60 -50 L -20 50 L 20 50 L 60 -50 L 30 -50 L 0 10 L -30 -50 Z"
+          fill="none" stroke="#FFD700" stroke-width="4" opacity="0.3" filter="url(#particleGlowLight)" />
+  </g>
+
+  <!-- 内圈能量环 -->
+  <circle cx="256" cy="215" r="70" fill="none" stroke="url(#goldGradientLight)" stroke-width="1.5" opacity="0.6" />
+
+  <!-- 装饰性数据点 -->
+  <g fill="#FFD700" opacity="0.4">
+    <circle cx="256" cy="90" r="2" />
+    <circle cx="256" cy="340" r="2" />
+    <circle cx="120" cy="215" r="2" />
+    <circle cx="392" cy="215" r="2" />
+  </g>
+</svg>
