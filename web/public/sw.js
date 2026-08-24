@@ -6,7 +6,7 @@
  *   - 推送通知 → 本地展示
  * 版本号变更自动触发旧缓存清理
  */
-const SW_VERSION = 'vxin-sw-v3';
+const SW_VERSION = 'vxin-sw-v4';
 const STATIC_CACHE = `${SW_VERSION}-static`;
 const DYNAMIC_CACHE = `${SW_VERSION}-dynamic`;
 const MAX_DYNAMIC_ENTRIES = 60;
