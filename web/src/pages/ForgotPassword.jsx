@@ -102,15 +102,12 @@ export default function ForgotPassword() {
       <div className="auth-container" style={{ width: 400 }}>
         <div className="auth-brand">
           <div className="auth-brand-icon">
-            <svg viewBox="0 0 46 46" fill="none" aria-hidden="true">
-              <path
-                d="M8 11 L23 35 L38 11"
-                stroke="white"
-                strokeWidth="7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
+            <svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
+              <rect x="0" y="0" width="100" height="100" rx="22" fill="#000000"/>
+              <polygon points="14,80 28,80 12,96" fill="#000000"/>
+              <circle cx="12" cy="96" r="2" fill="#000000"/>
+              <circle cx="50" cy="46" r="30" fill="none" stroke="#FFD700" strokeWidth="2.5" opacity="0.85"/>
+              <polygon points="38.28,32.23 46.09,51.77 53.91,51.77 61.72,32.23 55.86,32.23 50,43.95 44.14,32.23" fill="#FFD700"/>
             </svg>
           </div>
           <h1 className="auth-brand-name">忘记密码</h1>
