@@ -16,11 +16,11 @@
 tailwind.config = {
   theme: { extend: {
     colors: {
-      'wx-green':  '#07C160',
-      'wx-bubble': '#95EC69',
+      'wx-green':  '#0D9EB8',
+      'wx-bubble': '#8FDEED',
       'wx-dark':   '#1E1E1E',
       'wx-panel':  '#EDEDED',
-      'wx-active': '#C7ECD3',
+      'wx-active': '#C9EDF3',
     },
     fontSize: { '10': '10px', '11': '11px', '12': '12px', '13': '13px' },
   }}
@@ -65,7 +65,7 @@ textarea,input{font-family:inherit;outline:none;border:none}
   content:'';position:absolute;
   left:0;top:50%;transform:translateY(-50%);
   width:3px;height:20px;
-  background:#07C160;border-radius:0 2px 2px 0;
+  background:#0D9EB8;border-radius:0 2px 2px 0;
 }
 .nav-btn svg{width:22px;height:22px;fill:rgba(255,255,255,.38);transition:fill .08s}
 .nav-btn:hover svg{fill:rgba(255,255,255,.62)}
@@ -79,7 +79,7 @@ textarea,input{font-family:inherit;outline:none;border:none}
   user-select:none;
 }
 .conv-item:hover{background:rgba(0,0,0,.05)}
-.conv-item.active{background:#C7ECD3}
+.conv-item.active{background:#C9EDF3}
 .conv-item.active:hover{background:#BBDFC6}
 .conv-item.pinned:not(.active){background:rgba(0,0,0,.016)}
 
@@ -102,13 +102,13 @@ textarea,input{font-family:inherit;outline:none;border:none}
 }
 /* Mine: green, right, tail top-right */
 .bubble.mine{
-  background:#95EC69;
+  background:#8FDEED;
   border-radius:4px 2px 4px 4px;
 }
 .bubble.mine::after{
   content:'';position:absolute;
   right:-5px;top:0;
-  border-top:6px solid #95EC69;
+  border-top:6px solid #8FDEED;
   border-right:6px solid transparent;
 }
 /* Theirs: white, left, tail top-left */
@@ -142,9 +142,9 @@ textarea,input{font-family:inherit;outline:none;border:none}
   transition:background .15s,color .15s;
   cursor:default;letter-spacing:.2px;min-width:64px;
 }
-.send-btn.ready{background:#07C160;color:#fff;cursor:pointer}
-.send-btn.ready:hover{background:#06AE56}
-.send-btn.ready:active{background:#059848}
+.send-btn.ready{background:#0D9EB8;color:#fff;cursor:pointer}
+.send-btn.ready:hover{background:#0B839C}
+.send-btn.ready:active{background:#096B80}
 
 /* ── New message animation ────────────────────────────────── */
 @keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
@@ -167,7 +167,7 @@ textarea,input{font-family:inherit;outline:none;border:none}
   padding:0 4px;line-height:1;
   border:1.5px solid #EDEDED;
 }
-.conv-item.active .badge{border-color:#C7ECD3}
+.conv-item.active .badge{border-color:#C9EDF3}
 
 /* ── Right-click Context Menu ─────────────────────────────── */
 .ctx{
@@ -243,7 +243,7 @@ textarea,input{font-family:inherit;outline:none;border:none}
 
   <!-- User Avatar -->
   <div style="margin:16px 0 10px;cursor:pointer" onclick="showPage('me')" title="个人信息">
-    <div class="avatar" style="width:36px;height:36px;background:linear-gradient(135deg,#07C160,#0ABF50);font-size:14px">我</div>
+    <div class="avatar" style="width:36px;height:36px;background:linear-gradient(135deg,#0D9EB8,#0D9EB8);font-size:14px">我</div>
   </div>
 
   <!-- Navigation -->
@@ -303,8 +303,8 @@ textarea,input{font-family:inherit;outline:none;border:none}
   <!-- Empty state (shown when no conv selected) -->
   <div id="chat-empty" class="empty" style="display:flex">
     <svg style="width:62px;height:52px;margin-bottom:4px" viewBox="0 0 62 52">
-      <path fill="rgba(7,193,96,.4)" d="M20 1C9.5 1 1 7.8 1 16.2c0 4.7 2.5 8.9 6.5 11.7l-1.2 5.8 6.8-3.9c2.2.5 4.5.8 6.9.8 10.5 0 19-6.8 19-15.2S30.5 1 20 1z"/>
-      <path fill="#07C160" d="M40 13C28.4 13 19 20.5 19 29.7c0 5.3 2.9 10 7.6 13.1l-1.3 6.2 7.8-4.6c2.5.6 5.1.9 7.9.9 11.6 0 21-7.5 21-16.7S51.6 13 40 13z"/>
+      <path fill="rgba(13,158,184,.4)" d="M20 1C9.5 1 1 7.8 1 16.2c0 4.7 2.5 8.9 6.5 11.7l-1.2 5.8 6.8-3.9c2.2.5 4.5.8 6.9.8 10.5 0 19-6.8 19-15.2S30.5 1 20 1z"/>
+      <path fill="#0D9EB8" d="M40 13C28.4 13 19 20.5 19 29.7c0 5.3 2.9 10 7.6 13.1l-1.3 6.2 7.8-4.6c2.5.6 5.1.9 7.9.9 11.6 0 21-7.5 21-16.7S51.6 13 40 13z"/>
     </svg>
     <span style="font-size:13px">v信</span>
   </div>
@@ -378,8 +378,8 @@ textarea,input{font-family:inherit;outline:none;border:none}
 <!-- Screenshot modal -->
 <div id="screenshot-modal" style="display:none" class="modal-bg" onclick="if(event.target===this)hideModal(this.id)">
   <div class="modal-box" style="width:320px;padding:28px 24px 20px;text-align:center">
-    <div style="width:52px;height:52px;border-radius:50%;background:rgba(7,193,96,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
-      <svg style="width:26px;height:26px;fill:#07C160" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+    <div style="width:52px;height:52px;border-radius:50%;background:rgba(13,158,184,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+      <svg style="width:26px;height:26px;fill:#0D9EB8" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
     </div>
     <div style="font-size:15px;font-weight:600;margin-bottom:8px">截图</div>
     <div style="font-size:13px;color:#888;line-height:1.7;margin-bottom:20px">
@@ -387,7 +387,7 @@ textarea,input{font-family:inherit;outline:none;border:none}
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="hideModal('screenshot-modal')" style="flex:1;padding:8px;border:1px solid #E5E5E5;border-radius:5px;font-size:13px;color:#555;background:#fff;cursor:pointer;transition:background .1s" onmouseenter="this.style.background='#F5F5F5'" onmouseleave="this.style.background='#fff'">取消</button>
-      <button onclick="hideModal('screenshot-modal')" style="flex:1;padding:8px;background:#07C160;border-radius:5px;font-size:13px;color:#fff;cursor:pointer;transition:background .1s" onmouseenter="this.style.background='#06AE56'" onmouseleave="this.style.background='#07C160'">好的</button>
+      <button onclick="hideModal('screenshot-modal')" style="flex:1;padding:8px;background:#0D9EB8;border-radius:5px;font-size:13px;color:#fff;cursor:pointer;transition:background .1s" onmouseenter="this.style.background='#0B839C'" onmouseleave="this.style.background='#0D9EB8'">好的</button>
     </div>
   </div>
 </div>
@@ -440,7 +440,7 @@ textarea,input{font-family:inherit;outline:none;border:none}
 // ═══════════════════════════════════════════════════════════
 //  DATA
 // ═══════════════════════════════════════════════════════════
-const ME = { id:'me', name:'v信用户', avatar:'我', color:'linear-gradient(135deg,#07C160,#0ABF50)' };
+const ME = { id:'me', name:'v信用户', avatar:'我', color:'linear-gradient(135deg,#0D9EB8,#0D9EB8)' };
 
 const CONVS = [
   {
@@ -535,7 +535,7 @@ function renderPanel() {
         <div style="background:#fff;border-top:1px solid rgba(0,0,0,.07);border-bottom:1px solid rgba(0,0,0,.07)">
           ${['新的朋友 <span style="background:#FA5151;color:#fff;border-radius:8px;font-size:10px;padding:1px 5px;margin-left:6px">2</span>','群聊','标签'].map(l=>`
           <div class="page-item" onclick="alert('${l.replace(/<[^>]*>/g,'')}')">
-            <div class="avatar" style="width:36px;height:36px;background:#07C160;font-size:16px">👥</div>
+            <div class="avatar" style="width:36px;height:36px;background:#0D9EB8;font-size:16px">👥</div>
             <span style="flex:1;font-size:14px;color:#191919">${l}</span>
             <svg class="page-chev" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
           </div>`).join('')}
@@ -585,7 +585,7 @@ function renderPanel() {
       <div style="height:52px;display:flex;align-items:center;padding:0 16px;font-size:15px;font-weight:600;color:#191919;border-bottom:1px solid rgba(0,0,0,.07)">我</div>
       <!-- Profile card -->
       <div style="background:#fff;border-top:1px solid rgba(0,0,0,.07);border-bottom:1px solid rgba(0,0,0,.07);padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;margin-top:8px;transition:background .08s" onmouseenter="this.style.background='rgba(0,0,0,.03)'" onmouseleave="this.style.background='#fff'" onclick="alert('编辑个人资料')">
-        <div class="avatar" style="width:54px;height:54px;background:linear-gradient(135deg,#07C160,#0ABF50);font-size:20px;border-radius:8px">我</div>
+        <div class="avatar" style="width:54px;height:54px;background:linear-gradient(135deg,#0D9EB8,#0D9EB8);font-size:20px;border-radius:8px">我</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:16px;font-weight:600;color:#191919;margin-bottom:4px">v信用户</div>
           <div style="font-size:12px;color:#B2B2B2">微信号：vxin_2024</div>
@@ -704,7 +704,7 @@ function renderMessages(id) {
     const row = document.createElement('div');
     row.style.cssText = `display:flex;align-items:flex-start;gap:8px;margin-bottom:12px;flex-shrink:0;${isMe ? 'flex-direction:row-reverse' : ''}`;
 
-    const ava = `<div class="avatar" style="width:38px;height:38px;font-size:13px;flex-shrink:0;${isMe ? 'background:linear-gradient(135deg,#07C160,#0ABF50)' : 'background:'+conv.color}">${isMe ? '我' : conv.avatar.charAt(0)}</div>`;
+    const ava = `<div class="avatar" style="width:38px;height:38px;font-size:13px;flex-shrink:0;${isMe ? 'background:linear-gradient(135deg,#0D9EB8,#0D9EB8)' : 'background:'+conv.color}">${isMe ? '我' : conv.avatar.charAt(0)}</div>`;
 
     const nameHtml = (!isMe && msg.name) ? `<div style="font-size:11px;color:#888;margin-bottom:3px;padding-left:1px">${msg.name}</div>` : '';
     const content = msg.text.replace(/\n/g, '<br>');

@@ -65,7 +65,7 @@
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.electron-app .cl-entry-icon-box svg { fill: #07C160; width: 20px; height: 20px; }
+.electron-app .cl-entry-icon-box svg { fill: #0D9EB8; width: 20px; height: 20px; }
 
 /* ── Sub-tabs (received / sent) ── */
 .electron-app .cl-subtabs {
@@ -85,8 +85,8 @@
 }
 .electron-app .cl-subtab:hover { color: var(--vx-text-primary); }
 .electron-app .cl-subtab.active {
-  color: #07C160;
-  border-bottom-color: #07C160;
+  color: #0D9EB8;
+  border-bottom-color: #0D9EB8;
   font-weight: 600;
 }
 
@@ -129,7 +129,7 @@
   padding: 3px 8px;
   border-radius: 4px;
 }
-.electron-app .req-status-accepted { color: #07C160; background: var(--vx-surface-active); }
+.electron-app .req-status-accepted { color: #0D9EB8; background: var(--vx-surface-active); }
 .electron-app .req-status-rejected { color: var(--vx-text-secondary); background: var(--vx-surface-hover); }
 .electron-app .req-status-pending  { color: var(--vx-warning); background: var(--vx-warning-soft); }
 
@@ -152,7 +152,7 @@
   margin-top: 16px;
   height: 36px;
   padding: 0 20px;
-  background: #07C160;
+  background: #0D9EB8;
   color: var(--vx-text-inverse);
   border-radius: 8px;
   font-size: 14px;
@@ -223,7 +223,7 @@
 .electron-app .up-cover { width: 100%; height: 100%; object-fit: cover; }
 .electron-app .up-cover-default {
   width: 100%; height: 100%;
-  background: linear-gradient(135deg, #07C160 0%, var(--vx-primary-deep) 100%);
+  background: linear-gradient(135deg, #0D9EB8 0%, var(--vx-primary-deep) 100%);
 }
 .electron-app .up-close-btn {
   position: absolute; top: 10px; right: 10px;
@@ -258,7 +258,7 @@
   font-size: 12px; color: var(--vx-text-secondary); margin-top: 2px;
 }
 .electron-app .up-copyable { cursor: pointer; }
-.electron-app .up-copyable:hover { color: #07C160; }
+.electron-app .up-copyable:hover { color: #0D9EB8; }
 .electron-app .up-bio {
   font-size: 13px; color: var(--vx-text-secondary); margin-top: 6px; line-height: 1.5;
 }
@@ -294,7 +294,7 @@
 .electron-app .up-verify-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; }
 
 .electron-app .up-add-area { padding: 12px 20px; border-top: 1px solid var(--vx-border-light); }
-.electron-app .up-sent-tip { font-size: 13px; color: #07C160; padding: 8px 0; text-align: center; }
+.electron-app .up-sent-tip { font-size: 13px; color: #0D9EB8; padding: 8px 0; text-align: center; }
 .electron-app .up-err { font-size: 12px; color: var(--vx-danger); margin-top: 6px; }
 
 .electron-app .up-actions {
@@ -313,14 +313,14 @@
   display: flex; align-items: center; justify-content: center; gap: 4px;
 }
 .electron-app .up-action-btn:hover { opacity: 0.85; }
-.electron-app .up-action-chat { background: #07C160; color: var(--vx-text-inverse); border: none; }
+.electron-app .up-action-chat { background: #0D9EB8; color: var(--vx-text-inverse); border: none; }
 .electron-app .up-action-grey { background: var(--vx-bg); color: var(--vx-text-primary); border: 1px solid var(--vx-border); }
 .electron-app .up-action-warn { background: var(--vx-warning-soft); color: var(--vx-warning); border: 1px solid var(--vx-warning-border); }
 .electron-app .up-action-danger { background: var(--vx-danger-soft); color: var(--vx-danger); border: 1px solid var(--vx-danger-border); }
 .electron-app .up-loading-dot {
   width: 24px; height: 24px;
   border: 3px solid var(--vx-border);
-  border-top-color: #07C160;
+  border-top-color: #0D9EB8;
   border-radius: 50%;
   animation: vx-spin 0.7s linear infinite;
 }
@@ -361,7 +361,7 @@
   transition: border-color 120ms, background 120ms;
 }
 .electron-app .afm-search-wrap-focused {
-  background: var(--vx-surface); border-color: #07C160;
+  background: var(--vx-surface); border-color: #0D9EB8;
   box-shadow: 0 0 0 2px var(--vx-focus-ring-soft);
 }
 .electron-app .afm-search-icon { width: 16px; height: 16px; color: var(--vx-text-secondary); flex-shrink: 0; }
@@ -391,7 +391,7 @@
 }
 .electron-app .afm-search-row:hover { background: var(--vx-surface-hover); }
 .electron-app .afm-search-text { font-size: 14px; color: var(--vx-text-primary); }
-.electron-app .afm-search-hl { color: #07C160; font-weight: 500; }
+.electron-app .afm-search-hl { color: #0D9EB8; font-weight: 500; }
 .electron-app .afm-search-hint { font-size: 12px; color: var(--vx-text-muted); margin-left: auto; }
 .electron-app .afm-not-found { padding: 32px 20px; text-align: center; }
 .electron-app .afm-not-found-title { font-size: 14px; color: var(--vx-text-secondary); }
@@ -420,7 +420,7 @@ html.electron-app:has(body.dark-mode) .cl-subtabs { background: var(--vx-bg-seco
 html.electron-app:has(body.dark-mode) .req-item { border-bottom-color: var(--vx-border-light); }
 html.electron-app:has(body.dark-mode) .req-name { color: var(--vx-text-primary); }
 html.electron-app:has(body.dark-mode) .up-card { background: var(--vx-surface); }
-html.electron-app:has(body.dark-mode) .up-cover-default { background: linear-gradient(135deg, #07C160 0%, var(--vx-primary-deep) 100%); }
+html.electron-app:has(body.dark-mode) .up-cover-default { background: linear-gradient(135deg, #0D9EB8 0%, var(--vx-primary-deep) 100%); }
 html.electron-app:has(body.dark-mode) .up-avatar-wrap { border-color: var(--vx-surface); }
 html.electron-app:has(body.dark-mode) .up-name { color: var(--vx-text-primary); }
 html.electron-app:has(body.dark-mode) .up-row { border-bottom-color: var(--vx-border-light); }
@@ -434,7 +434,7 @@ html.electron-app:has(body.dark-mode) .afm-card { background: var(--vx-surface);
 html.electron-app:has(body.dark-mode) .afm-header { border-bottom-color: var(--vx-border); }
 html.electron-app:has(body.dark-mode) .afm-header-title { color: var(--vx-text-primary); }
 html.electron-app:has(body.dark-mode) .afm-search-wrap { background: var(--vx-surface-hover); }
-html.electron-app:has(body.dark-mode) .afm-search-wrap-focused { background: var(--vx-bg-secondary); border-color: #07C160; }
+html.electron-app:has(body.dark-mode) .afm-search-wrap-focused { background: var(--vx-bg-secondary); border-color: #0D9EB8; }
 html.electron-app:has(body.dark-mode) .afm-search-input { color: var(--vx-text-primary); }
 html.electron-app:has(body.dark-mode) .afm-result-item { border-bottom-color: var(--vx-border-light); }
 html.electron-app:has(body.dark-mode) .afm-result-item:hover { background: var(--vx-hover-overlay); }

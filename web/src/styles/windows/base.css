@@ -13,7 +13,7 @@
 .electron-app .req-accept {
   height: 36px;
   padding: 0 16px;
-  background: #07C160;
+  background: #0D9EB8;
   color: var(--vx-text-inverse);
   border: none;
   border-radius: 8px;
@@ -68,7 +68,7 @@
 .electron-app .req-reject:hover { background: var(--vx-bg); }
 
 /* Save button (text-style green) */
-.electron-app .wc-save-btn { color: #07C160; font-size: 15px; font-weight: 600; }
+.electron-app .wc-save-btn { color: #0D9EB8; font-size: 15px; font-weight: 600; }
 .electron-app .wc-save-btn:disabled { opacity: 0.5; }
 
 /* ── Switch ── */
@@ -123,7 +123,7 @@
 .electron-app .wc-add-form-input:focus,
 .electron-app .gi-name-edit:focus {
   background: var(--vx-surface);
-  border-color: #07C160;
+  border-color: #0D9EB8;
   outline: none;
   box-shadow: 0 0 0 2px var(--vx-focus-ring-soft);
 }
@@ -208,7 +208,7 @@
   border-bottom: 1px solid var(--vx-border);
   padding: 0 16px;
 }
-.electron-app .wc-page-header-back { color: #07C160; font-size: 15px; }
+.electron-app .wc-page-header-back { color: #0D9EB8; font-size: 15px; }
 .electron-app .wc-page-header-title { font-size: 16px; font-weight: 600; color: var(--vx-text-primary); }
 
 /* ── Settings card / row ── */
@@ -302,7 +302,7 @@ html.electron-app:has(body.dark-mode) .gi-name-edit {
   background: var(--vx-surface-hover); border-color: var(--vx-border); color: var(--vx-text-primary);
 }
 html.electron-app:has(body.dark-mode) .wc-switch { background: var(--vx-border-strong); }
-html.electron-app:has(body.dark-mode) .wc-switch.on { background: #07C160; }
+html.electron-app:has(body.dark-mode) .wc-switch.on { background: #0D9EB8; }
 
 /* ── Final QA Polish — targeted fixes from code audit ── */
 
@@ -491,7 +491,7 @@ html.electron-app:has(body.dark-mode) .wc-switch.on { background: #07C160; }
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #07C160;
+  background: #0D9EB8;
   border: 1.5px solid var(--vx-bg-secondary);
 }
 .electron-app .wc-chat-item.active .wc-chat-item-unread-dot {

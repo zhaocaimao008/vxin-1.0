@@ -30,35 +30,41 @@ import useFocusTrap from '../hooks/useFocusTrap';
 import { } from '../utils/url';
 import { } from '../utils/rememberedCreds';
 
-function WcEmpty() {
+function WcEmpty({ cold = false, onAddFriend, onCreateGroup }) {
   return (
     <div className="we-empty">
-      {/* v信品牌插画：对话气泡 + 品牌绿圆 */}
+      {/* v信品牌插画：对话气泡 + 品牌青圆 */}
       <svg className="we-empty-svg" viewBox="0 0 120 120" aria-hidden="true" fill="none">
         {/* 背景大圆 */}
-        <circle cx="60" cy="60" r="56" fill="rgba(7,193,96,.07)" />
+        <circle cx="60" cy="60" r="56" fill="rgba(13,158,184,.07)" />
         {/* 主气泡（他人） */}
-        <rect x="16" y="32" width="58" height="34" rx="14" fill="rgba(7,193,96,.14)" />
+        <rect x="16" y="32" width="58" height="34" rx="14" fill="rgba(13,158,184,.14)" />
         {/* 气泡尾 */}
-        <path d="M30 66l-8 10 18-10z" fill="rgba(7,193,96,.14)" />
+        <path d="M30 66l-8 10 18-10z" fill="rgba(13,158,184,.14)" />
         {/* 气泡内文字线条 */}
-        <rect x="26" y="43" width="32" height="4" rx="2" fill="rgba(7,193,96,.40)" />
-        <rect x="26" y="52" width="22" height="4" rx="2" fill="rgba(7,193,96,.28)" />
+        <rect x="26" y="43" width="32" height="4" rx="2" fill="rgba(13,158,184,.40)" />
+        <rect x="26" y="52" width="22" height="4" rx="2" fill="rgba(13,158,184,.28)" />
         {/* 我的气泡（右侧） */}
-        <rect x="46" y="66" width="56" height="30" rx="12" fill="#07C160" />
+        <rect x="46" y="66" width="56" height="30" rx="12" fill="#0D9EB8" />
         {/* 气泡尾 */}
-        <path d="M92 96l8 9-16-9z" fill="#07C160" />
+        <path d="M92 96l8 9-16-9z" fill="#0D9EB8" />
         {/* 气泡内文字线条 */}
         <rect x="56" y="75" width="28" height="4" rx="2" fill="rgba(255,255,255,.55)" />
         <rect x="56" y="84" width="18" height="4" rx="2" fill="rgba(255,255,255,.38)" />
         {/* 品牌绿圆点装饰 */}
-        <circle cx="96" cy="34" r="6" fill="rgba(7,193,96,.30)" />
-        <circle cx="24" cy="92" r="4" fill="rgba(7,193,96,.20)" />
+        <circle cx="96" cy="34" r="6" fill="rgba(13,158,184,.30)" />
+        <circle cx="24" cy="92" r="4" fill="rgba(13,158,184,.20)" />
       </svg>
       <div className="we-empty-text">
-        <h3 className="we-empty-title">欢迎使用 v信</h3>
-        <p className="we-empty-hint">安全连接每一刻，畅享沟通新体验</p>
+        <h3 className="we-empty-title">{cold ? '开始你的第一场对话' : '欢迎使用 v信'}</h3>
+        <p className="we-empty-hint">{cold ? '添加好友或发起群聊，和重要的人保持连接' : '安全连接每一刻，畅享沟通新体验'}</p>
       </div>
+      {cold && (
+        <div className="we-empty-actions">
+          <button type="button" className="cl-add-btn" onClick={onAddFriend}>＋ 添加好友</button>
+          <button type="button" className="we-empty-btn-ghost" onClick={onCreateGroup}>发起群聊</button>
+        </div>
+      )}
     </div>
   );
 }
@@ -263,6 +269,7 @@ export default function Home() {
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [addFriendRequest, setAddFriendRequest] = useState(0);
   const [convRefreshKey, setConvRefreshKey] = useState(0);
+  const [convCount, setConvCount] = useState(null);   // ChatList 上报：null=未加载，0=冷启动（用于 WcEmpty 引导卡）
   const { socket, reconnectCount, registerUnreadCleared } = useSocket();
   const { user } = useAuth();
   usePushNotification(user);
@@ -532,7 +539,7 @@ export default function Home() {
   const renderMain = () => {
     switch (tab) {
       case 'chats':
-        return <ChatList onSelectConv={isMobile ? handleMobileSelectConv : handleSelectConv} activeConvId={activeConv?.id} unread={unread} searchQuery={search} convRefreshKey={convRefreshKey} onOpenMentions={() => setShowMentions(true)} />;
+        return <ChatList onSelectConv={isMobile ? handleMobileSelectConv : handleSelectConv} activeConvId={activeConv?.id} unread={unread} searchQuery={search} convRefreshKey={convRefreshKey} onOpenMentions={() => setShowMentions(true)} onConvCount={setConvCount} onAddFriend={handleAddFriend} />;
       case 'contacts':
         return <ContactList onStartChat={(conv) => handleSelectConv(conv)} searchQuery={search} addFriendRequest={addFriendRequest} onAddFriendConsumed={handleAddFriendConsumed} />;
       case 'moments':
@@ -692,7 +699,8 @@ export default function Home() {
                 ) : tab === 'chats' ? (
                   <ChatList onSelectConv={handleMobileSelectConv} activeConvId={activeConv?.id}
                     unread={unread} searchQuery={search}
-                    convRefreshKey={convRefreshKey} onOpenMentions={() => setShowMentions(true)} />
+                    convRefreshKey={convRefreshKey} onOpenMentions={() => setShowMentions(true)}
+                    onConvCount={setConvCount} onAddFriend={handleAddFriend} />
                 ) : renderMain()}
               </div>
             </div>
@@ -727,10 +735,10 @@ export default function Home() {
         {isElectron ? (
           <div className="wc-sidebar-logo" aria-hidden="true">
             <svg viewBox="0 0 100 100" fill="none">
-              <rect x="0" y="0" width="100" height="100" rx="22" fill="#07C160"/>
-              <rect x="47.54" y="48.53" width="43.20" height="33.30" rx="11.30" fill="#07C160"/>
-              <polygon points="85.56,79.69 77.41,78.40 86.41,88.69" fill="#07C160"/>
-              <circle cx="86.41" cy="88.69" r="1.37" fill="#07C160"/>
+              <rect x="0" y="0" width="100" height="100" rx="22" fill="#0D9EB8"/>
+              <rect x="47.54" y="48.53" width="43.20" height="33.30" rx="11.30" fill="#0D9EB8"/>
+              <polygon points="85.56,79.69 77.41,78.40 86.41,88.69" fill="#0D9EB8"/>
+              <circle cx="86.41" cy="88.69" r="1.37" fill="#0D9EB8"/>
               <rect x="7.10" y="17.66" width="66.00" height="50.16" rx="15.05" fill="#fff"/>
               <polygon points="15.02,64.85 26.31,63.07 13.83,77.32" fill="#fff"/>
               <circle cx="13.83" cy="77.32" r="1.90" fill="#fff"/>
@@ -846,7 +854,7 @@ export default function Home() {
                   </Suspense>
                 </ChatWindowBoundary>
               )
-              : <WcEmpty />
+              : <WcEmpty cold={convCount === 0} onAddFriend={handleAddFriend} onCreateGroup={handleCreateGroup} />
             }
           </div>
         )

@@ -104,10 +104,10 @@ export default function Login() {
       <div className="auth-top-logo">
         <span className="auth-top-logo-icon" aria-hidden="true">
           <svg viewBox="0 0 100 100" fill="none">
-            <rect x="0" y="0" width="100" height="100" rx="22" fill="#07C160"/>
-            <rect x="47.54" y="48.53" width="43.20" height="33.30" rx="11.30" fill="#07C160"/>
-            <polygon points="85.56,79.69 77.41,78.40 86.41,88.69" fill="#07C160"/>
-            <circle cx="86.41" cy="88.69" r="1.37" fill="#07C160"/>
+            <rect x="0" y="0" width="100" height="100" rx="22" fill="#0D9EB8"/>
+            <rect x="47.54" y="48.53" width="43.20" height="33.30" rx="11.30" fill="#0D9EB8"/>
+            <polygon points="85.56,79.69 77.41,78.40 86.41,88.69" fill="#0D9EB8"/>
+            <circle cx="86.41" cy="88.69" r="1.37" fill="#0D9EB8"/>
             <rect x="7.10" y="17.66" width="66.00" height="50.16" rx="15.05" fill="#fff"/>
             <polygon points="15.02,64.85 26.31,63.07 13.83,77.32" fill="#fff"/>
             <circle cx="13.83" cy="77.32" r="1.90" fill="#fff"/>
@@ -142,10 +142,10 @@ export default function Login() {
           <div className="auth-brand">
             <div className="auth-brand-logo">
               <svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
-                <rect x="0" y="0" width="100" height="100" rx="22" fill="#07C160"/>
-                <rect x="47.54" y="48.53" width="43.20" height="33.30" rx="11.30" fill="#07C160"/>
-                <polygon points="85.56,79.69 77.41,78.40 86.41,88.69" fill="#07C160"/>
-                <circle cx="86.41" cy="88.69" r="1.37" fill="#07C160"/>
+                <rect x="0" y="0" width="100" height="100" rx="22" fill="#0D9EB8"/>
+                <rect x="47.54" y="48.53" width="43.20" height="33.30" rx="11.30" fill="#0D9EB8"/>
+                <polygon points="85.56,79.69 77.41,78.40 86.41,88.69" fill="#0D9EB8"/>
+                <circle cx="86.41" cy="88.69" r="1.37" fill="#0D9EB8"/>
                 <rect x="7.10" y="17.66" width="66.00" height="50.16" rx="15.05" fill="#fff"/>
                 <polygon points="15.02,64.85 26.31,63.07 13.83,77.32" fill="#fff"/>
                 <circle cx="13.83" cy="77.32" r="1.90" fill="#fff"/>
@@ -160,7 +160,7 @@ export default function Login() {
         </div>
         <div className="auth-split-right">
       <div className="auth-container">
-        <h1 className="auth-brand-name" style={{ fontSize: 24, textAlign: 'center', marginBottom: 6 }}>欢迎登录 <span style={{ color: 'var(--color-primary, #07C160)' }}>v信</span></h1>
+        <h1 className="auth-brand-name" style={{ fontSize: 24, textAlign: 'center', marginBottom: 6 }}>欢迎登录 <span style={{ color: 'var(--color-primary, #0D9EB8)' }}>v信</span></h1>
         <p className="auth-brand-desc" style={{ textAlign: 'center', marginBottom: 24 }}>安全连接每一刻，畅享沟通新体验</p>
 
         {/* 登录方式切换：手机登录 | v信登录 */}

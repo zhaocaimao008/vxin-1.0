@@ -22,7 +22,9 @@ module.exports = {
 
   // 前端入口
   // web: vite dev/preview 或线上;electron: 由 _electron 启动,baseURL 无意义
-  WEB_URL: process.env.E2E_WEB_URL || 'http://127.0.0.1:4178',
+  // 注意:生产构建 base=/app/（主站根目录是 landing），e2e 静态服务也按 /app 前缀伺服，
+  // 故默认 URL 带 /app，与 dist 的资源路径和路由 basename 对齐
+  WEB_URL: process.env.E2E_WEB_URL || 'http://127.0.0.1:4178/app',
 
   // 测试账号密码(造号用,满足后端 ≥8位含字母数字)
   TEST_PASSWORD: 'e2epass1234',

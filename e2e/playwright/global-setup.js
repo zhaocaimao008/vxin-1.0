@@ -16,7 +16,7 @@ const STATE_FILE = path.join(__dirname, '..', '.e2e-state.json');
 const WEB_DIST = path.join(env.REPO_ROOT, 'web', 'dist');
 
 const MIME = {
-  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css',
+  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.jsx': 'text/javascript', '.css': 'text/css',
   '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json',
   '.ico': 'image/x-icon', '.woff2': 'font/woff2',
 };
@@ -52,6 +52,9 @@ function startStaticServer(dir, port, { backendUrl, uploadsToken } = {}) {
       }
 
       let p = decodeURIComponent(rawPath);
+      // 生产构建 base=/app/（根目录留给 landing 站），静态服务按前缀剥离后映射 dist
+      if (p === '/app') p = '/app/';
+      if (p.startsWith('/app/')) p = p.slice('/app'.length);
       if (p === '/') p = '/index.html';
       let file = path.join(dir, p);
       // SPA 回退:非静态资源(无后缀)走 index.html

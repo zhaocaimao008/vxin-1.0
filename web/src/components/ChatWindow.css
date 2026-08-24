@@ -781,9 +781,9 @@
   justify-content: center;
   flex-shrink: 0;
   transition: transform var(--dur-fast), box-shadow var(--dur-fast);
-  box-shadow: 0 2px 6px rgba(7,193,96,.30);
+  box-shadow: 0 2px 6px rgba(13,158,184,.30);
 }
-.wc-voice-play-btn:hover { transform: scale(1.05); box-shadow: 0 3px 10px rgba(7,193,96,.38); }
+.wc-voice-play-btn:hover { transform: scale(1.05); box-shadow: 0 3px 10px rgba(13,158,184,.38); }
 .wc-voice-play-btn:active { transform: scale(.92); }
 /* 我方气泡内播放按钮用白底绿圈 */
 .wc-msg-bubble.mine .wc-voice-play-btn {

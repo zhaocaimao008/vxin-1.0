@@ -42,7 +42,9 @@ async function startBackend({ fresh = true } = {}) {
       NODE_ENV: 'test',
       DISABLE_RATE_LIMIT: '1',   // e2e:关限流,批量造号/发消息不被挡
       DISABLE_CSRF: '1',         // e2e:跨端口前端读不到 csrf cookie,关双提交校验
-      CORS_ORIGINS: env.WEB_URL, // e2e:放行 web 静态服 origin(跨端口),否则浏览器 CORS 挡登录
+      // e2e:放行 web 静态服 origin(跨端口),否则浏览器 CORS 挡登录。
+      // WEB_URL 含 /app 路径(对齐构建 base),CORS 只要 origin 部分
+      CORS_ORIGINS: new URL(env.WEB_URL).origin,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });

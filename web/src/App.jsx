@@ -42,7 +42,7 @@ export default function App() {
       {/* ── Skip-link：无障碍跳过导航 ── */}
       <a href="#main-content" className="skip-link" style={{
         position: 'absolute', left: '-9999px', zIndex: 9999,
-        padding: '8px 16px', background: 'var(--color-primary, #07C160)', color: '#fff',
+        padding: '8px 16px', background: 'var(--color-primary, #0D9EB8)', color: '#fff',
         fontSize: 'var(--text-base)', textDecoration: 'none', borderRadius: '0 0 4px 0',
       }}>跳过导航，直达内容</a>
       {isElectron && <ElectronTitlebar />}
