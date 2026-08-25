@@ -12,7 +12,28 @@
 //   3. 空值 → Web 同源，相对路径可用
 import { getConfig, isConfigLoaded } from './config';
 
+// ── 已确认废弃的 v信官方旧服务器地址（与 Android/iOS DEPRECATED_SERVERS 一致）──
+// 仅自动清除白名单内的废弃官方地址；用户自己配置的其他自定义服务器一律保留。
+const DEPRECATED_SERVERS = new Set(['45.77.131.33', '104.244.95.70']);
+
+export function isDeprecatedServerUrl(url) {
+  if (!url) return false;
+  try { return DEPRECATED_SERVERS.has(new URL(url).hostname); } catch { return false; }
+}
+
+// 清除 localStorage 中废弃的官方旧服务器地址，返回是否发生了清除。
+export function clearDeprecatedServerUrl() {
+  const manualUrl = localStorage.getItem('vxin_server_url');
+  if (manualUrl && isDeprecatedServerUrl(manualUrl)) {
+    localStorage.removeItem('vxin_server_url');
+    return true;
+  }
+  return false;
+}
+
 function getBaseUrl() {
+  // 自动清除废弃官方地址（45.77.131.33 / 104.244.95.70），与 Android/iOS 清理行为一致
+  clearDeprecatedServerUrl();
   const manualUrl = localStorage.getItem('vxin_server_url');
   if (manualUrl) return manualUrl;
 
