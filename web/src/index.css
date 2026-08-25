@@ -1149,25 +1149,31 @@ body.dark-mode .wc-msg-status-delivered { color: rgba(255,255,255,.42); }
   padding: 6px 18px;
   background: var(--bg-search);
   color: var(--text-muted);
+  border: 1.5px solid transparent;   /* 占位：active 态会加金色描边，提前留出边框宽度避免跳动 */
   border-radius: var(--radius-button);
   font-size: var(--text-sm2);
   font-weight: var(--font-medium);
   cursor: not-allowed;
-  transition: background var(--dur), color var(--dur), transform var(--dur-fast);
+  transition: background var(--dur), color var(--dur), border-color var(--dur), transform var(--dur-fast);
   min-width: 66px;
 }
+/* 品牌延伸（2026-08-25）：发送按钮改金色描边+金字，呼应登录/启动的黑金识别，
+   不用实心色块是因为发送按钮周围就是聊天气泡（还是绿色），实心金块贴着绿气泡
+   会显脏；描边风格对齐 Web 登录页 .auth-submit 的做法，观感上更像"同一套语言"。 */
 .wc-send-btn.active {
-  background: linear-gradient(135deg, var(--brand-400), var(--brand-600));
-  color: var(--gray-0);
+  background: #141414;
+  color: #FFD700;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(var(--color-primary-rgb), .32);
+  border: 1.5px solid #FFD700;
+  box-shadow: 0 2px 8px rgba(255,215,0,.20);
 }
 .wc-send-btn.active:hover {
-  background: linear-gradient(135deg, var(--brand-300), var(--brand-500));
-  box-shadow: 0 4px 14px rgba(var(--color-primary-rgb), .42);
+  background: #1a1a1a;
+  border-color: #FFC72C;
+  box-shadow: 0 4px 14px rgba(255,215,0,.30);
   transform: translateY(-1px);
 }
-.wc-send-btn.active:active { transform: translateY(0); box-shadow: 0 2px 6px rgba(var(--color-primary-rgb), .3); }
+.wc-send-btn.active:active { transform: translateY(0); box-shadow: 0 2px 6px rgba(255,215,0,.18); }
 
 /* chat-window 改版：发送按钮内的下拉箭头——纯视觉，不带菜单/不加交互 */
 .wc-send-arrow { width: 16px; height: 16px; fill: currentColor; margin-left: 2px; vertical-align: -3px; }
@@ -1991,7 +1997,7 @@ body.dark-mode .wc-settings-entry:hover {
 
   /* 发送按钮 */
   .wc-send-btn { padding: 5px 14px; border-radius: var(--radius-md); min-width: 52px; font-size: var(--text-sm2); }
-  .wc-send-btn.active { background: var(--green); }
+  .wc-send-btn.active { background: #141414; border-color: #FFD700; }
 
   /* 气泡 — 更圆润 */
   .wc-msg-bubble { border-radius: var(--radius-bubble); padding: 7px 12px; font-size: var(--text-base); }
@@ -2321,14 +2327,17 @@ body {
 .wc-sidebar-btn:hover .icon svg { fill: rgba(255,255,255,.90); }
 .wc-sidebar-btn:hover .wc-sidebar-label { color: rgba(255,255,255,.75); }
 .wc-sidebar-btn:active { transform: scale(.95); }
-/* 激活态：绿色背景块 + 绿色图标/文字 + 左侧3px指示条 */
+/* 激活态：金色背景块 + 金色图标/文字 + 左侧3px指示条
+   （2026-08-25 品牌延伸：登录/启动是黑金，但进主界面后选中态一直是绿的，
+   两段体验割裂——这里做一个小范围的强调色touch，不改全局 --color-primary，
+   聊天气泡/其余大面积绿色 UI 不受影响）*/
 .wc-sidebar-btn.active {
-  background: rgba(7,193,96,.14);
+  background: rgba(255,215,0,.14);
 }
-.wc-sidebar-btn.active:hover { background: rgba(7,193,96,.20); }
-.wc-sidebar-btn.active .icon svg { fill: #07C160; }
-.wc-sidebar-btn.active .wc-sidebar-label { color: #07C160; font-weight: 500; }
-/* 左侧品牌绿指示条 */
+.wc-sidebar-btn.active:hover { background: rgba(255,215,0,.20); }
+.wc-sidebar-btn.active .icon svg { fill: #FFD700; }
+.wc-sidebar-btn.active .wc-sidebar-label { color: #FFD700; font-weight: 500; }
+/* 左侧品牌金指示条 */
 .wc-sidebar-btn.active::before {
   content: '';
   display: block;
@@ -2336,7 +2345,7 @@ body {
   left: -8px; top: 50%; transform: translateY(-50%);
   width: 3px; height: 28px;
   border-radius: 0 3px 3px 0;
-  background: #07C160;
+  background: #FFD700;
 }
 .wc-sidebar-badge {
   position: absolute;
@@ -4663,19 +4672,19 @@ select:focus-visible {
 .wc-sidebar-btn:hover .icon svg { fill: rgba(255,255,255,.88); }
 .wc-sidebar-btn:hover .wc-sidebar-label { color: rgba(255,255,255,.72); }
 
-/* 激活状态：绿色背景 + 绿色图标/文字 */
+/* 激活状态：金色背景 + 金色图标/文字（与上方主规则同步，2026-08-25 品牌延伸） */
 .wc-sidebar-btn.active {
-  background: rgba(7,193,96,.14);
+  background: rgba(255,215,0,.14);
   box-shadow: none;
 }
-.wc-sidebar-btn.active:hover { background: rgba(7,193,96,.20); }
-.wc-sidebar-btn.active .icon svg { fill: #07C160; }
+.wc-sidebar-btn.active:hover { background: rgba(255,215,0,.20); }
+.wc-sidebar-btn.active .icon svg { fill: #FFD700; }
 .wc-sidebar-btn.active .wc-sidebar-label {
-  color: #07C160;
+  color: #FFD700;
   font-weight: 500;
 }
-/* 左侧品牌绿指示条 */
-.wc-sidebar-btn.active::before { display: block; background: #07C160; height: 28px; }
+/* 左侧品牌金指示条 */
+.wc-sidebar-btn.active::before { display: block; background: #FFD700; height: 28px; }
 
 .wc-sidebar-badge { border-color: #111111; }
 
