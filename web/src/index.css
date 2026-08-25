@@ -2786,18 +2786,22 @@ body:not(.dark-mode) .wc-discover {
 }
 body.dark-mode .wc-msg-time span { background: rgba(255,255,255,.08); }
 
-/* 发送按钮：激活态为品牌渐变实心药丸（明确的主操作） */
+/* 发送按钮：激活态黑底金字描边（2026-08-25 品牌延伸，覆盖同选择器在文件靠后处的
+   另一份声明——这份文件里 .wc-send-btn.active 被重复定义了好几处，此前只改了最早
+   那处，级联顺序上没生效，见本文件 line ~5047 附近同选择器） */
 .wc-send-btn.active {
-  background: linear-gradient(135deg, var(--brand-400), var(--brand-600));
-  color: var(--gray-0);
-  box-shadow: 0 2px 8px rgba(var(--color-primary-rgb), .32);
+  background: #141414;
+  color: #FFD700;
+  border: 1.5px solid #FFD700;
+  box-shadow: 0 2px 8px rgba(255,215,0,.20);
 }
 .wc-send-btn.active:hover {
-  background: linear-gradient(135deg, var(--brand-300), var(--brand-500));
-  box-shadow: 0 4px 14px rgba(var(--color-primary-rgb), .42);
+  background: #1a1a1a;
+  border-color: #FFC72C;
+  box-shadow: 0 4px 14px rgba(255,215,0,.30);
   transform: translateY(-1px);
 }
-.wc-send-btn { transition: background var(--dur), color var(--dur), transform var(--dur-fast); }
+.wc-send-btn { transition: background var(--dur), color var(--dur), border-color var(--dur), transform var(--dur-fast); }
 /* 可发送时按下轻微回弹，给发送一点触觉般的反馈 */
 .wc-send-btn.active:active { transform: scale(.94); }
 
@@ -5043,18 +5047,22 @@ body.dark-mode .wc-chat-item:not(.active) + .wc-chat-item:not(.active) {
 }
 body.dark-mode .wc-input-area { border-top-color: rgba(255,255,255,.07); }
 
-/* ── 发送按钮精修：更饱满 ── */
+/* ── 发送按钮精修：更饱满（此选择器全文件第 3 次声明，见 line ~1163/2790——
+   这是级联顺序里最后、真正生效的一份，2026-08-25 品牌延伸同步改到位）── */
 .wc-send-btn.active {
-  background: var(--color-primary);
-  box-shadow: 0 2px 8px rgba(7,193,96,.28);
+  background: #141414;
+  border: 1.5px solid #FFD700;
+  color: #FFD700;
+  box-shadow: 0 2px 8px rgba(255,215,0,.20);
   letter-spacing: .02em;
 }
 .wc-send-btn.active:hover {
-  background: var(--color-primary-hover);
-  box-shadow: 0 3px 12px rgba(7,193,96,.38);
+  background: #1a1a1a;
+  border-color: #FFC72C;
+  box-shadow: 0 3px 12px rgba(255,215,0,.30);
   transform: translateY(-1px);
 }
-.wc-send-btn.active:active { transform: scale(.97); box-shadow: 0 1px 4px rgba(7,193,96,.22); }
+.wc-send-btn.active:active { transform: scale(.97); box-shadow: 0 1px 4px rgba(255,215,0,.18); }
 
 /* ── 回到底部按钮精修 ── */
 .wc-scroll-to-bottom {
