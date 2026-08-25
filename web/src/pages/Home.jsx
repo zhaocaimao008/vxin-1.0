@@ -25,6 +25,7 @@ import Avatar from '../components/Avatar';
 import ReconnectingBanner from '../components/ReconnectingBanner';
 import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { usePushNotification } from '../hooks/usePushNotification';
 import useFocusTrap from '../hooks/useFocusTrap';
 import { } from '../utils/url';
@@ -64,7 +65,7 @@ function WcEmpty() {
 }
 
 /* ── SVG Icons ── */
-import { IcoAdd, IcoSearch, visibleTabs, TABS, desktopVisibleTabs } from '../components/TabIcons';
+import { IcoAdd, IcoSearch, IcoMoon, IcoSun, visibleTabs, TABS, desktopVisibleTabs } from '../components/TabIcons';
 import { ModalSkeleton } from '../components/ModalSkeleton';
 import { IcoClose } from '../components/Icons';
 
@@ -265,6 +266,7 @@ export default function Home() {
   const [convRefreshKey, setConvRefreshKey] = useState(0);
   const { socket, reconnectCount, registerUnreadCleared } = useSocket();
   const { user } = useAuth();
+  const { darkMode, setDarkMode } = useSettings();
   usePushNotification(user);
   const activeConvIdRef = useRef(null);
   const addBtnRef = useRef(null);
@@ -761,6 +763,17 @@ export default function Home() {
         </div>
         {/* 底部账号切换头像已移除（产品要求）：桌面端账号切换/添加账户功能
             迁到「设置 → 账号管理」，见 Profile.jsx 的 AccountSwitcher embedded 模式 */}
+        {/* 皮肤快捷切换：🌓 点击在浅色/深空之间切换（独立于「设置→外观」） */}
+        <button
+          className="wc-sidebar-btn wc-skin-toggle"
+          onClick={() => setDarkMode(!darkMode)}
+          title={darkMode ? '切换到浅色' : '切换到深空'}
+          aria-label="切换皮肤"
+        >
+          <div className="icon">{darkMode ? <IcoSun /> : <IcoMoon />}</div>
+          <span className="wc-sidebar-label">{darkMode ? '浅色' : '深空'}</span>
+        </button>
+        {isElectron && <AccountSwitcher />}
       </div>
 
       {/* 主内容区 */}

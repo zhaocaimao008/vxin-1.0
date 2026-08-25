@@ -111,7 +111,8 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setElectronToken(null);
     if (window.__ELECTRON_CONFIG__) window.location.hash = '#/login';
-    else window.location.replace('/app/login');
+    // Web 部署在 /app/ 子路径：必须带 BASE_URL，否则会话失效后落到落地页 404
+    else window.location.replace((import.meta.env.BASE_URL || '/') + 'login');
   }, []);
 
   // ── 401 自动踢出 ───────────────────────────────────────────────

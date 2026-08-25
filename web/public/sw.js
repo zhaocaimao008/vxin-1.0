@@ -11,10 +11,14 @@ const STATIC_CACHE = `${SW_VERSION}-static`;
 const DYNAMIC_CACHE = `${SW_VERSION}-dynamic`;
 const MAX_DYNAMIC_ENTRIES = 60;
 
-// 预缓存核心 Shell（由 Vite Build 动态替换，这里是默认列表）
+// SW 部署在子路径（如 /app/）时，用 SW 自身路径推导 base，避免硬编码根路径导致
+// 预缓存/离线 fallback 全部失效（部署在 /app/sw.js → SW_BASE='/app/'）。
+const SW_BASE = self.location.pathname.replace(/sw\.js$/, '');
+
+// 预缓存核心 Shell（SW_BASE 自动适配子路径部署）
 const PRECACHE_URLS = [
-  '/app/',
-  '/app/index.html',
+  SW_BASE,
+  SW_BASE + 'index.html',
 ];
 
 // ── 安装：预缓存核心 Shell ───────────────────────────────────
@@ -113,7 +117,7 @@ async function navigationHandler(request) {
     return response;
   } catch {
     const cache = await caches.open(STATIC_CACHE);
-    const fallback = await cache.match('/index.html') || await cache.match('/');
+    const fallback = await cache.match(SW_BASE + 'index.html') || await cache.match(SW_BASE);
     return fallback || new Response('v信 - 离线模式', { status: 200, headers: { 'Content-Type': 'text/html' } });
   }
 }
@@ -154,11 +158,11 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: data.body || '',
-    icon: '/icon-192.png',
-    badge: '/badge-72.png',
+    icon: SW_BASE + 'icon-192.png',
+    badge: SW_BASE + 'icon-192.png',
     tag: data.conversationId || 'vxin-msg',    // 同会话消息折叠为一条
     renotify: true,
-    data: { conversationId: data.conversationId, url: data.url || '/' },
+    data: { conversationId: data.conversationId, url: data.url || SW_BASE },
     actions: [
       { action: 'open', title: '查看' },
       { action: 'dismiss', title: '关闭' },
@@ -173,7 +177,7 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   if (event.action === 'dismiss') return;
-  const url = event.notification.data?.url || '/';
+  const url = event.notification.data?.url || SW_BASE;
   event.waitUntil(
     self.clients.matchAll({ type: 'window' }).then(clients => {
       const existing = clients.find(c => c.url.includes(self.location.origin));

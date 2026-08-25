@@ -17,8 +17,13 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const Home           = lazy(() => import('./pages/Home'));
 
 // Electron 使用 HashRouter（file:// 不支持 pushState）；Web 用 BrowserRouter
+// Web 部署在 /app/ 子路径：basename 取 Vite base（生产 /app/，dev /），登录跳转/刷新才不会落到根路径落地页
 const Router = window.__ELECTRON_CONFIG__ ? HashRouter : BrowserRouter;
-const ROUTER_PROPS = window.__ELECTRON_CONFIG__ ? {} : { basename: '/app' };
+const routerBasename = window.__ELECTRON_CONFIG__
+  ? undefined
+  : (import.meta.env.BASE_URL && import.meta.env.BASE_URL !== '/'
+      ? import.meta.env.BASE_URL.replace(/\/$/, '')
+      : '/');
 
 // 懒加载页面切换时的加载态（与 PrivateRoute 的 loading 视觉一致）
 const RouteFallback = () => (
@@ -49,7 +54,7 @@ export default function App() {
       {isElectron && <UpdateBanner />}
       <AndroidUpdatePrompt />
       <div id="main-content" role="main" style={isElectron ? { paddingTop: 30, height: '100vh', boxSizing: 'border-box', overflow: 'hidden' } : {}}>
-        <Router {...ROUTER_PROPS}>
+        <Router basename={routerBasename}>
           {/* Suspense 兜底懒加载 chunk 拉取期间的加载态 */}
           <Suspense fallback={<RouteFallback />}>
             <Routes>

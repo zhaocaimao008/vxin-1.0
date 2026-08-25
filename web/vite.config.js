@@ -3,9 +3,10 @@ import react from '@vitejs/plugin-react';
 import viteCompression from 'vite-plugin-compression';
 
 export default defineConfig(({ mode }) => ({
-  // desktop 模式：base='./（相对路径）适配 Electron file:// 协议
-  // web 模式：base='/'（绝对路径）适配浏览器 + Nginx
-  base: mode === 'desktop' ? './' : (mode === 'development' ? '/' : '/app/'),
+  // desktop 模式：base='./'（相对路径）适配 Electron file:// 协议
+  // web 生产模式：base='/app/'（vxinchat.com/app/ 子路径部署，资源必须带 /app/ 前缀才能被 nginx 命中）
+  // web dev 模式：base='/'（本地 dev server 根路径）
+  base: mode === 'desktop' ? './' : (mode === 'production' ? '/app/' : '/'),
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '2.2.0'),
   },

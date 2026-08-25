@@ -11,31 +11,93 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>v信 PC 端</title>
+<script>
+/* 皮肤防闪烁：CSS 生效前先设置 data-skin（避免深色皮肤下闪白） */
+(function(){try{var s=localStorage.getItem('vxin_pc_skin')||'light';document.documentElement.setAttribute('data-skin',s);}catch(e){}})();
+</script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
   theme: { extend: {
     colors: {
-      'wx-green':  '#07C160',
-      'wx-bubble': '#95EC69',
-      'wx-dark':   '#1E1E1E',
-      'wx-panel':  '#EDEDED',
-      'wx-active': '#C7ECD3',
+      'wx-green':  'var(--brand)',
+      'wx-bubble': 'var(--bubble-mine)',
+      'wx-dark':   'var(--sidebar-bg)',
+      'wx-panel':  'var(--bg-panel)',
+      'wx-active': 'var(--active-bg)',
     },
     fontSize: { '10': '10px', '11': '11px', '12': '12px', '13': '13px' },
   }}
 }
 </script>
 <style>
+/* ══════════════════════════════════════════════════════════
+   SKIN SYSTEM — 皮肤系统
+   皮肤1「v信绿·经典」: :root 默认（浅色）
+   皮肤2「深空·暗黑」: html[data-skin="dark"] 覆盖
+   ══════════════════════════════════════════════════════════ */
+:root{
+  /* Brand */
+  --brand:#07C160; --brand-hover:#06AE56; --brand-active:#059848;
+  --brand-grad2:#0ABF50; --brand-tint:rgba(7,193,96,.1); --logo-bg:rgba(7,193,96,.4);
+  /* Bubbles */
+  --bubble-mine:#95EC69; --bubble-shadow:rgba(0,0,0,.09);
+  /* Backgrounds */
+  --bg-panel:#EDEDED; --bg-card:#fff; --emoji-bg:#FAFAFA;
+  --btn-disabled-bg:#E6E6E6; --btn-hover-bg:#F5F5F5; --danger-tint:#FFF5F5;
+  --ctx-bg:#3A3A3C; --sidebar-bg:#1E1E1E; --glass-bg:rgba(237,237,237,.88);
+  /* Text */
+  --text-primary:#191919; --text-on-brand:#fff; --text-faint:#B2B2B2;
+  --text-tertiary:#ADADAD; --text-secondary:#888; --text-muted:#666;
+  --text-btn:#555; --text-strong:#333; --text-disabled:#999;
+  --chevron:#C7C7CC; --border-strong:#E5E5E5; --ts-chip-text:rgba(0,0,0,.36);
+  /* Semantic */
+  --danger:#FA5151; --danger-strong:#FF453A;
+  /* Interaction */
+  --active-bg:#C7ECD3; --active-bg-hover:#BBDFC6;
+  --hover-bg:rgba(0,0,0,.05); --hover-bg-soft:rgba(0,0,0,.03); --pinned-bg:rgba(0,0,0,.016);
+  --border-subtle:rgba(0,0,0,.07); --border-weak:rgba(0,0,0,.055);
+  /* Scrollbar / icons / overlay */
+  --scrollbar:rgba(0,0,0,.14); --scrollbar-hover:rgba(0,0,0,.25);
+  --icon:rgba(0,0,0,.5); --icon-muted:rgba(0,0,0,.38); --modal-overlay:rgba(0,0,0,.42);
+  /* Sidebar nav (constant dark, WeChat PC style) */
+  --nav-hover:rgba(255,255,255,.07); --nav-active:rgba(255,255,255,.10);
+  --nav-icon:rgba(255,255,255,.38); --nav-icon-hover:rgba(255,255,255,.62);
+  --nav-icon-active:rgba(255,255,255,.92); --nav-icon-dim:rgba(255,255,255,.32);
+  --ctx-hover:rgba(255,255,255,.09);
+}
+
+/* ── 皮肤2：深空·暗黑 ─────────────────────────────────── */
+html[data-skin="dark"]{
+  --brand:#2BB86E; --brand-hover:#5FCC8E; --brand-active:#07C160;
+  --brand-grad2:#0ABF50; --brand-tint:rgba(43,184,110,.14); --logo-bg:rgba(43,184,110,.5);
+  --bubble-mine:#2BB86E; --bubble-shadow:rgba(0,0,0,.35);
+  --bg-panel:#111111; --bg-card:#1C1C1E; --emoji-bg:#1C1C1E;
+  --btn-disabled-bg:#2C2C2E; --btn-hover-bg:#3A3A3C; --danger-tint:rgba(255,69,58,.12);
+  --ctx-bg:#2C2C2E; --sidebar-bg:#0A0A0A; --glass-bg:rgba(17,17,17,.88);
+  --text-primary:#E5E5EA; --text-on-brand:#fff; --text-faint:rgba(255,255,255,.30);
+  --text-tertiary:#8E8E93; --text-secondary:#8E8E93; --text-muted:#636366;
+  --text-btn:#D0D3D8; --text-strong:#D0D3D8; --text-disabled:#636366;
+  --chevron:#48484A; --border-strong:#3A3A3C; --ts-chip-text:rgba(255,255,255,.40);
+  --danger:#FF6B6B; --danger-strong:#FF453A;
+  --active-bg:#2A4A36; --active-bg-hover:#264333;
+  --hover-bg:rgba(255,255,255,.06); --hover-bg-soft:rgba(255,255,255,.04); --pinned-bg:rgba(255,255,255,.03);
+  --border-subtle:rgba(255,255,255,.07); --border-weak:rgba(255,255,255,.05);
+  --scrollbar:rgba(255,255,255,.14); --scrollbar-hover:rgba(255,255,255,.25);
+  --icon:rgba(255,255,255,.5); --icon-muted:rgba(255,255,255,.38); --modal-overlay:rgba(0,0,0,.6);
+  /* 侧栏导航在深色皮肤下保持原有亮白图标系，仅微调选中态 */
+  --nav-active:rgba(255,255,255,.14);
+}
+
 /* ── Reset & Base ─────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body,#app{height:100%;overflow:hidden}
 body{
   font-family:-apple-system,"PingFang SC","Microsoft YaHei UI","Microsoft YaHei","Segoe UI",sans-serif;
-  background:#EDEDED;
+  background:var(--bg-panel);
   -webkit-font-smoothing:antialiased;
   font-size:14px;
-  color:#191919;
+  color:var(--text-primary);
 }
 button{cursor:pointer;border:none;background:none;outline:none;font-family:inherit}
 textarea,input{font-family:inherit;outline:none;border:none}
@@ -43,8 +105,8 @@ textarea,input{font-family:inherit;outline:none;border:none}
 /* ── Scrollbar ────────────────────────────────────────────── */
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:rgba(0,0,0,.14);border-radius:2px}
-::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25)}
+::-webkit-scrollbar-thumb{background:var(--scrollbar);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:var(--scrollbar-hover)}
 
 /* ── Frosted Glass ────────────────────────────────────────── */
 .glass{
@@ -59,17 +121,17 @@ textarea,input{font-family:inherit;outline:none;border:none}
   cursor:pointer;position:relative;
   transition:background .08s;
 }
-.nav-btn:hover{background:rgba(255,255,255,.07)}
-.nav-btn.active{background:rgba(255,255,255,.10)}
+.nav-btn:hover{background:var(--nav-hover)}
+.nav-btn.active{background:var(--nav-active)}
 .nav-btn.active::after{
   content:'';position:absolute;
   left:0;top:50%;transform:translateY(-50%);
   width:3px;height:20px;
-  background:#07C160;border-radius:0 2px 2px 0;
+  background:var(--brand);border-radius:0 2px 2px 0;
 }
-.nav-btn svg{width:22px;height:22px;fill:rgba(255,255,255,.38);transition:fill .08s}
-.nav-btn:hover svg{fill:rgba(255,255,255,.62)}
-.nav-btn.active svg{fill:rgba(255,255,255,.92)}
+.nav-btn svg{width:22px;height:22px;fill:var(--nav-icon);transition:fill .08s}
+.nav-btn:hover svg{fill:var(--nav-icon-hover)}
+.nav-btn.active svg{fill:var(--nav-icon-active)}
 
 /* ── Chat List Item ───────────────────────────────────────── */
 .conv-item{
@@ -78,16 +140,16 @@ textarea,input{font-family:inherit;outline:none;border:none}
   transition:background .07s;position:relative;
   user-select:none;
 }
-.conv-item:hover{background:rgba(0,0,0,.05)}
-.conv-item.active{background:#C7ECD3}
-.conv-item.active:hover{background:#BBDFC6}
-.conv-item.pinned:not(.active){background:rgba(0,0,0,.016)}
+.conv-item:hover{background:var(--hover-bg)}
+.conv-item.active{background:var(--active-bg)}
+.conv-item.active:hover{background:var(--active-bg-hover)}
+.conv-item.pinned:not(.active){background:var(--pinned-bg)}
 
 /* ── Avatar (rounded square, WeChat style) ────────────────── */
 .avatar{
   border-radius:6px;
   display:flex;align-items:center;justify-content:center;
-  font-size:14px;font-weight:600;color:#fff;
+  font-size:14px;font-weight:600;color:var(--text-on-brand);
   flex-shrink:0;user-select:none;
 }
 
@@ -102,25 +164,25 @@ textarea,input{font-family:inherit;outline:none;border:none}
 }
 /* Mine: green, right, tail top-right */
 .bubble.mine{
-  background:#95EC69;
+  background:var(--bubble-mine);
   border-radius:4px 2px 4px 4px;
 }
 .bubble.mine::after{
   content:'';position:absolute;
   right:-5px;top:0;
-  border-top:6px solid #95EC69;
+  border-top:6px solid var(--bubble-mine);
   border-right:6px solid transparent;
 }
 /* Theirs: white, left, tail top-left */
 .bubble.theirs{
-  background:#fff;
+  background:var(--bg-card);
   border-radius:2px 4px 4px 4px;
-  box-shadow:0 1px 2px rgba(0,0,0,.09);
+  box-shadow:0 1px 2px var(--bubble-shadow);
 }
 .bubble.theirs::before{
   content:'';position:absolute;
   left:-5px;top:0;
-  border-top:6px solid #fff;
+  border-top:6px solid var(--bg-card);
   border-left:6px solid transparent;
 }
 
@@ -129,22 +191,22 @@ textarea,input{font-family:inherit;outline:none;border:none}
   width:30px;height:30px;
   display:flex;align-items:center;justify-content:center;
   border-radius:5px;cursor:pointer;
-  color:#666;transition:background .08s,color .08s;
+  color:var(--text-muted);transition:background .08s,color .08s;
 }
-.tool-btn:hover{background:rgba(0,0,0,.07);color:#333}
-.tool-btn.on{background:rgba(0,0,0,.08);color:#333}
+.tool-btn:hover{background:var(--border-subtle);color:var(--text-strong)}
+.tool-btn.on{background:var(--border-subtle);color:var(--text-strong)}
 .tool-btn svg{width:18px;height:18px;fill:currentColor;display:block}
 
 /* ── Send Button ──────────────────────────────────────────── */
 .send-btn{
   padding:5px 18px;border-radius:4px;font-size:13px;
-  background:#E6E6E6;color:#999;
+  background:var(--btn-disabled-bg);color:var(--text-disabled);
   transition:background .15s,color .15s;
   cursor:default;letter-spacing:.2px;min-width:64px;
 }
-.send-btn.ready{background:#07C160;color:#fff;cursor:pointer}
-.send-btn.ready:hover{background:#06AE56}
-.send-btn.ready:active{background:#059848}
+.send-btn.ready{background:var(--brand);color:var(--text-on-brand);cursor:pointer}
+.send-btn.ready:hover{background:var(--brand-hover)}
+.send-btn.ready:active{background:var(--brand-active)}
 
 /* ── New message animation ────────────────────────────────── */
 @keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
@@ -153,43 +215,43 @@ textarea,input{font-family:inherit;outline:none;border:none}
 /* ── Timestamp chip ───────────────────────────────────────── */
 .ts-chip{
   display:inline-block;
-  background:rgba(0,0,0,.08);color:rgba(0,0,0,.36);
+  background:var(--border-subtle);color:var(--ts-chip-text);
   font-size:11px;padding:2px 10px;border-radius:3px;
 }
 
 /* ── Badge ────────────────────────────────────────────────── */
 .badge{
   position:absolute;top:-5px;right:-5px;
-  background:#FA5151;color:#fff;
+  background:var(--danger);color:var(--text-on-brand);
   border-radius:9px;font-size:10px;font-weight:600;
   min-width:16px;height:16px;
   display:flex;align-items:center;justify-content:center;
   padding:0 4px;line-height:1;
-  border:1.5px solid #EDEDED;
+  border:1.5px solid var(--bg-panel);
 }
-.conv-item.active .badge{border-color:#C7ECD3}
+.conv-item.active .badge{border-color:var(--active-bg)}
 
 /* ── Right-click Context Menu ─────────────────────────────── */
 .ctx{
   position:fixed;z-index:9999;
-  background:#3A3A3C;border-radius:10px;
-  box-shadow:0 6px 24px rgba(0,0,0,.28),0 0 0 .5px rgba(255,255,255,.07);
+  background:var(--ctx-bg);border-radius:10px;
+  box-shadow:0 6px 24px var(--text-faint),0 0 0 .5px var(--nav-hover);
   overflow:hidden;min-width:140px;
   animation:ctxIn .08s ease both;
 }
 @keyframes ctxIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
 .ctx-item{
   display:flex;align-items:center;gap:8px;
-  padding:9px 16px;font-size:13.5px;color:#fff;
+  padding:9px 16px;font-size:13.5px;color:var(--text-on-brand);
   cursor:pointer;transition:background .07s;
 }
-.ctx-item:hover{background:rgba(255,255,255,.09)}
-.ctx-item.danger{color:#FF453A}
-.ctx-div{height:.5px;background:rgba(255,255,255,.1)}
+.ctx-item:hover{background:var(--ctx-hover)}
+.ctx-item.danger{color:var(--danger-strong)}
+.ctx-div{height:.5px;background:var(--nav-active)}
 
 /* ── Emoji Panel ──────────────────────────────────────────── */
 .emoji-panel{
-  background:#FAFAFA;border-top:1px solid rgba(0,0,0,.07);
+  background:var(--emoji-bg);border-top:1px solid var(--border-subtle);
   padding:8px 10px;display:flex;flex-wrap:wrap;gap:2px;
   max-height:116px;overflow-y:auto;
 }
@@ -198,18 +260,18 @@ textarea,input{font-family:inherit;outline:none;border:none}
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;transition:background .07s;line-height:1;
 }
-.emoji-btn:hover{background:rgba(0,0,0,.07)}
+.emoji-btn:hover{background:var(--border-subtle)}
 
 /* ── Modal ────────────────────────────────────────────────── */
 .modal-bg{
   position:fixed;inset:0;z-index:9000;
-  background:rgba(0,0,0,.42);
+  background:var(--modal-overlay);
   backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);
   display:flex;align-items:center;justify-content:center;
 }
 .modal-box{
-  background:#fff;border-radius:10px;
-  box-shadow:0 12px 48px rgba(0,0,0,.22);
+  background:var(--bg-card);border-radius:10px;
+  box-shadow:0 12px 48px var(--text-faint);
   overflow:hidden;
 }
 
@@ -217,18 +279,18 @@ textarea,input{font-family:inherit;outline:none;border:none}
 .page-item{
   display:flex;align-items:center;gap:12px;
   padding:0 16px;height:50px;cursor:pointer;
-  border-bottom:1px solid rgba(0,0,0,.055);
-  transition:background .07s;background:#fff;
+  border-bottom:1px solid var(--border-weak);
+  transition:background .07s;background:var(--bg-card);
 }
-.page-item:hover{background:rgba(0,0,0,.035)}
+.page-item:hover{background:var(--hover-bg-soft)}
 .page-item:last-child{border-bottom:none}
-.page-chev{width:13px;height:13px;fill:#C7C7CC;flex-shrink:0}
+.page-chev{width:13px;height:13px;fill:var(--chevron);flex-shrink:0}
 
 /* ── Empty state ──────────────────────────────────────────── */
 .empty{
   flex:1;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:10px;
-  color:rgba(0,0,0,.3);pointer-events:none;
+  color:var(--text-faint);pointer-events:none;
 }
 </style>
 </head>
@@ -237,13 +299,13 @@ textarea,input{font-family:inherit;outline:none;border:none}
 <div id="app" class="flex h-full">
 
 <!-- ══════════════════════════════════════════════════════════
-     SIDEBAR  68px · #1E1E1E
+     SIDEBAR  68px · var(--sidebar-bg)
 ══════════════════════════════════════════════════════════ -->
-<aside style="width:68px;min-width:68px;background:#1E1E1E;display:flex;flex-direction:column;align-items:center;z-index:10;user-select:none;flex-shrink:0">
+<aside style="width:68px;min-width:68px;background:var(--sidebar-bg);display:flex;flex-direction:column;align-items:center;z-index:10;user-select:none;flex-shrink:0">
 
   <!-- User Avatar -->
   <div style="margin:16px 0 10px;cursor:pointer" onclick="showPage('me')" title="个人信息">
-    <div class="avatar" style="width:36px;height:36px;background:linear-gradient(135deg,#07C160,#0ABF50);font-size:14px">我</div>
+    <div class="avatar" style="width:36px;height:36px;background:linear-gradient(135deg,var(--brand),var(--brand-grad2));font-size:14px">我</div>
   </div>
 
   <!-- Navigation -->
@@ -257,31 +319,31 @@ textarea,input{font-family:inherit;outline:none;border:none}
   <!-- Settings -->
   <div style="padding-bottom:10px">
     <button class="nav-btn" style="height:44px" onclick="openSettings()" title="设置">
-      <svg style="width:20px;height:20px;fill:rgba(255,255,255,.32)" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+      <svg style="width:20px;height:20px;fill:var(--nav-icon-dim)" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
     </button>
   </div>
 </aside>
 
 
 <!-- ══════════════════════════════════════════════════════════
-     PANEL  280px · #EDEDED
+     PANEL  280px · var(--bg-panel)
 ══════════════════════════════════════════════════════════ -->
-<section id="panel" style="width:280px;min-width:280px;background:#EDEDED;display:flex;flex-direction:column;flex-shrink:0;border-right:1px solid rgba(0,0,0,.08)">
+<section id="panel" style="width:280px;min-width:280px;background:var(--bg-panel);display:flex;flex-direction:column;flex-shrink:0;border-right:1px solid var(--border-subtle)">
 
   <!-- Panel top bar -->
-  <div id="panel-topbar" style="height:52px;display:flex;align-items:center;padding:0 10px;gap:6px;border-bottom:1px solid rgba(0,0,0,.08);flex-shrink:0;background:#EDEDED">
+  <div id="panel-topbar" style="height:52px;display:flex;align-items:center;padding:0 10px;gap:6px;border-bottom:1px solid var(--border-subtle);flex-shrink:0;background:var(--bg-panel)">
     <!-- Search -->
-    <div style="flex:1;display:flex;align-items:center;gap:5px;background:rgba(0,0,0,.07);border-radius:6px;padding:5px 10px;height:28px">
-      <svg style="width:13px;height:13px;fill:rgba(0,0,0,.38);flex-shrink:0" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+    <div style="flex:1;display:flex;align-items:center;gap:5px;background:var(--border-subtle);border-radius:6px;padding:5px 10px;height:28px">
+      <svg style="width:13px;height:13px;fill:var(--icon-muted);flex-shrink:0" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
       <input id="search-input" type="text" placeholder="搜索"
-        style="flex:1;font-size:13px;color:#191919;background:transparent;min-width:0"
+        style="flex:1;font-size:13px;color:var(--text-primary);background:transparent;min-width:0"
         oninput="onSearch(this.value)" />
     </div>
     <!-- Add button -->
     <button id="add-btn" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:5px;transition:background .08s;position:relative"
-      onmouseenter="this.style.background='rgba(0,0,0,.07)'" onmouseleave="this.style.background=''"
+      onmouseenter="this.style.background='var(--border-subtle)'" onmouseleave="this.style.background=''"
       onclick="toggleAddMenu(event)">
-      <svg style="width:18px;height:18px;fill:rgba(0,0,0,.5)" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+      <svg style="width:18px;height:18px;fill:var(--icon)" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
     </button>
   </div>
 
@@ -289,7 +351,7 @@ textarea,input{font-family:inherit;outline:none;border:none}
   <div id="panel-body" style="flex:1;overflow-y:auto;overflow-x:hidden"></div>
 
   <!-- Footer -->
-  <div style="text-align:center;padding:5px 0;font-size:10px;color:rgba(0,0,0,.22);flex-shrink:0;user-select:none">
+  <div style="text-align:center;padding:5px 0;font-size:10px;color:var(--text-faint);flex-shrink:0;user-select:none">
     v信 · 微信风格桌面客户端（4.1.10 UI 高度还原）
   </div>
 </section>
@@ -298,22 +360,22 @@ textarea,input{font-family:inherit;outline:none;border:none}
 <!-- ══════════════════════════════════════════════════════════
      CHAT WINDOW  flex-1
 ══════════════════════════════════════════════════════════ -->
-<main id="chat-main" style="flex:1;display:flex;flex-direction:column;min-width:0;background:#EDEDED">
+<main id="chat-main" style="flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg-panel)">
 
   <!-- Empty state (shown when no conv selected) -->
   <div id="chat-empty" class="empty" style="display:flex">
     <svg style="width:62px;height:52px;margin-bottom:4px" viewBox="0 0 62 52">
-      <path fill="rgba(7,193,96,.4)" d="M20 1C9.5 1 1 7.8 1 16.2c0 4.7 2.5 8.9 6.5 11.7l-1.2 5.8 6.8-3.9c2.2.5 4.5.8 6.9.8 10.5 0 19-6.8 19-15.2S30.5 1 20 1z"/>
-      <path fill="#07C160" d="M40 13C28.4 13 19 20.5 19 29.7c0 5.3 2.9 10 7.6 13.1l-1.3 6.2 7.8-4.6c2.5.6 5.1.9 7.9.9 11.6 0 21-7.5 21-16.7S51.6 13 40 13z"/>
+      <path fill="var(--logo-bg)" d="M20 1C9.5 1 1 7.8 1 16.2c0 4.7 2.5 8.9 6.5 11.7l-1.2 5.8 6.8-3.9c2.2.5 4.5.8 6.9.8 10.5 0 19-6.8 19-15.2S30.5 1 20 1z"/>
+      <path fill="var(--brand)" d="M40 13C28.4 13 19 20.5 19 29.7c0 5.3 2.9 10 7.6 13.1l-1.3 6.2 7.8-4.6c2.5.6 5.1.9 7.9.9 11.6 0 21-7.5 21-16.7S51.6 13 40 13z"/>
     </svg>
     <span style="font-size:13px">v信</span>
   </div>
 
   <!-- Chat header (hidden initially) -->
-  <div id="chat-header" class="glass" style="display:none;height:52px;flex-shrink:0;align-items:center;justify-content:space-between;padding:0 14px 0 16px;border-bottom:1px solid rgba(0,0,0,.08);background:rgba(237,237,237,.88)">
+  <div id="chat-header" class="glass" style="display:none;height:52px;flex-shrink:0;align-items:center;justify-content:space-between;padding:0 14px 0 16px;border-bottom:1px solid var(--border-subtle);background:var(--glass-bg)">
     <div>
-      <div id="chat-title" style="font-size:15px;font-weight:600;color:#191919"></div>
-      <div id="chat-sub"   style="font-size:11px;color:#888;margin-top:1px"></div>
+      <div id="chat-title" style="font-size:15px;font-weight:600;color:var(--text-primary)"></div>
+      <div id="chat-sub"   style="font-size:11px;color:var(--text-secondary);margin-top:1px"></div>
     </div>
     <div style="display:flex;align-items:center;gap:0">
       <button class="tool-btn" style="width:32px;height:32px" title="语音通话"><svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg></button>
@@ -323,10 +385,10 @@ textarea,input{font-family:inherit;outline:none;border:none}
   </div>
 
   <!-- Messages -->
-  <div id="messages" style="display:none;flex:1;overflow-y:auto;padding:12px 20px 8px;flex-direction:column;background:#EDEDED"></div>
+  <div id="messages" style="display:none;flex:1;overflow-y:auto;padding:12px 20px 8px;flex-direction:column;background:var(--bg-panel)"></div>
 
   <!-- Input area -->
-  <div id="input-area" style="display:none;flex-shrink:0;background:#fff;border-top:1px solid rgba(0,0,0,.08)">
+  <div id="input-area" style="display:none;flex-shrink:0;background:var(--bg-card);border-top:1px solid var(--border-subtle)">
     <!-- Toolbar -->
     <div style="display:flex;align-items:center;padding:6px 10px 2px;height:38px;gap:1px">
       <button class="tool-btn" id="emoji-btn" title="表情" onclick="toggleEmoji()">
@@ -356,13 +418,13 @@ textarea,input{font-family:inherit;outline:none;border:none}
     <!-- Textarea -->
     <div style="padding:4px 14px 2px">
       <textarea id="msg-input" rows="4"
-        style="width:100%;font-size:14px;line-height:1.6;color:#191919;background:transparent;resize:none;min-height:72px;max-height:120px;overflow-y:auto"
+        style="width:100%;font-size:14px;line-height:1.6;color:var(--text-primary);background:transparent;resize:none;min-height:72px;max-height:120px;overflow-y:auto"
         placeholder=""></textarea>
     </div>
 
     <!-- Footer -->
     <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 14px 10px">
-      <span style="font-size:11px;color:rgba(0,0,0,.28)">Enter 发送 &nbsp;·&nbsp; Shift+Enter 换行</span>
+      <span style="font-size:11px;color:var(--text-faint)">Enter 发送 &nbsp;·&nbsp; Shift+Enter 换行</span>
       <button id="send-btn" class="send-btn" onclick="sendMsg()">发 送</button>
     </div>
   </div>
@@ -378,16 +440,16 @@ textarea,input{font-family:inherit;outline:none;border:none}
 <!-- Screenshot modal -->
 <div id="screenshot-modal" style="display:none" class="modal-bg" onclick="if(event.target===this)hideModal(this.id)">
   <div class="modal-box" style="width:320px;padding:28px 24px 20px;text-align:center">
-    <div style="width:52px;height:52px;border-radius:50%;background:rgba(7,193,96,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
-      <svg style="width:26px;height:26px;fill:#07C160" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+    <div style="width:52px;height:52px;border-radius:50%;background:var(--brand-tint);display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+      <svg style="width:26px;height:26px;fill:var(--brand)" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
     </div>
     <div style="font-size:15px;font-weight:600;margin-bottom:8px">截图</div>
-    <div style="font-size:13px;color:#888;line-height:1.7;margin-bottom:20px">
+    <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:20px">
       在 PC 客户端中，截图将调用系统级截图工具。<br>当前为网页预览模式，暂不可用。
     </div>
     <div style="display:flex;gap:8px">
-      <button onclick="hideModal('screenshot-modal')" style="flex:1;padding:8px;border:1px solid #E5E5E5;border-radius:5px;font-size:13px;color:#555;background:#fff;cursor:pointer;transition:background .1s" onmouseenter="this.style.background='#F5F5F5'" onmouseleave="this.style.background='#fff'">取消</button>
-      <button onclick="hideModal('screenshot-modal')" style="flex:1;padding:8px;background:#07C160;border-radius:5px;font-size:13px;color:#fff;cursor:pointer;transition:background .1s" onmouseenter="this.style.background='#06AE56'" onmouseleave="this.style.background='#07C160'">好的</button>
+      <button onclick="hideModal('screenshot-modal')" style="flex:1;padding:8px;border:1px solid var(--border-strong);border-radius:5px;font-size:13px;color:var(--text-btn);background:var(--bg-card);cursor:pointer;transition:background .1s" onmouseenter="this.style.background='var(--btn-hover-bg)'" onmouseleave="this.style.background='var(--bg-card)'">取消</button>
+      <button onclick="hideModal('screenshot-modal')" style="flex:1;padding:8px;background:var(--brand);border-radius:5px;font-size:13px;color:var(--text-on-brand);cursor:pointer;transition:background .1s" onmouseenter="this.style.background='var(--brand-hover)'" onmouseleave="this.style.background='var(--brand)'">好的</button>
     </div>
   </div>
 </div>
@@ -395,34 +457,78 @@ textarea,input{font-family:inherit;outline:none;border:none}
 <!-- More modal -->
 <div id="more-modal" style="display:none" class="modal-bg" onclick="if(event.target===this)hideModal(this.id)">
   <div class="modal-box" style="width:380px;padding:20px 20px 16px">
-    <div style="font-size:14px;font-weight:600;margin-bottom:14px;color:#191919">更多功能</div>
+    <div style="font-size:14px;font-weight:600;margin-bottom:14px;color:var(--text-primary)">更多功能</div>
     <div style="display:flex;flex-wrap:wrap;gap:8px">
-      ${[['📍','位置'],['💌','名片'],['🧧','红包'],['🎵','语音'],['📹','视频通话'],['☎️','语音通话']].map(([e,l])=>`
-      <button onclick="hideModal('more-modal');alert('${l}功能')" style="flex:1;min-width:100px;padding:10px 0;border:1px solid #E5E5E5;border-radius:6px;font-size:13px;color:#555;background:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:background .1s" onmouseenter="this.style.background='#F5F5F5'" onmouseleave="this.style.background='#fff'">
-        <span style="font-size:22px">${e}</span><span>${l}</span>
-      </button>`).join('')}
+      <button onclick="hideModal('more-modal');alert('位置功能')" style="flex:1;min-width:100px;padding:10px 0;border:1px solid var(--border-strong);border-radius:6px;font-size:13px;color:var(--text-btn);background:var(--bg-card);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:background .1s" onmouseenter="this.style.background='var(--btn-hover-bg)'" onmouseleave="this.style.background='var(--bg-card)'">
+        <span style="font-size:22px">📍</span><span>位置</span>
+      </button>
+      <button onclick="hideModal('more-modal');alert('名片功能')" style="flex:1;min-width:100px;padding:10px 0;border:1px solid var(--border-strong);border-radius:6px;font-size:13px;color:var(--text-btn);background:var(--bg-card);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:background .1s" onmouseenter="this.style.background='var(--btn-hover-bg)'" onmouseleave="this.style.background='var(--bg-card)'">
+        <span style="font-size:22px">💌</span><span>名片</span>
+      </button>
+      <button onclick="hideModal('more-modal');alert('红包功能')" style="flex:1;min-width:100px;padding:10px 0;border:1px solid var(--border-strong);border-radius:6px;font-size:13px;color:var(--text-btn);background:var(--bg-card);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:background .1s" onmouseenter="this.style.background='var(--btn-hover-bg)'" onmouseleave="this.style.background='var(--bg-card)'">
+        <span style="font-size:22px">🧧</span><span>红包</span>
+      </button>
+      <button onclick="hideModal('more-modal');alert('语音功能')" style="flex:1;min-width:100px;padding:10px 0;border:1px solid var(--border-strong);border-radius:6px;font-size:13px;color:var(--text-btn);background:var(--bg-card);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:background .1s" onmouseenter="this.style.background='var(--btn-hover-bg)'" onmouseleave="this.style.background='var(--bg-card)'">
+        <span style="font-size:22px">🎵</span><span>语音</span>
+      </button>
+      <button onclick="hideModal('more-modal');alert('视频通话功能')" style="flex:1;min-width:100px;padding:10px 0;border:1px solid var(--border-strong);border-radius:6px;font-size:13px;color:var(--text-btn);background:var(--bg-card);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:background .1s" onmouseenter="this.style.background='var(--btn-hover-bg)'" onmouseleave="this.style.background='var(--bg-card)'">
+        <span style="font-size:22px">📹</span><span>视频通话</span>
+      </button>
+      <button onclick="hideModal('more-modal');alert('语音通话功能')" style="flex:1;min-width:100px;padding:10px 0;border:1px solid var(--border-strong);border-radius:6px;font-size:13px;color:var(--text-btn);background:var(--bg-card);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:background .1s" onmouseenter="this.style.background='var(--btn-hover-bg)'" onmouseleave="this.style.background='var(--bg-card)'">
+        <span style="font-size:22px">☎️</span><span>语音通话</span>
+      </button>
     </div>
-    <button onclick="hideModal('more-modal')" style="width:100%;margin-top:14px;padding:8px;border:1px solid #E5E5E5;border-radius:5px;font-size:13px;color:#888;background:#fff;cursor:pointer;transition:background .1s" onmouseenter="this.style.background='#F5F5F5'" onmouseleave="this.style.background='#fff'">取消</button>
+    <button onclick="hideModal('more-modal')" style="width:100%;margin-top:14px;padding:8px;border:1px solid var(--border-strong);border-radius:5px;font-size:13px;color:var(--text-secondary);background:var(--bg-card);cursor:pointer;transition:background .1s" onmouseenter="this.style.background='var(--btn-hover-bg)'" onmouseleave="this.style.background='var(--bg-card)'">取消</button>
   </div>
 </div>
 
 <!-- Settings modal -->
 <div id="settings-modal" style="display:none" class="modal-bg" onclick="if(event.target===this)hideModal(this.id)">
   <div class="modal-box" style="width:440px">
-    <div style="height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid rgba(0,0,0,.07)">
+    <div style="height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid var(--border-subtle)">
       <span style="font-size:14px;font-weight:600">设置</span>
-      <button onclick="hideModal('settings-modal')" style="color:#999;font-size:16px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:background .08s" onmouseenter="this.style.background='rgba(0,0,0,.07)'" onmouseleave="this.style.background=''">✕</button>
+      <button onclick="hideModal('settings-modal')" style="color:var(--text-disabled);font-size:16px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:background .08s" onmouseenter="this.style.background='var(--border-subtle)'" onmouseleave="this.style.background=''">✕</button>
     </div>
     <div style="padding:12px 0">
-      ${[['🔒','账号与安全'],['🔔','新消息通知'],['💬','聊天'],['🌙','深色模式'],['🌐','通用'],['❓','帮助与反馈'],['ℹ️','关于 v信']].map(([e,l])=>`
-      <div onclick="${l === '帮助与反馈' ? \"location.href='/vxin-qa.html'\" : \"alert('\" + l + \"')\"}" style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid rgba(0,0,0,.05);transition:background .08s" onmouseenter="this.style.background='rgba(0,0,0,.03)'" onmouseleave="this.style.background=''">
-        <span style="font-size:18px">${e}</span>
-        <span style="flex:1;font-size:14px;color:#191919">${l}</span>
-        <svg style="width:13px;height:13px;fill:#C7C7CC" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-      </div>`).join('')}
+      <div onclick="alert('账号与安全')" style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--hover-bg);transition:background .08s" onmouseenter="this.style.background='var(--hover-bg-soft)'" onmouseleave="this.style.background=''">
+        <span style="font-size:18px">🔒</span>
+        <span style="flex:1;font-size:14px;color:var(--text-primary)">账号与安全</span>
+        <svg style="width:13px;height:13px;fill:var(--chevron)" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+      </div>
+      <div onclick="alert('新消息通知')" style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--hover-bg);transition:background .08s" onmouseenter="this.style.background='var(--hover-bg-soft)'" onmouseleave="this.style.background=''">
+        <span style="font-size:18px">🔔</span>
+        <span style="flex:1;font-size:14px;color:var(--text-primary)">新消息通知</span>
+        <svg style="width:13px;height:13px;fill:var(--chevron)" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+      </div>
+      <div onclick="alert('聊天')" style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--hover-bg);transition:background .08s" onmouseenter="this.style.background='var(--hover-bg-soft)'" onmouseleave="this.style.background=''">
+        <span style="font-size:18px">💬</span>
+        <span style="flex:1;font-size:14px;color:var(--text-primary)">聊天</span>
+        <svg style="width:13px;height:13px;fill:var(--chevron)" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+      </div>
+      <div onclick="toggleSkin()" style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--hover-bg);transition:background .08s" onmouseenter="this.style.background='var(--hover-bg-soft)'" onmouseleave="this.style.background=''">
+        <span style="font-size:18px">🌓</span>
+        <span style="flex:1;font-size:14px;color:var(--text-primary)">深空皮肤</span>
+        <span class="skin-status" style="font-size:12px;color:var(--text-secondary);flex-shrink:0"></span>
+        <svg style="width:13px;height:13px;fill:var(--chevron)" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+      </div>
+      <div onclick="alert('通用')" style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--hover-bg);transition:background .08s" onmouseenter="this.style.background='var(--hover-bg-soft)'" onmouseleave="this.style.background=''">
+        <span style="font-size:18px">🌐</span>
+        <span style="flex:1;font-size:14px;color:var(--text-primary)">通用</span>
+        <svg style="width:13px;height:13px;fill:var(--chevron)" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+      </div>
+      <div onclick="location.href='/vxin-qa.html'" style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--hover-bg);transition:background .08s" onmouseenter="this.style.background='var(--hover-bg-soft)'" onmouseleave="this.style.background=''">
+        <span style="font-size:18px">❓</span>
+        <span style="flex:1;font-size:14px;color:var(--text-primary)">帮助与反馈</span>
+        <svg style="width:13px;height:13px;fill:var(--chevron)" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+      </div>
+      <div onclick="alert('关于 v信')" style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--hover-bg);transition:background .08s" onmouseenter="this.style.background='var(--hover-bg-soft)'" onmouseleave="this.style.background=''">
+        <span style="font-size:18px">ℹ️</span>
+        <span style="flex:1;font-size:14px;color:var(--text-primary)">关于 v信</span>
+        <svg style="width:13px;height:13px;fill:var(--chevron)" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+      </div>
     </div>
     <div style="padding:12px 16px">
-      <button onclick="alert('已退出登录')" style="width:100%;padding:8px;background:#fff;border:1px solid #E5E5E5;border-radius:5px;font-size:14px;color:#FA5151;cursor:pointer;transition:background .1s" onmouseenter="this.style.background='#FFF5F5'" onmouseleave="this.style.background='#fff'">退出登录</button>
+      <button onclick="alert('已退出登录')" style="width:100%;padding:8px;background:var(--bg-card);border:1px solid var(--border-strong);border-radius:5px;font-size:14px;color:var(--danger);cursor:pointer;transition:background .1s" onmouseenter="this.style.background='var(--danger-tint)'" onmouseleave="this.style.background='var(--bg-card)'">退出登录</button>
     </div>
   </div>
 </div>
@@ -440,7 +546,7 @@ textarea,input{font-family:inherit;outline:none;border:none}
 // ═══════════════════════════════════════════════════════════
 //  DATA
 // ═══════════════════════════════════════════════════════════
-const ME = { id:'me', name:'v信用户', avatar:'我', color:'linear-gradient(135deg,#07C160,#0ABF50)' };
+const ME = { id:'me', name:'v信用户', avatar:'我', color:'linear-gradient(135deg,var(--brand),var(--brand-grad2))' };
 
 const CONVS = [
   {
@@ -529,24 +635,24 @@ function renderPanel() {
   } else if (currentPage === 'contacts') {
     topbar.style.display = 'none';
     body.innerHTML = `
-      <div style="height:52px;display:flex;align-items:center;padding:0 16px;font-size:15px;font-weight:600;color:#191919;border-bottom:1px solid rgba(0,0,0,.07);flex-shrink:0">通讯录</div>
+      <div style="height:52px;display:flex;align-items:center;padding:0 16px;font-size:15px;font-weight:600;color:var(--text-primary);border-bottom:1px solid var(--border-subtle);flex-shrink:0">通讯录</div>
       <div style="padding:8px 0">
-        <div style="font-size:11px;color:#888;padding:6px 14px 4px">推荐</div>
-        <div style="background:#fff;border-top:1px solid rgba(0,0,0,.07);border-bottom:1px solid rgba(0,0,0,.07)">
-          ${['新的朋友 <span style="background:#FA5151;color:#fff;border-radius:8px;font-size:10px;padding:1px 5px;margin-left:6px">2</span>','群聊','标签'].map(l=>`
+        <div style="font-size:11px;color:var(--text-secondary);padding:6px 14px 4px">推荐</div>
+        <div style="background:var(--bg-card);border-top:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle)">
+          ${['新的朋友 <span style="background:var(--danger);color:var(--text-on-brand);border-radius:8px;font-size:10px;padding:1px 5px;margin-left:6px">2</span>','群聊','标签'].map(l=>`
           <div class="page-item" onclick="alert('${l.replace(/<[^>]*>/g,'')}')">
-            <div class="avatar" style="width:36px;height:36px;background:#07C160;font-size:16px">👥</div>
-            <span style="flex:1;font-size:14px;color:#191919">${l}</span>
+            <div class="avatar" style="width:36px;height:36px;background:var(--brand);font-size:16px">👥</div>
+            <span style="flex:1;font-size:14px;color:var(--text-primary)">${l}</span>
             <svg class="page-chev" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
           </div>`).join('')}
         </div>
-        <div style="font-size:11px;color:#888;padding:10px 14px 4px">联系人</div>
-        <div style="background:#fff;border-top:1px solid rgba(0,0,0,.07);border-bottom:1px solid rgba(0,0,0,.07)">
+        <div style="font-size:11px;color:var(--text-secondary);padding:10px 14px 4px">联系人</div>
+        <div style="background:var(--bg-card);border-top:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle)">
           ${CONVS.filter(c=>c.type==='private').map(c=>`
           <div class="page-item" onclick="selectConv(${c.id})">
             <div class="avatar" style="width:36px;height:36px;background:${c.color};font-size:14px">${c.avatar}</div>
             <div style="flex:1;min-width:0">
-              <div style="font-size:14px;color:#191919">${c.name}</div>
+              <div style="font-size:14px;color:var(--text-primary)">${c.name}</div>
             </div>
             <svg class="page-chev" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
           </div>`).join('')}
@@ -555,26 +661,26 @@ function renderPanel() {
   } else if (currentPage === 'discover') {
     topbar.style.display = 'none';
     const items = [
-      ['视频号','#333','M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z'],
-      ['扫一扫','#333','M9.5 6.5v3h-3v-3h3M11 5H5v6h6V5zm-1.5 9.5v3h-3v-3h3M11 13H5v6h6v-6zm6.5-6.5v3h-3v-3h3M19 5h-6v6h6V5zm-6 8h1.5v1.5H13V13zm1.5 1.5H16V16h-1.5v-1.5zM16 13h1.5v1.5H16V13zm-3 3h1.5v1.5H13V16zm1.5 1.5H16V19h-1.5v-1.5zM16 16h1.5v1.5H16V16zm1.5-1.5H19V16h-1.5v-1.5zm0 3H19V19h-1.5v-1.5z'],
-      ['摇一摇','#333','M7.72 3.37l-1.42-1.41C4.1 4.16 3 6.97 3 10h2c0-2.49.97-4.74 2.72-6.63zM17.71 1.96L16.3 3.37C18.03 5.26 19 7.51 19 10h2c0-3.03-1.1-5.84-3.29-8.04zM16 9h-2V5h-4v4H8l4 4 4-4zM8 15v2h8v-2H8zm-2 4v2h12v-2H6z'],
+      ['视频号','var(--text-strong)','M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z'],
+      ['扫一扫','var(--text-strong)','M9.5 6.5v3h-3v-3h3M11 5H5v6h6V5zm-1.5 9.5v3h-3v-3h3M11 13H5v6h6v-6zm6.5-6.5v3h-3v-3h3M19 5h-6v6h6V5zm-6 8h1.5v1.5H13V13zm1.5 1.5H16V16h-1.5v-1.5zM16 13h1.5v1.5H16V13zm-3 3h1.5v1.5H13V16zm1.5 1.5H16V19h-1.5v-1.5zM16 16h1.5v1.5H16V16zm1.5-1.5H19V16h-1.5v-1.5zm0 3H19V19h-1.5v-1.5z'],
+      ['摇一摇','var(--text-strong)','M7.72 3.37l-1.42-1.41C4.1 4.16 3 6.97 3 10h2c0-2.49.97-4.74 2.72-6.63zM17.71 1.96L16.3 3.37C18.03 5.26 19 7.51 19 10h2c0-3.03-1.1-5.84-3.29-8.04zM16 9h-2V5h-4v4H8l4 4 4-4zM8 15v2h8v-2H8zm-2 4v2h12v-2H6z'],
       ['看一看','#FF7A45','M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z'],
       ['搜一搜','#1890FF','M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'],
-      ['附近的人','#FA5151','M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z'],
+      ['附近的人','var(--danger)','M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z'],
       ['购物','#FA8C16','M19.5 3.5L18 2l-1.5 1.5L15 2l-1.5 1.5L12 2l-1.5 1.5L9 2 7.5 3.5 6 2v14H3v3c0 1.66 1.34 3 3 3h12c1.66 0 3-1.34 3-3V2l-1.5 1.5zM19 19c0 .55-.45 1-1 1H6c-.55 0-1-.45-1-1v-1h14v1zm0-3H8V5h11v11z'],
       ['游戏','#7B61FF','M15 7.5V2H9v5.5l3 3 3-3zM7.5 9H2v6h5.5l3-3-3-3zM9 16.5V22h6v-5.5l-3-3-3 3zM16.5 9l-3 3 3 3H22V9h-5.5z'],
       ['小程序','#444','M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z'],
     ];
     const sections = [[0],[1,2],[3,4],[5],[6,7],[8]];
     body.innerHTML = `
-      <div style="height:52px;display:flex;align-items:center;padding:0 16px;font-size:15px;font-weight:600;color:#191919;border-bottom:1px solid rgba(0,0,0,.07)">发现</div>
+      <div style="height:52px;display:flex;align-items:center;padding:0 16px;font-size:15px;font-weight:600;color:var(--text-primary);border-bottom:1px solid var(--border-subtle)">发现</div>
       <div style="padding-top:8px">
         ${sections.map(sec=>`
-        <div style="background:#fff;border-top:1px solid rgba(0,0,0,.07);border-bottom:1px solid rgba(0,0,0,.07);margin-bottom:8px">
+        <div style="background:var(--bg-card);border-top:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle);margin-bottom:8px">
           ${sec.map((idx,ii)=>{const [l,c,p]=items[idx];return`
-          <div class="page-item" style="border-bottom:${ii<sec.length-1?'1px solid rgba(0,0,0,.06)':'none'}" onclick="alert('${l}：功能正在开发中')">
+          <div class="page-item" style="border-bottom:${ii<sec.length-1?'1px solid var(--border-weak)':'none'}" onclick="alert('${l}：功能正在开发中')">
             <svg style="width:20px;height:20px;fill:${c};flex-shrink:0" viewBox="0 0 24 24"><path d="${p}"/></svg>
-            <span style="flex:1;font-size:14px;color:#191919">${l}</span>
+            <span style="flex:1;font-size:14px;color:var(--text-primary)">${l}</span>
             <svg class="page-chev" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
           </div>`;}).join('')}
         </div>`).join('')}
@@ -582,30 +688,30 @@ function renderPanel() {
   } else if (currentPage === 'me') {
     topbar.style.display = 'none';
     body.innerHTML = `
-      <div style="height:52px;display:flex;align-items:center;padding:0 16px;font-size:15px;font-weight:600;color:#191919;border-bottom:1px solid rgba(0,0,0,.07)">我</div>
+      <div style="height:52px;display:flex;align-items:center;padding:0 16px;font-size:15px;font-weight:600;color:var(--text-primary);border-bottom:1px solid var(--border-subtle)">我</div>
       <!-- Profile card -->
-      <div style="background:#fff;border-top:1px solid rgba(0,0,0,.07);border-bottom:1px solid rgba(0,0,0,.07);padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;margin-top:8px;transition:background .08s" onmouseenter="this.style.background='rgba(0,0,0,.03)'" onmouseleave="this.style.background='#fff'" onclick="alert('编辑个人资料')">
-        <div class="avatar" style="width:54px;height:54px;background:linear-gradient(135deg,#07C160,#0ABF50);font-size:20px;border-radius:8px">我</div>
+      <div style="background:var(--bg-card);border-top:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle);padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;margin-top:8px;transition:background .08s" onmouseenter="this.style.background='var(--hover-bg-soft)'" onmouseleave="this.style.background='var(--bg-card)'" onclick="alert('编辑个人资料')">
+        <div class="avatar" style="width:54px;height:54px;background:linear-gradient(135deg,var(--brand),var(--brand-grad2));font-size:20px;border-radius:8px">我</div>
         <div style="flex:1;min-width:0">
-          <div style="font-size:16px;font-weight:600;color:#191919;margin-bottom:4px">v信用户</div>
-          <div style="font-size:12px;color:#B2B2B2">微信号：vxin_2024</div>
+          <div style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:4px">v信用户</div>
+          <div style="font-size:12px;color:var(--text-faint)">微信号：vxin_2024</div>
         </div>
         <svg class="page-chev" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
       </div>
       <!-- 功能列表 -->
-      <div style="background:#fff;border-top:1px solid rgba(0,0,0,.07);border-bottom:1px solid rgba(0,0,0,.07);margin-top:8px">
+      <div style="background:var(--bg-card);border-top:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle);margin-top:8px">
         ${[['收藏','⭐'],['照片与视频','🖼️'],['卡包','💳'],['表情','😊']].map(([l,e],i,a)=>`
-        <div class="page-item" style="border-bottom:${i<a.length-1?'1px solid rgba(0,0,0,.06)':'none'}" onclick="alert('${l}')">
+        <div class="page-item" style="border-bottom:${i<a.length-1?'1px solid var(--border-weak)':'none'}" onclick="alert('${l}')">
           <span style="font-size:18px;width:22px;text-align:center">${e}</span>
-          <span style="flex:1;font-size:14px;color:#191919">${l}</span>
+          <span style="flex:1;font-size:14px;color:var(--text-primary)">${l}</span>
           <svg class="page-chev" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
         </div>`).join('')}
       </div>
       <!-- 设置 -->
-      <div style="background:#fff;border-top:1px solid rgba(0,0,0,.07);border-bottom:1px solid rgba(0,0,0,.07);margin-top:8px">
+      <div style="background:var(--bg-card);border-top:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle);margin-top:8px">
         <div class="page-item" onclick="openSettings()">
           <span style="font-size:18px;width:22px;text-align:center">⚙️</span>
-          <span style="flex:1;font-size:14px;color:#191919">设置</span>
+          <span style="flex:1;font-size:14px;color:var(--text-primary)">设置</span>
           <svg class="page-chev" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
         </div>
       </div>`;
@@ -636,18 +742,18 @@ function renderChatList() {
       </div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:baseline;justify-content:space-between;gap:4px;margin-bottom:3px">
-          <span style="font-size:14px;font-weight:400;color:#191919;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</span>
-          <span style="font-size:11px;color:#ADADAD;flex-shrink:0">${c.lastTime}</span>
+          <span style="font-size:14px;font-weight:400;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</span>
+          <span style="font-size:11px;color:var(--text-tertiary);flex-shrink:0">${c.lastTime}</span>
         </div>
-        <div style="font-size:12px;color:#888;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.lastMsg}</div>
+        <div style="font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.lastMsg}</div>
       </div>
-      ${c.pinned ? '<svg style="position:absolute;top:6px;right:8px;width:10px;height:10px;fill:#ADADAD" viewBox="0 0 24 24"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>' : ''}
+      ${c.pinned ? '<svg style="position:absolute;top:6px;right:8px;width:10px;height:10px;fill:var(--text-tertiary)" viewBox="0 0 24 24"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>' : ''}
     `;
     body.appendChild(div);
   });
 
   if (list.length === 0) {
-    body.innerHTML = `<div style="text-align:center;padding:40px 0;color:#B2B2B2;font-size:13px">未找到相关聊天</div>`;
+    body.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--text-faint);font-size:13px">未找到相关聊天</div>`;
   }
 }
 
@@ -704,9 +810,9 @@ function renderMessages(id) {
     const row = document.createElement('div');
     row.style.cssText = `display:flex;align-items:flex-start;gap:8px;margin-bottom:12px;flex-shrink:0;${isMe ? 'flex-direction:row-reverse' : ''}`;
 
-    const ava = `<div class="avatar" style="width:38px;height:38px;font-size:13px;flex-shrink:0;${isMe ? 'background:linear-gradient(135deg,#07C160,#0ABF50)' : 'background:'+conv.color}">${isMe ? '我' : conv.avatar.charAt(0)}</div>`;
+    const ava = `<div class="avatar" style="width:38px;height:38px;font-size:13px;flex-shrink:0;${isMe ? 'background:linear-gradient(135deg,var(--brand),var(--brand-grad2))' : 'background:'+conv.color}">${isMe ? '我' : conv.avatar.charAt(0)}</div>`;
 
-    const nameHtml = (!isMe && msg.name) ? `<div style="font-size:11px;color:#888;margin-bottom:3px;padding-left:1px">${msg.name}</div>` : '';
+    const nameHtml = (!isMe && msg.name) ? `<div style="font-size:11px;color:var(--text-secondary);margin-bottom:3px;padding-left:1px">${msg.name}</div>` : '';
     const content = msg.text.replace(/\n/g, '<br>');
 
     row.innerHTML = `
@@ -867,6 +973,17 @@ function closeAddMenu() {
   document.getElementById('add-overlay').style.display = 'none';
   document.getElementById('add-menu').style.display    = 'none';
 }
+
+// ═══════════════════════════════════════════════════════════
+//  SKIN — 皮肤切换（v信绿经典 / 深空暗黑）
+// ═══════════════════════════════════════════════════════════
+function currentSkin(){ return document.documentElement.getAttribute('data-skin') || 'light'; }
+function applySkin(s){
+  document.documentElement.setAttribute('data-skin', s);
+  try{ localStorage.setItem('vxin_pc_skin', s); }catch(e){}
+  document.querySelectorAll('.skin-status').forEach(el => { el.textContent = s === 'dark' ? '深空' : '浅色'; });
+}
+function toggleSkin(){ applySkin(currentSkin() === 'dark' ? 'light' : 'dark'); }
 
 // ═══════════════════════════════════════════════════════════
 //  MODALS

@@ -61,8 +61,9 @@ export function usePushNotification(user) {
         const { data } = await axios.get('/api/notifications/vapid-public-key');
         if (cancelled || !data.publicKey) return;
 
-        // 2. 注册 Service Worker
-        const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+        // 2. 注册 Service Worker（子路径部署需带 BASE_URL 前缀，否则 404 注册失败）
+        if (window.__ELECTRON_CONFIG__) return;
+        const reg = await navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js', { scope: import.meta.env.BASE_URL });
         await navigator.serviceWorker.ready;
         if (cancelled) return;
 

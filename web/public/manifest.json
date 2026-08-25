@@ -2,39 +2,65 @@
   "name": "v信",
   "short_name": "v信",
   "description": "安全、高效的企业级即时通讯",
-  "start_url": "/app/",
+  "start_url": "./",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#F7F7F7",
   "theme_color": "#07C160",
   "orientation": "portrait-primary",
   "lang": "zh-CN",
-  "scope": "/app/",
+  "scope": "./",
+  "scope": "./",
   "id": "com.vxin.app",
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ],
   "shortcuts": [
     {
       "name": "新消息",
       "short_name": "消息",
       "description": "查看最新消息",
-      "url": "/?tab=chat",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "url": "./?tab=chat",
+      "icons": [
+        {
+          "src": "./icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "通讯录",
       "short_name": "通讯录",
       "description": "查看联系人",
-      "url": "/?tab=contacts",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "url": "./?tab=contacts",
+      "icons": [
+        {
+          "src": "./icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "朋友圈",
       "short_name": "朋友圈",
       "description": "浏览朋友圈动态",
-      "url": "/?tab=moments",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+      "url": "./?tab=moments",
+      "icons": [
+        {
+          "src": "./icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ],
   "share_target": {
@@ -45,13 +71,33 @@
       "title": "title",
       "text": "text",
       "url": "url",
-      "files": [{ "name": "file", "accept": ["image/*", "video/*", "audio/*", ".pdf", ".doc", ".docx"] }]
+      "files": [
+        {
+          "name": "file",
+          "accept": [
+            "image/*",
+            "video/*",
+            "audio/*",
+            ".pdf",
+            ".doc",
+            ".docx"
+          ]
+        }
+      ]
     }
   },
   "protocol_handlers": [
-    { "protocol": "web+vxin", "url": "/open?uri=%s" }
+    {
+      "protocol": "web+vxin",
+      "url": "/open?uri=%s"
+    }
   ],
-  "categories": ["social", "communication"],
+  "categories": [
+    "social",
+    "communication"
+  ],
   "prefer_related_applications": false,
-  "edge_side_panel": { "preferred_width": 400 }
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }

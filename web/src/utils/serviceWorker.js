@@ -25,9 +25,14 @@ export async function registerSW({ onUpdate, onSuccess, onOffline } = {}) {
 
   _updateAvailableCallback = onUpdate;
 
+  // Electron 桌面端跑在 file:// 协议下，SW 不可用，跳过注册
+  if (window.__ELECTRON_CONFIG__) return;
+
   try {
-    const registration = await navigator.serviceWorker.register('/app/sw.js', {
-      scope: '/app/',
+    // 部署在子路径（/app/）时 SW 也必须带 BASE_URL 前缀，否则注册 404 失效
+    const base = import.meta.env.BASE_URL || '/';
+    const registration = await navigator.serviceWorker.register(base + 'sw.js', {
+      scope: base,
       updateViaCache: 'none',   // 强制每次检查更新
     });
     swRegistration = registration;
