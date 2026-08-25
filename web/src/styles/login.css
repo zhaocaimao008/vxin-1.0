@@ -476,6 +476,20 @@
 .auth-agreement a { color: #FFD700; text-decoration: none; }
 .auth-agreement a:hover { color: #FFC72C; }
 
+/* ── 下载客户端（仅 Web 端展示）── */
+.auth-download { margin-top: 22px; padding-top: 18px; border-top: 1px solid #2A2A2A; text-align: center; }
+.auth-download-label { font-size: 13px; color: #8A8478; margin-bottom: 12px; letter-spacing: .3px; }
+.auth-download-row { display: flex; gap: 10px; justify-content: center; }
+.auth-download-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 16px; border-radius: 10px;
+  background: #141414; color: #CCCCCC;
+  font-size: 13px; font-weight: 500; text-decoration: none;
+  border: 1px solid #2A2A2A;
+  transition: background 120ms, border-color 120ms, color 120ms;
+}
+.auth-download-btn:hover { background: rgba(255,215,0,.10); border-color: rgba(255,215,0,.35); color: #FFD700; }
+
 /* ── 服务器切换（Electron）── */
 .auth-server { margin-top: 20px; text-align: center; }
 .auth-server-toggle {
