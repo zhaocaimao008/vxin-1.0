@@ -384,12 +384,12 @@ function setupSecurity() {
   const ses = session.defaultSession;
 
   // 启动时按本次构建的内联脚本现算哈希；成功则去掉 'unsafe-inline'，失败回退。
-  // 'unsafe-eval' 暂保留：打包产物经 grep 未见 eval/new Function，可在 GUI 验证
-  // 无白屏后移除（详见 SECURITY-RELEASE.md）。
+  // 'unsafe-eval' 已移除：构建产物（web/dist/assets）经 grep 确认无 eval/new Function
+  // （2026-08-27 验证），不再需要放宽。若未来引入含 eval 的依赖，须先处理再构建。
   const hashes = inlineScriptHashes();
-  const scriptSrc = (hashes && hashes.length)
-    ? `'self' ${hashes.join(' ')} 'unsafe-eval'`
-    : `'self' 'unsafe-inline' 'unsafe-eval'`;
+  const scriptSrc = hashes && hashes.length
+    ? `'self' ${hashes.join(' ')}`
+    : `'self' 'unsafe-inline'`;
   if (hashes && hashes.length) log.info(`CSP: 已用 ${hashes.length} 个内联脚本哈希替代 unsafe-inline`);
 
   // 为主文档响应注入 CSP（不影响后端 API/WebSocket 响应）。
