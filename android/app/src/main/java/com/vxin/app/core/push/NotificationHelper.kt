@@ -11,6 +11,7 @@ import androidx.core.app.NotificationManagerCompat
 import com.vxin.app.R
 import com.vxin.app.MainActivity
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
@@ -68,6 +69,8 @@ class NotificationHelper @Inject constructor(
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             conversationId?.let { putExtra(EXTRA_CONVERSATION_ID, it) }
+            // 内部令牌：MainActivity 凭此区分「本应用通知」与「外部伪造显式 Intent」
+            putExtra(EXTRA_INTERNAL_TOKEN, internalToken(context))
         }
         val pending = PendingIntent.getActivity(
             context, notifId, intent,
@@ -143,6 +146,8 @@ class NotificationHelper @Inject constructor(
             putExtra(EXTRA_CALL_FROM, from)
             putExtra(EXTRA_CALL_NAME, callerName)
             putExtra(EXTRA_CALL_TYPE, callType)
+            // 内部令牌：防外部应用伪造来电/拒接 Intent（MainActivity 校验）
+            putExtra(EXTRA_INTERNAL_TOKEN, internalToken(context))
         }
         val reqBase = from.hashCode()
         val piFlags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -282,6 +287,27 @@ class NotificationHelper @Inject constructor(
         const val EXTRA_CALL_FROM = "callFrom"
         const val EXTRA_CALL_NAME = "callerName"
         const val EXTRA_CALL_TYPE = "callType"
+
+        // 内部令牌（防外部应用伪造来电/深链 Intent）：
+        // MainActivity exported=true 是 LAUNCHER 所必需，无法改 false，故对
+        // 通知点击类 Intent 额外携带应用私有随机令牌，外部应用无法预知/读取。
+        const val EXTRA_INTERNAL_TOKEN = "vxin_internal_token"
+        private const val KEY_INTERNAL_TOKEN = "internalToken"
+        private var cachedToken: String? = null
+
+        /** 生成/读取应用私有内部令牌（进程内缓存 + SharedPreferences 持久化） */
+        fun internalToken(context: Context): String {
+            return cachedToken ?: run {
+                val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                var t = prefs.getString(KEY_INTERNAL_TOKEN, null)
+                if (t.isNullOrEmpty()) {
+                    t = UUID.randomUUID().toString()
+                    prefs.edit().putString(KEY_INTERNAL_TOKEN, t).apply()
+                }
+                cachedToken = t
+                t
+            }
+        }
 
         private const val TAG = "NotificationHelper"
 

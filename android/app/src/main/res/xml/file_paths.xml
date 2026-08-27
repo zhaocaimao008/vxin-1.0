@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <!-- APK 下载到 getExternalFilesDir("downloads") -->
+    <!-- APK 下载到 getExternalFilesDir(null)/downloads -->
     <external-files-path name="downloads" path="downloads/" />
-    <!-- 也允许缓存目录（容错） -->
-    <cache-path name="cache" path="." />
+    <!-- 复制图片到剪贴板：cache/clipboard（FileDownloader.copyImageToClipboard） -->
+    <cache-path name="clipboard" path="clipboard/" />
+    <!-- 分享文件：cache/share（FileDownloader.shareFile） -->
+    <cache-path name="share" path="share/" />
 </paths>

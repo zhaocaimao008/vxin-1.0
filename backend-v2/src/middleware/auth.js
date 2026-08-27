@@ -42,7 +42,7 @@ module.exports = function auth(req, res, next) {
           res.clearCookie(config.cookieName, { path: '/' });
           return res.status(403).json({ error: '账号已被封禁' });
         }
-        if (payload.iat && row?.password_changed_at && payload.iat < row.password_changed_at) {
+        if (payload.iat && row?.password_changed_at && payload.iat <= row.password_changed_at) {
           res.clearCookie(config.cookieName, { path: '/' });
           return res.status(401).json({ error: '密码已修改，请重新登录' });
         }

@@ -18,16 +18,39 @@
 // ================================================================
 
 const KEY = 'vxin_remembered_creds_v1';
+const KEY_SEED = 'vxin_remembered_key_v1';
 // 固定混淆密钥：仅用于可逆混淆，不承担安全职责（见上方安全边界说明）。
-const OBF_KEY = 'vxin::remember::v1';
+// 审计加固（Web #4）：不再用固定密钥——改用首次使用时随机生成、存于本设备的
+// 设备密钥（每设备不同，避免「仓库内固定密钥可直接还原全部已存密码」）。
+const LEGACY_OBF_KEY = 'vxin::remember::v1';
+let _deviceKey = null;
+
+// 取设备随机密钥（首次生成并持久化；localStorage 不可用时退回首访随机值）
+function deviceKey() {
+  if (_deviceKey) return _deviceKey;
+  try {
+    let k = localStorage.getItem(KEY_SEED);
+    if (!k || k.length < 16) {
+      const bytes = new Uint8Array(24);
+      crypto.getRandomValues(bytes);
+      k = btoa(String.fromCharCode(...bytes));
+      localStorage.setItem(KEY_SEED, k);
+    }
+    _deviceKey = k;
+  } catch {
+    _deviceKey = LEGACY_OBF_KEY;
+  }
+  return _deviceKey;
+}
 
 // XOR + base64 可逆混淆。对 Unicode 密码安全（先 encodeURIComponent 转字节域）。
-function obfuscate(plain) {
+// @param key 混淆密钥
+function obfuscateWith(plain, key) {
   try {
     const s = unescape(encodeURIComponent(String(plain)));
     let out = '';
     for (let i = 0; i < s.length; i++) {
-      out += String.fromCharCode(s.charCodeAt(i) ^ OBF_KEY.charCodeAt(i % OBF_KEY.length));
+      out += String.fromCharCode(s.charCodeAt(i) ^ key.charCodeAt(i % key.length));
     }
     return btoa(out);
   } catch {
@@ -35,17 +58,26 @@ function obfuscate(plain) {
   }
 }
 
-function deobfuscate(obf) {
+function deobfuscateWith(obf, key) {
   try {
     const s = atob(String(obf));
     let out = '';
     for (let i = 0; i < s.length; i++) {
-      out += String.fromCharCode(s.charCodeAt(i) ^ OBF_KEY.charCodeAt(i % OBF_KEY.length));
+      out += String.fromCharCode(s.charCodeAt(i) ^ key.charCodeAt(i % key.length));
     }
     return decodeURIComponent(escape(out));
   } catch {
     return '';
   }
+}
+
+function obfuscate(plain) { return obfuscateWith(plain, deviceKey()); }
+
+// 兼容旧数据：先用设备密钥解，失败则试旧固定密钥（旧版本写入的数据）
+function deobfuscate(obf) {
+  const v = deobfuscateWith(obf, deviceKey());
+  if (v) return v;
+  return deobfuscateWith(obf, LEGACY_OBF_KEY);
 }
 
 function readAll() {

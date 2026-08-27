@@ -468,8 +468,17 @@ function setupSecurity() {
     contents.on('will-redirect', denyExternalNav);
 
     // window.open / target=_blank：拒绝新建窗口，安全外链走系统浏览器
+    // 与 will-navigate 一致：内网/回环地址不放行到系统浏览器，防被注入页面引导用户访问内网
     contents.setWindowOpenHandler(({ url }) => {
-      if (/^https?:\/\//.test(url)) shell.openExternal(url).catch(() => {});
+      if (/^https?:\/\//.test(url)) {
+        try {
+          const u = new URL(url);
+          const isPrivate = /^(localhost|127\.|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(u.hostname);
+          if (!isPrivate) shell.openExternal(url).catch(() => {});
+        } catch {
+          // URL 解析失败不放行
+        }
+      }
       return { action: 'deny' };
     });
 
@@ -681,7 +690,7 @@ function createWindow() {
   memoryMonitor.start();
 
   // 内存压力事件处理：渲染进程通知主进程清理缓存
-  ipcMain.handle('memory:getCurrent', () => memoryMonitor.getMemoryMB());
+  ipcMain.handle('memory:getCurrent', (e) => isTrustedSender(e) ? memoryMonitor.getMemoryMB() : 0);
 
   // 兜底：若渲染进程崩溃/被 CSP 拦截等异常导致 ready-to-show 永不触发，
   // 窗口会一直停留在 show:false 状态——表现为双击图标后完全无窗口（俗称"黑屏"）。
@@ -967,17 +976,19 @@ function isTrustedSender(event) {
 // ── IPC 处理器（白名单模式）───────────────────────────────
 function setupIPC() {
   // 窗口操作
-  ipcMain.handle('window:minimize',    () => mainWindow?.minimize());
-  ipcMain.handle('window:maximize',    () => {
+  ipcMain.handle('window:minimize',    (e) => { if (isTrustedSender(e)) mainWindow?.minimize(); });
+  ipcMain.handle('window:maximize',    (e) => {
+    if (!isTrustedSender(e)) return;
     if (mainWindow?.isMaximized()) mainWindow.unmaximize();
     else mainWindow?.maximize();
   });
-  ipcMain.handle('window:close',       () => mainWindow?.close());
-  ipcMain.handle('window:isMaximized', () => mainWindow?.isMaximized() ?? false);
+  ipcMain.handle('window:close',       (e) => { if (isTrustedSender(e)) mainWindow?.close(); });
+  ipcMain.handle('window:isMaximized', (e) => isTrustedSender(e) ? (mainWindow?.isMaximized() ?? false) : false);
 
   // 开机自动启动：复用系统托盘菜单已有的同一份 store 状态，供设置页读写
-  ipcMain.handle('system:getAutoLaunch', () => !!store.get('autoLaunch'));
-  ipcMain.handle('system:setAutoLaunch', (_e, enabled) => {
+  ipcMain.handle('system:getAutoLaunch', (e) => isTrustedSender(e) ? !!store.get('autoLaunch') : false);
+  ipcMain.handle('system:setAutoLaunch', (e, enabled) => {
+    if (!isTrustedSender(e)) return false;
     const on = !!enabled;
     store.set('autoLaunch', on);
     app.setLoginItemSettings({ openAtLogin: on });
@@ -1204,7 +1215,7 @@ function setupIPC() {
     CDN_ORIGIN = '';
     return true;
   });
-  ipcMain.handle('config:getServerUrl', () => store.get('serverUrl'));
+  ipcMain.handle('config:getServerUrl', (e) => isTrustedSender(e) ? store.get('serverUrl') : null);
 
   // 快捷键设置：读取 / 修改 / 重置
   ipcMain.handle('shortcuts:getAll', (_e) => {
@@ -1241,7 +1252,7 @@ function setupIPC() {
   });
 
   // 系统信息
-  ipcMain.handle('system:getPlatform', () => process.platform);
+  ipcMain.handle('system:getPlatform', (e) => isTrustedSender(e) ? process.platform : '');
 
   // 更新：用户在 UI 确认后主动触发安装
   ipcMain.handle('update:install', (_e) => {

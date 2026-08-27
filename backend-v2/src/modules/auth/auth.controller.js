@@ -155,7 +155,9 @@ exports.changePassword = asyncHandler(async (req, res) => {
 });
 
 exports.resetPassword = asyncHandler(async (req, res) => {
-  await svc.resetPassword(req.body);
+  const walletId = req.cookies?.[config.walletCookie];
+  // 所有权校验：必须本设备登录过该账号才能重置密码（防「知道手机号+公开邀请码即接管账号」）
+  await svc.resetPassword({ ...req.body, walletId });
   // 重置成功后强制断开目标用户现有 socket（best-effort，防账号盗用场景旧 socket 留存）
   const { phone } = req.body || {};
   if (phone) {
