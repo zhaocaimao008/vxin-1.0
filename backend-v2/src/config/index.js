@@ -127,6 +127,7 @@ const config = {
   asr: {
     // ASR 服务基础地址；换机/换端口只改这里或环境变量
     baseUrl: process.env.ASR_URL || 'http://127.0.0.1:18790',
+    serviceToken: process.env.SERVICE_TOKEN || '',
     // 单次转写请求超时（毫秒），任务书要求 30s
     timeoutMs: parseInt(process.env.ASR_TIMEOUT_MS, 10) || 30000,
   },

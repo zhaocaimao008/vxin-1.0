@@ -1,25 +1,28 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useI18n, SUPPORTED_LANGS } from '../contexts/I18nContext';
 import { timeoutSignal } from '../utils/config';
-import { saveCred, loadCred, removeCred, lastRememberedPhone } from '../utils/rememberedCreds';
+import {
+  saveRememberedUsername,
+  isUsernameRemembered,
+  removeRememberedUsername,
+  lastRememberedUsername,
+} from '../utils/rememberedCreds';
 import { isDeprecatedServerUrl } from '../utils/url';
 import '../styles/login.css';
 
 const isElectron = !!window.__ELECTRON_CONFIG__;
 
 export default function Login() {
-  // 「记住账户和密码」：登录页首帧即回填上次勾选记住的手机号 + 密码，免手输。
-  // 凭证仅在本地做可逆混淆存储，默认不勾选，详见 utils/rememberedCreds.js 安全边界。
-  const initialPhone = lastRememberedPhone();
-  const initialPwd = initialPhone ? loadCred(initialPhone) : '';
+  // 「记住用户名」：登录页首帧只回填上次勾选记住的手机号，绝不保存或回填密码。
+  const initialPhone = lastRememberedUsername();
   const [loginMode, setLoginMode] = useState('phone'); // 'phone' or 'vxin'
   const [phone, setPhone] = useState(initialPhone);
   const [vxinId, setVxinId] = useState('');
-  const [password, setPassword] = useState(initialPwd);
-  const [remember, setRemember] = useState(!!initialPwd);
+  const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(!!initialPhone);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
@@ -28,27 +31,17 @@ export default function Login() {
   // 勾选框本身是真实交互状态，未勾选禁止提交。
   const [agreed, setAgreed] = useState(false);
   const identifierOk = loginMode === 'phone' ? phone : vxinId;
-  // 渲染期避免重复解码：仅在账户列表变化时解一次，不再每行渲染都 loadCred（atob+XOR 开销）
-  const accountCreds = useMemo(() => {
-    const m = {};
-    for (const acct of accounts) {
-      const p = acct?.user?.phone || '';
-      if (p) m[p] = loadCred(p);
-    }
-    return m;
-  }, [accounts]);
   const { login, accounts, removeAccount, maxAccounts } = useAuth();
   const { lang, setLang } = useI18n();
   const [showLangMenu, setShowLangMenu] = useState(false);
   const navigate = useNavigate();
 
-  // 点击「最近登录」某账户：回填手机号，并在存有记住密码时一并回填密码 + 勾选记住。
+  // 点击「最近登录」某账户：只回填手机号，密码始终由用户输入。
   const fillAccount = (acct) => {
     const p = acct?.user?.phone || '';
     setPhone(p);
-    const saved = loadCred(p);
-    if (saved) { setPassword(saved); setRemember(true); }
-    else { setPassword(''); setRemember(false); }
+    setPassword('');
+    setRemember(isUsernameRemembered(p));
   };
 
   // ── 服务器切换（仅桌面端，登录前即可切换，无需重装） ──
@@ -104,10 +97,10 @@ export default function Login() {
         ? { phone, password }
         : { loginType: 'vxin', identifier: vxinId, password };
       const { data } = await axios.post('/api/auth/login', payload);
-      // 登录成功后按勾选保存/清除本地记住的密码（凭证按手机号归档，可逆混淆存储）
+      // 登录成功后按勾选只保存/清除用户名，绝不持久化密码。
       if (loginMode === 'phone') {
-        if (remember) saveCred(phone, password);
-        else removeCred(phone);
+        if (remember) saveRememberedUsername(phone);
+        else removeRememberedUsername(phone);
       }
       login(data.user, data.token);
       navigate('/');
@@ -189,7 +182,7 @@ export default function Login() {
           </button>
         </div>
 
-        {/* 最近登录：点击回填手机号；若曾记住密码则一并回填密码并自动勾选「记住密码」 */}
+        {/* 最近登录：点击只回填手机号，密码始终由用户输入。 */}
         {accounts.length > 0 && (
           <div className="auth-accounts">
             <div className="auth-accounts-header">
@@ -202,7 +195,7 @@ export default function Login() {
                   type="button"
                   className="auth-account-btn"
                   onClick={() => fillAccount(account)}
-                  title={accountCreds[account.user?.phone || ''] ? '填入账户与密码' : '填入手机号'}
+                  title="填入手机号"
                 >
                   <div className="auth-account-avatar">
                     {(account.user?.username || '?')[0].toUpperCase()}
@@ -215,7 +208,7 @@ export default function Login() {
                 <button
                   type="button"
                   className="auth-account-remove"
-                  onClick={() => { removeCred(account.user?.phone || ''); removeAccount(account.id); }}
+                  onClick={() => { removeRememberedUsername(account.user?.phone || ''); removeAccount(account.id); }}
                   title="移除记录"
                   aria-label="移除记录"
                 >✕</button>
@@ -334,7 +327,7 @@ export default function Login() {
                 checked={remember}
                 onChange={e => setRemember(e.target.checked)}
               />
-              记住密码
+              记住用户名
             </label>
             <Link to="/forgot-password" className="auth-link" style={{ fontSize: 'var(--text-sm2)' }}>忘记密码？</Link>
           </div>

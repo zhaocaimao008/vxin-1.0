@@ -245,7 +245,8 @@ app.get('/health', (req, res) => {
     db.prepare('SELECT 1').get();
     res.json({ ok: true, version: 2, db: 'ok' });
   } catch (e) {
-    res.status(503).json({ ok: false, version: 2, db: 'error', error: e.message });
+    console.error('[health] database probe failed:', e);
+    res.status(503).json({ status: 'error' });
   }
 });
 

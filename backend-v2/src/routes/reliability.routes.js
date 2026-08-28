@@ -7,7 +7,24 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
+const adminAuth = require('../middleware/adminAuth');
+const { readDb } = require('../db/connection');
 const { badRequest, forbidden } = require('../utils/http');
+
+const DLQ_QUEUE_NAMES = new Set(['messages']);
+
+function requireMessageAccess(messageId, userId) {
+  const message = readDb.prepare(
+    'SELECT id, conversation_id, sender_id FROM messages WHERE id=?'
+  ).get(messageId);
+  if (!message) throw forbidden('无权访问该消息');
+  if (message.sender_id === userId) return message;
+  const member = readDb.prepare(
+    'SELECT 1 FROM conversation_members WHERE conversation_id=? AND user_id=?'
+  ).get(message.conversation_id, userId);
+  if (!member) throw forbidden('无权访问该消息');
+  return message;
+}
 
 /**
  * @swagger
@@ -38,6 +55,8 @@ router.post('/ack/delivery', auth, async (req, res, next) => {
     if (!messageId) {
       throw badRequest('缺少参数: messageId');
     }
+
+    requireMessageAccess(messageId, userId);
 
     const ackManager = req.app.get('ackManager');
     await ackManager.recordDelivery(messageId, userId, timestamp || Date.now());
@@ -78,6 +97,8 @@ router.post('/ack/read', auth, async (req, res, next) => {
       throw badRequest('缺少参数: messageId');
     }
 
+    requireMessageAccess(messageId, userId);
+
     const ackManager = req.app.get('ackManager');
     await ackManager.recordRead(messageId, userId, timestamp || Date.now());
 
@@ -106,10 +127,13 @@ router.post('/ack/read', auth, async (req, res, next) => {
 router.get('/ack/status', auth, async (req, res, next) => {
   try {
     const { messageId } = req.query;
+    const userId = req.user.id;
 
     if (!messageId) {
       throw badRequest('缺少参数: messageId');
     }
+
+    requireMessageAccess(messageId, userId);
 
     const ackManager = req.app.get('ackManager');
     const status = await ackManager.getMessageAckStatus(messageId);
@@ -166,9 +190,13 @@ router.get('/queue/stats', auth, async (req, res, next) => {
  *       200:
  *         description: DLQ 消息列表
  */
-router.get('/dlq', auth, async (req, res, next) => {
+router.get('/dlq', adminAuth, async (req, res, next) => {
   try {
     const { queueName = 'messages', limit = 50 } = req.query;
+
+    if (!DLQ_QUEUE_NAMES.has(queueName)) {
+      throw badRequest('无效的队列名称');
+    }
 
     const msgQueue = req.app.get('msgQueue');
     const messages = await msgQueue.getDLQMessages(queueName, parseInt(limit));

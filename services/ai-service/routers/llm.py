@@ -1,5 +1,6 @@
 import os
 import logging
+import asyncio
 import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -13,6 +14,7 @@ LLM_BASE_URL  = os.environ.get('LLM_BASE_URL', 'http://localhost:11434')
 LLM_MODEL     = os.environ.get('LLM_MODEL', 'qwen2.5:7b')
 LLM_TIMEOUT   = float(os.environ.get('LLM_TIMEOUT', '120'))
 LLM_MAX_TOKENS = int(os.environ.get('LLM_MAX_TOKENS', '2048'))
+_llm_semaphore = asyncio.Semaphore(4)
 
 
 class ChatMessage(BaseModel):
@@ -36,6 +38,16 @@ class AssistantRequest(BaseModel):
 
 @router.post('/chat')
 async def chat(req: ChatRequest):
+    if _llm_semaphore.locked():
+        raise HTTPException(429, 'Too many concurrent LLM requests')
+    await _llm_semaphore.acquire()
+    try:
+        return await _chat(req)
+    finally:
+        _llm_semaphore.release()
+
+
+async def _chat(req: ChatRequest):
     model = req.model or LLM_MODEL
     payload = {
         'model': model,

@@ -4,10 +4,13 @@
  */
 const express = require('express');
 const router = express.Router();
+const adminAuth = require('../middleware/adminAuth');
 const { redisCache } = require('../integrations/redisCache');
 const { tracing } = require('../integrations/tracing');
 const { getCdnStatus } = require('../integrations/cdnOptimizer');
 const { getStats: getQueryStats } = require('../utils/queryOptimizer');
+
+router.use(adminAuth);
 
 /**
  * GET /api/monitoring/health
@@ -75,8 +78,10 @@ router.get('/query-stats', (req, res) => {
  */
 router.post('/redis-clear', async (req, res) => {
   try {
-    const pattern = req.body.pattern || '*';
-    const count = await redisCache.delPattern(pattern);
+    if (req.body?.confirm !== true) {
+      return res.status(400).json({ error: '需要 confirm: true 二次确认' });
+    }
+    const count = await redisCache.delPattern('cache:*');
     res.json({ success: true, deleted: count });
   } catch (error) {
     res.status(500).json({ error: error.message });

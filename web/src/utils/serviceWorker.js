@@ -8,6 +8,8 @@
  */
 
 let swRegistration = null;
+let swInitializationPromise = null;
+let _swUpdateIntervalId = null;
 let _updateAvailableCallback = null;
 
 /**
@@ -27,6 +29,15 @@ export async function registerSW({ onUpdate, onSuccess, onOffline } = {}) {
 
   // Electron 桌面端跑在 file:// 协议下，SW 不可用，跳过注册
   if (window.__ELECTRON_CONFIG__) return;
+
+  if (swRegistration) return swRegistration;
+  if (swInitializationPromise) return swInitializationPromise;
+
+  swInitializationPromise = initializeSW({ onUpdate, onSuccess, onOffline });
+  return swInitializationPromise;
+}
+
+async function initializeSW({ onUpdate, onSuccess, onOffline }) {
 
   try {
     // 部署在子路径（/app/）时 SW 也必须带 BASE_URL 前缀，否则注册 404 失效
@@ -57,7 +68,7 @@ export async function registerSW({ onUpdate, onSuccess, onOffline } = {}) {
     });
 
     // 每 30 分钟检查更新
-    setInterval(() => registration.update(), 30 * 60 * 1000);
+    _swUpdateIntervalId = setInterval(() => registration.update(), 30 * 60 * 1000);
 
     // 监听 SW 消息（导航、outbox 同步）
     navigator.serviceWorker.addEventListener('message', handleSWMessage);
@@ -68,6 +79,7 @@ export async function registerSW({ onUpdate, onSuccess, onOffline } = {}) {
 
     return registration;
   } catch (err) {
+    swInitializationPromise = null;
     console.warn('[SW] 注册失败（不影响功能）:', err.message);
   }
 }

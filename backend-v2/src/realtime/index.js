@@ -14,6 +14,8 @@ const presence = require('./presence');
 const broadcaster = require('./broadcaster');
 const prodMetrics = require('../utils/prodMetrics');
 
+const MAX_CONVERSATION_ROOMS = 2000;
+
 // 单设备踢下线用的房间名：同一用户可能多端在线（Windows/Android/iOS...），
 // deleteSession 只应断开被删的那一台设备，不能牵连同用户的其它在线设备。
 function deviceRoom(userId, device, platform) {
@@ -85,11 +87,16 @@ module.exports = function setupRealtime(io, app) {
     setImmediate(() => {
       try {
         // 限制加入房间数上限：极端情况下（用户在数千个群）无上限 join 会阻塞事件循环。
-        // 500 与 maxGroupMembers 配置一致，覆盖绝大多数正常使用场景。
-        const MAX_ROOMS = 500;
+        // 优先加入最近有消息的会话，并为重度用户保留合理上限。
         const convIds = readDb.prepare(
-          'SELECT conversation_id FROM conversation_members WHERE user_id=? LIMIT ?'
-        ).all(userId, MAX_ROOMS).map(c => c.conversation_id);
+          `SELECT cm.conversation_id
+             FROM conversation_members cm
+            WHERE cm.user_id=?
+            ORDER BY COALESCE((
+              SELECT MAX(m.created_at) FROM messages m WHERE m.conversation_id=cm.conversation_id
+            ), 0) DESC
+            LIMIT ?`
+        ).all(userId, MAX_CONVERSATION_ROOMS).map(c => c.conversation_id);
         if (convIds.length) socket.join(convIds);
       } catch (err) {
         console.error('[realtime] join rooms error:', err);

@@ -24,7 +24,10 @@ async function health() {
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 3000);
-    const resp = await fetch(`${config.asr.baseUrl}/health`, { signal: ctrl.signal });
+    const resp = await fetch(`${config.asr.baseUrl}/health`, {
+      headers: { 'X-Service-Token': config.asr.serviceToken },
+      signal: ctrl.signal,
+    });
     clearTimeout(timer);
     if (!resp.ok) return false;
     const json = await resp.json();
@@ -53,6 +56,7 @@ async function transcribe(buf, filename = 'audio.webm', language = 'auto') {
 
     const resp = await fetch(`${config.asr.baseUrl}/transcribe`, {
       method: 'POST',
+      headers: { 'X-Service-Token': config.asr.serviceToken },
       body: form,
       signal: ctrl.signal,
     });

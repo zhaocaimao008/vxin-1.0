@@ -24,9 +24,12 @@ exports.recharge = asyncHandler(async (req, res) => {
 // 好友转账：POST /api/wallet/transfer
 exports.transfer = asyncHandler(async (req, res) => {
   const { to_user_id, amount, note } = req.body;
+  const parsedAmount = Number(amount);
+  if (!Number.isInteger(parsedAmount) || parsedAmount <= 0)
+    return res.status(400).json({ error: '转账金额需为正整数（单位：金币）' });
   const result = await svc.transfer(req.user.id, {
     to_user_id,
-    amount: parseInt(amount, 10),
+    amount: parsedAmount,
     note,
   });
   res.json(result);
