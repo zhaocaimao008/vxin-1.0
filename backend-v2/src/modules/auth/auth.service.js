@@ -329,8 +329,8 @@ function switchAccount(walletId, userId) {
   return { token: signToken(user), user: serializeUser(user) };
 }
 
-/** 忘记密码：手机号 + 邀请码验证后重置（无需登录） */
-async function resetPassword({ phone, inviteCode, newPassword }) {
+/** 忘记密码：手机号 + 邀请码 + 本设备登录过该账号（所有权证明）后重置 */
+async function resetPassword({ phone, inviteCode, newPassword, walletId }) {
   if (!phone || !inviteCode || !newPassword) throw badRequest('请填写所有字段');
   if (typeof phone !== 'string' || phone.length < 5 || phone.length > 20 || !/^\+?[\d\s\-]{5,20}$/.test(phone))
     throw badRequest('手机号格式不正确');
@@ -340,6 +340,11 @@ async function resetPassword({ phone, inviteCode, newPassword }) {
     throw badRequest('密码必须至少8位，且至少包含1个字母和1个数字');
   const user = db.prepare('SELECT id FROM users WHERE phone=?').get(phone);
   if (!user) return { success: true }; // 不暴露手机号是否已注册，防枚举
+  // 安全加固（S1）：防止「公开注册邀请码 + 任意手机号」即可重置密码接管账号。
+  // 必须本设备登录过该账号（device_accounts 记录）才能重置，与 switchAccount 同源所有权校验。
+  if (!walletId) throw forbidden('请先在当前设备登录过该账号后再重置密码');
+  const owned = db.prepare('SELECT 1 FROM device_accounts WHERE wallet_id=? AND user_id=?').get(walletId, user.id);
+  if (!owned) throw forbidden('当前设备未登录过该账号，无法重置密码');
   const hash = await bcrypt.hash(newPassword, 12);
   const resetAt = Math.floor(Date.now() / 1000);
   db.prepare('UPDATE users SET password=?, password_changed_at=? WHERE id=?').run(hash, resetAt, user.id);

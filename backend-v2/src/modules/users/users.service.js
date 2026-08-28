@@ -9,7 +9,7 @@ const presence = require('../../realtime/presence');
 // 安全解析收藏 extra JSON：单条脏数据不应让整个收藏列表 500。
 function parseExtra(raw) {
   try { const v = JSON.parse(raw || '{}'); return v && typeof v === 'object' ? v : {}; }
-  catch { return {}; }
+  catch (e) { console.warn('[users] 收藏 extra JSON 解析失败（脏数据，已降级为 {}）:', e?.message); return {}; }
 }
 
 // ── 设置序列化 ──────────────────────────────────────────────────

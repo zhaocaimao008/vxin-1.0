@@ -150,6 +150,15 @@ const rechargeLimiter = rateLimit({
   validate: { xForwardedForHeader: false },
 });
 
+// 转账：单用户每分钟最多 10 次（每笔=扣款+入账+消息+全会话广播，高频调用会放大写负载）
+const transferLimiter = rateLimit({
+  ...base, windowMs: 60 * 1000, max: 10,
+  store: makeStore('transfer'),
+  keyGenerator: req => req.user?.id || ipKeyGenerator(req.ip),
+  handler: (req, res) => res.status(429).json(json('转账过于频繁，请稍后再试')),
+  validate: { xForwardedForHeader: false },
+});
+
 // 用户搜索：单用户每分钟 30 次
 const searchLimiter = rateLimit({
   ...base, windowMs: 60 * 1000, max: 30,
@@ -223,7 +232,7 @@ const joinGroupLimiter = rateLimit({
 });
 
 // 测试模式:DISABLE_RATE_LIMIT=1 时所有限流变 no-op
-const limiters = { loginLimiter, registerLimiter, sendMsgLimiter, uploadCredentialLimiter, switchLimiter, forgetLimiter, momentImageLimiter, reactLimiter, resetPasswordLimiter, chunkInitLimiter, chunkUploadLimiter, rechargeLimiter, searchLimiter, createMomentLimiter, commentLimiter, profileUpdateLimiter, stickerLimiter, pushSubscribeLimiter, turnCredentialLimiter, joinGroupLimiter };
+const limiters = { loginLimiter, registerLimiter, sendMsgLimiter, uploadCredentialLimiter, switchLimiter, forgetLimiter, momentImageLimiter, reactLimiter, resetPasswordLimiter, chunkInitLimiter, chunkUploadLimiter, rechargeLimiter, transferLimiter, searchLimiter, createMomentLimiter, commentLimiter, profileUpdateLimiter, stickerLimiter, pushSubscribeLimiter, turnCredentialLimiter, joinGroupLimiter };
 if (process.env.DISABLE_RATE_LIMIT === '1') {
   const noop = (req, res, next) => next();
   for (const k of Object.keys(limiters)) limiters[k] = noop;

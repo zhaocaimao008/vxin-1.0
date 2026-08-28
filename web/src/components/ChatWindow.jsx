@@ -348,6 +348,9 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
       if (recorderRef.current) stopRecording();
       if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
       clearTimeout(typingTimer.current);
+      // 清理自动重发错峰定时器，防止卸载/切会话后旧定时器仍触发 retryMessage
+      retryTimersRef.current.forEach(t => clearTimeout(t));
+      retryTimersRef.current = [];
       // 切换会话时取消所有阅后即焚定时器，防止旧会话定时器影响新会话消息状态
       burnTimers.forEach(handle => clearTimeout(handle));
       burnTimers.clear();
@@ -407,9 +410,12 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
   useEffect(() => {
     if (initialConv?.id !== '__file-helper__') return;
     // 处理虚拟 filehelper ID：获取真实会话
+    // 竞态保护：解析是异步的，若期间用户切走了会话，旧 Promise resolve 时不得覆盖当前会话
+    let cancelled = false;
     axios.get('/api/messages/file-helper')
-      .then(({ data }) => setConversation({ ...initialConv, id: data.conversationId }))
-      .catch(() => setConversation(initialConv));
+      .then(({ data }) => { if (!cancelled) setConversation({ ...initialConv, id: data.conversationId }); })
+      .catch(() => { if (!cancelled) setConversation(initialConv); });
+    return () => { cancelled = true; };
   }, [initialConv]);
 
   // 断线重连后补拉当前会话缺失消息
@@ -422,6 +428,8 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
     axios.get(`/api/messages/${conversation.id}`, { params: { after: after - 1, limit: 100 } })
       .then(({ data }) => {
         if (!data.length) return;
+        // 重连补拉的消息同样需要定时焚毁（阅后即焚在重连路径上的修复）
+        scheduleBurn(data);
         setMessages(prev => {
           const existingIds = new Set(prev.map(m => m.id));
           // ⚠ 补拉回来的真实消息带 client_msg_id；若它对应本地某条乐观消息(其 id/_tempId
@@ -438,13 +446,13 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
             }
             next.push(m); changed = true;
           }
-          if (!changed) return prev;
-          setTimeout(() => {
-            const outer = listOuterRef.current;
-            if (outer) outer.scrollTo({ top: outer.scrollHeight, behavior: 'smooth' });
-          }, 50);
-          return next;
+          return changed ? next : prev;
         });
+        // 滚动副作用放在 updater 之外（渲染期 updater 内不应有副作用）
+        setTimeout(() => {
+          const outer = listOuterRef.current;
+          if (outer) outer.scrollTo({ top: outer.scrollHeight, behavior: 'smooth' });
+        }, 50);
       })
       .catch(() => {});
   }, [reconnectCount, conversation.id, disconnectAtRef]);
@@ -705,7 +713,12 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
           } else {
             // 锚定滚动位置：prepend 历史消息后保持当前视口位置不跳动
             const prevHeight = container.scrollHeight;
-            setMessages(prev => [...data, ...prev]);
+            setMessages(prev => {
+              // 按 id 去重：同一游标窗口重复拉取时过滤已存在的消息，与 onMsgBatch 的 have Set 逻辑一致
+              const have = new Set(data.map(m => m.id));
+              const filtered = prev.filter(m => !have.has(m.id));
+              return [...data, ...filtered];
+            });
             requestAnimationFrame(() => {
               if (listOuterRef.current)
                 listOuterRef.current.scrollTop += listOuterRef.current.scrollHeight - prevHeight;
@@ -802,6 +815,8 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
         incoming.push(msg);
       }
       if (!incoming.length) return;
+      // 批量下发的消息同样需要定时焚毁（阅后即焚在批量路径上的修复）
+      scheduleBurn(incoming);
       setMessages(prev => {
         const have = new Set(prev.map(m => m.id));
         let next = prev.slice();
@@ -1056,13 +1071,17 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
     if (!failed.length) return;
     // 轻量安抚：告知用户失败消息正在自动重发（不打扰，仅一次）
     showToast(`网络已恢复，正在重发 ${failed.length} 条消息`);
+    // 先清旧定时器（上一轮重连可能还有未触发句柄），再登记新句柄供卸载/切会话时清理
+    retryTimersRef.current.forEach(t => clearTimeout(t));
+    retryTimersRef.current = [];
     failed.forEach((m, i) => {
       // 错峰重发：每条间隔 120ms，避免重连瞬间 N 条消息同时打满连接
-      setTimeout(() => {
+      const t = setTimeout(() => {
         // 二次确认仍处于失败态（用户可能已手动重发或它已被认领）
         const cur = messagesRef.current.find(x => x._tempId === m._tempId);
         if (cur && cur._status === 'error') retryMessage(cur);
       }, i * 120);
+      retryTimersRef.current.push(t);
     });
   }, [reconnectCount, socket, retryMessage]);
 
@@ -1078,11 +1097,14 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
     const failed = messagesRef.current.filter(m => m._status === 'error' && m._tempId);
     if (!failed.length) return;
     healedOnMountRef.current = true;
+    retryTimersRef.current.forEach(t => clearTimeout(t));
+    retryTimersRef.current = [];
     failed.forEach((m, i) => {
-      setTimeout(() => {
+      const t = setTimeout(() => {
         const cur = messagesRef.current.find(x => x._tempId === m._tempId);
         if (cur && cur._status === 'error') retryMessage(cur);
       }, i * 120);
+      retryTimersRef.current.push(t);
     });
   }, [messages, socket, retryMessage]);
 
@@ -1674,7 +1696,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
       recorder.ondataavailable = e => chunks.push(e.data);
       recorder.onstop = async () => {
         const blob = new Blob(chunks, { type: 'audio/webm' });
-        if (blob.size < 1000) { stream.getTracks().forEach(t => t.stop()); return; } // too short
+        if (blob.size < 1000) { stream.getTracks().forEach(t => t.stop()); showToast('说话时间太短，请按住再试', 'info'); return; } // too short
         setUploadState({ name: '语音', progress: 0, status: 'uploading' });
         const onProg = (p) => setUploadState(s => s ? { ...s, progress: p } : null);
         try {
@@ -2014,18 +2036,27 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
       user.id, claiming, lastMineId]);
 
   // 当 pendingScrollId 所指消息随 messages 更新进入 flatItems 后，执行实际滚动
+  // 消息高亮定时器：统一管理，卸载/切会话时清理（修复 rAF 回调内 return 不生效的问题）
+  const highlightTimerRef = useRef(null);
+  // 自动重发错峰定时器句柄：卸载/切会话时统一清理
+  const retryTimersRef = useRef([]);
+
   useEffect(() => {
     if (!pendingScrollId) return;
     const idx = flatItems.findIndex(it => it.type === 'message' && it.msg?.id === pendingScrollId);
     if (idx >= 0) {
-      // 在 rAF 回调中消费一次性触发（清 pendingScrollId），避免 effect 体内同步 setState
-      requestAnimationFrame(() => {
+      const raf = requestAnimationFrame(() => {
         virtListRef.current?.scrollToItem(idx, 'center');
         setHighlightedMsgId(String(pendingScrollId));
         setPendingScrollId(null);
-        const _hl = setTimeout(() => setHighlightedMsgId(null), 2000);
-    return () => clearTimeout(_hl);
+        // 先清旧定时器再设新定时器，避免 2s 内连续定位时旧定时器提前清掉新高亮
+        if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+        highlightTimerRef.current = setTimeout(() => setHighlightedMsgId(null), 2000);
       });
+      return () => {
+        cancelAnimationFrame(raf);
+        if (highlightTimerRef.current) { clearTimeout(highlightTimerRef.current); highlightTimerRef.current = null; }
+      };
     }
   }, [pendingScrollId, flatItems]);
 
@@ -2074,7 +2105,9 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
     if (idx >= 0) {
       virtListRef.current?.scrollToItem(idx, 'center');
       setHighlightedMsgId(String(msgId));
-      setTimeout(() => setHighlightedMsgId(null), 2000);
+      // 与 effect 内高亮定时器共用同一 ref，先清旧再设新，卸载后不触发 setState
+      if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+      highlightTimerRef.current = setTimeout(() => setHighlightedMsgId(null), 2000);
       return;
     }
     const el = document.getElementById(`msg-${msgId}`);
@@ -2101,7 +2134,8 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
   const togglePinnedDetail = useCallback(() => setShowPinnedDetail(v => !v), []);
   const cancelUpload = useCallback(() => setUploadState(null), []);
   const unpinMessage = useCallback((msgId) => {
-    axios.delete(`/api/messages/conversation/${conversation.id}/pin-message/${msgId}`);
+    axios.delete(`/api/messages/conversation/${conversation.id}/pin-message/${msgId}`)
+      .catch(e => showToast(e.response?.data?.error || '取消置顶失败，请重试', 'error'));
   }, [conversation.id]);
 
   return (
@@ -2432,7 +2466,8 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
                     handleFileUpload({ target: { files: [file] } });
                   } catch { /* clipboard image read failed; ignore */ }
                 } else {
-                  document.querySelector('input[accept*="image"]')?.click();
+                  // 用文件 input 的 ref 直接触发，避免全局 querySelector 误命中页面其它图片选择器
+                  fileInputRef.current?.click();
                 }
               } },
               { bg:'var(--icon-bg-neutral)', svg:<svg viewBox="0 0 24 24" style={{width:24,height:24,fill:'var(--text-inverse)'}}><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>, label:'视频通话', testid:'chat-call-video-btn', action:()=>{ closePanels(); startCall('video'); } },

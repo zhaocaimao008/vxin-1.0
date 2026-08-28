@@ -17,7 +17,7 @@ const { db } = require('../../db/connection');
 const { writeAsync } = require('../../db/writer');
 const config = require('../../config');
 const { badRequest, forbidden, notFound } = require('../../utils/http');
-const { requireMember, buildMessage } = require('./shared');
+const { requireMember, buildMessage, privateSendGuard } = require('./shared');
 const { pushNewMessage } = require('../../utils/push');
 const broadcaster = require('../../realtime/broadcaster');
 const cache = require('../../utils/cache');
@@ -44,6 +44,13 @@ function scheduleMessage(userId, { conversation_id, content, type = 'text', send
 
   // 必须是会话成员才能定时发送（与普通发消息一致的权限门控）
   requireMember(conversation_id, userId, '无权在该会话发送');
+  // 安全加固（S3）：创建时即校验发送守卫 + 全员禁言，与普通发消息路径一致，
+  // 防止被拉黑/被屏蔽陌生人/禁言群成员通过「先创建定时消息」绕过限制。
+  const member = db.prepare('SELECT role FROM conversation_members WHERE conversation_id=? AND user_id=?').get(conversation_id, userId);
+  const conv = db.prepare('SELECT mute_all, type FROM conversations WHERE id=?').get(conversation_id);
+  const guardReason = privateSendGuard(conversation_id, userId, conv);
+  if (guardReason) throw forbidden(guardReason);
+  if (conv?.mute_all && member?.role === 'member') throw forbidden('全员禁言中，您没有发言权限');
 
   const id = uuidv4();
   db.prepare(
@@ -116,11 +123,30 @@ async function sendDueMessages() {
     if (upd.changes === 0) continue;
 
     try {
-      // 发送前二次校验：发送者仍是会话成员（退群/会话解散则跳过并标记 cancelled）
+      // 发送前二次校验（S2）：发送者可能已被封禁/拉黑/被屏蔽/被全员禁言——
+      // 定时消息到点也必须走与普通发送一致的守卫，不能成为绕过封禁的后门通道。
+      const sender = db.prepare('SELECT banned FROM users WHERE id=?').get(sched.sender_id);
+      if (sender?.banned) {
+        db.prepare("UPDATE scheduled_messages SET status='cancelled' WHERE id=?").run(sched.id);
+        continue;
+      }
       const stillMember = db.prepare(
         'SELECT 1 FROM conversation_members WHERE conversation_id=? AND user_id=?'
       ).get(sched.conversation_id, sched.sender_id);
       if (!stillMember) {
+        db.prepare("UPDATE scheduled_messages SET status='cancelled' WHERE id=?").run(sched.id);
+        continue;
+      }
+      // 全员禁言 + 私聊守卫（拉黑/屏蔽陌生人）二次校验
+      const conv = db.prepare('SELECT mute_all, type FROM conversations WHERE id=?').get(sched.conversation_id);
+      const memberRow = db.prepare('SELECT role FROM conversation_members WHERE conversation_id=? AND user_id=?')
+        .get(sched.conversation_id, sched.sender_id);
+      if (conv?.mute_all && memberRow?.role === 'member') {
+        db.prepare("UPDATE scheduled_messages SET status='cancelled' WHERE id=?").run(sched.id);
+        continue;
+      }
+      const guardReason = privateSendGuard(sched.conversation_id, sched.sender_id, conv);
+      if (guardReason) {
         db.prepare("UPDATE scheduled_messages SET status='cancelled' WHERE id=?").run(sched.id);
         continue;
       }

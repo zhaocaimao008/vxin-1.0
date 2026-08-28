@@ -444,11 +444,17 @@ async function collect(userId, msgId) {
   // 去重：同一内容已收藏则 409（唯一索引兜底竞态，避免重复行）
   const existing = db.prepare('SELECT id FROM collections WHERE user_id=? AND dedup_key=?').get(userId, dedupKey);
   if (existing) throw conflict('已收藏', 'COLLECTION_DUPLICATE');
-  // P0-1：worker 异步写
+  // P0-1：worker 异步写；并发双请求同时通过 SELECT 判重时，唯一索引兜底会抛
+  // SQLITE_CONSTRAINT_UNIQUE —— 捕获并转 409，而不是让 errorHandler 误报 500。
   const id = uuidv4();
-  await writeAsync('INSERT INTO collections (id,user_id,type,content,extra,dedup_key) VALUES (?,?,?,?,?,?)',
-    [id, userId, msg.type, msg.content, JSON.stringify(extra), dedupKey]
-  );
+  try {
+    await writeAsync('INSERT INTO collections (id,user_id,type,content,extra,dedup_key) VALUES (?,?,?,?,?,?)',
+      [id, userId, msg.type, msg.content, JSON.stringify(extra), dedupKey]
+    );
+  } catch (e) {
+    if (String(e?.code || e?.message || '').includes('CONSTRAINT')) throw conflict('已收藏', 'COLLECTION_DUPLICATE');
+    throw e;
+  }
   // CO3：回传新建的收藏对象
   const row = db.prepare('SELECT * FROM collections WHERE id=?').get(id);
   let parsedExtra = {};

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -28,6 +28,15 @@ export default function Login() {
   // 勾选框本身是真实交互状态，未勾选禁止提交。
   const [agreed, setAgreed] = useState(false);
   const identifierOk = loginMode === 'phone' ? phone : vxinId;
+  // 渲染期避免重复解码：仅在账户列表变化时解一次，不再每行渲染都 loadCred（atob+XOR 开销）
+  const accountCreds = useMemo(() => {
+    const m = {};
+    for (const acct of accounts) {
+      const p = acct?.user?.phone || '';
+      if (p) m[p] = loadCred(p);
+    }
+    return m;
+  }, [accounts]);
   const { login, accounts, removeAccount, maxAccounts } = useAuth();
   const { lang, setLang } = useI18n();
   const [showLangMenu, setShowLangMenu] = useState(false);
@@ -80,6 +89,15 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return; // 防连点/回车重复提交
+    // 与注册页对齐的手机号前端校验，避免非法手机号直接打到后端
+    if (loginMode === 'phone' && !/^\d{11}$/.test(phone)) {
+      setError('请输入 11 位手机号');
+      return;
+    }
+    if (loginMode === 'vxin' && !/^\d{6}$/.test(vxinId)) {
+      setError('请输入 6 位数字 v信号');
+      return;
+    }
     setError(''); setLoading(true);
     try {
       const payload = loginMode === 'phone'
@@ -184,7 +202,7 @@ export default function Login() {
                   type="button"
                   className="auth-account-btn"
                   onClick={() => fillAccount(account)}
-                  title={loadCred(account.user?.phone || '') ? '填入账户与密码' : '填入手机号'}
+                  title={accountCreds[account.user?.phone || ''] ? '填入账户与密码' : '填入手机号'}
                 >
                   <div className="auth-account-avatar">
                     {(account.user?.username || '?')[0].toUpperCase()}

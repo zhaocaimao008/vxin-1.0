@@ -43,7 +43,8 @@ async function send(io, userId, { conversationId, totalAmount, totalCount, greet
     })();
   } catch (e) {
     if (e.status) throw e;       // ApiError（如余额不足）原样抛给前端
-    console.error('[redpacket] send 失败:', e.code, e.message);
+    // 保留完整错误与堆栈（SQLITE_BUSY/约束冲突等不应被抹成无痕 500）
+    console.error('[redpacket] send 失败:', e);
     throw new Error('发红包失败，请重试');
   }
 

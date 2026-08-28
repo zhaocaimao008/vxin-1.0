@@ -103,7 +103,8 @@ async function transfer(senderId, { to_user_id, amount, note }) {
     })();
   } catch (e) {
     if (e.status) throw e; // ApiError 原样抛（如余额不足）
-    console.error('[transfer] 转账失败:', e.code, e.message);
+    // 保留原始错误与堆栈，便于排障（SQLITE_BUSY/约束冲突等不应被抹成无痕 500）
+    console.error('[transfer] 转账失败:', e);
     throw new Error('转账失败，请重试');
   }
 

@@ -105,6 +105,14 @@ class MainActivity : ComponentActivity() {
             action != NotificationHelper.ACTION_CALL_DECLINE
         ) return
 
+        // 安全（审计）：外部应用可显式 Intent 拉起本 Activity（exported=true 是 LAUNCHER 必需），
+        // 伪造来电界面或触发拒接。校验应用私有内部令牌，不匹配一律忽略。
+        if (intent.getStringExtra(NotificationHelper.EXTRA_INTERNAL_TOKEN)
+                != NotificationHelper.internalToken(this)) {
+            android.util.Log.w(TAG, "忽略伪造的来电 Intent: action=$action")
+            return
+        }
+
         val from = intent.getStringExtra(NotificationHelper.EXTRA_CALL_FROM).orEmpty()
         val callType = intent.getStringExtra(NotificationHelper.EXTRA_CALL_TYPE) ?: "audio"
         val callerName = intent.getStringExtra(NotificationHelper.EXTRA_CALL_NAME).orEmpty()
@@ -153,12 +161,20 @@ class MainActivity : ComponentActivity() {
     private fun handleMessageIntent(intent: Intent?) {
         if (isCallIntent(intent)) return
         val convId = intent?.getStringExtra(NotificationHelper.EXTRA_CONVERSATION_ID) ?: return
+        // 安全（审计）：深链携带会话 ID 可被外部应用伪造（拉进任意会话/钓鱼），
+        // 与来电同样校验应用私有内部令牌，不匹配忽略。
+        if (intent.getStringExtra(NotificationHelper.EXTRA_INTERNAL_TOKEN)
+                != NotificationHelper.internalToken(this)) {
+            android.util.Log.w(TAG, "忽略伪造的深链 Intent")
+            return
+        }
         PendingConversationHolder.conversationId.value = convId
         // 消费掉，避免旋转/重建时重复触发
         intent.removeExtra(NotificationHelper.EXTRA_CONVERSATION_ID)
     }
 
     private companion object {
+        const val TAG = "MainActivity"
         const val PREF_FSI_WARNED = "fullScreenIntentWarned"
     }
 }

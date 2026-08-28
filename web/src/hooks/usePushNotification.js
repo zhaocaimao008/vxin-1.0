@@ -82,6 +82,7 @@ export function usePushNotification(user) {
 
         // 5. 保存订阅到后端
         await axios.post('/api/notifications/web-subscribe', { subscription: sub.toJSON() });
+        if (cancelled) return; // 保存期间用户已登出/切换账号：不再挂监听，防止旧会话监听泄漏
 
         // 6. 监听 Service Worker 消息（通知点击跳转到会话）
         navigator.serviceWorker.addEventListener('message', handleSWMessage);
