@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, Suspense, lazy } from 'react';
 import { playMessageTone } from '../utils/notifySound';
+import { playIncomingRing, stopIncomingRing } from '../utils/callSound';
+import { startCallVisualAlert, stopCallVisualAlert } from '../utils/callVisualAlert';
+import CallSoundGuide from '../components/CallSoundGuide';
 import './Home.css';
 import axios from 'axios';
 import ChatList from '../components/ChatList';
@@ -463,26 +466,38 @@ export default function Home() {
   }, [socket]);
 
   const [activeCall, setActiveCall] = useState(null);
+  const activeCallRef = useRef(null);
+  useEffect(() => { activeCallRef.current = activeCall; }, [activeCall]);
+
+  // 来电提醒清理兜底：activeCall 消失（挂断/拒绝/超时/对方取消）时停铃声 + 恢复标题/favicon。
+  // 接听瞬间的停铃由 CallModal.accept 显式处理（此时 activeCall 仍在，本 effect 不触发）。
+  useEffect(() => {
+    if (!activeCall) {
+      stopIncomingRing();
+      stopCallVisualAlert();
+    }
+  }, [activeCall]);
 
   // 全局来电监听（不论哪个会话打开，都能收到来电）
   useEffect(() => {
     if (!socket) return;
     const onIncoming = ({ from, type, caller }) => {
-      setActiveCall(prev => {
-        // 通话中忽略新来电（busy）
-        if (prev) {
-          socket.emit('call:response', { to: from, accepted: false, busy: true });
-          return prev;
-        }
-        // 桌面端：来电时若窗口在后台/最小化，拉到前台并闪烁 + 弹原生通知，
-        // 否则用户看不到来电界面（Electron 端此前完全无后台来电提醒）。
-        if (window.__ELECTRON_CONFIG__ && (document.hidden || !document.hasFocus())) {
-          try { window.electronAPI?.focusForCall?.(); } catch { /* 非桌面端忽略 */ }
-        }
-        const callerName = caller?.name || '好友';
-        showNotification(callerName, type === 'video' ? '邀请你视频通话' : '邀请你语音通话', caller?.avatar);
-        return { type, direction: 'incoming', remoteUser: { id: from, name: caller?.name, avatar: caller?.avatar }, remoteId: from };
-      });
+      // 通话中忽略新来电（busy）；用 ref 取最新值，避免 effect 闭包里的陈旧 activeCall
+      if (activeCallRef.current) {
+        socket.emit('call:response', { to: from, accepted: false, busy: true });
+        return;
+      }
+      const callerName = caller?.name || '好友';
+      // 来电铃声（AudioContext 未解锁时静默，视觉提醒兜底）+ 标题/favicon 闪烁
+      playIncomingRing();
+      startCallVisualAlert(callerName);
+      setActiveCall({ type, direction: 'incoming', remoteUser: { id: from, name: caller?.name, avatar: caller?.avatar }, remoteId: from });
+      // 桌面端：来电时若窗口在后台/最小化，拉到前台并闪烁 + 弹原生通知，
+      // 否则用户看不到来电界面（Electron 端此前完全无后台来电提醒）。
+      if (window.__ELECTRON_CONFIG__ && (document.hidden || !document.hasFocus())) {
+        try { window.electronAPI?.focusForCall?.(); } catch { /* 非桌面端忽略 */ }
+      }
+      showNotification(callerName, type === 'video' ? '邀请你视频通话' : '邀请你语音通话', caller?.avatar);
     };
     socket.on('call:incoming', onIncoming);
     return () => socket.off('call:incoming', onIncoming);
@@ -592,6 +607,7 @@ export default function Home() {
   const overlays = (
     <>
       <ReconnectingBanner />
+      <CallSoundGuide />
       {activeCall && (
         <Suspense fallback={<ModalSkeleton height={420} />}>
           <CallModal

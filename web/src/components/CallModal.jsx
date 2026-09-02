@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import Avatar from './Avatar';
 import { mediaUrl } from '../utils/url';
+import { stopIncomingRing } from '../utils/callSound';
 import './CallModal.css';
 
 const FALLBACK_ICE = {
@@ -350,6 +351,7 @@ export default function CallModal({ socket, call, onClose }) {
   }, [socket, remoteId, endCall]);
 
   const accept = useCallback(async () => {
+    stopIncomingRing(); // 接听瞬间停来电铃声（activeCall 仍在，Home 兜底不触发）
     setStatus('connecting');
     await initPC();
     socket?.emit('call:response', { to: remoteId, accepted: true });
@@ -360,6 +362,7 @@ export default function CallModal({ socket, call, onClose }) {
   }, [socket, remoteId, initPC, processOffer]);
 
   const reject = useCallback(() => {
+    stopIncomingRing();
     socket?.emit('call:response', { to: remoteId, accepted: false, reason: 'rejected' });
     onClose();
   }, [socket, remoteId, onClose]);

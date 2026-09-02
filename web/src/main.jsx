@@ -16,6 +16,7 @@ import { initImageOptimizer } from './utils/imageOptimizer';
 import { setupAxiosInterceptors } from './utils/axiosInterceptor';
 import { registerSW } from './utils/serviceWorker';
 import { networkMonitor } from './utils/networkMonitor';
+import { prewarmAudio } from './utils/callSound';
 
 // ── Sentry 错误监控初始化 ─────────────────────────────────
 if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
@@ -124,6 +125,13 @@ if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
     });
   }
 
-  // 8. 渲染 React
+  // 8. 全局静默解锁：首次任意手势时预热 AudioContext（来电铃声前置条件，零打扰）。
+  //    浏览器 autoplay 策略下 AudioContext 需手势解锁；解锁后本会话内来电铃声可无手势播放。
+  //    Electron 端主进程已全局关闭 autoplay 门槛，此监听无害冗余。
+  document.addEventListener('pointerdown', () => { prewarmAudio(); }, { once: true, passive: true });
+  document.addEventListener('keydown', () => { prewarmAudio(); }, { once: true, passive: true });
+  document.addEventListener('touchstart', () => { prewarmAudio(); }, { once: true, passive: true });
+
+  // 9. 渲染 React
   ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 })();
