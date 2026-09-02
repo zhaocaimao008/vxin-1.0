@@ -488,9 +488,14 @@ export default function Home() {
         return;
       }
       const callerName = caller?.name || '好友';
-      // 来电铃声（AudioContext 未解锁时静默，视觉提醒兜底）+ 标题/favicon 闪烁
-      playIncomingRing();
-      startCallVisualAlert(callerName);
+      // 来电铃声 + 标题/favicon 闪烁——仅 Web/桌面端启用：
+      // 原生移动端（Capacitor）已有原生推送铃声（CallManager/GeTui），WebAudio 铃声会造成双铃；
+      // 移动端 WebView 无浏览器标签栏，标题/favicon 提醒也无意义。
+      const isNativeMobile = !!(window.Capacitor && window.Capacitor.isNativePlatform());
+      if (!isNativeMobile) {
+        playIncomingRing();        // AudioContext 未解锁时静默，视觉提醒兜底
+        startCallVisualAlert(callerName);
+      }
       setActiveCall({ type, direction: 'incoming', remoteUser: { id: from, name: caller?.name, avatar: caller?.avatar }, remoteId: from });
       // 桌面端：来电时若窗口在后台/最小化，拉到前台并闪烁 + 弹原生通知，
       // 否则用户看不到来电界面（Electron 端此前完全无后台来电提醒）。
