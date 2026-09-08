@@ -455,7 +455,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
         }, 50);
       })
       .catch(() => {});
-  }, [reconnectCount, conversation.id, disconnectAtRef]);
+  }, [reconnectCount, conversation.id, disconnectAtRef, scheduleBurn]);
 
   // 切换会话时清空所有会话内 UI 状态：render 期派生（存上一次 conversation.id），
   // 避免在 effect 内同步 setState 触发级联渲染。等价于按会话 id 重挂载。
