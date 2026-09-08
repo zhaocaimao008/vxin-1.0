@@ -99,132 +99,64 @@ jobs:
         working-directory: web
         run: npm run lint -- --max-warnings=0
 
+  # ── 生产部署：日本服务器 45.77.131.33（self-hosted runner vxin-prod-deploy）──
+  # 服务器挂过之后发现旧版是 SSH 到已死的香港机（DEPLOY_* secrets），永远红；
+  # 改为在日本本机 runner 上本地执行部署，无公网 SSH、无 secrets 依赖。
   deploy:
-    name: 部署到香港服务器
+    name: 部署到日本服务器（本地 self-hosted runner）
     needs: [test, backend-jest, web-gate]
-    runs-on: ubuntu-latest
-    continue-on-error: true   # SSH key 未配置时不阻断 CI Gate
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-
+    # 只部署 main 分支的 push / 手动 dispatch，避免任意分支手动触发覆盖线上
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, linux, x64, vxin-prod-deploy]
+    timeout-minutes: 30
     steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: 配置 SSH
+      - name: 部署到 /root/vxin-1.0（代码 + web + 后端 + pm2 重启）
+        shell: bash
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.DEPLOY_SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          set -euo pipefail
+          REPO=/root/vxin-1.0
+          echo "📋 V信部署到日本 $(date) | sha=$GITHUB_SHA"
+          PREV_SHA="$(git -C "$REPO" rev-parse HEAD 2>/dev/null || echo '')"
 
-      - name: 部署应用
-        env:
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_HOST: ${{ secrets.DEPLOY_SERVER_HOST }}
-          DEPLOY_PATH: /root/v信/backend-v2
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # ⚠ 用单引号 heredoc 保持脚本字面量；把变量通过远端 bash -s 的命令行 env 传进去
-          #   （原脚本把 env 设在 runner 上，heredoc 里 $DEPLOY_PATH 在服务器端是空的 → cd 到家目录 → git 找不到仓库）
-          ssh -i ~/.ssh/deploy_key ${DEPLOY_USER}@${DEPLOY_HOST} \
-            "DEPLOY_PATH='${DEPLOY_PATH}' GH_TOKEN='${GH_TOKEN}' bash -s" << 'DEPLOY_SCRIPT'
-          set -e
-          REPO_ROOT="$(dirname "$DEPLOY_PATH")"   # git 仓库根 = backend-v2 的上一级（/root/v信）
-          AUTH_URL="https://x-access-token:${GH_TOKEN}@github.com/zhaocaimao008/vxin-1.0.git"
-          CLEAN_URL="https://github.com/zhaocaimao008/vxin-1.0.git"
+          echo "📥 拉取代码"
+          git -C "$REPO" fetch origin main
+          git -C "$REPO" reset --hard "$GITHUB_SHA"
 
-          echo "📋 V信后端自动部署 $(date)"
-          echo "仓库根: $REPO_ROOT | 应用目录: $DEPLOY_PATH"
-
-          # 首次部署：仓库根没有 .git 时，bootstrap 把 git 历史引导进现有目录
-          if [ ! -d "$REPO_ROOT/.git" ]; then
-            echo "🆕 首次部署：克隆 git 历史到 $REPO_ROOT"
-            TMP="$(mktemp -d)"
-            git clone --no-checkout "$AUTH_URL" "$TMP/repo"
-            mv "$TMP/repo/.git" "$REPO_ROOT/.git"
-            rm -rf "$TMP"
-            git -C "$REPO_ROOT" remote set-url origin "$CLEAN_URL"
-          fi
-
-          echo "📥 步骤 1: 拉取最新代码 (main)"
-          # 记录部署前的 commit，供健康检查失败时自动回滚（生产自愈，避免坏版本长期在线）
-          PREV_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || echo '')"
-          echo "部署前版本: ${PREV_SHA:-<无（首次部署）>}"
-          # 用带 token 的 URL 显式 fetch（token 不落盘到 remote 配置）
-          git -C "$REPO_ROOT" fetch "$AUTH_URL" main
-          git -C "$REPO_ROOT" reset --hard FETCH_HEAD
-
-          echo "🌐 步骤 2a: 构建 Web 前端"
-          cd "$REPO_ROOT/web"
-          npm ci
+          echo "🌐 构建 Web 前端并发布到 /var/www/vxin-web/app"
+          cd "$REPO/web"
+          npm ci --legacy-peer-deps
           npm run build
-          echo "✅ Web 构建完成（dist/ 已更新）"
+          rsync -a --delete dist/ /var/www/vxin-web/app/
+          echo "✅ Web 已发布"
 
-          echo "📦 步骤 2b: 安装后端生产依赖"
-          cd "$DEPLOY_PATH"
+          echo "📦 安装后端生产依赖"
+          cd "$REPO/backend-v2"
           npm ci --omit=dev
-          chmod 600 .env 2>/dev/null || true
 
-          echo "🚀 步骤 3: 重启应用（pm2: vxin-backend）"
-          # 旧进程名迁移：老服务器上是 vxin-server-v2，先删避免端口占用/双进程
+          echo "🚀 重启应用（pm2: vxin-backend）"
           pm2 delete vxin-server-v2 2>/dev/null || true
           pm2 restart vxin-backend --update-env || PORT=3002 pm2 start src/server.js --name vxin-backend
           pm2 save || true
 
-          echo "🔄 步骤 3b: Reload nginx（使静态文件变更立即生效）"
-          nginx -s reload 2>/dev/null || kill -HUP $(cat /run/nginx.pid 2>/dev/null || cat /var/run/nginx.pid 2>/dev/null) 2>/dev/null || true
+          echo "🔄 Reload nginx"
+          nginx -s reload 2>/dev/null || true
 
-          echo "✅ 步骤 4: 健康检查"
+          echo "✅ 健康检查"
           sleep 5
           HEALTH_OK=0
-          for i in $(seq 1 15); do
-            if curl -s http://localhost:3002/health | grep -q "ok"; then
+          for i in $(seq 1 20); do
+            if curl -s -m 3 http://127.0.0.1:3002/health | grep -q '"ok":true'; then
               echo "✅ 健康检查通过"; HEALTH_OK=1; break
             fi
-            echo "等待启动... ($i/15)"; sleep 2
+            echo "等待启动... ($i/20)"; sleep 2
           done
 
-          # ── 自动回滚：新版本起不来时，回到部署前的 commit 并重启，避免生产长期挂掉 ──
           if [ "$HEALTH_OK" != "1" ]; then
-            echo "❌ 新版本健康检查失败"
-            if [ -n "$PREV_SHA" ]; then
-              echo "↩️  自动回滚到部署前版本 $PREV_SHA"
-              git -C "$REPO_ROOT" reset --hard "$PREV_SHA"
-              cd "$REPO_ROOT/web" && npm ci && npm run build || echo "⚠ 回滚 web 构建失败（前端可能保留新版 dist）"
-              cd "$DEPLOY_PATH" && npm ci --omit=dev
-              pm2 delete vxin-server-v2 2>/dev/null || true
-              pm2 restart vxin-backend --update-env || PORT=3002 pm2 start src/server.js --name vxin-backend
-              pm2 save || true
-              sleep 5
-              RB_OK=0
-              for i in $(seq 1 15); do
-                if curl -s http://localhost:3002/health | grep -q "ok"; then
-                  echo "✅ 回滚后健康检查通过（生产已恢复到 $PREV_SHA）"; RB_OK=1; break
-                fi
-                echo "回滚后等待启动... ($i/15)"; sleep 2
-              done
-              [ "$RB_OK" = "1" ] || echo "🚨 回滚后仍不健康！需人工介入：pm2 logs vxin-backend --lines 80"
-            else
-              echo "🚨 无部署前版本（首次部署）可回滚，需人工介入"
-            fi
-            exit 1   # 无论是否回滚成功，本次部署都判失败（触发失败通知）
+            echo "❌ 新版本健康检查失败，自动回滚到 $PREV_SHA"
+            git -C "$REPO" reset --hard "$PREV_SHA"
+            cd "$REPO/backend-v2"
+            pm2 restart vxin-backend --update-env || true
+            echo "🚨 回滚执行完毕，需人工检查 pm2 logs vxin-backend"
+            exit 1
           fi
           echo "🎉 部署完成 $(date)"
-
-          DEPLOY_SCRIPT
-
-      - name: 部署完成通知
-        if: success()
-        run: |
-          echo "✅ 部署成功！"
-          echo "时间: $(date)"
-          echo "版本: $(git rev-parse --short HEAD)"
-
-      - name: 部署失败通知
-        if: failure()
-        run: |
-          echo "❌ 部署失败！"
-          echo "请检查服务器日志: pm2 logs vxin-backend --lines 50"
-          exit 1
