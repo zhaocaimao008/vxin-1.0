@@ -32,17 +32,20 @@ module.exports = function auth(req, res, next) {
       const payload = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] });
       // 校验账号状态：封禁即拒（与 socket 握手一致），及 token 是否早于密码修改时间。
       // 优先命中进程内缓存（30s TTL），未命中才查 DB 并回填缓存。
+      if (!payload.id) return res.status(401).json({ error: 'Token无效' });
       if (payload.id) {
         let row = getUserStatus(payload.id);
         if (!row) {
-          row = readDb.prepare('SELECT banned, password_changed_at FROM users WHERE id=?').get(payload.id);
-          if (row) setUserStatus(payload.id, row.banned, row.password_changed_at);
+          row = readDb.prepare('SELECT banned, password_changed_at, auth_version FROM users WHERE id=?').get(payload.id);
+          if (row) setUserStatus(payload.id, row.banned, row.password_changed_at, row.auth_version);
         }
+        // 旧 JWT 仅兼容初始版本 1；真实改密推进版本，恢复时间戳不能复活旧授权。
+        if (!row || (payload.authVersion ?? 1) !== row.auth_version) return res.status(401).json({ error: '登录已失效，请重新登录' });
         if (row?.banned) {
           res.clearCookie(config.cookieName, { path: '/' });
           return res.status(403).json({ error: '账号已被封禁' });
         }
-        if (payload.iat && row?.password_changed_at && payload.iat <= row.password_changed_at) {
+        if (payload.authVersion == null && (!payload.iat || payload.iat <= row.password_changed_at)) {
           res.clearCookie(config.cookieName, { path: '/' });
           return res.status(401).json({ error: '密码已修改，请重新登录' });
         }

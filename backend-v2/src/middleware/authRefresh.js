@@ -1,15 +1,5 @@
 'use strict';
-/**
- * 宽松鉴权中间件：专供 /auth/refresh 使用。
- *
- * 背景：前端在收到 401（access token 过期）后才调用 refresh。
- * 若 refresh 也用严格鉴权（jwt.verify 校验过期），过期 token 会直接 401，
- * 静默刷新永远无法在真正过期时生效 → 用户被迫重新登录。
- *
- * 本中间件：验证签名 + 黑名单 + 用户状态，但**忽略过期**，
- * 并设"滑动宽限窗口"（默认 1 个 tokenMaxAge，即最长 2 倍有效期），
- * 超过窗口仍拒绝，避免 token 被无限续期。
- */
+/** Refresh 仅接受尚未过期的 JWT，撤销记录的 exp 与可续期截止时间一致。 */
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const { csrfCookieOptions } = require('../utils/cookies');
@@ -31,32 +21,25 @@ module.exports = function authRefresh(req, res, next) {
     }
 
     try {
-      // 忽略过期，仅验签名（refresh 场景允许过期 token 换新）
+      // 校验 exp，禁止已撤销 JWT 在黑名单到期后重新续期。
       const payload = jwt.verify(token, config.jwtSecret, {
         algorithms: ['HS256'],
-        ignoreExpiration: true,
       });
 
-      // 滑动宽限窗口：过期超过 1 个 tokenMaxAge 则拒绝续期
-      if (payload.exp) {
-        const graceMs = config.tokenMaxAge * 1000;
-        if (Date.now() - payload.exp * 1000 > graceMs) {
-          res.clearCookie(config.cookieName, { path: '/' });
-          return res.status(401).json({ error: '登录已过期，请重新登录' });
-        }
-      }
-
+      if (!payload.id) return res.status(401).json({ error: 'Token无效' });
       if (payload.id) {
         let row = getUserStatus(payload.id);
         if (!row) {
-          row = readDb.prepare('SELECT banned, password_changed_at FROM users WHERE id=?').get(payload.id);
-          if (row) setUserStatus(payload.id, row.banned, row.password_changed_at);
+          row = readDb.prepare('SELECT banned, password_changed_at, auth_version FROM users WHERE id=?').get(payload.id);
+          if (row) setUserStatus(payload.id, row.banned, row.password_changed_at, row.auth_version);
         }
+        // 旧 JWT 仅兼容初始版本 1；真实改密推进版本，恢复时间戳不能复活旧授权。
+        if (!row || (payload.authVersion ?? 1) !== row.auth_version) return res.status(401).json({ error: '登录已失效，请重新登录' });
         if (row?.banned) {
           res.clearCookie(config.cookieName, { path: '/' });
           return res.status(403).json({ error: '账号已被封禁' });
         }
-        if (payload.iat && row?.password_changed_at && payload.iat < row.password_changed_at) {
+        if (payload.authVersion == null && (!payload.iat || payload.iat <= row.password_changed_at)) {
           res.clearCookie(config.cookieName, { path: '/' });
           return res.status(401).json({ error: '密码已修改，请重新登录' });
         }

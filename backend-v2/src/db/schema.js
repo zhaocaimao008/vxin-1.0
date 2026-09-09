@@ -504,6 +504,19 @@ function applySchema(db) {
     //     只影响登录状态，不覆盖上线后新产生的聊天数据，也不会复活
     //     「因真实修改密码而应失效」的旧 JWT
     "UPDATE users SET password_changed_at = strftime('%s','now')",
+    "ALTER TABLE users ADD COLUMN auth_version INTEGER NOT NULL DEFAULT 1",
+    "ALTER TABLE user_sessions ADD COLUMN wallet_id TEXT DEFAULT NULL",
+    "ALTER TABLE device_accounts ADD COLUMN session_id TEXT DEFAULT NULL",
+    "DELETE FROM device_accounts", // 一次性撤销旧版无法证明认证版本的免密授权
+    `CREATE TABLE IF NOT EXISTS session_tokens (
+      token TEXT PRIMARY KEY, session_id TEXT NOT NULL, expires_at INTEGER NOT NULL
+    )`,
+    "CREATE INDEX IF NOT EXISTS idx_session_tokens_session ON session_tokens(session_id)",
+    `CREATE TABLE IF NOT EXISTS upload_owners (
+      path TEXT PRIMARY KEY, user_id TEXT NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+    )`,
+    "CREATE INDEX IF NOT EXISTS idx_messages_file_url ON messages(file_url)",
   ];
 
   // ── 迁移执行：版本追踪 + 错误分级 ────────────────────────────────

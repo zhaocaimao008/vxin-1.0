@@ -8,13 +8,14 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const { db, readDb } = require('../db/connection');
-const { isBlacklisted } = require('../utils/tokenBlacklist');
+const { isBlacklisted, revocations } = require('../utils/tokenBlacklist');
 const { detectDevice } = require('../modules/auth/auth.service');
 const presence = require('./presence');
 const broadcaster = require('./broadcaster');
 const prodMetrics = require('../utils/prodMetrics');
 
 const MAX_CONVERSATION_ROOMS = 2000;
+const tokenRoom = token => 'token_' + require('crypto').createHash('sha256').update(token).digest('hex');
 
 // 单设备踢下线用的房间名：同一用户可能多端在线（Windows/Android/iOS...），
 // deleteSession 只应断开被删的那一台设备，不能牵连同用户的其它在线设备。
@@ -39,6 +40,9 @@ const registerCall    = require('./handlers/call');
 const registerGroupCall = require('./handlers/groupCall');
 
 module.exports = function setupRealtime(io, app) {
+  const revokeToken = token => io.to(tokenRoom(token)).disconnectSockets(true);
+  revocations.on('token', revokeToken);
+  io.engine?.on('close', () => revocations.off('token', revokeToken));
   broadcaster.setIo(io); // 广播调度器绑定 io 实例（分片削峰派发）
 
   // ── 握手鉴权（Cookie 优先，Electron 降级到 auth.token）──────
@@ -52,15 +56,17 @@ module.exports = function setupRealtime(io, app) {
     if (!token) { prodMetrics.recordConnResult(false); return next(new Error('未授权')); }
     try {
       socket.user = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] });
+      socket.token = token;
       // 黑名单（logout / 强制下线的 token 不得接入）
       if (await isBlacklisted(token)) {
         prodMetrics.recordConnResult(false);
         return next(new Error('Token已失效，请重新登录'));
       }
       // 检查封禁状态 + password_changed_at（与 HTTP auth 中间件等价）
-      const user = db.prepare('SELECT banned, password_changed_at FROM users WHERE id=?').get(socket.user.id);
+      const user = db.prepare('SELECT banned, password_changed_at, auth_version FROM users WHERE id=?').get(socket.user.id);
+      if (!user || (socket.user.authVersion ?? 1) !== user.auth_version) return next(new Error('登录已失效'));
       if (user?.banned) { prodMetrics.recordConnResult(false); return next(new Error('账号已被封禁')); }
-      if (user?.password_changed_at && socket.user.iat < user.password_changed_at) {
+      if (socket.user.authVersion == null && (!socket.user.iat || socket.user.iat <= user.password_changed_at)) {
         prodMetrics.recordConnResult(false);
         return next(new Error('密码已修改，请重新登录'));
       }
@@ -74,6 +80,23 @@ module.exports = function setupRealtime(io, app) {
 
   io.on('connection', (socket) => {
     const userId = socket.user.id;
+    socket.join(tokenRoom(socket.token));
+    // 握手只运行一次；逐事件复核撤销，同时用定时器收回过期后的收消息能力。
+    const checkAccess = async () => {
+      const denied = await isBlacklisted(socket.token);
+      const row = db.prepare('SELECT banned, password_changed_at, auth_version FROM users WHERE id=?').get(userId);
+      if (denied || !row || row.banned || (socket.user.authVersion ?? 1) !== row.auth_version ||
+          (socket.user.authVersion == null && (!socket.user.iat || socket.user.iat <= row.password_changed_at)) ||
+          !socket.user.exp || socket.user.exp <= Math.floor(Date.now()/1000)) throw new Error('登录已失效');
+    };
+    socket.use(async (_packet, next) => {
+      try { await checkAccess(); if (socket.connected) next(); }
+      catch (err) { socket.disconnect(true); next(err); }
+    });
+    checkAccess().catch(() => socket.disconnect(true)); // 覆盖握手与 connection 之间的撤销
+    const expiryTimer = setTimeout(() => socket.disconnect(true), Math.max(0, socket.user.exp * 1000 - Date.now()));
+    expiryTimer.unref?.();
+    socket.on('disconnect', () => clearTimeout(expiryTimer));
     const isFirstDevice = !presence.isOnline(userId);
 
     presence.addSocket(userId, socket.id);
@@ -85,6 +108,7 @@ module.exports = function setupRealtime(io, app) {
     const { device, platform } = detectDevice(socket.handshake.headers['user-agent']);
     socket.join(deviceRoom(userId, device, platform));
     setImmediate(() => {
+      if (!socket.connected) return;
       try {
         // 限制加入房间数上限：极端情况下（用户在数千个群）无上限 join 会阻塞事件循环。
         // 优先加入最近有消息的会话，并为重度用户保留合理上限。

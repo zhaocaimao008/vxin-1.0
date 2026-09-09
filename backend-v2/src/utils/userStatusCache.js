@@ -19,12 +19,12 @@ function getUserStatus(userId) {
   const entry = cache.get(userId);
   if (!entry) return null;
   if (Date.now() > entry.exp) { cache.delete(userId); return null; }
-  return { banned: entry.banned, password_changed_at: entry.password_changed_at };
+  return { banned: entry.banned, password_changed_at: entry.password_changed_at, auth_version: entry.auth_version };
 }
 
 /** 写入缓存。 */
-function setUserStatus(userId, banned, password_changed_at) {
-  cache.set(userId, { banned, password_changed_at, exp: Date.now() + CACHE_TTL_MS });
+function setUserStatus(userId, banned, password_changed_at, auth_version = 0) {
+  cache.set(userId, { banned, password_changed_at, auth_version, exp: Date.now() + CACHE_TTL_MS });
 }
 
 /** 主动驱逐（封禁/改密/删号时调用，保证下次请求立即穿透到 DB）。 */

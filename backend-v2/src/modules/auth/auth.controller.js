@@ -23,6 +23,7 @@ function ensureWallet(req, res) {
     walletId = crypto.randomUUID();
     res.cookie(config.walletCookie, walletId, walletCookieOptions(req));
   }
+  req.walletId = walletId;
   return walletId;
 }
 
@@ -72,17 +73,15 @@ exports.me = asyncHandler(async (req, res) => {
 
 exports.refresh = asyncHandler(async (req, res) => {
   const newToken = svc.refreshToken(req.user);
+  svc.upsertSession(req.user.id, req, newToken); // 先追踪新 token，避免 await 期间踢设备后又重建授权
   // 黑名单化旧 token，防止被盗 JWT 在 refresh 后仍可访问（与 changePassword 保持一致）
   if (req.token) {
     const { addToBlacklist } = require('../../utils/tokenBlacklist');
     const jwt = require('jsonwebtoken');
     const payload = jwt.decode(req.token);
-    if (payload?.exp) await addToBlacklist(req.token, payload.exp).catch(() => {});
+    if (payload?.exp) await addToBlacklist(req.token, payload.exp);
   }
   setAuthCookie(req, res, newToken);
-  // 同步该设备 session 记录的 token，否则单设备踢下线(deleteSession)黑名单的会是
-  // 已刷新失效的旧 token，刷新后的新 token 不受影响，踢下线会失效。
-  svc.upsertSession(req.user.id, req, newToken);
   res.json({ success: true, token: newToken, user: svc.getMe(req.user.id) });
 });
 
@@ -126,7 +125,9 @@ exports.deleteSession = asyncHandler(async (req, res) => {
 
 exports.deleteAllSessions = asyncHandler(async (req, res) => {
   const { device, platform } = svc.detectDevice(req.headers['user-agent']);
-  svc.deleteAllOtherSessions(req.user.id, device, platform);
+  const targets = await svc.deleteAllOtherSessions(req.user.id, device, platform);
+  const { kickDevice } = require('../../realtime');
+  for (const target of targets) kickDevice(req.app.get('io'), req.user.id, target.device, target.platform);
   res.json({ success: true });
 });
 
@@ -134,11 +135,13 @@ exports.deleteAccount = asyncHandler(async (req, res) => {
   const { password } = req.body || {};
   if (!password) throw badRequest('请输入密码确认注销');
   await svc.deleteAccount(req.user.id, password);
+  const io = req.app.get('io');
+  if (io) io.to(`user_${req.user.id}`).disconnectSockets(true);
   // 黑名单化当前 token，防止注销后 Bearer token 仍可调用 API
   if (req.token) {
     const { addToBlacklist } = require('../../utils/tokenBlacklist');
     const payload = jwt.decode(req.token);
-    if (payload?.exp) await addToBlacklist(req.token, payload.exp).catch(() => {});
+    if (payload?.exp) await addToBlacklist(req.token, payload.exp);
   }
   res.clearCookie(config.cookieName, { path: '/' });
   res.clearCookie(config.csrfCookie, { path: '/' });
@@ -147,6 +150,9 @@ exports.deleteAccount = asyncHandler(async (req, res) => {
 
 exports.changePassword = asyncHandler(async (req, res) => {
   const token = await svc.changePassword(req.user.id, { ...req.body, currentToken: req.token });
+  svc.upsertSession(req.user.id, req, token);
+  const io = req.app.get('io');
+  if (io) io.to(`user_${req.user.id}`).disconnectSockets(true);
   setAuthCookie(req, res, token);
   // 关键：改密后旧 token 已加入黑名单+清 session。Cookie 客户端(浏览器)靠上面刷新的 Cookie 续命；
   // Bearer 客户端(桌面 Electron / 移动 Capacitor / Android / iOS 原生)必须拿到新 token 覆盖本地，

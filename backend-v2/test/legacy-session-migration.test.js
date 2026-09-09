@@ -36,7 +36,7 @@ describe('BATCH4 Legacy Session 强制重登 + 精确踢下线', () => {
     const src = fs.readFileSync(require.resolve('../src/db/schema.js'), 'utf8');
     const m = src.match(/const migrations = \[([\s\S]*?)\n  \];/);
     const arr = eval('[' + m[1] + ']');
-    const last = arr[arr.length - 1];
+    const last = arr[104]; // 固定历史迁移索引，允许 schema.js 按约定尾部追加迁移
     expect(last).toContain("UPDATE users SET password_changed_at");
     expect(last).toContain("strftime('%s','now')");
     // 幂等：重复执行只是推进时间戳，不删数据

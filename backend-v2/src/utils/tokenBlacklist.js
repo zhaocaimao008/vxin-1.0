@@ -11,6 +11,7 @@
  */
 
 const redis = require('redis');
+const revocations = new (require('events').EventEmitter)();
 
 let redisClient = null;
 let useRedis = false;
@@ -90,8 +91,10 @@ async function addToBlacklist(token, expiresAt) {
   const ttl = expiresAt - now;
   if (ttl <= 0) return;
 
-  // 立即驱逐干净缓存，防止同一 token 在 30s 内继续被放行
+  // 撤销必须先同步持久化，再断线；否则在途握手可能回填“干净”缓存并逃过断线。
+  getDb().prepare('INSERT OR REPLACE INTO token_blacklist (token, expires_at) VALUES (?, ?)').run(token, expiresAt);
   _cleanDel(token);
+  revocations.emit('token', token);
 
   const key = `blacklist:${token}`;
   try {
@@ -103,12 +106,7 @@ async function addToBlacklist(token, expiresAt) {
     console.error('[TokenBlacklist] Redis add error:', err.message);
   }
 
-  // SQLite 持久化（主路径 + Redis 双写备份）
-  try {
-    getDb().prepare('INSERT OR REPLACE INTO token_blacklist (token, expires_at) VALUES (?, ?)').run(token, expiresAt);
-  } catch (err) {
-    console.error('[TokenBlacklist] SQLite add error:', err.message);
-  }
+
 }
 
 /**
@@ -172,4 +170,4 @@ async function clear() {
 // 启动时初始化 Redis
 initRedis();
 
-module.exports = { addToBlacklist, isBlacklisted, clear };
+module.exports = { addToBlacklist, isBlacklisted, clear, revocations };
