@@ -38,13 +38,13 @@ export default function AndroidUpdatePrompt() {
         left: '50%',
         transform: 'translate(-50%, -50%)',
         zIndex: 9999,
-        background: '#1a1a1a',
-        borderRadius: '12px',
+        background: 'var(--bg-modal)',
+        borderRadius: 'var(--radius-lg, 12px)',
         padding: '24px',
         maxWidth: '85vw',
         maxHeight: '80vh',
         boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
-        color: '#fff',
+        color: 'var(--text-primary)',
         fontFamily: '"HarmonyOS Sans", -apple-system, BlinkMacSystemFont, sans-serif'
       }}
       role="dialog"
@@ -58,7 +58,7 @@ export default function AndroidUpdatePrompt() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0,0,0,0.5)',
+          background: 'var(--bg-overlay)',
           zIndex: 9998,
           cursor: 'pointer'
         }}
@@ -71,17 +71,17 @@ export default function AndroidUpdatePrompt() {
           🎉 发现新版本 {latestVersion.name}
         </h2>
 
-        <p style={{ margin: '8px 0 16px 0', fontSize: '14px', color: '#aaa' }}>
+        <p style={{ margin: '8px 0 16px 0', fontSize: '14px', color: 'var(--text-secondary)' }}>
           {latestVersion.description || '已有新版本可用'}
         </p>
 
         {/* 更新日志 */}
         {changelog && changelog.length > 0 && (
-          <div style={{ margin: '16px 0', padding: '12px', background: '#2a2a2a', borderRadius: '8px' }}>
-            <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#888' }}>更新内容：</p>
+          <div style={{ margin: '16px 0', padding: '12px', background: 'var(--bg-card)', borderRadius: 'var(--radius-md, 8px)' }}>
+            <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: 'var(--text-secondary)' }}>更新内容：</p>
             <ul style={{ margin: '0', paddingLeft: '20px', fontSize: '13px', lineHeight: '1.6' }}>
               {changelog.map((item, idx) => (
-                <li key={idx} style={{ margin: '4px 0', color: '#ccc' }}>
+                <li key={idx} style={{ margin: '4px 0', color: 'var(--text-primary)' }}>
                   {item}
                 </li>
               ))}
@@ -96,17 +96,17 @@ export default function AndroidUpdatePrompt() {
             style={{
               flex: 1,
               padding: '12px 24px',
-              background: '#07C160',
-              color: '#fff',
+              background: 'var(--color-primary)',
+              color: 'var(--text-on-brand)',
               border: 'none',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius-md, 8px)',
               fontSize: '14px',
               fontWeight: 600,
               cursor: 'pointer',
               transition: 'background 0.3s'
             }}
-            onMouseEnter={(e) => e.target.style.background = '#11A047'}
-            onMouseLeave={(e) => e.target.style.background = '#07C160'}
+            onMouseEnter={(e) => e.target.style.background = 'var(--color-primary-hover)'}
+            onMouseLeave={(e) => e.target.style.background = 'var(--color-primary)'}
           >
             立即下载
           </button>
@@ -115,23 +115,23 @@ export default function AndroidUpdatePrompt() {
             style={{
               flex: 1,
               padding: '12px 24px',
-              background: '#3a3a3a',
-              color: '#ccc',
+              background: 'var(--bg-card)',
+              color: 'var(--text-secondary)',
               border: 'none',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius-md, 8px)',
               fontSize: '14px',
               cursor: 'pointer',
               transition: 'background 0.3s'
             }}
-            onMouseEnter={(e) => e.target.style.background = '#4a4a4a'}
-            onMouseLeave={(e) => e.target.style.background = '#3a3a3a'}
+            onMouseEnter={(e) => e.target.style.background = 'var(--bg-card-hover)'}
+            onMouseLeave={(e) => e.target.style.background = 'var(--bg-card)'}
           >
             稍后提醒
           </button>
         </div>
 
         {/* 版本信息 */}
-        <p style={{ margin: '16px 0 0 0', fontSize: '11px', color: '#666', textAlign: 'center' }}>
+        <p style={{ margin: '16px 0 0 0', fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
           当前版本：{currentVersion?.name} • 最新版本：{latestVersion.name}
         </p>
       </div>
