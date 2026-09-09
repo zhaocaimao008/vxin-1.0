@@ -14,8 +14,12 @@ export function useAndroidVersionCheck() {
     changelog: []
   });
 
+  // @capacitor/core 在纯 Web 构建里也会自注册 window.Capacitor（isNativePlatform() 恒为 false），
+  // 故不能只判存在——否则任何桌面/移动浏览器访问 vxinchat.com 都会被判定为"Capacitor App"，
+  // 进而对着桌面网页弹"发现新版本，请下载 Android 安装包"。改用与全仓库其余判断点一致的
+  // isNativePlatform()（main.jsx/AuthContext.jsx/SocketContext.jsx 等均用此写法）。
   const isCapacitorApp = () => {
-    return !!window.Capacitor || !!window.cordova;
+    return !!window.Capacitor?.isNativePlatform?.() || !!window.cordova;
   };
 
   const openDownload = useCallback((downloadUrl) => {
