@@ -8,7 +8,7 @@ import { goLogin } from '../utils/url';
 import { showConfirm, showToast } from '../utils/toast';
 import { copyToClipboard } from '../utils/clipboard';
 import { timeoutSignal } from '../utils/config';
-import { IcoDesktop as IcoDeviceDesktop, IcoMobile as IcoDeviceMobile, IcoClose } from './Icons';
+import { IcoDesktop as IcoDeviceDesktop, IcoMobile as IcoDeviceMobile, IcoClose, IcoGlobe, IcoSun, IcoMoon as IcoMoonFilled, IcoAuto } from './Icons';
 
 /* ─── 小工具 ─── */
 // role="button" 的 div 应同时支持 Enter 和空格触发（空格默认会滚动页面，需 preventDefault）
@@ -587,7 +587,7 @@ function DeviceList({ onBack }) {
     const pl = p.toLowerCase();
     if (pl.includes('windows') || pl.includes('mac')) return <IcoDeviceDesktop size={18} />;
     if (pl.includes('iphone') || pl.includes('ipad') || pl.includes('android')) return <IcoDeviceMobile size={18} />;
-    return '🌐';
+    return <IcoGlobe size={18} />;
   };
 
   return (
@@ -646,10 +646,10 @@ function AppearanceSettings({ onBack }) {
       <div className="wc-appearance-pad">
         <div className="wc-appearance-row">
           {[
-            { label: '日间模式', mode: 'light', emoji: '☀️', bg: '#FFFFFF', border: '#E5E5EA', textColor: '#333' },
-            { label: '夜间模式', mode: 'dark',  emoji: '🌙', bg: '#1C1C1E', border: '#48484A', textColor: '#EBEBF5' },
-            { label: '跟随系统', mode: 'auto',  emoji: '🌗', bg: 'linear-gradient(105deg,#FFFFFF 50%,#1C1C1E 50%)', border: '#B0B4BC', textColor: '#888' },
-          ].map(({ label, mode, emoji, bg, border, textColor }) => (
+            { label: '日间模式', mode: 'light', Icon: IcoSun,  bg: '#FFFFFF', border: '#E5E5EA', textColor: '#333', iconColor: '#F5A623' },
+            { label: '夜间模式', mode: 'dark',  Icon: IcoMoonFilled, bg: '#1C1C1E', border: '#48484A', textColor: '#EBEBF5', iconColor: '#EBEBF5' },
+            { label: '跟随系统', mode: 'auto',  Icon: IcoAuto, bg: 'linear-gradient(105deg,#FFFFFF 50%,#1C1C1E 50%)', border: '#B0B4BC', textColor: '#888', iconColor: '#888' },
+          ].map(({ label, mode, Icon, bg, border, textColor, iconColor }) => (
             <button key={mode} type="button"
               className="wc-appearance-btn"
               aria-pressed={themeMode === mode}
@@ -659,7 +659,7 @@ function AppearanceSettings({ onBack }) {
                 boxShadow: themeMode === mode ? '0 0 0 4px rgba(var(--color-primary-rgb),.15)' : '0 2px 8px rgba(0,0,0,.08)',
               }}
               onClick={() => setThemeMode(mode)}>
-              <span className="wc-appearance-emoji">{emoji}</span>
+              <span className="wc-appearance-emoji" style={{ color: iconColor, display: 'inline-flex' }}><Icon size={22} /></span>
               <span style={{ fontSize: 'var(--text-meta)', color: textColor, fontWeight: themeMode === mode ? 600 : 400 }}>{label}</span>
             </button>
           ))}
