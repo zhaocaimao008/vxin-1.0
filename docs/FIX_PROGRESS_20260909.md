@@ -58,6 +58,15 @@
 - **通话信令 (`call.js`/`groupCall.js`) 核查**：状态机、超时清理(120s)、断线清理、重复拨号覆盖、防伪造转发校验均已有明确注释和边界处理，判断为已经过多轮加固（"fix: 防 map 泄漏"等注释可查），未发现新的可复现问题；`activeCalls` 用进程内 Map 是有意的架构选择（`ecosystem.config.js` 显式使用单 fork 实例，注释说明是因 Socket.IO 未接 Redis adapter），非疏漏
 - **Android 编译回归**：`./gradlew --no-daemon :app:compileDebugKotlin` BUILD SUCCESSFUL（本轮未改动 Android 源码，用于确认现有状态未被破坏）
 
+### 批次 5（2026-09-09）— 真实 Bug：Android 更新弹窗误判所有 Web 访客 + 弹窗接入设计令牌
+沿"设计令牌盘点"排查散落硬编码颜色时，顺着 `AndroidUpdatePrompt.jsx` 的硬编码颜色追到其数据来源 `useAndroidVersionCheck.js`，发现一个真实、可复现、会影响生产所有 Web 访问者的缺陷：
+
+- **问题**：`isCapacitorApp()` 只判断 `window.Capacitor` 是否存在，但 `@capacitor/core` 在纯 Web 构建里也会自注册该全局对象（`isNativePlatform()` 恒为 false）。全仓库其余判断点（`main.jsx`/`AuthContext.jsx`/`SocketContext.jsx` 等）都用 `window.Capacitor?.isNativePlatform?.()`，唯独这个 Hook 用了错误、更宽松的存在性判断——导致任何用桌面浏览器或手机浏览器访问 vxinchat.com 网页版的人，都会被误判成"这是原生 Capacitor App"：每小时悄悄向生产域名发起版本检查请求，一旦命中 `mandatory` 更新还会对着网页弹出"发现新版本，请下载 Android 安装包"的对话框
+- **修复**：`isCapacitorApp()` 改用与全仓库一致的 `isNativePlatform()` 判断（commit `436be5a`）
+- **验证（有前后对比，非猜测）**：起隔离测试环境+真实 Chromium 打开登录后页面，修复前能实测观察到对 `vxinchat.com/downloads/android-version.json` 的请求（被浏览器 CORS 拦截，未发生数据泄露）；同样操作修复后不再触发该请求
+- **顺带**：`AndroidUpdatePrompt.jsx` 弹窗本身接入设计令牌（`--bg-modal`/`--bg-overlay`/`--text-primary`/`--color-primary` 等），修复此前恒为纯黑、不随浅色/深色模式变化、与全站弹窗风格脱节的问题（commit `dcbc04f`）
+- 过程中同样起停了隔离测试后端(127.0.0.1:3099)+web静态服务(127.0.0.1:4178)，验证后已确认端口/进程清理干净，未影响生产 pm2 `vxin-backend`(3002)
+
 ## 下一批计划
-- 转向 UI/UX 逐页梳理与统一设计变量整理（当前 `ui-refresh.css` 是唯一全局样式来源，尚未系统盘点是否有遗漏页面/组件）
+- 继续设计令牌盘点：`ContactList.jsx`/`ScanQR.jsx`/`ElectronTitlebar.jsx` 里的散落硬编码颜色逐个核实是否也是真实遗漏（部分如 `ElectronTitlebar.jsx` 的黑金配色、`ErrorBoundary.jsx` 的独立硬编码可能是有意为之，需先判断而非一律改）
 - iOS 原生代码仍受本机无 Xcode 限制，无法编译验证（沿用既往记忆中的环境限制结论）
