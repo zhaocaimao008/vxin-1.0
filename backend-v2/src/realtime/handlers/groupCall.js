@@ -59,7 +59,7 @@ function removeMember(io, callId, userId) {
   call.members.delete(userId);
   if (userCall.get(userId) === callId) userCall.delete(userId);
   // 通知其余成员该 peer 离开（关闭对应 PeerConnection / 移除画面）
-  for (const uid of call.members) io.to(`user_${uid}`).emit('group_call:peer_left', { callId, userId });
+  for (const uid of call.members) io?.to(`user_${uid}`).emit('group_call:peer_left', { callId, userId });
   if (call.members.size === 0) endCall(io, callId);
 }
 
@@ -143,6 +143,10 @@ module.exports = function registerGroupCallHandler(io, socket) {
     if (!to) return;
     const call = groupCalls.get(callId);
     if (!call || !call.members.has(userId) || !call.members.has(to)) return; // 只在同一通话成员间转发
+    for (const uid of [userId, to]) {
+      if (!isMember(call.conversationId, uid)) removeMember(io, callId, uid);
+    }
+    if (!call.members.has(userId) || !call.members.has(to)) return;
     io.to(`user_${to}`).emit(event, payload);
   }
 
@@ -156,6 +160,17 @@ module.exports = function registerGroupCallHandler(io, socket) {
     const remaining = (presence.onlineUsers.get(userId)?.size || 0) - 1;
     if (remaining <= 0) removeMember(io, callId, userId);
   });
+};
+
+module.exports.revokeMembership = function (io, conversationId, userId) {
+  for (const [callId, call] of groupCalls) {
+    if (call.conversationId !== conversationId) continue;
+    for (const uid of [...call.members]) {
+      if (userId && uid !== userId) continue;
+      io?.to(`user_${uid}`).emit('group_call:ended', { callId, reason: 'membership_revoked' });
+      removeMember(io, callId, uid);
+    }
+  }
 };
 
 module.exports._state = { groupCalls, userCall, MAX_PARTICIPANTS }; // 供测试/监控

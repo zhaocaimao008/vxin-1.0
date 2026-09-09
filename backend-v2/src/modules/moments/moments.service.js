@@ -180,7 +180,10 @@ function createMoment(io, userId, { content, images, visibility, visibleTo }) {
   const cloudBase = isConfigured() ? getPublicBase() : null;
   const imgs = rawImgs.filter(url => {
     if (typeof url !== 'string') return false;
-    if (url.startsWith(localPrefix) || url.startsWith('/uploads/')) return true;
+    if (url.startsWith(localPrefix) || url.startsWith('/uploads/')) {
+      if (!require('../../utils/uploadAccess').canAccessUpload(userId, url)) throw forbidden('无权使用该附件');
+      return true;
+    }
     if (cloudBase && url.startsWith(cloudBase + '/')) return true;
     return false;
   });
@@ -296,9 +299,6 @@ function getMoment(viewerId, momentId) {
 // 物理删除一条动态及其级联数据（评论/点赞/通知/举报）。不做权限校验，调用方负责鉴权。
 // 作者删除(deleteMoment) 与 后台举报处理(admin.resolveReport) 共用，避免重复。
 function purgeMoment(momentId) {
-  const m = db.prepare('SELECT images FROM moments WHERE id=?').get(momentId);
-  const images = JSON.parse(m?.images || '[]');
-
   db.transaction(() => {
     db.prepare('DELETE FROM moment_comments WHERE moment_id=?').run(momentId);
     db.prepare('DELETE FROM moment_likes WHERE moment_id=?').run(momentId);
@@ -307,19 +307,8 @@ function purgeMoment(momentId) {
     db.prepare('DELETE FROM moments WHERE id=?').run(momentId);
   })();
 
-  // 异步清理本地存储图片（OSS 图片为外部 URL，跳过）
-  const fs = require('fs');
-  const path = require('path');
-  for (const url of images) {
-    try {
-      const rel = String(url).replace(/^https?:\/\/[^/]+/, '').replace(/^\/uploads\//, '');
-      const abs = path.join(config.uploadsRoot, rel);
-      const safeRoot = config.uploadsRoot.endsWith(path.sep) ? config.uploadsRoot : config.uploadsRoot + path.sep;
-      if (abs.startsWith(safeRoot) && rel && !rel.includes('..')) {
-        fs.unlink(abs, () => {});
-      }
-    } catch {}
-  }
+  // 客户端 URL 不是文件所有权证明；只解除引用，保留可能被其他资源复用的文件。
+
 }
 
 // ── 删除动态（仅作者，级联清理点赞/评论）──────────────────────
@@ -551,3 +540,5 @@ module.exports = {
   reportMoment,
   listNotifications, unreadNotificationCount, markNotificationsRead,
 };
+
+module.exports.assertVisible = assertVisible;

@@ -24,7 +24,7 @@ class CacheWarmer {
       console.log('[CacheWarmer] 开始预热活跃用户...');
       
       const users = db.prepare(`
-        SELECT * FROM users 
+        SELECT id, username, avatar, bio, wechat_id, cover_photo, created_at FROM users
         ORDER BY last_online_at DESC 
         LIMIT ?
       `).all(this.maxActiveUsers);
@@ -199,7 +199,7 @@ class CacheWarmer {
    */
   async warmUserData(userId) {
     try {
-      const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+      const user = db.prepare('SELECT id, username, avatar, bio, wechat_id, cover_photo, created_at FROM users WHERE id = ?').get(userId);
       if (user) {
         await redis.setex(`user:${userId}`, this.userTTL, JSON.stringify(user));
       }

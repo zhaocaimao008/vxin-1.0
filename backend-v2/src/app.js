@@ -87,34 +87,36 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 // H9: /uploads 静态文件鉴权 — 用户JWT或Admin JWT均可访问，同时校验黑名单
 const jwt = require('jsonwebtoken');
 const { isBlacklisted } = require('./utils/tokenBlacklist');
-app.use('/uploads', (req, res, next) => {
-  // Cookie 优先；Electron/移动端用 Bearer 鉴权、<img> 无法带 header，故同时支持 ?token= 查询参数与 Bearer 兜底
+app.use('/uploads', async (req, res, next) => {
+  res.setHeader('Cache-Control', 'private, no-store');
   const bearer = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
   const token = req.cookies?.[config.cookieName] || req.cookies?.[config.admin.cookieName]
     || req.query?.token || bearer;
   if (!token) return res.status(401).json({ error: '未授权' });
+  let payload, isAdmin = false;
   try {
-    jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] });
-  } catch {
-    try {
-      jwt.verify(token, config.adminJwtSecret, { algorithms: ['HS256'] });
-    } catch {
-      return res.status(401).json({ error: '未授权' });
+    try { payload = jwt.verify(token, config.adminJwtSecret, { algorithms: ['HS256'] }); isAdmin = payload.admin === true; }
+    catch { /* 普通用户 JWT 使用独立密钥 */ }
+    if (!isAdmin) payload = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] });
+  } catch { return res.status(401).json({ error: '未授权' }); }
+  try {
+    if (await isBlacklisted(token)) return res.status(401).json({ error: '登录已失效，请重新登录' });
+    if (!isAdmin) {
+      const row = require('./db/connection').db.prepare('SELECT banned, password_changed_at, auth_version FROM users WHERE id=?').get(payload.id || '');
+      if (!row || row.banned || (payload.authVersion ?? 1) !== row.auth_version ||
+          (payload.authVersion == null && (!payload.iat || payload.iat <= row.password_changed_at))) {
+        return res.status(401).json({ error: '登录已失效，请重新登录' });
+      }
+      if (!require('./utils/uploadAccess').canAccessUpload(payload.id, '/uploads' + req.path)) {
+        return res.status(403).json({ error: '无权访问该附件' });
+      }
     }
-  }
-  isBlacklisted(token).then(blacklisted => {
-    if (blacklisted) return res.status(401).json({ error: '登录已失效，请重新登录' });
     next();
-  }).catch(err => {
-    console.error('[uploads] blacklist check error:', err.message);
-    res.status(503).json({ error: '认证服务暂时不可用' });
-  });
+  } catch (err) { next(err); }
 }, uploadsCacheMiddleware, express.static(config.uploadsRoot, {
-  // uploads 均为 uuid 命名、内容永不变更 → 强缓存，消除每次加载的 304 回源往返，
-  // 头像/图片打开会话即从本地缓存秒出。private：内容经鉴权，禁止共享缓存(CDN/代理)存储，
-  // 只允许当前用户浏览器缓存（与该用户已被授权取得这些字节一致，无安全回归）。
+  // 每次读取重新检查资源权限；禁止浏览器及共享缓存绕过撤销。
   setHeaders: (res) => {
-    res.setHeader('Cache-Control', 'private, max-age=31536000, immutable');
+    res.setHeader('Cache-Control', 'private, no-store');
     // nosniff：禁止 MIME 嗅探（正确 Content-Type 由扩展名派生，不影响 PDF/图片等内联打开）。
     // 不再强制 attachment：能上传的都是常见安全格式（HTML/SVG/XML 等已被扩展名白名单挡在门外），
     // 故无需以附件下发，保留浏览器「直接打开」PDF 等的原有体验。

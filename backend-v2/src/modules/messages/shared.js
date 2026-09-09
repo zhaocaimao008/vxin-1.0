@@ -81,7 +81,7 @@ function buildMessage(id) {
   return msg;
 }
 
-// 彻底清除一个会话及其全部衍生数据（消息/表情/送达/FTS/置顶/红包/成员/设置/邀请令牌）。
+// 清除会话聊天数据；有红包时原子结算并保留账务事实及归档会话占位。
 // 必须按外键依赖顺序删除，否则 foreign_keys=ON 下删 conversations 会约束失败。
 function purgeConversation(id) {
   db.transaction(() => {
@@ -93,13 +93,15 @@ function purgeConversation(id) {
       db.prepare(`DELETE FROM messages_fts WHERE message_id IN (${ph})`).run(...msgIds);
     }
     db.prepare('DELETE FROM pinned_messages WHERE conversation_id=?').run(id);
-    db.prepare('DELETE FROM red_packet_claims WHERE packet_id IN (SELECT id FROM red_packets WHERE conversation_id=?)').run(id);
-    db.prepare('DELETE FROM red_packets WHERE conversation_id=?').run(id);
+    require('../redpackets/redpackets.service').settleConversationActivePacketsTx(id);
     db.prepare('DELETE FROM messages WHERE conversation_id=?').run(id);
     db.prepare('DELETE FROM conversation_settings WHERE conversation_id=?').run(id);
+    db.prepare('DELETE FROM conversation_clears WHERE conversation_id=?').run(id);
     db.prepare('DELETE FROM group_invite_tokens WHERE conversation_id=?').run(id);
     db.prepare('DELETE FROM conversation_members WHERE conversation_id=?').run(id);
-    db.prepare('DELETE FROM conversations WHERE id=?').run(id);
+    if (db.prepare('SELECT 1 FROM red_packets WHERE conversation_id=?').get(id)) {
+      db.prepare("UPDATE conversations SET type='archived', name='', avatar='', announcement='', owner_id=NULL WHERE id=?").run(id);
+    } else db.prepare('DELETE FROM conversations WHERE id=?').run(id);
   })();
 }
 

@@ -198,7 +198,12 @@ async function getUserDetail(viewerId, targetId) {
   const showLastOnline = isPrivileged && (isFriend || targetId === viewerId);
 
   return {
-    ...user,
+    // 缓存可能来自旧版全量预热；响应仍须白名单，不能展开含密码/手机号的历史缓存。
+    id: user.id,
+    username: user.username,
+    avatar: user.avatar,
+    status: user.status,
+    wechat_id: user.wechat_id,
     bio: visible ? user.bio : '',
     cover_photo: visible ? user.cover_photo : '',
     isFriend, isBlocked,

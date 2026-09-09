@@ -130,19 +130,21 @@ async function resetPassword(io, id, newPassword) {
   const user = db.prepare('SELECT id FROM users WHERE id=?').get(id);
   if (!user) throw notFound('用户不存在');
   const hash = await bcrypt.hash(newPassword, 12);
-  db.prepare('UPDATE users SET password=?, password_changed_at=? WHERE id=?').run(hash, Math.floor(Date.now() / 1000), id);
+  db.prepare('UPDATE users SET password=?, password_changed_at=?, auth_version=auth_version+1 WHERE id=?').run(hash, Math.floor(Date.now() / 1000), id);
   invalidateUser(id); // 驱逐状态缓存，令旧 JWT 立即失效
   // 踢掉该用户所有会话并强制断开 socket，使旧 JWT 立即失效
   db.prepare('DELETE FROM user_sessions WHERE user_id=?').run(id);
+  db.prepare('DELETE FROM device_accounts WHERE user_id=?').run(id);
   if (io) io.to(`user_${id}`).disconnectSockets(true);
 }
 
-// ── 彻底删除用户（级联清理，含其消息）──────────────────────────
+// ── 匿名化用户并清理聊天关系（保留账务事实）──────────────────────────
 function deleteUser(io, id) {
   const user = db.prepare('SELECT id FROM users WHERE id=?').get(id);
   if (!user) throw notFound('用户不存在');
 
   db.transaction(() => {
+    require('../redpackets/redpackets.service').settleUserActivePacketsTx(id);
     // 该用户发的消息及其衍生数据（用子查询避免 IN(?) 参数爆炸）
     db.prepare('DELETE FROM message_reactions WHERE message_id IN (SELECT id FROM messages WHERE sender_id=?)').run(id);
     db.prepare('DELETE FROM message_deliveries WHERE message_id IN (SELECT id FROM messages WHERE sender_id=?)').run(id);
@@ -170,26 +172,7 @@ function deleteUser(io, id) {
         db.prepare('UPDATE conversations SET owner_id=? WHERE id=?').run(heir.user_id, g.id);
         db.prepare("UPDATE conversation_members SET role='owner' WHERE conversation_id=? AND user_id=?").run(g.id, heir.user_id);
       } else {
-        // 无其他成员 → 解散整群（按外键依赖顺序级联，与 purgeConversation 一致；
-        // 此处内联以复用当前事务，避免 better-sqlite3 嵌套事务报错）。
-        const msgIds = db.prepare('SELECT id FROM messages WHERE conversation_id=?').all(g.id).map(r => r.id);
-        for (let i = 0; i < msgIds.length; i += 500) {
-          const chunk = msgIds.slice(i, i + 500);
-          const ph = chunk.map(() => '?').join(',');
-          db.prepare(`DELETE FROM message_reactions WHERE message_id IN (${ph})`).run(...chunk);
-          db.prepare(`DELETE FROM message_deliveries WHERE message_id IN (${ph})`).run(...chunk);
-          db.prepare(`DELETE FROM messages_fts WHERE message_id IN (${ph})`).run(...chunk);
-          db.prepare(`DELETE FROM pinned_messages WHERE message_id IN (${ph})`).run(...chunk);
-        }
-        db.prepare('DELETE FROM pinned_messages WHERE conversation_id=?').run(g.id);
-        db.prepare('DELETE FROM red_packet_claims WHERE packet_id IN (SELECT id FROM red_packets WHERE conversation_id=?)').run(g.id);
-        db.prepare('DELETE FROM red_packets WHERE conversation_id=?').run(g.id);
-        db.prepare('DELETE FROM messages WHERE conversation_id=?').run(g.id);
-        db.prepare('DELETE FROM conversation_settings WHERE conversation_id=?').run(g.id);
-        db.prepare('DELETE FROM conversation_clears WHERE conversation_id=?').run(g.id);
-        db.prepare('DELETE FROM group_invite_tokens WHERE conversation_id=?').run(g.id);
-        db.prepare('DELETE FROM conversation_members WHERE conversation_id=?').run(g.id);
-        db.prepare('DELETE FROM conversations WHERE id=?').run(g.id);
+        purgeConversation(g.id); // 嵌套同步事务使用 savepoint，保留账务事实
       }
     }
     db.prepare('DELETE FROM conversation_members WHERE user_id=?').run(id);
@@ -198,13 +181,7 @@ function deleteUser(io, id) {
     db.prepare('DELETE FROM push_subscriptions WHERE user_id=?').run(id);
     db.prepare('DELETE FROM device_tokens WHERE user_id=?').run(id);
     db.prepare('DELETE FROM collections WHERE user_id=?').run(id);
-    db.prepare('DELETE FROM red_packet_claims WHERE user_id=?').run(id);
-    // 列名为 packet_id（非 red_packet_id）——原写法引用不存在的列会抛错并回滚整个删除事务，
-    // 导致后台删除用户恒定 500。修正列名以清理该用户所发红包的领取记录。
-    db.prepare('DELETE FROM red_packet_claims WHERE packet_id IN (SELECT id FROM red_packets WHERE sender_id=?)').run(id);
-    db.prepare('DELETE FROM red_packets WHERE sender_id=?').run(id);
-    db.prepare('DELETE FROM wallet_transactions WHERE user_id=?').run(id);
-    db.prepare('DELETE FROM wallets WHERE user_id=?').run(id);
+    // 红包、领取、钱包和流水是结算依据，不能随账号删除。
     db.prepare('DELETE FROM device_accounts WHERE user_id=?').run(id);
     db.prepare('DELETE FROM user_stickers WHERE user_id=?').run(id);
     // 先清该用户对他人动态的互动记录（自身动态的互动由 ON DELETE CASCADE 随 moments 删除）
@@ -217,8 +194,10 @@ function deleteUser(io, id) {
     db.prepare(`
       DELETE FROM conversations WHERE type='private'
         AND id NOT IN (SELECT DISTINCT conversation_id FROM conversation_members)
+        AND id NOT IN (SELECT conversation_id FROM red_packets)
     `).run();
-    db.prepare('DELETE FROM users WHERE id=?').run(id);
+    db.prepare("UPDATE users SET username=?, phone=?, password='*', avatar='', bio='', cover_photo='', wechat_id=NULL, invite_code=NULL, banned=1, auth_version=auth_version+1 WHERE id=?")
+      .run(`已注销_${id}`, `deleted_${id}`, id);
   })();
   invalidateUser(id); // 驱逐状态缓存
   if (io) io.to(`user_${id}`).disconnectSockets(true);
@@ -285,8 +264,12 @@ function groupDetail(id) {
 function dismissGroup(io, id) {
   const conv = db.prepare("SELECT id FROM conversations WHERE id=? AND type='group'").get(id);
   if (!conv) throw notFound('群不存在');
-  purgeConversation(id); // 完整级联清理，含消息（修复外键约束 500）
-  if (io) io.to(id).emit('group_dismissed', { conversationId: id });
+  purgeConversation(id);
+  require('../../realtime/handlers/groupCall').revokeMembership(io, id);
+  if (io) {
+    io.to(id).emit('group_dismissed', { conversationId: id });
+    io.in(id).socketsLeave(id);
+  }
 }
 
 // ── 邀请码（运行时可改，存 admin_settings，回退 .env）────────────

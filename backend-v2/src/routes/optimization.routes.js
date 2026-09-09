@@ -7,6 +7,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
+const adminAuth = require('../middleware/adminAuth');
 const { badRequest } = require('../utils/http');
 
 /**
@@ -229,7 +230,7 @@ router.post('/dedup/mark', auth, async (req, res, next) => {
  *     tags: [Optimization]
  *     security: [{ bearerAuth: [] }]
  */
-router.post('/cache/warm', auth, async (req, res, next) => {
+router.post('/cache/warm', adminAuth, async (req, res, next) => {
   try {
     const cacheWarmer = req.app.get('cacheWarmer');
 
@@ -270,13 +271,14 @@ router.post('/cache/warm', auth, async (req, res, next) => {
 router.post('/cache/warm-user', auth, async (req, res, next) => {
   try {
     const { userId } = req.body;
+    if (userId && userId !== req.user.id) return res.status(403).json({ error: '只能预热自己的资料' });
     const cacheWarmer = req.app.get('cacheWarmer');
 
     if (!cacheWarmer) {
       throw badRequest('缓存预热器未初始化');
     }
 
-    const result = await cacheWarmer.warmUserData(userId);
+    const result = await cacheWarmer.warmUserData(req.user.id);
     res.json({ result });
   } catch (err) {
     next(err);

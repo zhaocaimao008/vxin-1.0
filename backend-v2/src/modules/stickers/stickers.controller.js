@@ -43,6 +43,7 @@ exports.collect = asyncHandler(async (req, res) => {
   const pub = getPublicBase();
   const ok = url.startsWith('/uploads/') || (pub && url.startsWith(pub + '/'));
   if (!ok) throw badRequest('图片来源不合法');
+  if (url.startsWith('/uploads/') && !require('../../utils/uploadAccess').canAccessUpload(req.user.id, url)) throw forbidden('无权使用该附件');
   const id = uuidv4();
   let inserted = false;
   db.transaction(() => {
@@ -69,6 +70,7 @@ exports.send = asyncHandler(async (req, res) => {
   if (!isMember(conversationId, req.user.id)) throw forbidden('无权发送');
   const sticker = db.prepare('SELECT url FROM user_stickers WHERE id=? AND user_id=?').get(stickerId, req.user.id);
   if (!sticker) throw notFound('表情不存在');
+  if (sticker.url.startsWith('/uploads/') && !require('../../utils/uploadAccess').canAccessUpload(req.user.id, sticker.url)) throw forbidden('无权使用该附件');
   const msg = await msgSvc.saveUploadedFile(io(req), conversationId, req.user.id, {
     type: 'image', content: '[表情]', fileUrl: sticker.url,
   });

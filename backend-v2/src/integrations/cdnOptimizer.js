@@ -34,7 +34,7 @@ function getCachePolicy(filePath) {
 
 // 将本地 /uploads/xxx 路径重写为 CDN URL
 function toCdnUrl(localUrl) {
-  if (!CDN_BASE || !localUrl) return localUrl;
+  if (!CDN_BASE || !localUrl || localUrl.startsWith('/uploads/')) return localUrl;
   if (localUrl.startsWith('http://') || localUrl.startsWith('https://')) return localUrl;
   const clean = localUrl.replace(/^\/uploads\//, '');
   return `${CDN_BASE.replace(/\/$/, '')}/uploads/${clean}`;
@@ -63,16 +63,7 @@ function computeEtag(content) {
  * Express 中间件：为 /uploads 静态资源添加最优缓存头
  */
 function uploadsCacheMiddleware(req, res, next) {
-  const originalSetHeader = res.setHeader.bind(res);
-  res.setHeader = function (name, value) {
-    // 只覆盖 Cache-Control，其他保持原样
-    if (name.toLowerCase() === 'cache-control' &&
-        req.path && /\.(jpg|jpeg|png|gif|webp|avif|mp4|mp3|pdf|zip)$/i.test(req.path)) {
-      return originalSetHeader('Cache-Control', CACHE_POLICIES.immutable);
-    }
-    return originalSetHeader(name, value);
-  };
-
+  // 上传附件的权限由下载门控决定，不得提升 private/no-store 为 public。
   // 追加 CDN 友好的安全头
   res.setHeader('Vary', 'Accept-Encoding, Accept');
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -83,13 +74,10 @@ function uploadsCacheMiddleware(req, res, next) {
  * Express 中间件：自动将 API 响应中的 /uploads/ 替换成 CDN URL
  */
 function cdnRewriteMiddleware(req, res, next) {
-  if (!CDN_BASE) return next();
+  // 受保护的 /uploads 必须经过应用鉴权，不能重写到绕过门控的公共 CDN。
+  return next();
 
-  const originalJson = res.json.bind(res);
-  res.json = function (data) {
-    return originalJson(rewriteUrlsInObject(data));
-  };
-  next();
+
 }
 
 /**

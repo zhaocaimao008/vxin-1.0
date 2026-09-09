@@ -236,7 +236,7 @@ function makeChatUploader(dest) {
     storage,
     limits: { fileSize: MAX_UPLOAD_BYTES },
   }).single('file'));
-  return [multerMw, makeChatMagicMiddleware()];
+  return [multerMw, makeChatMagicMiddleware(), require('./uploadAccess').recordUploadedFiles];
 }
 
 function makeImageUploader(dest, fieldName = 'image', maxCount = 1, maxSize = 5 * 1024 * 1024) {
@@ -256,7 +256,7 @@ function makeImageUploader(dest, fieldName = 'image', maxCount = 1, maxSize = 5 
     },
   });
   const middleware = maxCount === 1 ? m.single(fieldName) : m.array(fieldName, maxCount);
-  return [wrapUpload(middleware), makeMagicBytesMiddleware(ALLOWED_IMAGE_MIMES)];
+  return [wrapUpload(middleware), makeMagicBytesMiddleware(ALLOWED_IMAGE_MIMES), require('./uploadAccess').recordUploadedFiles];
 }
 
 // 浏览器会内联渲染/执行的危险 MIME（html/xml/svg/js）。云直传对象的 Content-Type 由客户端

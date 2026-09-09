@@ -156,9 +156,17 @@ function reclaimExpired() {
 //   不限 24h：注销即立刻结清该用户所有在途红包。返回退回总额（金币，整数分）。
 //   ⚠ 供 deleteAccount 在其外层事务内内联调用（同事务原子）；不自开事务。
 function settleUserActivePacketsTx(userId) {
+  return settleActivePacketsTx('sender_id', userId);
+}
+
+function settleConversationActivePacketsTx(conversationId) {
+  return settleActivePacketsTx('conversation_id', conversationId);
+}
+
+function settleActivePacketsTx(column, id) {
   const active = db.prepare(
-    "SELECT id, sender_id, total_amount FROM red_packets WHERE sender_id=? AND status='active'"
-  ).all(userId);
+    `SELECT id, sender_id, total_amount FROM red_packets WHERE ${column}=? AND status='active'`
+  ).all(id);
   let refundedTotal = 0;
   let refundedCount = 0;
   for (const p of active) {
@@ -186,4 +194,4 @@ function startExpiryReclaim() {
   return timer;
 }
 
-module.exports = { send, detail, claim, reclaimExpired, settleUserActivePacketsTx, startExpiryReclaim };
+module.exports = { send, detail, claim, reclaimExpired, settleUserActivePacketsTx, settleConversationActivePacketsTx, startExpiryReclaim };

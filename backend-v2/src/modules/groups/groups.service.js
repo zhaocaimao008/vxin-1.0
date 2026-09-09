@@ -200,6 +200,7 @@ function kick(io, convId, callerId, uid) {
   if (callerRole === 'admin' && targetRole !== 'member') throw forbidden('管理员只能移除普通成员');
 
   db.prepare('DELETE FROM conversation_members WHERE conversation_id=? AND user_id=?').run(convId, uid);
+  require('../../realtime/handlers/groupCall').revokeMembership(io, convId, uid);
   if (io) {
     io.in(`user_${uid}`).socketsLeave(convId);
     io.to(convId).emit('group_updated', { id: convId });
@@ -215,6 +216,7 @@ function leave(io, convId, userId) {
   if (conv.owner_id === userId) throw badRequest('群主不能直接退出群聊，请先转让群主后再退出，或解散群聊');
   const result = db.prepare('DELETE FROM conversation_members WHERE conversation_id=? AND user_id=?').run(convId, userId);
   if (result.changes === 0) throw forbidden('您不在此群中');
+  require('../../realtime/handlers/groupCall').revokeMembership(io, convId, userId);
   if (io) {
     io.in(`user_${userId}`).socketsLeave(convId);
     io.to(convId).emit('group_updated', { id: convId });
@@ -228,6 +230,7 @@ function dissolve(io, convId, userId) {
   if (!conv) throw notFound('群不存在');
   if (conv.owner_id !== userId) throw forbidden('仅群主可解散群聊');
   purgeConversation(convId);
+  require('../../realtime/handlers/groupCall').revokeMembership(io, convId);
   if (io) {
     // 先广播再离开：emit 之后才 socketsLeave，否则房间已空事件送达 0 人
     io.to(convId).emit('group_dismissed', { conversationId: convId });
