@@ -81,7 +81,18 @@
 - **产出**：`brand/vxin/svg/icon-square.svg`（黑底完整版，iOS/Windows/favicon/PWA 用）、`icon-mark.svg`（透明底纯标记，Android adaptive-icon 前景层及后续应用内 Logo 位复用）。旧 `logo.svg`/`logo-256.svg`/`logo-light.svg` 保留不删（无確認引用方本轮不动，供追溯），新资源不复用旧文件名，避免路径歧义。
 - **状态**：矢量母版**已完成且已验证**（`convert`(ImageMagick, librsvg 后端) 栅格化 16/32/256px 预览，人工比对小尺寸下 V 形轮廓与圆点仍清晰可辨，无糊团）；四端实际接入（favicon/manifest、Android mipmap 全密度、iOS AppIcon-1024、Windows icon.ico）在下一批次落地。
 
+### 批次 7（2026-09-10）— App 图标/Logo 四端实际接入
+
+- Web：`favicon.ico`(16/32/48)/`favicon.png`/manifest 引用的 `icons/icon-192.png`、`icon-512.png` 已替换
+- Windows/Electron：`assets/icon.ico`(16/32/48/256)/`icon.png` 已替换（窗口图标/安装包图标/托盘图标共用同一资源，托盘由 Electron 运行时缩放到 16px）
+- Android：5 个密度 `ic_launcher.png`/`ic_launcher_round.png`(legacy 方形回退) + `ic_launcher_foreground.png`(adaptive-icon 前景层，108dp 标准尺寸换算) 已替换，背景色沿用既有 `#000000`
+- iOS：`AppIcon.appiconset/AppIcon-1024.png`（Contents.json 唯一实际引用的文件）已替换，已展平无 alpha 通道
+- 顺带统一了 5 处逐字节相同的旧版内联 SVG 品牌标（`ElectronTitlebar.jsx` 标题栏 + `Login/Register/ForgotPassword/Home.jsx` 四个认证页）为同一套新 V+尾点标记
+- 状态：**已修复且已验证** —`npm run build`(web) 通过；`./gradlew --no-daemon :app:compileDebugKotlin` BUILD SUCCESSFUL 且 `processDebugResources`/`mergeDebugResources` 非 UP-TO-DATE 实际重跑（证明新 PNG 被 AAPT 正常处理）；全部 PNG 用 `identify` 核实尺寸；ImageMagick 栅格化 16/18/32px 预览人工核实小尺寸清晰度。iOS 编译验证、Windows 真机渲染验证仍受本机无 Xcode / Electron 沙箱限制（既有环境限制，非本批新增）。
+- 遗留：`ScanQR.jsx`/`ElectronTitlebar.jsx` 当初"无需改动"结论对 ElectronTitlebar 部分已被本批次的 Logo 重绘覆盖更新，不再是遗留项
+
 ## 下一批计划
-- 完成图标四端实际接入（Web favicon+manifest、Android mipmap 全密度+adaptive、iOS AppIcon-1024、Windows icon.ico/png），并在可行范围内截图/构建验证
-- 批次6"已修改但待验证"项（ContactList 空态图标深色模式）找一次成功的真实浏览器验证批次一并截图确认
+- 批次6"已修改但待验证"项（ContactList 空态图标深色模式）+ 本批次图标视觉效果，一并找一次能跑通的真实浏览器 e2e 环境截图确认（此前两次隔离环境脚本因未知原因卡在登录流程，已放弃在单次任务上过度重试，留给下次批次一起处理，会先排查是不是隔离后端/前端启动时序本身的问题而不是重复相同命令）
+- 应用内功能图标（导航/发送/语音/更多等）统一梳理与图标组件化——本轮"App 主图标"已完成，"应用内功能图标统一"（五.2）尚未开始
+- 继续账号安全/消息/好友群聊/媒体/通话六大类的逐链路 Bug 排查（三.4 媒体、三.5 通话、三.6 通知与生命周期尚未系统过一遍，批次3只覆盖了三.1-三.3 部分）
 - iOS 原生代码仍受本机无 Xcode 限制，无法编译验证（沿用既往记忆中的环境限制结论）
