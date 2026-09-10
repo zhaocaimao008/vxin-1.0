@@ -1066,7 +1066,7 @@ function ProfileDetail({ user, updateUser, onBack, navigateTo, desktop = false }
           <Card>
             <CRow icon={<IcoUserRow />} bg="var(--color-primary)" label="用户名"
               value={user?.username || ''} onClick={() => navigateTo?.('edit-name')} />
-            <CRow icon={<IcoIdRow />} bg="var(--icon-bg-invite)" label="微信号"
+            <CRow icon={<IcoIdRow />} bg="var(--icon-bg-invite)" label="v信号"
               value={user?.wechat_id || ''} onClick={user?.wechat_id ? copyVid : undefined} />
             <CRow icon={<IcoBioRow />} bg="var(--icon-bg-schedule)" label="个性签名"
               value={user?.bio || '未设置'} onClick={() => navigateTo?.('edit-bio')} />
