@@ -3,6 +3,13 @@ import { isVoicePlayed, markVoicePlayed } from '../utils/playedVoice';
 import { transcribeVoice } from '../utils/transcribe';
 import { showToast } from '../utils/toast';
 
+// 模块级单例：同一时间只允许一条语音消息在播放。每个 VoicePlayer 是各自独立的
+// <audio> 实例（无全局播放态协调），此前点开第二条语音时第一条仍在播，两段声音会
+// 叠在一起——不符合"点击播放/暂停"的隐含预期（微信/Telegram 等主流 IM 均是新语音
+// 开始播放时自动停掉上一条）。用模块级变量记录当前播放中的 audio 元素，无需引入
+// Context/全局状态管理，成本最低。
+let activeVoiceAudio = null;
+
 const VoicePlayer = memo(function VoicePlayer({ url, msgId = null, isMine = false, transcript = null }) {
   const [playing, setPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -60,13 +67,22 @@ const VoicePlayer = memo(function VoicePlayer({ url, msgId = null, isMine = fals
     audio.preload = 'metadata';
     const onMeta  = () => { setDuration(Number.isFinite(audio.duration) ? audio.duration : 0); setLoaded(true); };
     const onTime  = () => setCurrentTime(audio.currentTime);
-    const onEnded = () => { setPlaying(false); setCurrentTime(0); };
+    const onEnded = () => {
+      if (activeVoiceAudio === audio) activeVoiceAudio = null;
+      setPlaying(false); setCurrentTime(0);
+    };
     const onPlay  = () => {
+      // 开始播放这一条前，先停掉上一条（如果不是自己），保证同一时间只有一条语音在响
+      if (activeVoiceAudio && activeVoiceAudio !== audio) activeVoiceAudio.pause();
+      activeVoiceAudio = audio;
       setPlaying(true);
       // 首次播放 → 标记已播放、消除红点
       if (!isMine && msgId) { markVoicePlayed(msgId); setUnplayed(false); }
     };
-    const onPause = () => setPlaying(false);
+    const onPause = () => {
+      if (activeVoiceAudio === audio) activeVoiceAudio = null;
+      setPlaying(false);
+    };
     audio.addEventListener('loadedmetadata', onMeta);
     audio.addEventListener('timeupdate', onTime);
     audio.addEventListener('ended', onEnded);
@@ -74,6 +90,10 @@ const VoicePlayer = memo(function VoicePlayer({ url, msgId = null, isMine = fals
     audio.addEventListener('pause', onPause);
     audioRef.current = audio;
     return () => {
+      // 卸载时若这条正是当前"播放中"单例，须显式清掉引用——组件卸载后 React 状态
+      // 已不重要，但 activeVoiceAudio 是模块级变量，会跨组件生命周期存活，不清会
+      // 残留一个指向已卸载 audio 的悬空引用，导致下一条语音播放时误判"需要暂停它"。
+      if (activeVoiceAudio === audio) activeVoiceAudio = null;
       audio.pause();
       audio.src = '';
       audio.removeEventListener('loadedmetadata', onMeta);
