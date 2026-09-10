@@ -1036,6 +1036,8 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
     );
     const timer = setTimeout(() => {
       pendingMsgsRef.current.delete(newTempId);
+      // 发送失败：也要无条件滚到底，否则用户看不到❗重试图标（批次17真实bug，见 FIX_PROGRESS）
+      forceScrollRef.current = true;
       setMessages(prev => prev.map(m => m._tempId === newTempId ? { ...m, _status: 'error' } : m));
     }, 5000);
     pendingMsgsRef.current.set(newTempId, timer);
@@ -1052,6 +1054,8 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
         confirmedMsgIds.current.add(ack.message.id);
         setMessages(prev => prev.map(m => m._tempId === newTempId ? { ...ack.message } : m));
       } else {
+        // 发送失败：也要无条件滚到底，否则用户看不到❗重试图标（批次17真实bug，见 FIX_PROGRESS）
+        forceScrollRef.current = true;
         setMessages(prev => prev.map(m => m._tempId === newTempId ? { ...m, _status: 'error' } : m));
       }
     });
@@ -1191,6 +1195,8 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
     // 2. 5s 超时 → 标记失败
     const timer = setTimeout(() => {
       pendingMsgsRef.current.delete(tempId);
+      // 发送失败：也要无条件滚到底，否则用户看不到❗重试图标（批次17真实bug，见 FIX_PROGRESS）
+      forceScrollRef.current = true;
       setMessages(prev => prev.map(m => m._tempId === tempId ? { ...m, _status: 'error' } : m));
     }, 5000);
     pendingMsgsRef.current.set(tempId, timer);
@@ -1217,6 +1223,8 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
         confirmedMsgIds.current.add(ack.message.id);
         setMessages(prev => prev.map(m => m._tempId === tempId ? { ...ack.message } : m));
       } else {
+        // 发送失败：也要无条件滚到底，否则用户看不到❗重试图标（批次17真实bug，见 FIX_PROGRESS）
+        forceScrollRef.current = true;
         setMessages(prev => prev.map(m => m._tempId === tempId ? { ...m, _status: 'error' } : m));
       }
     });
@@ -1269,6 +1277,8 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
     setMessages(prev => [...prev, optimistic]);
     const timer = setTimeout(() => {
       pendingMsgsRef.current.delete(tempId);
+      // 发送失败：也要无条件滚到底，否则用户看不到❗重试图标（批次17真实bug，见 FIX_PROGRESS）
+      forceScrollRef.current = true;
       setMessages(prev => prev.map(m => m._tempId === tempId ? { ...m, _status: 'error' } : m));
     }, 5000);
     pendingMsgsRef.current.set(tempId, timer);
@@ -1279,6 +1289,8 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
         confirmedMsgIds.current.add(ack.message.id);
         setMessages(prev => prev.map(m => m._tempId === tempId ? { ...ack.message } : m));
       } else {
+        // 发送失败：也要无条件滚到底，否则用户看不到❗重试图标（批次17真实bug，见 FIX_PROGRESS）
+        forceScrollRef.current = true;
         setMessages(prev => prev.map(m => m._tempId === tempId ? { ...m, _status: 'error' } : m));
       }
     });
