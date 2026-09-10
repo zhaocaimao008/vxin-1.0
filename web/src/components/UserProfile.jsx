@@ -178,10 +178,15 @@ export default function UserProfile({ userId, onClose, onStartChat, onFriendAdde
           {user.bio && <div className="up-bio">{user.bio}</div>}
           {/* 特权账户：精确最后在线时间 */}
           {user.last_online_at !== undefined && (() => {
-            const label = formatLastOnline(user.last_online_at, user.status === 'online');
+            const isOnline = user.status === 'online';
+            const label = formatLastOnline(user.last_online_at, isOnline);
             return label ? (
-              <div className="up-last-online" title="最后在线时间（特权可见）">
-                🟢 {label}
+              <div
+                className={`up-last-online${isOnline ? '' : ' up-last-online-offline'}`}
+                title="最后在线时间（特权可见）"
+              >
+                <span className="up-status-dot" aria-hidden="true" />
+                {label}
               </div>
             ) : null;
           })()}
