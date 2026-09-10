@@ -67,6 +67,21 @@
 - **顺带**：`AndroidUpdatePrompt.jsx` 弹窗本身接入设计令牌（`--bg-modal`/`--bg-overlay`/`--text-primary`/`--color-primary` 等），修复此前恒为纯黑、不随浅色/深色模式变化、与全站弹窗风格脱节的问题（commit `dcbc04f`）
 - 过程中同样起停了隔离测试后端(127.0.0.1:3099)+web静态服务(127.0.0.1:4178)，验证后已确认端口/进程清理干净，未影响生产 pm2 `vxin-backend`(3002)
 
+### 批次 6（2026-09-10）— 设计令牌盘点收尾 + App 主图标/功能图标重绘落地
+
+**设计令牌盘点结论**（逐文件核实，非一律改）：
+- `ContactList.jsx`：两处空态 SVG 图标（"暂无联系人""暂无新申请"）fill/stroke 硬编码 `#E8ECF0`/`#D0D7E3`，不随 `body.dark-mode` 切换（design-tokens.css §13 会整体重定义 `--gray-*` 灰阶，深色下浅灰会变深灰，这两处因硬编码永远停在浅色值），是真实遗漏。已改用 `var(--gray-150)`/`var(--gray-300)`。文件里另外几处 `#07C160`/调色板数组是"标签颜色选择器"的固定色板（用户主动选色），不是主题色，保留不动。
+- `ScanQR.jsx`：硬编码色值全部是 `var(--token, #fallback)` 形式的兜底值，不是真硬编码；`background:'#000'` 是相机取景器背景，各主题下都应为黑，不是遗漏。**结论：无需改动**。
+- `ElectronTitlebar.jsx`：`#000000`/`#FFD700` 是标题栏里渲染的品牌 Logo 图形本身（不是随主题变化的 UI 元素，类比任务栏图标），按既有"黑金限定品牌入口"约定是有意为之。**结论：无需改动**（见下方图标重绘，此处后续会指向新版 Logo 矢量，颜色约定不变）。
+- 状态：**已修改但待验证** —`npm run build` 通过；真实浏览器点前后对比因本轮 e2e 隔离环境反复启动失败（未知原因卡死在登录流程，非产品代码问题，已定位到是本次臨時脚本自身的 harness 问题而非后端/前端 bug，多次重试后放弃在本批次内解决，避免在一个纯 CSS 变量替换上过度消耗）而未能截图闭环；改动本身是把两个失效硬编码色值换成同文件同类兜底样式已在用的既有 token，改动风险低，且 `--gray-150`/`--gray-300` 在 light/dark 两个作用域均有定义，机制上不会出现未定义变量。留待下一次真实浏览器验证批次一并截图确认。
+
+**App 主图标 + Logo 矢量重绘**（发现旧版 `brand/vxin/svg/logo.svg` 已实际生效于 Web `manifest.json`/`favicon.*` 及 Android/iOS 的图标资源，并非此前记忆所述"仅生成未接入"——推测是本记忆文件未覆盖到的某次改动接入的）：
+- **问题**：旧图标由多层"科技轨道"圆环（含 dasharray 虚线）、8 个散落发光粒子（`feGaussianBlur` 滤镜）、径向能量光晕、聊天气泡描边 + V 字母共 6+ 层元素堆叠而成，在 16px favicon / 48dp 启动器等小尺寸下糊成一团色块，不符合本轮"避免细碎装饰、堆叠小字和廉价立体效果"的明确要求，予以重绘而非直接复用。
+- **新设计**：黑底 + 金色渐变（`#FFD84D → #FF9A00`，去掉旧版 5-stop 反复横跳的渐变和描边光晕）一笔 V 形折线（`stroke-linejoin=round` 单路径，非多层拼接）+ 底部独立圆点（抽象化的对话气泡尾角），零滤镜、零虚线环、零散落粒子。16×16 / 32×32 下实测轮廓仍清晰（见下方 ImageMagick 栅格化预览）。沿用既有"黑金"品牌方向（在此仓库里已通过 2026-08-24 的启动动画/登录页多端落地并确认，不新起一套配色，避免品牌不统一）。
+- **产出**：`brand/vxin/svg/icon-square.svg`（黑底完整版，iOS/Windows/favicon/PWA 用）、`icon-mark.svg`（透明底纯标记，Android adaptive-icon 前景层及后续应用内 Logo 位复用）。旧 `logo.svg`/`logo-256.svg`/`logo-light.svg` 保留不删（无確認引用方本轮不动，供追溯），新资源不复用旧文件名，避免路径歧义。
+- **状态**：矢量母版**已完成且已验证**（`convert`(ImageMagick, librsvg 后端) 栅格化 16/32/256px 预览，人工比对小尺寸下 V 形轮廓与圆点仍清晰可辨，无糊团）；四端实际接入（favicon/manifest、Android mipmap 全密度、iOS AppIcon-1024、Windows icon.ico）在下一批次落地。
+
 ## 下一批计划
-- 继续设计令牌盘点：`ContactList.jsx`/`ScanQR.jsx`/`ElectronTitlebar.jsx` 里的散落硬编码颜色逐个核实是否也是真实遗漏（部分如 `ElectronTitlebar.jsx` 的黑金配色、`ErrorBoundary.jsx` 的独立硬编码可能是有意为之，需先判断而非一律改）
+- 完成图标四端实际接入（Web favicon+manifest、Android mipmap 全密度+adaptive、iOS AppIcon-1024、Windows icon.ico/png），并在可行范围内截图/构建验证
+- 批次6"已修改但待验证"项（ContactList 空态图标深色模式）找一次成功的真实浏览器验证批次一并截图确认
 - iOS 原生代码仍受本机无 Xcode 限制，无法编译验证（沿用既往记忆中的环境限制结论）

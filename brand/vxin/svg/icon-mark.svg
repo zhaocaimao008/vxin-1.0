@@ -1,0 +1,19 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!--
+    V信 品牌标记 — 2026-09-10 重绘
+    设计说明：一笔 V 形折线（对话/确认的双重隐喻）+ 底部独立圆点（聊天气泡尾角的
+    抽象化，而非字面画一个完整气泡）。纯几何色块，无渐变环、无粒子光效、无描边
+    发光滤镜，保证 16px favicon / 48dp 启动器图标下轮廓依然清晰可辨。
+    透明背景版本，供 Android adaptive-icon 前景层、应用内 Logo 位等场景复用；
+    需要实心背景的场景使用同目录 icon-square.svg（黑底）。
+  -->
+  <defs>
+    <linearGradient id="vxinGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD84D"/>
+      <stop offset="100%" stop-color="#FF9A00"/>
+    </linearGradient>
+  </defs>
+  <path d="M 322 300 L 512 664 L 702 300" fill="none" stroke="url(#vxinGold)"
+        stroke-width="128" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="512" cy="706" r="60" fill="url(#vxinGold)"/>
+</svg>
