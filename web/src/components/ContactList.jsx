@@ -228,8 +228,8 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
             {contactsLoaded && contacts.length === 0 && !searchQuery && (
               <div className="cl-empty" role="status">
                 <svg viewBox="0 0 48 48" width="48" height="48" fill="none" className="cl-empty-icon">
-                  <circle cx="24" cy="20" r="10" fill="#E8ECF0"/>
-                  <path d="M8 40c0-8.84 7.16-16 16-16s16 7.16 16 16" stroke="#D0D7E3" strokeWidth="2" strokeLinecap="round"/>
+                  <circle cx="24" cy="20" r="10" fill="var(--gray-150)"/>
+                  <path d="M8 40c0-8.84 7.16-16 16-16s16 7.16 16 16" stroke="var(--gray-300)" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
                 <div className="cl-empty-text">暂无联系人</div>
                 <div className="cl-empty-sub">通过搜索添加好友</div>
@@ -263,7 +263,7 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
               <>
                 {requests.length === 0 && (
                   <div className="cl-empty" role="status">
-                    <svg viewBox="0 0 24 24" width="40" height="40" fill="#D0D7E3" className="cl-empty-icon">
+                    <svg viewBox="0 0 24 24" width="40" height="40" fill="var(--gray-300)" className="cl-empty-icon">
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
                     </svg>
                     <div className="cl-empty-text">暂无新申请</div>
