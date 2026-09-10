@@ -10,6 +10,14 @@ const LS_KEY = 'vxin_call_sound_ready';
  * - Electron 端：主进程已全局解锁 autoplay，无需引导
  * - 移动端（Capacitor）：有原生推送铃声，无需引导
  * - 已预热过（localStorage 标记）：不再打扰
+ *
+ * 定位沿革（批次11/12/18）：从「顶栏下方居中大胶囊」一路改到这版「顶部通栏细条」，
+ * 前两版无论把 top 偏移调多大，都只是在"猜下面还有多少内容"——不同页面顶部结构高度
+ * 不一（单层顶栏/双层标题+标签/短会话消息紧贴顶部…），批次18 用真实截图实测到
+ * 大胶囊会直接压在新会话第一条消息气泡上。这版改用与 ReconnectingBanner
+ * （同目录，已验证过全端无遮挡问题的既有组件）完全相同的"顶部通栏细条"方案：
+ * 贴 viewport 最顶端、内容单行不换行、高度收得足够窄，不再需要为任何页面的具体高度
+ * 猜测安全间距——两个通栏细条即使碰巧同时出现也只是相互紧贴，不会压住消息/标题正文。
  */
 export default function CallSoundGuide() {
   const [dismissed, setDismissed] = useState(() => {
@@ -31,40 +39,33 @@ export default function CallSoundGuide() {
     setDismissed(true);
   };
 
-  const style = {
-    position: 'fixed',
-    // top:12 此前直接扣在顶栏（--header-h: 54px）范围内，压住会话头部的联系人名字。改成
-    // header-h+12 后又发现"动态"页有标题+子标签两层顶部区域（比单层顶栏更高，实测约
-    // 90-100px），同样的偏移量还是会压住"互动消息"标签文字。这是个全局挂载、跨任意页面
-    // 显示的一次性引导条，没有单一 CSS 选择器能覆盖所有页面各自不同高度的顶部结构，与其
-    // 逐页微调，不如统一让到一个能容纳"顶栏+两行标题"场景的安全值，牺牲部分页面下方多出
-    // 的空白换全页面不遮挡。
-    top: 100,
-    left: '50%',
-    transform: 'translateX(-50%)',
-    zIndex: 9999,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    // 窄屏(≤400px)下 fixed+shrink-to-fit 会把里面的文字挤得换行，胶囊被撑成三行，
-    // 比压住头部还难看；收紧内边距/间距/字号，文字整体不换行，宁可贴边也不折行。
-    padding: window.innerWidth <= 400 ? '6px 10px' : '8px 14px',
-    borderRadius: 999,
-    background: 'rgba(23,29,48,0.95)',
-    color: '#fff',
-    fontSize: window.innerWidth <= 400 ? 11 : 13,
-    boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
-    maxWidth: 'calc(100vw - 16px)',
-  };
-
   return (
-    <div style={style} role="status">
-      <span style={{ whiteSpace: 'nowrap' }}>🔔 开启来电铃声提醒</span>
+    <div
+      role="status"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        padding: '6px 10px',
+        paddingTop: 'calc(6px + env(safe-area-inset-top))', // 移动端避开刘海
+        background: 'rgba(23,29,48,0.95)',
+        color: '#fff',
+        fontSize: 12,
+        boxShadow: '0 1px 6px rgba(0,0,0,.25)',
+      }}
+    >
+      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🔔 开启来电铃声提醒</span>
       <button
         onClick={enable}
         style={{
-          border: 'none', borderRadius: 999, padding: window.innerWidth <= 400 ? '3px 10px' : '4px 14px',
-          background: '#4C8DFF', color: '#fff', fontSize: window.innerWidth <= 400 ? 11 : 13, cursor: 'pointer', whiteSpace: 'nowrap',
+          border: 'none', borderRadius: 999, padding: '3px 10px', flexShrink: 0,
+          background: '#4C8DFF', color: '#fff', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap',
         }}
       >
         开启
@@ -72,8 +73,8 @@ export default function CallSoundGuide() {
       <button
         onClick={later}
         style={{
-          border: 'none', borderRadius: 999, padding: window.innerWidth <= 400 ? '3px 6px' : '4px 10px',
-          background: 'transparent', color: 'rgba(255,255,255,0.6)', fontSize: window.innerWidth <= 400 ? 10 : 12, cursor: 'pointer', whiteSpace: 'nowrap',
+          border: 'none', borderRadius: 999, padding: '3px 8px', flexShrink: 0,
+          background: 'transparent', color: 'rgba(255,255,255,0.6)', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap',
         }}
       >
         暂不
