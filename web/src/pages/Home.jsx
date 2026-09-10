@@ -749,11 +749,9 @@ export default function Home() {
         {isElectron ? (
           <div className="wc-sidebar-logo" aria-hidden="true">
             <svg viewBox="0 0 100 100" fill="none">
-              <rect x="0" y="0" width="100" height="100" rx="22" fill="#000000"/>
-              <polygon points="14,80 28,80 12,96" fill="#000000"/>
-              <circle cx="12" cy="96" r="2" fill="#000000"/>
-              <circle cx="50" cy="46" r="30" fill="none" stroke="#FFD700" strokeWidth="2.5" opacity="0.85"/>
-              <polygon points="38.28,32.23 46.09,51.77 53.91,51.77 61.72,32.23 55.86,32.23 50,43.95 44.14,32.23" fill="#FFD700"/>
+              <rect x="0" y="0" width="100" height="100" rx="22" fill="#0A0A0A"/>
+              <path d="M 31.5 29.3 L 50 64.9 L 68.6 29.3" fill="none" stroke="#FFD700" strokeWidth="12.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="50" cy="69" r="5.9" fill="#FFD700"/>
             </svg>
           </div>
         ) : (

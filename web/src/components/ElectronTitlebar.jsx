@@ -68,15 +68,15 @@ export default function ElectronTitlebar() {
         display: 'flex', alignItems: 'center', gap: 6,
         flex: 1, paddingLeft: 10, minWidth: 0,
       }}>
-        {/* v信 品牌图标 — 黑金科技风：黑色圆角方形气泡 + 金色 V + 金色圆环，
-            与 EXE/Login/侧栏 Logo 同一套矢量图，2026-08-24 品牌系统接入。 */}
+        {/* v信 品牌图标 — 黑底 + 金色 V 形折线 + 尾点，与 brand/vxin/svg/icon-square.svg
+            同一套矢量图（2026-09-10 重绘，替换旧版科技轨道环+多边形拼接 V，见
+            docs/FIX_PROGRESS_20260909.md 批次6）。 */}
         <div style={{ width: 18, height: 18, flexShrink: 0, borderRadius: 4, overflow: 'hidden' }}>
-          <svg viewBox="0 0 100 100" fill="none" width="18" height="18">
-            <rect x="0" y="0" width="100" height="100" rx="22" fill="#000000"/>
-            <polygon points="14,80 28,80 12,96" fill="#000000"/>
-            <circle cx="12" cy="96" r="2" fill="#000000"/>
-            <circle cx="50" cy="46" r="30" fill="none" stroke="#FFD700" strokeWidth="2.5" opacity="0.85"/>
-            <polygon points="38.28,32.23 46.09,51.77 53.91,51.77 61.72,32.23 55.86,32.23 50,43.95 44.14,32.23" fill="#FFD700"/>
+          <svg viewBox="0 0 100 100" width="18" height="18">
+            <rect x="0" y="0" width="100" height="100" rx="22" fill="#0A0A0A"/>
+            <path d="M 31.5 29.3 L 50 64.9 L 68.6 29.3" fill="none" stroke="#FFD700"
+                  strokeWidth="12.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <circle cx="50" cy="69" r="5.9" fill="#FFD700"/>
           </svg>
         </div>
         <span style={{
