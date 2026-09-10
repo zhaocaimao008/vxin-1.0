@@ -111,3 +111,12 @@
 - **验证（RED→GREEN，非假设）**：新增 `test/push-account-switch-leak.test.js`，模拟账号 A 订阅 endpoint E → 账号 B 在同一 endpoint 订阅 → 断言 A 的订阅行必须被清除（Web Push + 原生 device token 各一个用例）。`git stash` 临时撤掉修复后两个用例均真实 FAIL（`Received: {"1":1}`，证明泄露复现），恢复修复后两个用例真实 PASS。随后跑全量 `npm test`（344+2 用例，`--forceExit --runInBand` 隔离测试库），全绿，无回归。
 
 状态：**已修复且已验证**
+
+### 批次 10（2026-09-10）— 真实 Bug：连续点开多条语音消息会叠音播放
+
+三.4 媒体链路排查发现：`VoicePlayer.jsx` 每条语音消息各自独立 `new Audio(url)`，彼此之间没有任何"播放中"状态协调——点开第一条语音在播时，再点第二条，两段声音会同时叠着响，不符合微信/Telegram 等主流 IM"新语音开始播放自动停掉上一条"的隐含预期。
+
+- **修复**：加一个模块级变量 `activeVoiceAudio` 记录当前播放中的 audio 元素；`onPlay` 时若存在别的正在播的 audio 先 `.pause()` 掉；`onPause`/`onEnded`/组件卸载时都同步清空引用，避免残留悬空引用误判。未引入 Context/全局状态库，改动量最小。
+- **验证（真实浏览器，非猜测）**：起隔离后端(127.0.0.1:3099)+web静态服务，用 `ffmpeg` 生成两段真实 3 秒 MP3，以真实用户身份通过 `/messages/:id/upload` 接口发两条真实语音消息，真实 Chromium 登录后在聊天窗口依次点击两个播放按钮，用按钮 `aria-label`（精确反映组件 `playing` state）判断实际播放态。**RED**（`git stash` 撤掉修复）：点第二条后两个按钮同时显示"暂停"（=同时在播，实锤叠音）。**GREEN**（恢复修复）：点第二条后只有它显示"暂停"，第一条自动变回"播放"（=已被停掉）。过程中额外发现并解决一个测试环境本身的限制：`<audio src>`/`<img src>` 标签发的是不带 `Authorization` 头的普通 GET，而本地隔离环境 web 静态服务与后端跨源导致 cookie 认证也传不过去——复用了 `e2e/playwright/global-setup.js` 里已有的解法（`/uploads` 请求由静态服务器代理到后端并注入 Bearer token），而不是重新发明一套。
+
+状态：**已修复且已验证**
