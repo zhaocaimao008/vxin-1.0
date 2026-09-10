@@ -102,7 +102,12 @@
 
 状态：**已修复且已验证** —`npm run build` 通过；`e2e/playwright/web`（隔离后端127.0.0.1:3099+独立测试库，非生产）61 用例：58 通过，3 个失败（`outbox.spec.js` OB-01/OB-02、`search.spec.js` SEARCH-01）；三个失败逐一单独重跑：OB-01/OB-02 是 `playwright.config.js` 里预先记录的已知结论（35 用例串行共享单后端时的时序抖动），SEARCH-01 单独重跑该文件 4/4 全绿——判定为同一类时序抖动而非本批改动引入的真实回归，不是"看起来没问题"的猜测，是有隔离重跑证据支撑的结论。grep 确认全部改动文件不再含旧字符/emoji。运行期间发现一个此前自己遗留的孤儿隔离测试后端进程（pid 1451718，占 CPU 18 分钟，与生产 `vxin-backend`(3002) 端口/数据库均隔离未产生数据交叉）已定位并 kill 清理，全程用 `/health`+`pm2 list` 反复确认生产未受影响。
 
-## 下一批计划
-- 继续账号安全/消息/好友群聊/媒体/通话六大类的逐链路 Bug 排查（三.4 媒体、三.5 通话、三.6 通知与生命周期尚未系统过一遍，批次3只覆盖了三.1-三.3 部分；批次3已确认账号安全/uploadAccess 相关代码已经历多轮加固，本轮快速抽查未发现新增疑点，不再对同一批文件重复分析）
-- `ChatWindowBoundary.jsx`/`ErrorBoundary.jsx` 的 ⚠️/😵 错误态 emoji、`MessageItem.jsx` 发送失败 ❗，评估是否也纳入统一图标（优先级低于上面的功能性 Bug）
-- iOS 原生代码仍受本机无 Xcode 限制，无法编译验证（沿用既往记忆中的环境限制结论）
+### 批次 9（2026-09-10）— 真实 P0 Bug：免密切换账号后，旧账号仍收到推到本设备的通知（跨账号内容泄露）
+
+三.6 通知链路排查，沿业务代码逐路径核查（非猜测）发现：
+
+- **问题**：`push_subscriptions`（Web Push）/`device_tokens`（FCM/APNs/个推）的唯一约束都是 `UNIQUE(user_id, endpoint/token)`。但一个浏览器 Service Worker 的 PushSubscription endpoint、或一部手机的 FCM/APNs token，物理上是"一台设备一份"，不是按账号区分的。Web（`AuthContext.switchAccount`）、Android（`SessionManager`）、iOS（`SessionStore`）都有"免密切换账号"（`switchAccount`，特意不走 `logout`，ACC-01 用例的产品语义就是"切换为新账号不被登出"），旧账号切走后从未主动删除自己在这台设备上的订阅/token 行。于是同一个物理 endpoint/token 会同时挂在新旧两个账号名下——`push.js` 的 `pushToUser` 给旧账号推消息时，依然会真实推到这台已经登录新账号的设备上，`detail_preview` 打开时推送里还带真实消息发件人/正文，是可复现的跨账号内容泄露，不是理论风险。
+- **修复**：`notifications.service.js` 的 `webSubscribe`/`saveDeviceToken` 写入前，先删除该 endpoint/token 上属于其它 `user_id` 的旧订阅行，保证一个物理端点任意时刻只归属当前登录账号。纯附加式修复，未改表结构/未做迁移，服务端自愈、不依赖任何客户端配合改动。
+- **验证（RED→GREEN，非假设）**：新增 `test/push-account-switch-leak.test.js`，模拟账号 A 订阅 endpoint E → 账号 B 在同一 endpoint 订阅 → 断言 A 的订阅行必须被清除（Web Push + 原生 device token 各一个用例）。`git stash` 临时撤掉修复后两个用例均真实 FAIL（`Received: {"1":1}`，证明泄露复现），恢复修复后两个用例真实 PASS。随后跑全量 `npm test`（344+2 用例，`--forceExit --runInBand` 隔离测试库），全绿，无回归。
+
+状态：**已修复且已验证**
