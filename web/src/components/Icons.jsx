@@ -14,6 +14,14 @@ export const IcoClose = ({ size = 18, ...rest }) => (
   <Svg size={size} {...rest}><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></Svg>
 );
 
+export const IcoUpload = ({ size = 18, ...rest }) => (
+  <Svg size={size} {...rest}><path d="M12 3l5 5-1.41 1.41L13 6.83V16h-2V6.83L8.41 9.41 7 8l5-5zM5 18h14v2H5z"/></Svg>
+);
+
+export const IcoEdit = ({ size = 16, ...rest }) => (
+  <Svg size={size} {...rest}><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></Svg>
+);
+
 export const IcoCamera = ({ off = false, size = 20, ...rest }) => off
   ? <Svg size={size} {...rest}><path d="M21 6.5l-4-4-1.5 1.5 4 4L21 6.5zm1.99 10.5L18 12.5l-4-4L2 2 .99 3.01 3 5H1v14h16v-2.01l2.99 3 .99-.99-2-2.01L22.99 17zM4 17V7h1l13 13H4zm11.5-5.5L14 10 9 5H21v11l-5.5-4.5z"/></Svg>
   : <Svg size={size} {...rest}><path d="M15 8v8H5V8h10m1-2H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4V7c0-.55-.45-1-1-1z"/></Svg>;

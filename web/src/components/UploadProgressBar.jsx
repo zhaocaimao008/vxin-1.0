@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { IcoErrorX } from './Icons';
+import { IcoErrorX, IcoUpload, IcoClose } from './Icons';
 
 /* ── 文件上传进度 / 失败重试条（从 ChatWindow 抽离）─────────────────
    纯展示子组件：由 uploadState 驱动（null | { name, progress, status,
@@ -18,7 +18,7 @@ function UploadProgressBar({ uploadState, onCancel }) {
     >
       {uploadState.status === 'uploading' ? (
         <>
-          <span className="wc-upload-icon wc-upload-icon-ok">📤</span>
+          <span className="wc-upload-icon wc-upload-icon-ok"><IcoUpload size={18} /></span>
           <div className="wc-upload-body">
             <div className="wc-upload-name">
               {uploadState.name} · {uploadState.progress}%
@@ -43,7 +43,7 @@ function UploadProgressBar({ uploadState, onCancel }) {
             className="wc-cancel-upload-btn"
             onClick={onCancel}
             aria-label="取消上传"
-          >✕</button>
+          ><IcoClose size={16} /></button>
         </>
       )}
     </div>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { showToast, showConfirm } from '../utils/toast';
 import { useConvSettings } from '../hooks/useConvSettings';
+import { IcoClose } from './Icons';
 
 const BURN_OPTIONS = [
   { value: 0,      label: '关闭' },
@@ -69,7 +70,7 @@ export default function PrivateChatSettings({ conversation, onClose, onConvUpdat
     <div className="wc-settings-panel">
       <div className="wc-settings-header">
         <span className="wc-settings-header-title">聊天设置</span>
-        <button className="wc-settings-close-btn" onClick={onClose} aria-label="关闭窗口">✕</button>
+        <button className="wc-settings-close-btn" onClick={onClose} aria-label="关闭窗口"><IcoClose size={16} /></button>
       </div>
       <div className="wc-settings-body">
         <div className="wc-settings-section-mt">

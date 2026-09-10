@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { IcoCelebrate, IcoCheckCircle, IcoWarn } from './Icons';
+import { IcoCelebrate, IcoCheckCircle, IcoWarn, IcoClose } from './Icons';
 
 /**
  * Windows/桌面端更新条。
@@ -64,7 +64,7 @@ export default function UpdateBanner() {
         <>
           <span className="wc-update-icon wc-spin">↻</span>
           <span className="wc-update-text">正在检查更新…</span>
-          <button className="wc-update-dismiss" onClick={handleDismiss} aria-label="关闭">✕</button>
+          <button className="wc-update-dismiss" onClick={handleDismiss} aria-label="关闭"><IcoClose size={16} /></button>
         </>
       )}
       {state === 'available' && (
@@ -74,7 +74,7 @@ export default function UpdateBanner() {
           <div className="wc-update-progress-wrap">
             <div className="wc-update-progress-bar" style={{ width: `${progress}%` }} />
           </div>
-          <button className="wc-update-dismiss" onClick={handleDismiss} aria-label="关闭">✕</button>
+          <button className="wc-update-dismiss" onClick={handleDismiss} aria-label="关闭"><IcoClose size={16} /></button>
         </>
       )}
       {state === 'downloading' && (
@@ -84,7 +84,7 @@ export default function UpdateBanner() {
           <div className="wc-update-progress-wrap">
             <div className="wc-update-progress-bar" style={{ width: `${progress}%` }} />
           </div>
-          <button className="wc-update-dismiss" onClick={handleDismiss} aria-label="后台下载">✕</button>
+          <button className="wc-update-dismiss" onClick={handleDismiss} aria-label="后台下载"><IcoClose size={16} /></button>
         </>
       )}
       {state === 'ready' && (
@@ -100,7 +100,7 @@ export default function UpdateBanner() {
           <span className="wc-update-icon"><IcoWarn size={17} /></span>
           <span className="wc-update-text">{errMsg || '更新检查失败'}</span>
           <button className="wc-update-install-btn" onClick={handleCheck}>重试</button>
-          <button className="wc-update-dismiss" onClick={handleDismiss} aria-label="关闭">✕</button>
+          <button className="wc-update-dismiss" onClick={handleDismiss} aria-label="关闭"><IcoClose size={16} /></button>
         </>
       )}
     </div>

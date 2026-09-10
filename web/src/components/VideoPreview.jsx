@@ -1,6 +1,7 @@
 import React, { useEffect, useCallback } from 'react';
 import { downloadFile } from '../utils/download';
 import { shareMessage, canShare } from '../utils/share';
+import { IcoClose } from './Icons';
 
 // 从(可能带 ?token= / #t= 的)视频地址里抽一个像样的下载文件名
 function filenameFromUrl(u) {
@@ -119,7 +120,7 @@ export default function VideoPreview({ url, name, onClose }) {
         }}
         aria-label="关闭"
       >
-        ✕
+        <IcoClose size={20} />
       </button>
     </div>
   );

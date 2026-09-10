@@ -6,7 +6,7 @@ import { mediaUrl } from '../utils/url';
 import { showToast, showConfirm } from '../utils/toast';
 import { useConvSettings } from '../hooks/useConvSettings';
 import { GroupAvatar } from './GroupAvatar';
-import { IcoClose } from './Icons';
+import { IcoClose, IcoEdit } from './Icons';
 export { GroupAvatar } from './GroupAvatar'; // re-export 向后兼容
 
 /* ── 群头像上传（管理员 hover 显示相机图标） ── */
@@ -477,7 +477,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
             ) : (
               <div className="gi-name-row">
                 <span className="gi-name">{info.name}</span>
-                {isAdmin && <button className="gi-btn-name" onClick={() => setEditName(true)} aria-label="修改群名称">✎</button>}
+                {isAdmin && <button className="gi-btn-name" onClick={() => setEditName(true)} aria-label="修改群名称"><IcoEdit size={14} /></button>}
               </div>
             )}
             <div className="gi-meta">

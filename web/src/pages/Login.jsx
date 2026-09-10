@@ -11,6 +11,7 @@ import {
   lastRememberedUsername,
 } from '../utils/rememberedCreds';
 import { isDeprecatedServerUrl } from '../utils/url';
+import { IcoClose } from '../components/Icons';
 import '../styles/login.css';
 
 const isElectron = !!window.__ELECTRON_CONFIG__;
@@ -207,7 +208,7 @@ export default function Login() {
                   onClick={() => { removeRememberedUsername(account.user?.phone || ''); removeAccount(account.id); }}
                   title="移除记录"
                   aria-label="移除记录"
-                >✕</button>
+                ><IcoClose size={14} /></button>
               </div>
             ))}
           </div>

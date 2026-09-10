@@ -5,6 +5,7 @@ import axios from 'axios';
 import Avatar from './Avatar';
 import { mediaUrl } from '../utils/url';
 import { showToast } from '../utils/toast';
+import { IcoClose } from './Icons';
 
 /**
  * 「扫一扫」入群：登录后主动扫群二维码。
@@ -130,7 +131,7 @@ export default function ScanQR({ onClose }) {
         onClick={e => e.stopPropagation()}>
         <div className="wc-modal-header">
           <span className="wc-modal-title">扫一扫</span>
-          <button className="wc-modal-close" onClick={() => onClose()} aria-label="关闭">✕</button>
+          <button className="wc-modal-close" onClick={() => onClose()} aria-label="关闭"><IcoClose size={18} /></button>
         </div>
 
         {phase === 'scanning' && (
