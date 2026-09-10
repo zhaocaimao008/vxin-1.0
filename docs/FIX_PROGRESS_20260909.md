@@ -91,8 +91,18 @@
 - 状态：**已修复且已验证** —`npm run build`(web) 通过；`./gradlew --no-daemon :app:compileDebugKotlin` BUILD SUCCESSFUL 且 `processDebugResources`/`mergeDebugResources` 非 UP-TO-DATE 实际重跑（证明新 PNG 被 AAPT 正常处理）；全部 PNG 用 `identify` 核实尺寸；ImageMagick 栅格化 16/18/32px 预览人工核实小尺寸清晰度。iOS 编译验证、Windows 真机渲染验证仍受本机无 Xcode / Electron 沙箱限制（既有环境限制，非本批新增）。
 - 遗留：`ScanQR.jsx`/`ElectronTitlebar.jsx` 当初"无需改动"结论对 ElectronTitlebar 部分已被本批次的 Logo 重绘覆盖更新，不再是遗留项
 
+### 批次 8（2026-09-10）— 应用内功能图标统一 + 真实 Bug：资料页"在线"绿点在离线时也常亮
+
+**功能图标统一**：`Icons.jsx` 里已有 `IcoClose` 且已被 10 个文件复用，但仍有 8 处散落的裸字符"✕"关闭按钮没跟上，另有 1 处 emoji（上传中📤）、1 处裸字符编辑图标（✎）未纳入统一组件：
+- 裸"✕"→`<IcoClose/>`：`PrivateChatSettings.jsx`、`ScanQR.jsx`、`VideoPreview.jsx`、`UpdateBanner.jsx`(4处)、`UploadProgressBar.jsx`、`Login.jsx`(移除记录按钮)
+- 新增 `IcoUpload`/`IcoEdit` 到 `Icons.jsx`（同源 24-viewBox、currentColor 继承风格），替换 `UploadProgressBar.jsx` 的 📤 emoji 和 `GroupInfo.jsx` 的 ✎ 编辑群名按钮
+- 未动：`ChatWindow.jsx` 的 REACTIONS 表情回应数组、`Moments.jsx` 的 `<option>` 可见范围 emoji（原生 select 无法渲染 SVG，emoji 是该场景标准做法）——判断为合理使用，非需要统一的"图标"
+
+**真实 Bug（顺带发现，非凭空猜测）**：`UserProfile.jsx` 特权账户可见的"最后在线时间"一行，🟢 绿点和文字颜色（`--green`）**无条件常亮**，不管 `formatLastOnline()` 返回的到底是"当前在线"还是"3 分钟前在线"/"昨天 14:23"这类离线时间戳（`utils/time.js:62-78` 确认后者只在 `isOnline===false` 时才会走到）。复现条件：以特权账户查看一个当前离线用户的资料页，只要其 `last_online_at` 有值——会看到绿色在线圆点+绿色文字挂在"昨天 14:23"这种离线描述旁边，误导管理员以为对方在线。修复：圆点/文字颜色按 `user.status === 'online'` 条件切换（在线绿、离线 `--text-tertiary` 中性灰），emoji 圆点改成 CSS `.up-status-dot`（emoji 圆点在不同 OS/字体下大小颜色不一致，不如实心 CSS 圆点可靠）。
+
+状态：**已修复且已验证** —`npm run build` 通过；`e2e/playwright/web`（隔离后端127.0.0.1:3099+独立测试库，非生产）61 用例：58 通过，3 个失败（`outbox.spec.js` OB-01/OB-02、`search.spec.js` SEARCH-01）；三个失败逐一单独重跑：OB-01/OB-02 是 `playwright.config.js` 里预先记录的已知结论（35 用例串行共享单后端时的时序抖动），SEARCH-01 单独重跑该文件 4/4 全绿——判定为同一类时序抖动而非本批改动引入的真实回归，不是"看起来没问题"的猜测，是有隔离重跑证据支撑的结论。grep 确认全部改动文件不再含旧字符/emoji。运行期间发现一个此前自己遗留的孤儿隔离测试后端进程（pid 1451718，占 CPU 18 分钟，与生产 `vxin-backend`(3002) 端口/数据库均隔离未产生数据交叉）已定位并 kill 清理，全程用 `/health`+`pm2 list` 反复确认生产未受影响。
+
 ## 下一批计划
-- 批次6"已修改但待验证"项（ContactList 空态图标深色模式）+ 本批次图标视觉效果，一并找一次能跑通的真实浏览器 e2e 环境截图确认（此前两次隔离环境脚本因未知原因卡在登录流程，已放弃在单次任务上过度重试，留给下次批次一起处理，会先排查是不是隔离后端/前端启动时序本身的问题而不是重复相同命令）
-- 应用内功能图标（导航/发送/语音/更多等）统一梳理与图标组件化——本轮"App 主图标"已完成，"应用内功能图标统一"（五.2）尚未开始
-- 继续账号安全/消息/好友群聊/媒体/通话六大类的逐链路 Bug 排查（三.4 媒体、三.5 通话、三.6 通知与生命周期尚未系统过一遍，批次3只覆盖了三.1-三.3 部分）
+- 继续账号安全/消息/好友群聊/媒体/通话六大类的逐链路 Bug 排查（三.4 媒体、三.5 通话、三.6 通知与生命周期尚未系统过一遍，批次3只覆盖了三.1-三.3 部分；批次3已确认账号安全/uploadAccess 相关代码已经历多轮加固，本轮快速抽查未发现新增疑点，不再对同一批文件重复分析）
+- `ChatWindowBoundary.jsx`/`ErrorBoundary.jsx` 的 ⚠️/😵 错误态 emoji、`MessageItem.jsx` 发送失败 ❗，评估是否也纳入统一图标（优先级低于上面的功能性 Bug）
 - iOS 原生代码仍受本机无 Xcode 限制，无法编译验证（沿用既往记忆中的环境限制结论）
