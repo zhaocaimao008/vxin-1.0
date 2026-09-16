@@ -1,0 +1,25 @@
+name: Repair private media routing
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  configure:
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, linux, x64, vxin-prod-deploy]
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify backend serves the existing upload directory
+        run: |
+          cd /root/vxin-1.0/backend-v2
+          node <<'NODE'
+          const fs = require('fs');
+          const config = require('./src/config');
+          const backend = fs.realpathSync(config.uploadsRoot);
+          const nginx = fs.realpathSync('/var/www/vxin-uploads');
+          if (backend !== nginx) throw Error('Upload storage differs; refusing to change routing');
+          console.log('Backend and Nginx share the same existing uploads directory');
+          NODE
+      - name: Validate, reload and check anonymous access (restore config on failure)
+        run: python3 deploy/configure-nginx-uploads.py /etc/nginx/conf.d/dipsin.conf --apply

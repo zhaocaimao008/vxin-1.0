@@ -12,6 +12,11 @@ name: Windows Desktop Build
 # self-hosted runner 带来的任意代码执行风险。
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: '构建并发布 main 的当前版本（用于重试发布）'
+        type: boolean
+        default: false
   push:
     tags:
       # 仅桌面端专属前缀触发；避免裸 v* 同时误触发 Android/iOS 发布（详见 VERSIONING.md）。
@@ -72,7 +77,7 @@ jobs:
     needs: build
     # 只在打了 desktop-v* tag 时真正发布；workflow_dispatch 手动跑仅用于
     # build 联调，不落地到生产目录，避免任意分支手动触发就覆盖线上产物。
-    if: startsWith(github.ref, 'refs/tags/desktop-v')
+    if: startsWith(github.ref, 'refs/tags/desktop-v') || (github.ref == 'refs/heads/main' && inputs.publish)
     runs-on: [self-hosted, linux, x64, vxin-prod-deploy]
     environment: production
     permissions:
@@ -82,17 +87,20 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: vxin-windows-setup
-          path: artifacts
+          path: ${{ runner.temp }}/vxin-windows-${{ github.run_id }}/artifacts
 
       - name: 校验 + 原子发布到 /var/www/vxin-download
         shell: bash
+        working-directory: ${{ runner.temp }}/vxin-windows-${{ github.run_id }}
         run: |
           set -euo pipefail
 
           TARGET=/var/www/vxin-download
-          EXE=$(find artifacts -maxdepth 1 -name "*.exe" | head -1)
           YML="artifacts/latest.yml"
-          BLOCKMAP=$(find artifacts -maxdepth 1 -name "*.blockmap" | head -1)
+          EXE_PATH=$(sed -n 's/^path: //p' "$YML" | tr -d '\r')
+          [[ "$EXE_PATH" =~ ^vxin-[0-9]+\.[0-9]+\.[0-9]+-setup\.exe$ ]]
+          EXE="artifacts/$EXE_PATH"
+          BLOCKMAP="$EXE.blockmap"
 
           if [ -z "$EXE" ] || [ ! -f "$YML" ] || [ -z "$BLOCKMAP" ]; then
             echo "❌ 构建产物不全（EXE/latest.yml/blockmap 缺失），拒绝发布"; exit 1
@@ -194,7 +202,7 @@ jobs:
 
   mac-build:
     name: macOS package verification (unsigned)
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && !inputs.publish
     runs-on: macos-15
     timeout-minutes: 30
     steps:

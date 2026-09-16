@@ -85,9 +85,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: vxin-release-apk
-          path: artifacts
+          path: ${{ runner.temp }}/vxin-android-${{ github.run_id }}/artifacts
       - name: Publish verified signed APK and update manifest
         shell: bash
+        working-directory: ${{ runner.temp }}/vxin-android-${{ github.run_id }}
         run: |
           set -euo pipefail
           TARGET=/var/www/vxin-download
