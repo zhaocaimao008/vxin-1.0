@@ -3,6 +3,10 @@ name: iOS TestFlight
 on:
   workflow_dispatch:
     inputs:
+      signing_check_only:
+        description: '仅诊断证书有效期与 Apple API 权限，不上传'
+        type: boolean
+        default: false
       version:
         description: '版本号 (如 1.0.1)'
         required: false
@@ -20,6 +24,7 @@ on:
 
 jobs:
   testflight:
+    if: ${{ !inputs.signing_check_only }}
     # Apple 自 2026-04 起要求用 iOS 26 SDK(Xcode 26)构建才能上传 App Store。
     # macos-15 仅带 Xcode 16(iOS 18 SDK)，会在上传校验时 409。改用 macos-26。
     runs-on: macos-26
@@ -217,3 +222,22 @@ jobs:
           eval "$(python3 scripts/tf-config-to-env.py)"
           # 轮询等待最新构建变 VALID（最多 ~18 分钟）
           python3 scripts/ios-testflight-submit.py
+
+  signing-diagnostics:
+    if: inputs.signing_check_only
+    runs-on: macos-26
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pyjwt cryptography
+      - name: Inspect certificate and API access (no private key output)
+        env:
+          IOS_CERTIFICATE_P12_BASE64: ${{ secrets.IOS_CERTIFICATE_P12_BASE64 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
+        run: python3 scripts/ios-signing-status.py

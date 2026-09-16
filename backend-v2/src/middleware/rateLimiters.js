@@ -57,8 +57,9 @@ const base = { standardHeaders: true, legacyHeaders: false };
 // 登录：5 次失败 → 10 分钟锁定（支持手机号/v信号两种登录方式，限流等级不变）
 const loginLimiter = rateLimit({
   ...base, windowMs: 10 * 60 * 1000, max: 5,
+  skipSuccessfulRequests: true,
   store: makeStore('login'),
-  keyGenerator: (req) => req.body?.identifier || req.body?.phone || ipKeyGenerator(req.ip),
+  keyGenerator: (req) => req.body?.identifier || req.body?.phone || req.body?.wechat_id || ipKeyGenerator(req.ip),
   handler: (req, res) => res.status(429).json(json('登录尝试过于频繁，账户已锁定10分钟')),
   message: json('登录尝试过于频繁，请10分钟后再试'),
 });
