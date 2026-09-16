@@ -3,7 +3,7 @@
 # v信 一键回滚脚本
 #
 # 用法:
-#   bash deploy/rollback.sh           # 回滚到上一个 commit（最常用）
+#   bash deploy/rollback.sh           # 回滚到上次成功发布前的版本（含前端与依赖）
 #   bash deploy/rollback.sh <hash>    # 回滚到指定 commit
 #   bash deploy/rollback.sh --db <backup.db.gz>  # 从备份恢复 DB
 # ─────────────────────────────────────────────────────────────────────────────
@@ -17,7 +17,7 @@ step() { echo -e "\n${YEL}── $* ──${NC}"; }
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 BE="$ROOT/backend-v2"
-PM2_APP="vxin-server-v2"
+PM2_APP="${PM2_APP:-vxin-backend}"
 MODE=""
 TARGET=""
 DB_BACKUP=""
@@ -31,7 +31,7 @@ case "${1:-}" in
     ;;
   "")
     MODE="code"
-    TARGET="HEAD~1"
+    TARGET=$(cat "${STATE_ROOT:-/var/lib/vxin-releases}/previous.sha") || die "没有上次成功发布记录，请指定 commit"
     ;;
   --*)
     die "未知选项: $1\n用法: bash rollback.sh [<commit_hash>] [--db <backup.db.gz>]"
@@ -59,40 +59,9 @@ check_health() {
 # ════════════════════════════════════════════════════════════════════
 if [[ "$MODE" == "code" ]]; then
 # ── 代码回滚 ───────────────────────────────────────────────────────
-  step "当前版本"
-  CURRENT=$(git -C "$ROOT" rev-parse --short HEAD)
-  CURRENT_MSG=$(git -C "$ROOT" log -1 --format="%s")
-  warn "当前: $CURRENT $CURRENT_MSG"
-
-  step "目标版本"
-  TARGET_HASH=$(git -C "$ROOT" rev-parse --short "$TARGET" 2>/dev/null) || \
-    die "找不到 commit: $TARGET"
-  TARGET_MSG=$(git -C "$ROOT" log -1 --format="%s" "$TARGET_HASH")
-  warn "目标: $TARGET_HASH $TARGET_MSG"
-
-  echo ""
-  read -rp "确认回滚到 $TARGET_HASH ? [y/N] " confirm
-  [[ "$confirm" =~ ^[yY]$ ]] || { warn "取消"; exit 0; }
-
-  step "切换代码"
-  git -C "$ROOT" checkout "$TARGET_HASH" -- backend-v2/src backend-v2/package.json
-
-  step "安装依赖（如有变化）"
-  cd "$BE" && npm ci --production --quiet
-
-  step "重启后端"
-  pm2 restart "$PM2_APP" 2>/dev/null || pm2 start "$BE/src/server.js" --name "$PM2_APP"
-
-  step "验证健康"
-  sleep 2
-  if check_health; then
-    ok "回滚成功 → $TARGET_HASH $TARGET_MSG"
-    echo ""
-    echo -e "${GRN}  如需固化回滚，请 git revert 并 push:${NC}"
-    echo "    git revert HEAD --no-edit && git push origin main"
-  else
-    die "健康检查失败！后端未正常启动，查看: pm2 logs $PM2_APP --lines 50"
-  fi
+  # Rebuild the exact target lockfile, then publish backend + Web together.
+  # release.sh preserves the current installation if the rollback target fails.
+  exec bash "$SCRIPT_DIR/release.sh" "$TARGET"
 
 # ════════════════════════════════════════════════════════════════════
 elif [[ "$MODE" == "db" ]]; then
@@ -104,7 +73,7 @@ elif [[ "$MODE" == "db" ]]; then
 
   step "备份当前 DB（安全）"
   SAFETY="$DB_PATH.rollback-$(date +%Y%m%d_%H%M%S)"
-  cp "$DB_PATH" "$SAFETY"
+  sqlite3 "$DB_PATH" ".backup '$SAFETY'"
   ok "当前 DB 已备份: $SAFETY"
 
   step "解压并恢复 DB"
@@ -128,7 +97,7 @@ elif [[ "$MODE" == "db" ]]; then
   else
     warn "健康检查失败，尝试恢复安全备份..."
     pm2 stop "$PM2_APP"
-    cp "$SAFETY" "$DB_PATH"
+    sqlite3 "$SAFETY" ".backup '$DB_PATH'"
     pm2 start "$PM2_APP"
     die "DB 恢复失败。已还原到 $SAFETY，请人工检查"
   fi

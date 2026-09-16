@@ -11,14 +11,51 @@ on:
       - 'web/index.html'
       - 'web/vite.config.js'
       - 'web/package.json'
+      - 'web/package-lock.json'
+      - 'deploy/release.sh'
       - '.github/workflows/deploy.yml'
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
+    inputs:
+      check_only:
+        type: boolean
+        default: false
+        description: '仅检查生产环境，不发布' 
 
 permissions:
   contents: read
 
+concurrency:
+  group: production-release
+  cancel-in-progress: false
+
 jobs:
+  readiness:
+    if: github.event_name == 'workflow_dispatch' && inputs.check_only
+    runs-on: [self-hosted, linux, x64, vxin-prod-deploy]
+    timeout-minutes: 5
+    steps:
+      - name: Inspect current installation without exposing credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          REPO=/root/vxin-1.0
+          git -C "$REPO" rev-parse HEAD
+          git -C "$REPO" status --short
+          df -h "$REPO" /var/www/vxin-web/app
+          node --version
+          test -s /var/www/vxin-web/app/index.html
+          pm2 jlist | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.stringify(JSON.parse(s).map(p=>({name:p.name,status:p.pm2_env.status,cwd:p.pm2_env.pm_cwd,script:p.pm2_env.pm_exec_path})))));'
+          curl --fail --silent --max-time 10 http://127.0.0.1:3002/health
+          cd "$REPO/backend-v2"
+          node <<'NODE'
+          const fs = require('fs');
+          const env = require('dotenv').parse(fs.readFileSync('.env'));
+          const fields = ['JWT_SECRET','ADMIN_JWT_SECRET','TURN_SECRET','TURN_URLS','VAPID_PUBLIC_KEY','VAPID_PRIVATE_KEY','FIREBASE_SERVICE_ACCOUNT','APNS_KEY_PATH','GETUI_APP_ID','GETUI_APP_KEY','GETUI_APP_SECRET','ASR_URL','SERVICE_TOKEN','S3_BUCKET','S3_ACCESS_KEY_ID','S3_SECRET_ACCESS_KEY','SMS_ACCESS_KEY_ID'];
+          console.log(JSON.stringify(Object.fromEntries(fields.map(k => [k, !!env[k]]))));
+          NODE
+
   test:
+    if: ${{ !inputs.check_only }}
     name: 冒烟检查
     runs-on: ubuntu-latest
 
@@ -52,6 +89,7 @@ jobs:
 
   # ── 部署闸门（除冒烟外，追加真实门禁，任一红则不部署）──
   backend-jest:
+    if: ${{ !inputs.check_only }}
     name: 后端 Jest + 覆盖率下限
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -79,6 +117,7 @@ jobs:
         run: npm run test:coverage
 
   web-gate:
+    if: ${{ !inputs.check_only }}
     name: Web Lint + Capacitor 版本守护
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -106,57 +145,20 @@ jobs:
     name: 部署到日本服务器（本地 self-hosted runner）
     needs: [test, backend-jest, web-gate]
     # 只部署 main 分支的 push / 手动 dispatch，避免任意分支手动触发覆盖线上
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && !inputs.check_only
     runs-on: [self-hosted, linux, x64, vxin-prod-deploy]
     timeout-minutes: 30
     steps:
-      - name: 部署到 /root/vxin-1.0（代码 + web + 后端 + pm2 重启）
+      - uses: actions/checkout@v4
+      - name: 隔离构建、发布与完整失败回滚
         shell: bash
+        env:
+          REPO_DIR: /root/vxin-1.0
+          WEB_ROOT: /var/www/vxin-web/app
+          STATE_ROOT: /var/lib/vxin-releases
+          PM2_APP: vxin-backend
+          HEALTH_URL: http://127.0.0.1:3002/health
         run: |
           set -euo pipefail
-          REPO=/root/vxin-1.0
-          echo "📋 V信部署到日本 $(date) | sha=$GITHUB_SHA"
-          PREV_SHA="$(git -C "$REPO" rev-parse HEAD 2>/dev/null || echo '')"
-
-          echo "📥 拉取代码"
-          git -C "$REPO" fetch origin main
-          git -C "$REPO" reset --hard "$GITHUB_SHA"
-
-          echo "🌐 构建 Web 前端并发布到 /var/www/vxin-web/app"
-          cd "$REPO/web"
-          npm ci --legacy-peer-deps
-          npm run build
-          rsync -a --delete dist/ /var/www/vxin-web/app/
-          echo "✅ Web 已发布"
-
-          echo "📦 安装后端生产依赖"
-          cd "$REPO/backend-v2"
-          npm ci --omit=dev
-
-          echo "🚀 重启应用（pm2: vxin-backend）"
-          pm2 delete vxin-server-v2 2>/dev/null || true
-          pm2 restart vxin-backend --update-env || PORT=3002 pm2 start src/server.js --name vxin-backend
-          pm2 save || true
-
-          echo "🔄 Reload nginx"
-          nginx -s reload 2>/dev/null || true
-
-          echo "✅ 健康检查"
-          sleep 5
-          HEALTH_OK=0
-          for i in $(seq 1 20); do
-            if curl -s -m 3 http://127.0.0.1:3002/health | grep -q '"ok":true'; then
-              echo "✅ 健康检查通过"; HEALTH_OK=1; break
-            fi
-            echo "等待启动... ($i/20)"; sleep 2
-          done
-
-          if [ "$HEALTH_OK" != "1" ]; then
-            echo "❌ 新版本健康检查失败，自动回滚到 $PREV_SHA"
-            git -C "$REPO" reset --hard "$PREV_SHA"
-            cd "$REPO/backend-v2"
-            pm2 restart vxin-backend --update-env || true
-            echo "🚨 回滚执行完毕，需人工检查 pm2 logs vxin-backend"
-            exit 1
-          fi
-          echo "🎉 部署完成 $(date)"
+          git -C "$REPO_DIR" fetch origin main
+          bash deploy/release.sh "$GITHUB_SHA"
