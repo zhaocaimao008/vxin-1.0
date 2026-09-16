@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useI18n, SUPPORTED_LANGS } from '../contexts/I18nContext';
-import { timeoutSignal } from '../utils/config';
+import { normalizeServerUrl, testServerConnection } from '../utils/config';
 import {
   saveRememberedUsername,
   isUsernameRemembered,
@@ -12,6 +12,8 @@ import {
 } from '../utils/rememberedCreds';
 import { isDeprecatedServerUrl } from '../utils/url';
 import { IcoClose } from '../components/Icons';
+import AuthDocuments from '../components/AuthDocuments';
+import { DOWNLOAD_FALLBACK, loadDownloadLinks } from '../utils/downloadLinks';
 import '../styles/login.css';
 
 const isElectron = !!window.__ELECTRON_CONFIG__;
@@ -28,9 +30,14 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
   const [showPwd, setShowPwd] = useState(false);
-  // 《用户协议》《隐私政策》暂无落地页，链接点击不跳转（与 Register 现状一致）；
-  // 勾选框本身是真实交互状态，未勾选禁止提交。
   const [agreed, setAgreed] = useState(false);
+  const [downloads, setDownloads] = useState({ windows: DOWNLOAD_FALLBACK, android: DOWNLOAD_FALLBACK });
+  useEffect(() => {
+    if (isElectron) return;
+    let active = true;
+    loadDownloadLinks(window.location.origin).then(links => { if (active) setDownloads(links); });
+    return () => { active = false; };
+  }, []);
   const identifierOk = loginMode === 'phone' ? phone : vxinId;
   const { login, accounts, removeAccount, maxAccounts } = useAuth();
   const { lang, setLang } = useI18n();
@@ -57,25 +64,25 @@ export default function Login() {
   const [serverInput, setServerInput] = useState(currentServer);
   const [serverTest, setServerTest] = useState(null);
   const [serverBusy, setServerBusy] = useState(false);
+  const serverCheck = useRef(0);
 
   const testServer = async () => {
-    const url = serverInput.trim().replace(/\/$/, '');
-    if (!url.startsWith('http')) { setServerTest({ ok: false, msg: '请以 http:// 或 https:// 开头' }); return; }
+    const attempt = ++serverCheck.current;
     setServerBusy(true); setServerTest(null);
-    try {
-      await fetch(`${url}/health`, { signal: timeoutSignal(6000) });
-      setServerTest({ ok: true, msg: '连接成功 ✓' });
-    } catch {
-      setServerTest({ ok: false, msg: '无法连接到该服务器，请检查地址' });
-    } finally { setServerBusy(false); }
+    const result = await testServerConnection(serverInput);
+    if (attempt !== serverCheck.current) return;
+    setServerTest(result);
+    setServerBusy(false);
   };
 
-  const saveServer = () => {
-    const url = serverInput.trim().replace(/\/$/, '');
-    if (!url.startsWith('http')) { setServerTest({ ok: false, msg: '请以 http:// 或 https:// 开头' }); return; }
+  const saveServer = async () => {
+    const url = normalizeServerUrl(serverInput);
+    if (!url) { setServerTest({ ok: false, msg: '请输入有效的 http:// 或 https:// 服务器地址' }); return; }
     if (isDeprecatedServerUrl(url)) { setServerTest({ ok: false, msg: '该地址已废弃，请使用正式服务器 https://vxinchat.com' }); return; }
+    try {
+      if (isElectron && !await window.electronAPI?.setServerUrl?.(url)) return;
+    } catch { setServerTest({ ok: false, msg: '未能保存服务器地址，请重试' }); return; }
     localStorage.setItem('vxin_server_url', url);
-    window.electronAPI?.setServerUrl?.(url);
     axios.defaults.baseURL = url;
     window.location.reload();
   };
@@ -342,20 +349,17 @@ export default function Login() {
           还没有账号？<Link to="/register" className="auth-link">立即注册</Link>
         </p>
 
-        {/* 用户协议：真实勾选状态，未勾选禁止提交；协议/隐私政策暂无落地页，链接点击不跳转
-            位置对齐参考图（图标参考同目录 Web登录页面-ref.png）：协议行在"立即注册"下方 */}
+        {/* 文档在对话框中打开，保留尚未提交的账号和密码输入。 */}
         <div className="auth-agreement-row">
           <input
             type="checkbox"
             className="auth-agreement-box"
             data-testid="login-agreement-checkbox"
+            aria-label="同意用户协议和隐私政策"
             checked={agreed}
             onChange={e => setAgreed(e.target.checked)}
           />
-          <p className="auth-agreement">
-            我已阅读并同意 <a href="#" onClick={e => e.preventDefault()}>《用户协议》</a> 和{' '}
-            <a href="#" onClick={e => e.preventDefault()}>《隐私政策》</a>
-          </p>
+          <div className="auth-agreement">我已阅读并同意 <AuthDocuments /></div>
         </div>
 
         {/* 下载客户端 — 仅网页端显示，桌面端本身就是客户端不需要 */}
@@ -363,13 +367,13 @@ export default function Login() {
           <div className="auth-download">
             <p className="auth-download-label">下载客户端</p>
             <div className="auth-download-row">
-              <a href="/downloads/vxin-windows-latest.exe" download className="auth-download-btn">
+              <a href={downloads.windows} download={downloads.windows !== DOWNLOAD_FALLBACK} className="auth-download-btn">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
                   <path d="M3 5.48l7.2-.98v6.96H3V5.48zm0 13.04l7.2.98v-6.86H3v5.88zm8.04 1.09L21 21V12.6h-9.96v6.0zM11.04 3L21 3.6V11.4h-9.96V3z"/>
                 </svg>
                 Windows 版
               </a>
-              <a href="/downloads/vxin-android-latest.apk" download className="auth-download-btn">
+              <a href={downloads.android} download={downloads.android !== DOWNLOAD_FALLBACK} className="auth-download-btn">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
                   <path d="M17.6 9.48l1.84-3.18a.39.39 0 00-.14-.53.39.39 0 00-.53.14l-1.86 3.22a11.46 11.46 0 00-9.82 0L5.23 5.91a.39.39 0 00-.53-.14.39.39 0 00-.14.53L6.4 9.48A10.78 10.78 0 001 18h22a10.78 10.78 0 00-5.4-8.52zM7 15.25a1.25 1.25 0 110-2.5 1.25 1.25 0 010 2.5zm10 0a1.25 1.25 0 110-2.5 1.25 1.25 0 010 2.5z"/>
                 </svg>
@@ -396,7 +400,7 @@ export default function Login() {
                   className="auth-server-input"
                   aria-label="服务器地址"
                   value={serverInput}
-                  onChange={e => { setServerInput(e.target.value); setServerTest(null); }}
+                  onChange={e => { ++serverCheck.current; setServerInput(e.target.value); setServerTest(null); setServerBusy(false); }}
                   placeholder="https://example.com"
                   autoCapitalize="none"
                   spellCheck={false}
@@ -412,7 +416,7 @@ export default function Login() {
                   </button>
                   <button type="button" onClick={saveServer} className="auth-server-btn primary">保存并切换</button>
                 </div>
-                <button type="button" className="auth-server-cancel" onClick={() => { setShowServer(false); setServerInput(currentServer); setServerTest(null); }}>取消</button>
+                <button type="button" className="auth-server-cancel" onClick={() => { ++serverCheck.current; setServerBusy(false); setShowServer(false); setServerInput(currentServer); setServerTest(null); }}>取消</button>
               </div>
             )}
           </div>
@@ -423,9 +427,7 @@ export default function Login() {
       {!isElectron && (
         <div className="auth-page-footer">
           © {new Date().getFullYear()} v信. 保留所有权利。{' '}
-          <a href="#" onClick={e => e.preventDefault()}>用户协议</a>{' | '}
-          <a href="#" onClick={e => e.preventDefault()}>隐私政策</a>{' | '}
-          <a href="#" onClick={e => e.preventDefault()}>帮助中心</a>
+          <AuthDocuments footer />
         </div>
       )}
     </div>

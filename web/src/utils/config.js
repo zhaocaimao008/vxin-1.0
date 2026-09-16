@@ -141,10 +141,21 @@ export function isConfigLoaded() {
 /**
  * 测试连接（供运行时切换服务器 UI 使用）
  */
-export async function testServerConnection(url) {
-  if (!url || !url.startsWith('http')) return { ok: false, msg: '格式错误' };
+export function normalizeServerUrl(value) {
   try {
-    const res = await fetch(`${url.replace(/\/$/, '')}/health`, { signal: timeoutSignal(6000) });
+    if (typeof value !== 'string' || !/^https?:\/\//i.test(value.trim())) return null;
+    const url = new URL(value.trim());
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) return null;
+    return url.href.replace(/\/+$/, '');
+  } catch { return null; }
+}
+
+export async function testServerConnection(url) {
+  const clean = normalizeServerUrl(url);
+  if (!clean) return { ok: false, msg: '请输入有效的 http:// 或 https:// 服务器地址' };
+  try {
+    if (window.__ELECTRON_CONFIG__ && window.electronAPI?.testServerUrl) return await window.electronAPI.testServerUrl(clean);
+    const res = await fetch(`${clean}/health`, { signal: timeoutSignal(6000) });
     if (res.ok) {
       const data = await res.json();
       if (data?.ok === true && data?.db === 'ok') return { ok: true, msg: '连接成功 ✓' };

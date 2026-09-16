@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { fetchBuffer } = require('./fetchBuffer');
+const { probeServer } = require('./probeServer');
 const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
 const Store = require('electron-store');
@@ -190,7 +191,7 @@ function isSafeReadPath(filePath) {
 function isValidServerUrl(url) {
   try {
     const u = new URL(url);
-    return u.protocol === 'https:' || u.protocol === 'http:';
+    return ['https:', 'http:'].includes(u.protocol) && !u.username && !u.password && !u.search && !u.hash;
   } catch {
     return false;
   }
@@ -1146,7 +1147,7 @@ function setupIPC() {
     }
   });
 
-  // 服务器配置（仅 https；并需用户在主进程侧确认，防止渲染进程被注入后
+  // 服务器配置（需用户在主进程侧确认，防止渲染进程被注入后
   // 静默把后端重定向到恶意服务器。为支持私有化部署，不限制具体域名）
   ipcMain.handle('config:setServerUrl', async (_e, url) => {
     if (!isTrustedSender(_e)) return false;
@@ -1160,10 +1161,6 @@ function setupIPC() {
     }
     let u;
     try { u = new URL(url); } catch { return false; }
-    if (u.protocol !== 'https:') {
-      log.warn('config:setServerUrl 拒绝非 https 地址:', url);
-      return false;
-    }
     const { response } = await dialog.showMessageBox(mainWindow, {
       type: 'warning',
       buttons: ['取消', '确认切换'],
@@ -1172,7 +1169,7 @@ function setupIPC() {
       noLink: true,
       title: '切换服务器',
       message: '确认将 v信 连接的服务器切换为：',
-      detail: u.origin,
+      detail: u.href + (u.protocol === 'http:' ? '\n此地址使用未加密的 HTTP 连接。' : ''),
     });
     if (response !== 1) {
       log.info('用户取消切换服务器:', u.origin);
@@ -1186,13 +1183,14 @@ function setupIPC() {
     // 同步运行时变量，否则 onHeadersReceived 仍按旧 API_ORIGIN/WS_ORIGIN 拼 CSP，
     // 把新服务器的请求当成跨域拦下来。CDN_ORIGIN 清空——新服务器的 cdn 域名未知，
     // 需下次 loadRemoteServerUrl() 重新拉取。
-    SERVER_URL = u.origin;
+    SERVER_URL = u.href.replace(/\/+$/, '');
     API_ORIGIN = u.origin;
     WS_ORIGIN = u.origin.replace(/^http/, 'ws');
     CDN_ORIGIN = '';
     return true;
   });
   ipcMain.handle('config:getServerUrl', (e) => isTrustedSender(e) ? store.get('serverUrl') : null);
+  ipcMain.handle('config:testServerUrl', (e, url) => isTrustedSender(e) ? probeServer(url) : { ok: false, msg: '无法连接到该服务器' });
 
   // 快捷键设置：读取 / 修改 / 重置
   ipcMain.handle('shortcuts:getAll', (_e) => {

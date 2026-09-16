@@ -29,7 +29,7 @@ jobs:
           text = Path('/etc/nginx/conf.d/dipsin.conf').read_text()
           start = text.index('server_name vxinchat.com www.vxinchat.com;')
           block = text[start:]
-          match = re.search(r'location /uploads/\s*\{([^}]+)\}', block)
+          match = re.search(r'location (?:\^~\s+)?/uploads/\s*\{([^}]+)\}', block)
           print('Vxin uploads directives:', [line.strip() for line in match[1].splitlines() if re.match(r'\s*(alias|root|auth_request|proxy_pass|try_files|expires)\s', line)] if match else 'not found')
           PYNGINX
           test -s /var/www/vxin-web/app/index.html

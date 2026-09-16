@@ -51,20 +51,17 @@ test.describe('登录异常 LOGIN-EDGE', () => {
     await expect(submitBtn).toBeDisabled();
   });
 
-  test('LOGIN-02 错误密码提示错误', async ({ webPage, baseURL }) => {
+  test('LOGIN-02 错误密码提示错误', async ({ webPage, seeded, baseURL }) => {
     const login = new LoginPage(webPage);
     await login.gotoLogin(baseURL);
-    await webPage.locator(`[data-testid="${A.loginPhone}"]`).fill('13800000000');
+    await webPage.locator(`[data-testid="${A.loginPhone}"]`).fill(seeded.users[0].phone);
     await webPage.locator(`[data-testid="${A.loginPassword}"]`).fill('wrongpassword999');
     // 登录页新增协议勾选：未勾选时提交按钮 disabled，需先勾选才能触发提交
     await webPage.locator('[data-testid="login-agreement-checkbox"]').check({ force: true });
     await webPage.locator(`[data-testid="${A.loginSubmit}"]`).click();
-    await webPage.waitForTimeout(2500);
-
-    // 应有错误提示或仍在登录页
-    const hasError = await webPage.locator(`[data-testid="${A.authError}"]`).isVisible().catch(() => false);
-    const onLogin  = await webPage.locator(`[data-testid="${A.loginPhone}"]`).isVisible().catch(() => false);
-    expect(hasError || onLogin).toBeTruthy();
+    await expect(webPage.getByTestId(A.authError)).toBeVisible();
+    await expect(webPage.getByTestId(A.authError)).toContainText(/密码|账号/);
+    await expect(webPage.getByTestId(A.loginPhone)).toBeVisible();
   });
 
   test('LOGIN-03 正确账号登录成功', async ({ webPage, seeded, baseURL }) => {
@@ -88,15 +85,9 @@ test.describe('登录异常 LOGIN-EDGE', () => {
 
     // 刷新页面
     await webPage.reload();
-    await webPage.waitForTimeout(3000);
-
-    // 登录态由 httpOnly cookie 维持，刷新后重新调用 /api/auth/me
-    // 隔离测试环境（无 HTTPS/secure cookie）可能丢失登录态，不强制断言
-    // 记录实际行为供参考
-    const onLogin = await webPage.locator(`[data-testid="${A.loginPhone}"]`).isVisible().catch(() => false);
-    const onHome  = await webPage.locator(`[data-testid="${A.navTab('chats')}"]`).first().isVisible().catch(() => false);
-    // 不崩溃即通过（具体行为取决于 cookie 配置）
-    expect(onLogin || onHome).toBeTruthy();
+    await chat.waitReady();
+    await expect(webPage.getByTestId(A.navTab('chats')).first()).toBeVisible();
+    await expect(webPage.getByTestId(A.loginPhone)).toHaveCount(0);
   });
 
   test('LOGIN-05 连续双击登录不重复提交', async ({ webPage, seeded, baseURL }) => {
@@ -107,16 +98,23 @@ test.describe('登录异常 LOGIN-EDGE', () => {
     // 登录页新增协议勾选：未勾选时提交按钮 disabled，需先勾选才能触发提交
     await webPage.locator('[data-testid="login-agreement-checkbox"]').check({ force: true });
 
-    const submitBtn = webPage.locator(`[data-testid="${A.loginSubmit}"]`);
-    await submitBtn.click();
-    // 二次点击：按钮在提交中应变为 disabled（loading=true）
-    const isDisabledAfterFirst = await submitBtn.isDisabled().catch(() => true);
-    // 即使不 disabled，也不应崩溃
-    await submitBtn.click({ force: true }).catch(() => {});
-    await webPage.waitForTimeout(3000);
-
-    const errors = [];
-    webPage.on('pageerror', e => errors.push(e.message));
-    expect(errors.filter(e => !e.includes('ResizeObserver'))).toHaveLength(0);
+    let requests = 0;
+    let release;
+    const held = new Promise(resolve => { release = resolve; });
+    await webPage.route('**/api/auth/login', async route => {
+      requests++;
+      await held;
+      await route.continue();
+    });
+    const submitBtn = webPage.getByTestId(A.loginSubmit);
+    try {
+      await submitBtn.click();
+      await expect(submitBtn).toBeDisabled();
+      await webPage.locator('form.auth-form').evaluate(form => form.requestSubmit());
+      await expect.poll(() => requests).toBe(1);
+    } finally { release(); }
+    await new ChatPage(webPage).waitReady();
+    expect(requests).toBe(1);
   });
+
 });

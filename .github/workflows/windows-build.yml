@@ -27,6 +27,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: windows-release
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: windows-latest
@@ -135,10 +139,11 @@ jobs:
           mkdir -p "$STAGING/updates"
           cp "$EXE" "$STAGING/$EXE_NAME"
           cp "$EXE" "$STAGING/updates/$EXE_NAME"
+          cp "$EXE" "$STAGING/vxin-windows-latest.exe"
           cp "$BLOCKMAP" "$STAGING/updates/$BLOCKMAP_NAME"
           cp "$YML" "$STAGING/updates/latest.yml"
 
-          for f in "$STAGING/$EXE_NAME" "$STAGING/updates/$EXE_NAME"; do
+          for f in "$STAGING/$EXE_NAME" "$STAGING/updates/$EXE_NAME" "$STAGING/vxin-windows-latest.exe"; do
             s=$(stat -c%s "$f"); h=$(openssl dgst -sha512 -binary "$f" | openssl base64 -A)
             if [ "$s" != "$ACTUAL_SIZE" ] || [ "$h" != "$ACTUAL_SHA512" ]; then
               echo "❌ staging 校验失败（拷贝过程可能损坏）: $f"; rm -rf "$STAGING"; exit 1
@@ -152,12 +157,16 @@ jobs:
           if [ -f "$TARGET/updates/latest.yml" ]; then
             cp "$TARGET/updates/latest.yml" "$TARGET/updates/latest.yml.bak-$(date -u +%Y%m%d%H%M%S)"
           fi
+          ALIAS_BACKUP="$TARGET/.windows-latest-$GITHUB_RUN_ID.bak"
+          if [ -f "$TARGET/vxin-windows-latest.exe" ]; then cp -a "$TARGET/vxin-windows-latest.exe" "$ALIAS_BACKUP"; fi
+          echo "ALIAS_BACKUP=$ALIAS_BACKUP" >> "$GITHUB_ENV"
 
           # ── 原子发布：EXE/blockmap 先落地（同文件系统内 mv 是原子操作），
           # latest.yml 最后才切换，确保客户端不会先读到新 latest.yml 却下载不到对应 EXE ──
           mv "$STAGING/$EXE_NAME" "$TARGET/$EXE_NAME"
           mv "$STAGING/updates/$EXE_NAME" "$TARGET/updates/$EXE_NAME"
           mv "$STAGING/updates/$BLOCKMAP_NAME" "$TARGET/updates/$BLOCKMAP_NAME"
+          mv "$STAGING/vxin-windows-latest.exe" "$TARGET/vxin-windows-latest.exe"
           mv "$STAGING/updates/latest.yml" "$TARGET/updates/latest.yml"
           rm -rf "$STAGING"
 
@@ -182,11 +191,12 @@ jobs:
           BM_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -I "$BM_URL" || echo "000")
           LIVE_VERSION=$(grep -m1 '^version:' /tmp/live-latest-${VERSION}.yml 2>/dev/null | awk '{print $2}' || echo "")
           LIVE_SHA512=$(grep -m1 '^sha512:' /tmp/live-latest-${VERSION}.yml 2>/dev/null | awk '{print $2}' || echo "")
+          ALIAS_SHA512=$(openssl dgst -sha512 -binary "$TARGET/vxin-windows-latest.exe" | openssl base64 -A)
 
           echo "latest.yml=$YML_CODE  exe=$EXE_CODE  blockmap=$BM_CODE  live_version=$LIVE_VERSION"
 
           if [ "$YML_CODE" != "200" ] || [ "$EXE_CODE" != "200" ] || [ "$BM_CODE" != "200" ] \
-             || [ "$LIVE_VERSION" != "$VERSION" ] || [ "$LIVE_SHA512" != "$EXPECTED_SHA512" ]; then
+             || [ "$LIVE_VERSION" != "$VERSION" ] || [ "$LIVE_SHA512" != "$EXPECTED_SHA512" ] || [ "$ALIAS_SHA512" != "$EXPECTED_SHA512" ]; then
             echo "❌ 生产验证失败，尝试回滚 latest.yml 到上一版本"
             LATEST_BAK=$(ls -t "$TARGET"/updates/latest.yml.bak-* 2>/dev/null | head -1 || true)
             if [ -n "$LATEST_BAK" ]; then
@@ -195,6 +205,7 @@ jobs:
             else
               echo "⚠ 没有可用的 latest.yml 备份，无法自动回滚"
             fi
+            if [ -f "$ALIAS_BACKUP" ]; then cp -a "$ALIAS_BACKUP" "$TARGET/vxin-windows-latest.exe"; else rm -f "$TARGET/vxin-windows-latest.exe"; fi
             exit 1
           fi
 

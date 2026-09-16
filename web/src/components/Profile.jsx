@@ -7,7 +7,7 @@ import { useI18n, SUPPORTED_LANGS } from '../contexts/I18nContext';
 import { goLogin } from '../utils/url';
 import { showConfirm, showToast } from '../utils/toast';
 import { copyToClipboard } from '../utils/clipboard';
-import { timeoutSignal } from '../utils/config';
+import { normalizeServerUrl, testServerConnection } from '../utils/config';
 import { IcoDesktop as IcoDeviceDesktop, IcoMobile as IcoDeviceMobile, IcoClose, IcoGlobe, IcoSun, IcoMoon as IcoMoonFilled, IcoAuto } from './Icons';
 
 /* ─── 小工具 ─── */
@@ -1134,25 +1134,23 @@ function ServerSettings({ onBack }) {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
   const [saving, setSaving] = useState(false);
+  const serverCheck = useRef(0);
 
   const testConn = async () => {
-    const url = input.trim().replace(/\/$/, '');
-    if (!url.startsWith('http')) { setTestResult({ ok: false, msg: '格式错误，请以 http:// 或 https:// 开头' }); return; }
+    const attempt = ++serverCheck.current;
     setTesting(true); setTestResult(null);
-    try {
-      await fetch(`${url}/health`, { signal: timeoutSignal(6000) });
-      setTestResult({ ok: true, msg: '连接成功 ✓' });
-    } catch {
-      setTestResult({ ok: false, msg: '无法连接到该服务器，请检查地址' });
-    } finally { setTesting(false); }
+    const result = await testServerConnection(input);
+    if (attempt !== serverCheck.current) return;
+    setTestResult(result); setTesting(false);
   };
 
   const handleSave = async () => {
-    const url = input.trim().replace(/\/$/, '');
-    if (!url.startsWith('http')) return;
+    const url = normalizeServerUrl(input);
+    if (!url) { setTestResult({ ok: false, msg: '请输入有效的 http:// 或 https:// 服务器地址' }); return; }
     setSaving(true);
-    await changeServer(url);
-    setSaving(false);
+    try { await changeServer(url); }
+    catch { setTestResult({ ok: false, msg: '未能保存服务器地址，请重试' }); }
+    finally { setSaving(false); }
   };
 
   return (
@@ -1162,7 +1160,7 @@ function ServerSettings({ onBack }) {
         <div className="wc-server-label">服务器地址（支持 IP 或域名）</div>
         <input
           value={input}
-          onChange={e => { setInput(e.target.value); setTestResult(null); }}
+          onChange={e => { ++serverCheck.current; setInput(e.target.value); setTestResult(null); setTesting(false); }}
           placeholder="https://example.com"
           aria-label="服务器地址"
           className="wc-server-input"

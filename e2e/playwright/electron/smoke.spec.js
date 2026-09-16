@@ -3,6 +3,7 @@ const base = require('@playwright/test');
 const { launchElectron, skipReason } = require('./launch');
 const { LoginPage } = require('../pages/LoginPage');
 const { ChatPage } = require('../pages/ChatPage');
+const http = require('http');
 
 const test = base.test;
 const expect = base.expect;
@@ -14,13 +15,21 @@ const expect = base.expect;
  */
 test.describe('Electron 桌面端', () => {
   let app, page, state;
+  let probe, probeUrl, slowResponse;
 
   test.beforeAll(async () => {
     const reason = skipReason();
     test.skip(!!reason, reason || '');
+    probe = http.createServer((req, res) => {
+      if (req.url === '/slow/health') { slowResponse = res; return; }
+      if (req.url === '/missing/health') { res.writeHead(404); res.end('missing'); return; }
+      res.end('<html>homepage</html>');
+    });
+    await new Promise(resolve => probe.listen(0, '127.0.0.1', resolve));
+    probeUrl = `http://127.0.0.1:${probe.address().port}`;
     ({ app, page, state } = await launchElectron());
   });
-  test.afterAll(async () => { if (app) await app.close(); });
+  test.afterAll(async () => { if (app) await app.close(); if (probe) { probe.closeAllConnections(); await new Promise(resolve => probe.close(resolve)); } });
 
   test('WIN-CONFIG 自定义 HTTP 服务器和临时用户目录生效', async () => {
     const config = await page.evaluate(() => window.__ELECTRON_CONFIG__);
@@ -28,6 +37,42 @@ test.describe('Electron 桌面端', () => {
     expect(config.serverUrlManual).toBe(true);
     expect(app.profile).toContain('vxin-electron-e2e-');
     expect(app.logs()).not.toContain('Protocol "http:" not supported');
+  });
+
+  test('WIN-PROBE 登录前拒绝 404 和普通网页，确认真实健康响应', async () => {
+    await page.getByRole('button', { name: /当前服务器/ }).click();
+    const address = page.getByRole('textbox', { name: '服务器地址', exact: true });
+    for (const fixture of [{ path: '/missing', error: '服务器返回 404' }, { path: '/html', error: '无法连接' }]) {
+      await address.fill(probeUrl + fixture.path);
+      await page.getByRole('button', { name: '测试连接', exact: true }).click();
+      await expect(page.getByRole('alert')).toContainText(fixture.error);
+    }
+    await address.fill(state.backendUrl);
+    await page.getByRole('button', { name: '测试连接', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('连接成功');
+    await page.getByRole('button', { name: '取消', exact: true }).click();
+  });
+
+  test('WIN-PROBE 修改地址后忽略旧检测结果', async () => {
+    await page.getByRole('button', { name: /当前服务器/ }).click();
+    const address = page.getByRole('textbox', { name: '服务器地址', exact: true });
+    await address.fill(probeUrl + '/slow');
+    await page.getByRole('button', { name: '测试连接', exact: true }).click();
+    await expect.poll(() => !!slowResponse).toBe(true);
+    await address.fill(state.backendUrl);
+    await page.getByRole('button', { name: '测试连接', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('连接成功');
+    slowResponse.writeHead(503); slowResponse.end('old response');
+    await page.waitForTimeout(150); // Allow the earlier IPC reply to reach the renderer.
+    await expect(page.getByRole('alert')).toContainText('连接成功');
+    await page.getByRole('button', { name: '取消', exact: true }).click();
+  });
+
+  test('WIN-DOCS 桌面包内的隐私政策可读取并关闭', async () => {
+    await page.getByRole('link', { name: '《隐私政策》', exact: true }).click();
+    await expect(page.locator('dialog[open] .auth-privacy-content').getByRole('heading', { name: '隐私政策', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: '关闭文档', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: '隐私政策', exact: true })).not.toBeVisible();
   });
 
   test('WIN-AUTH 登录成功 → 主界面', async () => {

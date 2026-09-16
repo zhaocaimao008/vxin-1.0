@@ -32,6 +32,25 @@ it('accepts a healthy v信 backend', async () => {
   expect((await testServerConnection('https://example.test')).ok).toBe(true);
 });
 
+it('desktop probes a new origin via the restricted main-process health API', async () => {
+  const testServerUrl = vi.fn().mockResolvedValue({ ok: true, msg: '连接成功 ✓' });
+  vi.stubGlobal('window', { __ELECTRON_CONFIG__: {}, electronAPI: { testServerUrl } });
+  const fetch = vi.fn(); vi.stubGlobal('fetch', fetch);
+  const { testServerConnection } = await import('./config');
+  expect((await testServerConnection('http://127.0.0.1:18000/')).ok).toBe(true);
+  expect(testServerUrl).toHaveBeenCalledWith('http://127.0.0.1:18000');
+  expect(fetch).not.toHaveBeenCalled();
+});
+
+it.each(['httpx://bad.test', 'http:bad.test', 'https://user:secret@example.test', 'https://example.test?api=1', 'https://example.test/#page'])('rejects unsafe server addresses before making a request: %s', async url => {
+  const fetch = vi.fn();
+  vi.stubGlobal('fetch', fetch);
+  const { testServerConnection, normalizeServerUrl } = await import('./config');
+  expect(normalizeServerUrl(url)).toBeNull();
+  expect((await testServerConnection(url)).ok).toBe(false);
+  expect(fetch).not.toHaveBeenCalled();
+});
+
 it('preserves the desktop custom server without contacting remote discovery', async () => {
   vi.stubGlobal('window', { __ELECTRON_CONFIG__: { serverUrl: 'http://127.0.0.1:19000/', serverUrlManual: true } });
   const fetch = vi.fn();

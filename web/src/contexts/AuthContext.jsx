@@ -4,6 +4,7 @@ import { clearCache } from '../utils/msgCache';
 import { clearOutbox } from '../utils/outbox';
 import { createMessageScope } from '../utils/messageScope';
 import { clearDrafts } from '../utils/drafts';
+import { normalizeServerUrl } from '../utils/config';
 
 // 所有请求自动携带 httpOnly Cookie（同源时浏览器自动附加，跨域需此选项）
 axios.defaults.withCredentials = true;
@@ -221,20 +222,22 @@ export const AuthProvider = ({ children }) => {
   // 2. 更新 axios baseURL
   // 3. 清除当前登录态 → PrivateRoute 自动跳转登录页 → 用户用新服务器账号重新登录
   const changeServer = async (newUrl) => {
+    const clean = normalizeServerUrl(newUrl);
+    if (!clean) return false;
+    if (window.__ELECTRON_CONFIG__ && !await window.electronAPI?.setServerUrl?.(clean)) return false;
     clearDrafts(createMessageScope(userRef.current?.id, axios.defaults.baseURL || window.location.origin));
-    const clean = newUrl.trim().replace(/\/$/, '');
     clearOutbox(createMessageScope(userRef.current?.id, axios.defaults.baseURL || window.location.origin));
     try { await axios.post('/api/auth/logout'); } catch { /* logout is best-effort on server switch */ }
-    if (window.__ELECTRON_CONFIG__) {
-      localStorage.setItem('vxin_server_url', clean);
-      window.electronAPI?.setServerUrl?.(clean);
-    }
+    localStorage.setItem('vxin_server_url', clean);
     axios.defaults.baseURL = clean;
     setElectronToken(null);
     clearCsrfCache();
     clearCache();   // 切换服务器=换账号域，清离线消息缓存避免串号
     setUser(null);
     setAccounts([]);
+    writeAccounts([]);
+    window.location.reload();
+    return true;
   };
 
   // ── 更新本地用户缓存（头像/昵称变更后调用） ─────────────────

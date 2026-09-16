@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import AuthDocuments from '../components/AuthDocuments';
 import '../styles/login.css';
 
 export default function Register() {
@@ -205,19 +206,17 @@ export default function Register() {
             {loading ? <span className="auth-spinner" /> : '注册'}
           </button>
 
-          {/* 用户协议：真实勾选状态，未勾选禁止提交；协议/隐私政策暂无落地页，链接点击不跳转 */}
+          {/* 打开文档时保留注册输入。 */}
           <div className="auth-agreement-row">
             <input
               type="checkbox"
               className="auth-agreement-box"
               data-testid="register-agreement-checkbox"
+              aria-label="同意用户协议和隐私政策"
               checked={agreed}
               onChange={e => setAgreed(e.target.checked)}
             />
-            <p className="auth-agreement">
-              我已阅读并同意 <a href="#" onClick={e => e.preventDefault()}>《用户协议》</a> 和{' '}
-              <a href="#" onClick={e => e.preventDefault()}>《隐私政策》</a>
-            </p>
+            <div className="auth-agreement">我已阅读并同意 <AuthDocuments /></div>
           </div>
         </form>
 
