@@ -75,15 +75,23 @@ def main():
         os.replace(temporary, args.config)
         subprocess.run(['nginx', '-t'], check=True)
         subprocess.run(['systemctl', 'reload', 'nginx'], check=True)
-        url = 'https://vxinchat.com/uploads/__release_auth_probe_' + str(time.time_ns())
-        request = urllib.request.Request(url, headers={'Cache-Control': 'no-cache'})
-        try:
-            response = urllib.request.urlopen(request, timeout=20)
-        except urllib.error.HTTPError as error:
-            response = error
-        with response:
-            if response.status != 401 or 'no-store' not in response.headers.get('Cache-Control', ''):
-                raise RuntimeError('Public anonymous media authorization check failed')
+        # systemd reload acknowledges the signal before all workers have switched.
+        for attempt in range(10):
+            url = 'https://vxinchat.com/uploads/__release_auth_probe_' + str(time.time_ns())
+            request = urllib.request.Request(url, headers={'Cache-Control': 'no-cache'})
+            try:
+                response = urllib.request.urlopen(request, timeout=10)
+            except urllib.error.HTTPError as error:
+                response = error
+            with response:
+                status = response.status
+                cache = response.headers.get('Cache-Control', '')
+            print('Anonymous media probe:', status, cache)
+            if status == 401 and 'no-store' in cache:
+                break
+            time.sleep(1)
+        else:
+            raise RuntimeError('Public anonymous media authorization check failed')
         print('Uploads authentication verified: anonymous 401, no-store; backup:', backup)
     except BaseException:
         shutil.copy2(backup, args.config)
