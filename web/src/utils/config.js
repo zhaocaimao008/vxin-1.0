@@ -65,6 +65,15 @@ export function loadRemoteConfig() {
   if (_loading) return _loading;
 
   _loading = (async () => {
+    // The desktop main process has already validated the user's chosen server.
+    // Do not overwrite that choice with a second remote discovery request.
+    const desktop = window.__ELECTRON_CONFIG__;
+    if (desktop?.serverUrlManual && /^https?:\/\//.test(desktop.serverUrl || '')) {
+      const base = desktop.serverUrl.trim().replace(/\/+$/, '');
+      _config = { ...DEFAULTS, api: base, socket: base, cdn: base };
+      _loaded = true;
+      return _config;
+    }
     // 1. 依次尝试每个引导地址，任意一个成功即用
     for (const url of CONFIG_URLS) {
       try {

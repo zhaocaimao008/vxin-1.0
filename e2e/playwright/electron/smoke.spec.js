@@ -22,6 +22,14 @@ test.describe('Electron 桌面端', () => {
   });
   test.afterAll(async () => { if (app) await app.close(); });
 
+  test('WIN-CONFIG 自定义 HTTP 服务器和临时用户目录生效', async () => {
+    const config = await page.evaluate(() => window.__ELECTRON_CONFIG__);
+    expect(config.serverUrl).toBe(state.backendUrl);
+    expect(config.serverUrlManual).toBe(true);
+    expect(app.profile).toContain('vxin-electron-e2e-');
+    expect(app.logs()).not.toContain('Protocol "http:" not supported');
+  });
+
   test('WIN-AUTH 登录成功 → 主界面', async () => {
     const login = new LoginPage(page);
     const chat = new ChatPage(page);
@@ -35,10 +43,23 @@ test.describe('Electron 桌面端', () => {
 
   test('WIN-CHAT 发送文本消息', async () => {
     const chat = new ChatPage(page);
-    test.skip(!state.convAB, '无会话');
+    expect(state.convAB).toBeTruthy();
     await chat.openConv(state.convAB);
     const t = 'electron-e2e-' + Date.now();
     await chat.sendText(t);
     await chat.expectMessageVisible(t);
+  });
+
+  test('WIN-RELOAD 刷新后消息仍存在，主要导航可打开', async () => {
+    await page.reload();
+    const chat = new ChatPage(page);
+    await chat.waitReady();
+    await chat.openConv(state.convAB);
+    await expect(page.locator('[data-testid^="msg-bubble-"]').filter({ hasText: 'electron-e2e-' }).last()).toBeVisible();
+    for (const name of ['contacts', 'moments', 'favorites', 'me', 'chats']) {
+      await page.getByTestId('nav-tab-' + name).click();
+      await expect(page.getByTestId('nav-tab-' + name)).toBeVisible();
+      await expect(page.getByText('页面出了点小问题', { exact: true })).toHaveCount(0);
+    }
   });
 });

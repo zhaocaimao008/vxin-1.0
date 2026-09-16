@@ -1,61 +1,82 @@
 'use strict';
-const { _electron } = require('playwright');
+const { chromium } = require('playwright');
+const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const env = require('../../shared/env');
-
 const DESKTOP_DIR = path.join(env.REPO_ROOT, 'desktop-electron');
+const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-/**
- * 启动 desktop-electron(它 loadFile web/dist/index.html)。
- * 前置:必须先 `cd web && npm run build` 生成 web/dist。
- * 让 Electron 连测试后端:通过 args 传一个临时 user-data + 预置 localStorage。
- * Electron 用 HashRouter,登录路径 /#/login。
- *
- * 注意(本机 headless):需 xvfb。CI/无显示器环境用:
- *   xvfb-run -a npm run test:electron
- */
-/**
- * 是否应跳过 Electron 测试。返回原因字符串或 null。
- * desktop-electron/src/main.js 调用了 app.enableSandbox()(生产安全配置),
- * 在 root 环境下 Electron 强制要求沙箱却不支持 root → FATAL,无法以 root 跑。
- * 非 root 桌面/CI 用户正常。
- */
 function skipReason() {
-  if (typeof process.getuid === 'function' && process.getuid() === 0) {
-    return 'root 环境:main.js enableSandbox() 与 Electron root 沙箱限制冲突,请用非 root 用户运行';
-  }
-  const dist = path.join(env.REPO_ROOT, 'web', 'dist', 'index.html');
-  if (!fs.existsSync(dist)) return 'web/dist 不存在,先 npm run build:web';
+  if (typeof process.getuid === 'function' && process.getuid() === 0) return 'Electron 沙箱需要非 root 用户';
   return null;
 }
 
+/** Own profile + main-window CDP attachment; the separate splash partition is never a test page. */
 async function launchElectron() {
-  const dist = path.join(env.REPO_ROOT, 'web', 'dist', 'index.html');
-  if (!fs.existsSync(dist)) {
-    throw new Error('web/dist 不存在,先运行 npm run build:web');
+  const dist = path.join(env.REPO_ROOT, 'web/dist/index.html');
+  if (!fs.existsSync(dist)) throw new Error('先运行 npm run build -- --mode desktop');
+  if (/\b(?:src|href)="\/app\/assets\//.test(fs.readFileSync(dist, 'utf8'))) {
+    throw new Error('Electron 必须使用 desktop 模式构建，相对资源路径才适用于 file://');
   }
-  const state = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', '.e2e-state.json'), 'utf8'));
-
-  // 用 desktop-electron 自带的 electron 二进制(Playwright 默认找自己的,这里项目本地)
-  const electronBin = path.join(DESKTOP_DIR, 'node_modules', 'electron', 'dist', 'electron');
-  const app = await _electron.launch({
-    executablePath: fs.existsSync(electronBin) ? electronBin : undefined,
-    // --no-sandbox: root 环境(CI/容器)下 Electron 沙箱不支持 root,必须关。
-    // 普通用户桌面跑可去掉。--disable-gpu: headless/xvfb 无 GPU。
-    args: ['.', '--no-sandbox', '--disable-gpu'],
-    cwd: DESKTOP_DIR,
-    env: {
-      ...process.env,
-      // 让主进程跳过远程 config 拉取,直接用测试后端(main.js 的 store/默认机制)
-      VXIN_SERVER_URL: state.backendUrl,
-      ELECTRON_DISABLE_SECURITY_WARNINGS: '1',
-    },
+  const state = JSON.parse(fs.readFileSync(path.join(__dirname, '../../.e2e-state.json'), 'utf8'));
+  const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'vxin-electron-e2e-'));
+  fs.writeFileSync(path.join(profile, 'config.json'), JSON.stringify({
+    serverUrl: state.backendUrl, serverUrlManual: true, minimizeToTray: false, autoLaunch: false,
+  }));
+  const executable = require(path.join(DESKTOP_DIR, 'node_modules/electron'));
+  const child = spawn(executable, ['.', '--user-data-dir=' + profile, '--remote-debugging-port=0', '--disable-gpu', '--no-sandbox'], {
+    cwd: DESKTOP_DIR, env: { ...process.env, NODE_ENV: 'test' }, stdio: ['ignore', 'pipe', 'pipe'],
   });
-  const page = await app.firstWindow();
-  // Electron 渲染层登录前注入后端地址(与 web fixture 同理)
-  await page.evaluate((url) => { try { localStorage.setItem('vxin_server_url', url); } catch {} }, state.backendUrl);
-  return { app, page, state };
+  let logs = '', endpoint, browser, page, exited = false, startupError;
+  const exitedPromise = new Promise(resolve => child.once('exit', () => { exited = true; resolve(); }));
+  child.once('error', error => { startupError = error; exited = true; });
+  const collect = chunk => {
+    const text = chunk.toString(); logs = (logs + text).slice(-30000);
+    const match = logs.match(/DevTools listening on (ws:\/\/[^\s]+)/); if (match) endpoint = match[1];
+  };
+  child.stdout.on('data', collect); child.stderr.on('data', collect);
+  const close = async () => {
+    if (page && !page.isClosed()) await page.evaluate(() => window.electronAPI?.close()).catch(() => {});
+    if (browser) await browser.close().catch(() => {});
+    if (!exited) {
+      await Promise.race([exitedPromise, pause(1500)]);
+      if (!exited) child.kill('SIGTERM');
+      await Promise.race([exitedPromise, pause(3000)]);
+      if (!exited) {
+        child.kill('SIGKILL');
+        await Promise.race([exitedPromise, pause(3000)]);
+      }
+    }
+    fs.rmSync(profile, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+  };
+  try {
+    const deadline = Date.now() + 30000;
+    let targets;
+    while (Date.now() < deadline) {
+      if (startupError) throw startupError;
+      if (exited) throw new Error('Electron 启动退出:\n' + logs);
+      if (endpoint) {
+        const origin = 'http://' + new URL(endpoint).host;
+        targets = await fetch(origin + '/json/list').then(r => r.json()).catch(() => []);
+        if (targets.some(t => t.url.includes('/web/dist/index.html')) && !targets.some(t => t.url.includes('/assets/splash.html'))) break;
+      }
+      await pause(100);
+    }
+    if (!targets?.some(t => t.url.includes('/web/dist/index.html')) || targets.some(t => t.url.includes('/assets/splash.html'))) throw new Error('主窗口未就绪:\n' + logs);
+    browser = await chromium.connectOverCDP(endpoint);
+    page = browser.contexts().flatMap(context => context.pages()).find(p => p.url().includes('/web/dist/index.html'));
+    if (!page) throw new Error('无法附着主窗口');
+    const context = page.context();
+    await context.route('**/*', route => {
+      const url = new URL(route.request().url());
+      if (['http:', 'https:'].includes(url.protocol) && !['127.0.0.1', 'localhost'].includes(url.hostname)) return route.abort();
+      return route.continue();
+    });
+    await page.getByTestId('login-phone-input').waitFor({ timeout: 15000 });
+    return { app: { close, profile, logs: () => logs }, page, state };
+  } catch (error) { await close(); throw error; }
 }
 
 module.exports = { launchElectron, skipReason };

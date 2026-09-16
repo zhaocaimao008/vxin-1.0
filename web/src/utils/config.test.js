@@ -21,3 +21,12 @@ it('accepts a healthy v信 backend', async () => {
   const { testServerConnection } = await import('./config');
   expect((await testServerConnection('https://example.test')).ok).toBe(true);
 });
+
+it('preserves the desktop custom server without contacting remote discovery', async () => {
+  vi.stubGlobal('window', { __ELECTRON_CONFIG__: { serverUrl: 'http://127.0.0.1:19000/', serverUrlManual: true } });
+  const fetch = vi.fn();
+  vi.stubGlobal('fetch', fetch);
+  const { loadRemoteConfig } = await import('./config');
+  expect(await loadRemoteConfig()).toMatchObject({ api: 'http://127.0.0.1:19000', socket: 'http://127.0.0.1:19000' });
+  expect(fetch).not.toHaveBeenCalled();
+});

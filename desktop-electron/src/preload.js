@@ -18,6 +18,7 @@ const SERVER_URL = argValue('--vxin-server-url=') || 'https://vxinchat.com';
 contextBridge.exposeInMainWorld('__ELECTRON_CONFIG__', {
   isElectron: true,
   serverUrl: SERVER_URL,
+  serverUrlManual: argValue('--vxin-server-manual=') === '1',
   appVersion: APP_VERSION,
 });
 

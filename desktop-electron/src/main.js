@@ -5,7 +5,7 @@ const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, dialog,
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
-const https = require('https');
+const { fetchBuffer } = require('./fetchBuffer');
 const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
 const Store = require('electron-store');
@@ -253,7 +253,7 @@ async function loadRemoteServerUrl() {
 async function loadServerFeatures() {
   try {
     const buf = await Promise.race([
-      fetchBuffer(`${SERVER_URL}/api/config`),
+      fetchBuffer(`${SERVER_URL}/api/config`, { allowHttp: SERVER_URL.startsWith('http:') }),
       new Promise((_, reject) => setTimeout(() => reject(new Error('features 拉取超时')), 3000)),
     ]);
     const cfg = JSON.parse(buf.toString('utf8'));
@@ -610,6 +610,7 @@ function createWindow() {
       additionalArguments: [
         `--vxin-app-version=${app.getVersion()}`,
         `--vxin-server-url=${SERVER_URL}`,
+        `--vxin-server-manual=${store.get('serverUrlManual') === true ? '1' : '0'}`,
       ],
       webSecurity: true,
       allowRunningInsecureContent: false,
@@ -767,30 +768,6 @@ function channelYmlName() {
   if (process.platform === 'darwin') return 'latest-mac.yml';
   if (process.platform === 'linux') return 'latest-linux.yml';
   return 'latest.yml';
-}
-
-// 拉取一个 https 资源为 Buffer；404 → 返回 null；其余错误 → reject。带超时与大小上限。
-function fetchBuffer(url, { allowMissing = false } = {}) {
-  return new Promise((resolve, reject) => {
-    const req = https.get(url, { timeout: 15000 }, (res) => {
-      if (allowMissing && (res.statusCode === 404 || res.statusCode === 403)) {
-        res.resume(); return resolve(null);
-      }
-      if (res.statusCode !== 200) {
-        res.resume(); return reject(new Error(`HTTP ${res.statusCode} for ${url}`));
-      }
-      const chunks = [];
-      let size = 0;
-      res.on('data', (c) => {
-        size += c.length;
-        if (size > 5 * 1024 * 1024) { req.destroy(); reject(new Error('元数据过大')); return; }
-        chunks.push(c);
-      });
-      res.on('end', () => resolve(Buffer.concat(chunks)));
-    });
-    req.on('timeout', () => req.destroy(new Error('请求超时')));
-    req.on('error', reject);
-  });
 }
 
 // 验证更新元数据签名。返回：'ok' | 'skip'(未启用) | 'fail'(疑似篡改/校验失败)
@@ -1026,7 +1003,7 @@ function setupIPC() {
     const allowed = [API_ORIGIN, CDN_ORIGIN].filter(Boolean);
     if (!allowed.includes(origin)) { log.warn('clipboard:copyImage 拒绝非白名单来源:', origin); return false; }
     try {
-      const buf = await fetchBuffer(url);        // 复用带超时+大小上限的 https 拉取
+      const buf = await fetchBuffer(url, { allowHttp: SERVER_URL.startsWith('http:') }); // 复用带超时+大小上限的 https 拉取
       if (!buf) return false;
       const img = nativeImage.createFromBuffer(buf);
       if (img.isEmpty()) return false;           // 非图片/解码失败
