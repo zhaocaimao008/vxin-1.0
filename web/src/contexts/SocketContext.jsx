@@ -58,21 +58,8 @@ export const SocketProvider = ({ children }) => {
       timeout: 10000,
     });
 
-    // W7: 客户端心跳自检（网络静默断开检测）
-    // 场景：中间件（4G NAT/代理）会静默关闭30s无流量的连接，但客户端不收到 disconnect 事件。
-    // 方案：任意事件到达时重置30s定时器；使用节流（1s内只重置一次）避免高频消息连续 clearTimeout/setTimeout
-    let _silenceTimer = null;
-    let _lastReset = 0;
-    const _resetSilence = () => {
-      const now = Date.now();
-      if (now - _lastReset < 1000) return;  // 节流：1s 内只重置一次
-      _lastReset = now;
-      clearTimeout(_silenceTimer);
-      _silenceTimer = setTimeout(() => {
-        if (s.connected) { s.disconnect(); s.connect(); }
-      }, 30000);
-    };
-    s.onAny(_resetSilence);  // 任意事件（含 pong）重置计时器（节流版）
+    // Engine.IO 自带 ping/pong 超时检测。Socket.IO onAny 只观测业务事件，
+    // 不能据此判断连接静默，否则正常空闲连接也会被主动断开。
 
     setSocket(s);
     if (typeof window !== 'undefined') window.__vxinSocket = s;
@@ -91,6 +78,7 @@ export const SocketProvider = ({ children }) => {
     // （由 AuthContext 统一监听处理），避免两处各写一套清理逻辑。
     s.on('force_logout', () => {
       s.disconnect();
+      if (window.__vxinSocket === s) delete window.__vxinSocket;
       window.dispatchEvent(new CustomEvent('vxin:session_expired'));
     });
     s.on('sync:unread_cleared', (payload) => {
@@ -116,6 +104,7 @@ export const SocketProvider = ({ children }) => {
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('online', onOnline);
       s.disconnect();
+      if (window.__vxinSocket === s) delete window.__vxinSocket;
       setSocket(null);
       setConnected(false);
     };
@@ -147,4 +136,3 @@ export const useSocket = () => ({ ...useContext(SocketCoreContext), ...useContex
 export const useSocketCore   = () => useContext(SocketCoreContext);
 /** 仅状态部分 — connected/reconnectCount */
 export const useSocketStatus = () => useContext(SocketStatusContext);
-

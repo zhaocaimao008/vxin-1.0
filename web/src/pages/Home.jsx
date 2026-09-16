@@ -73,6 +73,18 @@ import { IcoClose } from '../components/Icons';
 
 const isElectron = !!window.__ELECTRON_CONFIG__;
 
+function HomeFrame({ children }) {
+  return (
+    <div className={`home-frame${isElectron ? ' home-frame-electron' : ''}`}>
+      <div className="home-status-bars">
+        <ReconnectingBanner />
+        <CallSoundGuide />
+      </div>
+      {children}
+    </div>
+  );
+}
+
 /* ── 左上角头像 — 点击展开账号切换/添加下拉面板 ── */
 
 /* ── 群成员行（带 hover） ── */
@@ -611,8 +623,6 @@ export default function Home() {
   // 各端共用的浮层（二维码 / 添加菜单 / 建群 / 网络搜索 / 通话）
   const overlays = (
     <>
-      <ReconnectingBanner />
-      <CallSoundGuide />
       {activeCall && (
         <Suspense fallback={<ModalSkeleton height={420} />}>
           <CallModal
@@ -672,6 +682,7 @@ export default function Home() {
     const mLabel = (k) => TABS.find(t => t.key === k)?.label || '';
 
     return (
+      <HomeFrame>
       <div className="m-shell">
         {activeConv ? (
           <div className="m-chat-page">
@@ -737,10 +748,12 @@ export default function Home() {
         )}
         {overlays}
       </div>
+      </HomeFrame>
     );
   }
 
   return (
+    <HomeFrame>
     <div className={`wc-app${isMobile ? ' wc-mobile' : ''}`}>
 
       {/* 左侧导航栏——Electron: Logo置顶，账号切换已移入设置页（产品要求去掉底部重复入口）；
@@ -883,6 +896,7 @@ export default function Home() {
 
       {overlays}
     </div>
+    </HomeFrame>
   );
 }
 

@@ -51,7 +51,7 @@ exports.switchAccount = asyncHandler(async (req, res) => {
   const { token, user } = svc.switchAccount(walletId, userId);
   setAuthCookie(req, res, token);
   svc.upsertSession(user.id, req, token);
-  res.json({ user });
+  res.json({ token, user });
 });
 
 // 从本设备移除某账号（删除/退出后不再可免密切换）。只影响本设备的钱包。

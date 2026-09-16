@@ -25,14 +25,13 @@ if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
     environment: import.meta.env.MODE,
     release: `vxin@${__APP_VERSION__}`,
     integrations: [
-      new Sentry.BrowserTracing({
-        tracePropagationTargets: ['localhost', /^https:\/\/vxinchat\.com/],
-      }),
-      new Sentry.Replay({
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration({
         maskAllText: true,
         blockAllMedia: true,
       }),
     ],
+    tracePropagationTargets: ['localhost', /^https:\/\/vxinchat\.com/],
     tracesSampleRate: 0.1, // 10% 性能监控采样
     replaysSessionSampleRate: 0.1, // 10% 正常会话录制
     replaysOnErrorSampleRate: 1.0, // 100% 错误会话录制

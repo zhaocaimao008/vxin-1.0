@@ -57,7 +57,7 @@ export default class ChatWindowBoundary extends React.Component {
           )}
           <button
             style={styles.btn}
-            onClick={() => this.setState({ hasError: false, error: null })}
+            onClick={() => window.location.reload()}
           >
             重试
           </button>

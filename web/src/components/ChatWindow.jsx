@@ -14,6 +14,8 @@ import UploadProgressBar from './UploadProgressBar';
 import ComposeContextBar from './ComposeContextBar';
 import MultiSelectBar from './MultiSelectBar';
 import { loadOutbox, upsertOutbox, removeFromOutbox } from '../utils/outbox';
+import { createMessageScope } from '../utils/messageScope';
+import { recoverMessages } from '../utils/recoverMessages';
 import { loadCache, saveCache } from '../utils/msgCache';
 
 // ── 模块级常量，避免每次渲染重建 Set ────────────────────────────
@@ -210,6 +212,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
   const inputAreaRef = useRef(null);
   const { socket, reconnectCount, disconnectAtRef, registerDelivered } = useSocket();
   const { user } = useAuth();
+  const messageScope = useMemo(() => createMessageScope(user?.id, axios.defaults.baseURL || window.location.origin), [user?.id]);
 
   // ── 点击输入区外部关闭 emoji / more / 表情包 面板 ────────────────────
   useEffect(() => {
@@ -320,16 +323,16 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
     const nowFailedKeys = new Set();
     for (const m of messages) {
       if (m._status === 'error' && m.type === 'text' && m._tempId) {
-        upsertOutbox(convId, m);
+        upsertOutbox(convId, m, messageScope);
         nowFailedKeys.add(m._tempId);
       }
     }
     // 上一轮在 outbox、这轮已不再失败（成功送达或被删）→ 清出 outbox
     for (const key of outboxKeysRef.current) {
-      if (!nowFailedKeys.has(key)) removeFromOutbox(convId, key);
+      if (!nowFailedKeys.has(key)) removeFromOutbox(convId, key, messageScope);
     }
     outboxKeysRef.current = nowFailedKeys;
-  }, [messages, conversation.id]);
+  }, [messages, conversation.id, messageScope]);
 
   // ── 离线消息缓存同步：以本地 messages 为准，防抖反写 IndexedDB ──────────
   // 与上方 outbox 同理，集中一处覆盖新消息/批量/撤回/编辑/清空所有路径：messages
@@ -338,9 +341,10 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
   useEffect(() => {
     const convId = conversation.id;
     if (!convId) return;
-    const t = setTimeout(() => { saveCache(convId, messagesRef.current); }, 500);
+    if (!messageScope) return;
+    const t = setTimeout(() => { saveCache(`${messageScope.key}:${convId}`, messagesRef.current); }, 500);
     return () => clearTimeout(t);
-  }, [messages, conversation.id]);
+  }, [messages, conversation.id, messageScope]);
   useEffect(() => {
     // 快照 ref 指向的 Map，避免 cleanup 运行时 ref.current 已被后续渲染替换（react-hooks/exhaustive-deps）
     const burnTimers = burnTimersRef.current;
@@ -425,8 +429,11 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
     if (!after) return;
     // after-1: 覆盖同秒边界 — DB created_at 是秒精度，断线和消息落库可能同秒，
     // 用 > after 会漏掉。-1s 扩大窗口，重复消息由下方 existingIds 去重。
-    axios.get(`/api/messages/${conversation.id}`, { params: { after: after - 1, limit: 100 } })
-      .then(({ data }) => {
+    const ac = new AbortController();
+    recoverMessages(
+      async (params, signal) => (await axios.get(`/api/messages/${conversation.id}`, { params, signal })).data,
+      after - 1,
+      data => {
         if (!data.length) return;
         // 重连补拉的消息同样需要定时焚毁（阅后即焚在重连路径上的修复）
         scheduleBurn(data);
@@ -453,8 +460,11 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
           const outer = listOuterRef.current;
           if (outer) outer.scrollTo({ top: outer.scrollHeight, behavior: 'smooth' });
         }, 50);
-      })
-      .catch(() => {});
+      }, ac.signal,
+    ).catch(err => {
+      if (!ac.signal.aborted) showToast(err.response?.data?.error || '消息同步失败，请重新打开会话重试');
+    });
+    return () => ac.abort();
   }, [reconnectCount, conversation.id, disconnectAtRef, scheduleBurn]);
 
   // 切换会话时清空所有会话内 UI 状态：render 期派生（存上一次 conversation.id），
@@ -485,7 +495,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
 
     // 离线缓存首屏：先渲染本地缓存历史（若有），服务端到达后合并覆盖。
     // 只在当前 messages 尚为空时填充，避免覆盖已有乐观消息/已加载内容。
-    const convIdForCache = conversation.id;
+    const convIdForCache = messageScope ? `${messageScope.key}:${conversation.id}` : null;
     loadCache(convIdForCache).then(cached => {
       if (ac.signal.aborted || !cached.length) return;
       setMessages(prev => (prev.length ? prev : cached));
@@ -495,7 +505,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
       .then(data => {
         if (ac.signal.aborted) return; // 会话已切走，丢弃结果
         // 合并本地待发件箱：上次「发送失败」且未成功的文本消息，切回本会话仍在
-        const pending = loadOutbox(conversation.id);
+        const pending = loadOutbox(conversation.id, messageScope);
         let merged = data;
         if (pending.length) {
           const serverIds = new Set(data.map(m => m.id));
@@ -506,7 +516,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
           );
           // 把「其实已成功」的从 outbox 清掉
           for (const p of pending) {
-            if (!stillPending.includes(p)) removeFromOutbox(conversation.id, p._tempId || p.id);
+            if (!stillPending.includes(p)) removeFromOutbox(conversation.id, p._tempId || p.id, messageScope);
           }
           if (stillPending.length) {
             merged = [...data, ...stillPending].sort(
@@ -584,7 +594,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
       confirmedIds.clear();
       readerReadAtRef.current = {};
     };
-  }, [conversation.id, fetchMessages, socket, conversation.type, conversation.scrollToId, scheduleBurn]);
+  }, [conversation.id, fetchMessages, socket, conversation.type, conversation.scrollToId, scheduleBurn, messageScope]);
 
   // 新消息到达且当前在底部时，自动标记已读（带最新消息 ID）
   // 阈值与自动滚底(<400)一致：处于 120~400px 区间时新消息会被自动拉到底，
@@ -1026,7 +1036,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
 
   // ── 重发失败消息（复用 pendingMsgsRef + ack 机制）─────────────
   const retryMessage = useCallback((failedMsg) => {
-    if (!socket) return;
+    if (!socket?.connected || failedMsg.sender_id !== user.id || failedMsg.conversation_id !== conversation.id) return;
     const newTempId = `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     setMessages(prev =>
       prev.map(m => m._tempId === failedMsg._tempId
@@ -1059,7 +1069,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
         setMessages(prev => prev.map(m => m._tempId === newTempId ? { ...m, _status: 'error' } : m));
       }
     });
-  }, [socket]);
+  }, [socket, user.id, conversation.id]);
 
   // ── 断线重连后：自动自愈「发送失败」的消息（弱网/电梯/地铁场景）─────────
   // 重连时补拉服务端消息(上面的 effect)可认领「已落库但 ack 丢失」的乐观消息；

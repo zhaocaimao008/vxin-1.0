@@ -13,3 +13,10 @@
   color: var(--text-secondary);
   cursor: default;
 }
+/* 提示条占正常布局高度；空闲/断线时都不会遮挡导航和聊天操作。 */
+.home-frame { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
+.home-frame-electron { height: calc(100vh - 30px); height: calc(100dvh - 30px); }
+.home-status-bars { flex: 0 0 auto; }
+.home-status-bars .wc-net-banner { position: relative; inset: auto; }
+.home-frame > .wc-app, .home-frame > .m-shell { position: relative; inset: auto; flex: 1; height: auto; min-height: 0; }
+.home-frame .m-chat-page { position: absolute; height: 100%; }

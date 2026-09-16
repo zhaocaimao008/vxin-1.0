@@ -19,7 +19,7 @@ const convSvc = require('../conversations/conversations.service');
 const MAX = config.limits.maxMsgLength;
 
 // ── 历史消息（批量 replyTo + reactions，群已读数 / 私聊送达）──────
-function history(convId, userId, { before, after, limit, beforeId }) {
+function history(convId, userId, { before, after, limit, beforeId, afterId }) {
   requireMember(convId, userId);
 
   const rawLimit = parseInt(limit);
@@ -56,7 +56,17 @@ function history(convId, userId, { before, after, limit, beforeId }) {
       params.push(beforeTs);
     }
   }
-  if (hasAfter)  { query += ' AND m.created_at > ?'; params.push(afterTs); }
+  if (hasAfter) {
+    if (afterId) {
+      const cursor = db.prepare('SELECT rowid AS rid, created_at FROM messages WHERE id=? AND conversation_id=?').get(afterId, convId);
+      if (!cursor) throw badRequest('消息游标已失效，请重新加载会话');
+      query += ' AND (m.created_at > ? OR (m.created_at = ? AND m.rowid > ?))';
+      params.push(cursor.created_at, cursor.created_at, cursor.rid);
+    } else {
+      query += ' AND m.created_at > ?';
+      params.push(afterTs);
+    }
+  }
   query += hasAfter ? ' ORDER BY m.created_at ASC, m.rowid ASC LIMIT ?' : ' ORDER BY m.created_at DESC, m.rowid DESC LIMIT ?';
   params.push(lim);
 

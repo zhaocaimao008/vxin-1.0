@@ -51,16 +51,17 @@ export default class ErrorBoundary extends React.Component {
   }
 
   handleReload = () => {
-    // 优先回到当前页重试；状态复位让子树重新挂载
-    this.setState({ hasError: false, error: null });
+    // React.lazy 会缓存失败的 import Promise，单纯重挂载仍会报同一个错。
+    window.location.reload();
   };
 
   handleHome = () => {
     // 回首页（HashRouter 用 #/，BrowserRouter 用 /）；强制刷新确保干净状态
-    const isHash = typeof location !== 'undefined' && location.hash.startsWith('#/');
+    const isHash = typeof window !== 'undefined' && (window.__ELECTRON_CONFIG__ || location.hash.startsWith('#/'));
     if (typeof location !== 'undefined') {
-      location.href = isHash ? `${location.pathname}#/` : '/';
-      location.reload();
+      const home = isHash ? `${location.pathname}#/` : (import.meta.env.BASE_URL || '/');
+      if (location.pathname + location.hash === home) location.reload();
+      else location.assign(home);
     }
   };
 

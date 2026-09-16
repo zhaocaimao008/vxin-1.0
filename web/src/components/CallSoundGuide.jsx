@@ -11,13 +11,8 @@ const LS_KEY = 'vxin_call_sound_ready';
  * - 移动端（Capacitor）：有原生推送铃声，无需引导
  * - 已预热过（localStorage 标记）：不再打扰
  *
- * 定位沿革（批次11/12/18）：从「顶栏下方居中大胶囊」一路改到这版「顶部通栏细条」，
- * 前两版无论把 top 偏移调多大，都只是在"猜下面还有多少内容"——不同页面顶部结构高度
- * 不一（单层顶栏/双层标题+标签/短会话消息紧贴顶部…），批次18 用真实截图实测到
- * 大胶囊会直接压在新会话第一条消息气泡上。这版改用与 ReconnectingBanner
- * （同目录，已验证过全端无遮挡问题的既有组件）完全相同的"顶部通栏细条"方案：
- * 贴 viewport 最顶端、内容单行不换行、高度收得足够窄，不再需要为任何页面的具体高度
- * 猜测安全间距——两个通栏细条即使碰巧同时出现也只是相互紧贴，不会压住消息/标题正文。
+ * 与重连提示一起放在 Home 的正常布局中，给提示条留出真实高度，
+ * 避免盖住移动端右上角“发起”和聊天返回按钮。
  */
 export default function CallSoundGuide() {
   const [dismissed, setDismissed] = useState(() => {
@@ -42,12 +37,8 @@ export default function CallSoundGuide() {
   return (
     <div
       role="status"
+      data-testid="call-sound-guide"
       style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 9999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

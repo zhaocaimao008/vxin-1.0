@@ -3,7 +3,7 @@ import { useSocketStatus } from '../contexts/SocketContext'; // 只订阅 connec
 
 /**
  * 断线重连提示条。socket 断开超过 2s 仍未恢复才显示，避免初次连接/瞬断闪烁。
- * 固定在顶部，两端（桌面 + 移动）通用。
+ * 放在 Home 顶部的提示条区域，桌面和移动端均预留布局空间。
  * 恢复连接后不直接消失，而是短暂闪现一条绿色「网络已恢复」，给用户一个确定的收尾反馈，
  * ~2s 后自动收起（对齐一线 App 的「断—连」闭环体感）。
  */
@@ -30,7 +30,7 @@ export default function ReconnectingBanner() {
 
   if (state === 'hidden') return null;
   const restored = state === 'restored';
-  // Electron 自定义标题栏固定在 top:0 高 30px，提示条需下移避免被遮住
+  // HomeFrame 负责预留 Electron 标题栏与提示条的空间。
   const isElectron = !!window.__ELECTRON_CONFIG__;
   return (
     <div

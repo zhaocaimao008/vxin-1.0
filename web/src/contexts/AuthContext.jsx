@@ -1,6 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { clearCache } from '../utils/msgCache';
+import { clearOutbox } from '../utils/outbox';
+import { createMessageScope } from '../utils/messageScope';
 
 // 所有请求自动携带 httpOnly Cookie（同源时浏览器自动附加，跨域需此选项）
 axios.defaults.withCredentials = true;
@@ -108,6 +110,9 @@ export const AuthProvider = ({ children }) => {
   // 会话失效统一清理：401 兜底踢出 / 被踢下线(SocketContext force_logout) /
   // refresh 失败(axiosInterceptor vxin:session_expired) 三处共用，避免各写一套、遗漏清理项。
   const forceLogout = useCallback(() => {
+    clearOutbox(createMessageScope(userRef.current?.id, axios.defaults.baseURL || window.location.origin));
+    clearCache();
+    clearCsrfCache();
     setUser(null);
     setElectronToken(null);
     if (window.__ELECTRON_CONFIG__) window.location.hash = '#/login';
@@ -169,6 +174,8 @@ export const AuthProvider = ({ children }) => {
   // 失败（如 wallet 过期、该账号未在本设备登录过）抛错，调用方回退到密码登录。
   const switchAccount = async (accountId) => {
     const { data } = await axios.post('/api/auth/switch', { userId: accountId });
+    setElectronToken(data.token || null);
+    await clearCache();
     const next = upsertAccount(data.user);
     setAccounts(next);
     setUser(data.user);
@@ -200,6 +207,7 @@ export const AuthProvider = ({ children }) => {
     await axios.post('/api/auth/logout').catch(() => {});
     if (userRef.current?.id) removeAccount(userRef.current.id);
     clearCsrfCache();
+    clearOutbox(createMessageScope(userRef.current?.id, axios.defaults.baseURL || window.location.origin));
     clearCache();   // 隐私红线：登出清空离线消息缓存
     setElectronToken(null);
     setUser(null);
@@ -211,6 +219,7 @@ export const AuthProvider = ({ children }) => {
   // 3. 清除当前登录态 → PrivateRoute 自动跳转登录页 → 用户用新服务器账号重新登录
   const changeServer = async (newUrl) => {
     const clean = newUrl.trim().replace(/\/$/, '');
+    clearOutbox(createMessageScope(userRef.current?.id, axios.defaults.baseURL || window.location.origin));
     try { await axios.post('/api/auth/logout'); } catch { /* logout is best-effort on server switch */ }
     if (window.__ELECTRON_CONFIG__) {
       localStorage.setItem('vxin_server_url', clean);

@@ -43,6 +43,29 @@ function paginateAll(convId, userId, limit, useCompoundCursor) {
 }
 
 describe('消息历史·同秒游标', () => {
+  test('重连正向分页：205 条同秒消息全部取到，不能跨会话使用游标', async () => {
+    const a = await makeUser({ username: 'forward_a' });
+    const b = await makeUser({ username: 'forward_b' });
+    await befriend(a, b);
+    const convId = await privateConversation(a, b);
+    const ids = await seedSameSecondMessages(convId, a.userId, 205, 1700000000);
+    let after = 1699999999, afterId;
+    const recovered = [];
+    for (let guard = 0; guard < 5; guard++) {
+      const page = msgSvc.history(convId, a.userId, { after, afterId, limit: 100 });
+      recovered.push(...page.map(m => m.id));
+      if (page.length < 100) break;
+      after = page.at(-1).created_at;
+      afterId = page.at(-1).id;
+    }
+    expect(recovered).toEqual(ids);
+    const c = await makeUser({ username: 'forward_c' });
+    await befriend(a, c);
+    const otherConv = await privateConversation(a, c);
+    expect(() => msgSvc.history(otherConv, a.userId, { after, afterId, limit: 100 })).toThrow('消息游标已失效');
+    expect(() => msgSvc.history(convId, c.userId, { after, afterId, limit: 100 })).toThrow();
+  });
+
   test('同一秒内消息数 > limit：复合游标(beforeId)分页能取全、不丢不重', async () => {
     const a = await makeUser({ username: 'pgc_a' });
     const b = await makeUser({ username: 'pgc_b' });
