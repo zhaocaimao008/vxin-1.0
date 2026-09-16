@@ -86,7 +86,7 @@ jobs:
           curl --fail --silent --show-error --max-time 20 "https://vxinchat.com/landing-release.json?release=$GITHUB_SHA" | jq -e --arg sha "$GITHUB_SHA" '.commit == $sha'
           curl --fail --silent --show-error --max-time 20 "https://vxinchat.com/?release=$GITHUB_SHA" > "$BACKUP/published.html"
           grep -F 'vxin-android-8.0.7.apk' "$BACKUP/published.html" > /dev/null
-          grep -F 'vxin-8.0.14-setup.exe' "$BACKUP/published.html" > /dev/null
+          grep -F 'vxin-8.0.16-setup.exe' "$BACKUP/published.html" > /dev/null
           curl --fail --silent --show-error --max-time 20 https://vxinchat.com/app/ -o /dev/null
           trap - ERR
           echo "Landing published: $GITHUB_SHA; previous HTML: $BACKUP"
