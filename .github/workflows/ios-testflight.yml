@@ -108,6 +108,8 @@ jobs:
           from pathlib import Path
           profile = plistlib.loads(Path(os.environ['RUNNER_TEMP'] + '/profile.plist').read_bytes())
           name = profile['Name']
+          with open(os.environ['GITHUB_ENV'], 'a') as env_file:
+              env_file.write('SIGNING_PROFILE_NAME=' + name + '\n')
           project = Path('ios/Vxin.xcodeproj/project.pbxproj')
           text = re.sub(r'PROVISIONING_PROFILE_SPECIFIER = [^;]+;', lambda _: 'PROVISIONING_PROFILE_SPECIFIER = ' + json.dumps(name) + ';', project.read_text())
           project.write_text(text)
@@ -174,6 +176,14 @@ jobs:
           </plist>
           EOF
 
+          python3 - <<'PYEXPORT'
+          import os, plistlib
+          from pathlib import Path
+          path = Path('/tmp/ExportOptions.plist')
+          config = plistlib.loads(path.read_bytes())
+          config['provisioningProfiles']['com.vxin.app'] = os.environ['SIGNING_PROFILE_NAME']
+          path.write_bytes(plistlib.dumps(config))
+          PYEXPORT
           xcodebuild -exportArchive \
             -archivePath /tmp/Vxin.xcarchive \
             -exportPath /tmp/vxin-ipa \
