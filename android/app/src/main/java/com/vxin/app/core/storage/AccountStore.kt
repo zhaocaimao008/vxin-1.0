@@ -19,22 +19,23 @@ import javax.inject.Singleton
 class AccountStore @Inject constructor(
     @ApplicationContext context: Context,
     private val json: Json,
+    private val serverConfig: ServerConfig,
 ) {
     private val prefs: SharedPreferences = runCatching { create(context) }.getOrElse {
         context.deleteSharedPreferences(FILE); create(context)
     }
 
     fun accounts(): List<Account> = runCatching {
-        prefs.getString(KEY_LIST, null)?.let { json.decodeFromString<List<Account>>(it) } ?: emptyList()
+        prefs.getString(listKey, null)?.let { json.decodeFromString<List<Account>>(it) } ?: emptyList()
     }.getOrDefault(emptyList())
 
-    fun activeId(): String? = prefs.getString(KEY_ACTIVE, null)
+    fun activeId(): String? = prefs.getString(activeKey, null)
 
     /** 登录成功：加入/更新该账号并设为当前 */
     fun upsertActive(account: Account) {
         val next = accounts().filterNot { it.id == account.id } + account
         save(next)
-        prefs.edit().putString(KEY_ACTIVE, account.id).apply()
+        prefs.edit().putString(activeKey, account.id).apply()
     }
 
     fun tokenFor(id: String): String? = accounts().firstOrNull { it.id == id }?.token
@@ -45,18 +46,21 @@ class AccountStore @Inject constructor(
         save(next)
     }
 
-    fun setActive(id: String) { prefs.edit().putString(KEY_ACTIVE, id).apply() }
+    fun setActive(id: String) { prefs.edit().putString(activeKey, id).apply() }
 
     /** 移除账号，返回剩余账号 */
     fun remove(id: String): List<Account> {
         val next = accounts().filterNot { it.id == id }
         save(next)
-        if (activeId() == id) prefs.edit().remove(KEY_ACTIVE).apply()
+        if (activeId() == id) prefs.edit().remove(activeKey).apply()
         return next
     }
 
+    private val listKey: String get() = "accounts_v2:${serverConfig.baseUrl.trim().trimEnd('/')}"
+    private val activeKey: String get() = "active_v2:${serverConfig.baseUrl.trim().trimEnd('/')}"
+
     private fun save(list: List<Account>) {
-        prefs.edit().putString(KEY_LIST, json.encodeToString(list)).apply()
+        prefs.edit().putString(listKey, json.encodeToString(list)).apply()
     }
 
     private fun create(ctx: Context): SharedPreferences {
@@ -70,7 +74,5 @@ class AccountStore @Inject constructor(
 
     private companion object {
         const val FILE = "vxin_accounts"
-        const val KEY_LIST = "accounts"
-        const val KEY_ACTIVE = "active_id"
     }
 }

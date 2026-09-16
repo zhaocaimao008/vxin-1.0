@@ -76,7 +76,9 @@ final class AuthRepository {
     }
 
     func logout() async {
+        let scope = MessageScope.current
         let _: EmptyResponse? = try? await api.send("api/auth/logout", method: "POST")
+        if KeychainStore.shared.token != nil && scope?.isCurrent != true { return }
         if let active = AccountStore.shared.activeId() { AccountStore.shared.remove(active) }
         KeychainStore.shared.clear()
     }

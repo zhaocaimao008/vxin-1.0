@@ -16,6 +16,7 @@ import javax.inject.Singleton
 @Singleton
 class TokenStore @Inject constructor(
     @ApplicationContext context: Context,
+    private val serverConfig: ServerConfig,
 ) {
     private val prefs: SharedPreferences = runCatching {
         createEncrypted(context)
@@ -26,14 +27,16 @@ class TokenStore @Inject constructor(
     }
 
     var token: String?
-        get() = prefs.getString(KEY_TOKEN, null)
+        get() = prefs.getString(tokenKey, null)
         set(value) = prefs.edit().apply {
-            if (value == null) remove(KEY_TOKEN) else putString(KEY_TOKEN, value)
+            if (value == null) remove(tokenKey) else putString(tokenKey, value)
         }.apply()
 
     val isLoggedIn: Boolean get() = !token.isNullOrBlank()
 
-    fun clear() = prefs.edit().clear().apply()
+    fun clear() = prefs.edit().remove(tokenKey).remove("vxin_token").apply()
+
+    private val tokenKey: String get() = "token_v2:${serverConfig.baseUrl.trim().trimEnd('/')}"
 
     private fun createEncrypted(context: Context): SharedPreferences {
         val masterKey = MasterKey.Builder(context)
@@ -50,6 +53,5 @@ class TokenStore @Inject constructor(
 
     private companion object {
         const val FILE_NAME = "vxin_secure_prefs"
-        const val KEY_TOKEN = "vxin_token"
     }
 }

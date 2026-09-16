@@ -27,9 +27,14 @@ final class SessionStore: ObservableObject {
     init() {
         observer = NotificationCenter.default.addObserver(
             forName: APIClient.unauthorizedNotification, object: nil, queue: .main
-        ) { [weak self] _ in
+        ) { [weak self] notification in
+            guard let expired = notification.object as? MessageScope else { return }
             Task { @MainActor in
+                guard KeychainStore.shared.token == nil,
+                      AccountStore.shared.activeId() == expired.userId,
+                      ServerConfig.shared.baseURL == expired.server else { return }
                 SocketService.shared.disconnect()
+                MsgCacheStore.shared.clear()
                 self?.state = .unauthenticated
             }
         }
@@ -45,7 +50,10 @@ final class SessionStore: ObservableObject {
     }
 
     func restoreSession() async {
-        if let user = await repo.restoreSession() {
+        let scope = MessageScope.current
+        let user = await repo.restoreSession()
+        if let scope, !scope.isCurrent, KeychainStore.shared.token != nil { return }
+        if let user {
             SocketService.shared.connect()
             PushManager.shared.requestAuthorizationAndRegister()
             VoipCallManager.shared.registerCachedTokenIfNeeded()   // 补注册 PushKit 在未登录期缓存的 VoIP token
@@ -85,6 +93,7 @@ final class SessionStore: ObservableObject {
 
     func switchAccount(_ id: String) {
         guard let token = AccountStore.shared.token(for: id) else { return }
+        state = .loading
         SocketService.shared.disconnect()
         AccountStore.shared.setActive(id)
         KeychainStore.shared.token = token
@@ -112,7 +121,11 @@ final class SessionStore: ObservableObject {
 
     /// 注销账户成功后本地收尾：清登录态回登录页（与 logout 一致，但不再调 /logout）。
     func deleteAccount() async {
+        let scope = MessageScope.current
         await PushManager.shared.unregister()
+        guard scope?.isCurrent == true else { return }
+        DraftStore.shared.clearScope(scope)
+        OutboxStore.shared.clearScope(scope)
         SocketService.shared.disconnect()
         if let active = AccountStore.shared.activeId() { AccountStore.shared.remove(active) }
         KeychainStore.shared.clear()
@@ -122,9 +135,14 @@ final class SessionStore: ObservableObject {
     }
 
     func logout() async {
+        let scope = MessageScope.current
         await PushManager.shared.unregister()
+        guard scope?.isCurrent == true else { return }
+        DraftStore.shared.clearScope(scope)
+        OutboxStore.shared.clearScope(scope)
         SocketService.shared.disconnect()
         await repo.logout()
+        if KeychainStore.shared.token != nil && scope?.isCurrent != true { return }
         MsgCacheStore.shared.clear()   // 离线消息缓存全清（隐私红线：登出/切账号）
         refreshAccounts()   // AuthRepository.logout 已移除当前账号，同步发布列表
         state = .unauthenticated

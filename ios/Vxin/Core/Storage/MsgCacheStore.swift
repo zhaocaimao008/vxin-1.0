@@ -19,12 +19,14 @@ final class MsgCacheStore {
 
     private let fm = FileManager.default
     private let dir: URL
+    private let currentScope: () -> MessageScope?
     // I3: 专用串行队列，所有文件 IO 在后台线程执行，绝不阻塞主线程。
     // 非 private：测试用它做同步屏障（ioQueue.sync {}）等待异步写入落盘，业务代码不应直接使用。
     let ioQueue = DispatchQueue(label: "com.vxin.msgcache", qos: .utility)
 
     /// 允许测试注入独立目录，避免污染真实缓存。
-    init(directory: URL? = nil) {
+    init(directory: URL? = nil, currentScope: @escaping () -> MessageScope? = { MessageScope.current }) {
+        self.currentScope = currentScope
         if let directory {
             dir = directory
         } else {
@@ -58,37 +60,42 @@ final class MsgCacheStore {
     // MARK: - Public（签名对齐 msgCache.js load/save/remove/clear）
 
     /// 读取会话缓存（最近 50，createdAt 升序）。任何异常 → 返回空。
-    func load(_ conversationId: String) -> [Message] {
-        guard !conversationId.isEmpty else { return [] }
-        return loadItems(conversationId).map { $0.toMessage() }
+    func load(_ conversationId: String, scope: MessageScope? = MessageScope.current) -> [Message] {
+        guard let scope, scope == currentScope(), !conversationId.isEmpty else { return [] }
+        return loadItems(scope.key + ":" + conversationId).map { $0.toMessage() }
     }
 
     /// 覆写会话缓存（异步后台 IO，不阻塞主线程）。
-    func save(_ conversationId: String, _ msgs: [Message]) {
-        guard !conversationId.isEmpty else { return }
+    func save(_ conversationId: String, _ msgs: [Message], scope: MessageScope? = MessageScope.current) {
+        guard let scope, scope == currentScope(), !conversationId.isEmpty else { return }
+        let key = scope.key + ":" + conversationId
         let clean = Self.normalize(msgs).map { Cached(from: $0) }
         ioQueue.async { [weak self] in
-            self?.writeItems(conversationId, clean)
+            guard let self, scope == self.currentScope() else { return }
+            self.writeItems(key, clean)
         }
     }
 
     /// 删除单条（异步后台 IO）。
-    func remove(_ conversationId: String, _ msgId: String) {
-        guard !conversationId.isEmpty else { return }
+    func remove(_ conversationId: String, _ msgId: String, scope: MessageScope? = MessageScope.current) {
+        guard let scope, scope == currentScope(), !conversationId.isEmpty else { return }
+        let key = scope.key + ":" + conversationId
         ioQueue.async { [weak self] in
             guard let self else { return }
-            let items = self.loadItems(conversationId)
+            guard scope == self.currentScope() else { return }
+            let items = self.loadItems(key)
             let next = items.filter { $0.id != msgId }
-            if next.count != items.count { self.writeItems(conversationId, next) }
+            if next.count != items.count { self.writeItems(key, next) }
         }
     }
 
     /// 清理（异步后台 IO）。
-    func clear(_ conversationId: String? = nil) {
+    func clear(_ conversationId: String? = nil, scope: MessageScope? = MessageScope.current) {
         ioQueue.async { [weak self] in
             guard let self else { return }
             if let conversationId, !conversationId.isEmpty {
-                try? self.fm.removeItem(at: self.fileURL(conversationId))
+                guard let scope, scope == self.currentScope() else { return }
+                try? self.fm.removeItem(at: self.fileURL(scope.key + ":" + conversationId))
             } else {
                 try? self.fm.removeItem(at: self.dir)
                 try? self.fm.createDirectory(at: self.dir, withIntermediateDirectories: true)

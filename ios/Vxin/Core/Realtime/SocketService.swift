@@ -35,6 +35,7 @@ final class SocketService {
     /// 注意：SocketIO 库自带 SocketManager 类型，这里用全限定名避免与本类混淆
     private var manager: SocketIO.SocketManager?
     private var socket: SocketIOClient?
+    private var socketScope: MessageScope?
 
     let status = CurrentValueSubject<SocketStatus, Never>(.disconnected)
     let incoming = PassthroughSubject<Message, Never>()
@@ -109,11 +110,11 @@ final class SocketService {
     private var _reconnectTask: Task<Void, Never>?
 
     func connect() {
-        guard let token = KeychainStore.shared.token else { return }
-        if socket?.status == .connected { return }
+        guard let scope = MessageScope.current, let token = KeychainStore.shared.token, scope.isCurrent else { return }
+        if socket?.status == .connected && socketScope == scope { return }
         disconnect()
 
-        guard let url = URL(string: ServerConfig.shared.baseURL) else { return }
+        guard let url = URL(string: scope.server) else { return }
         let mgr = SocketIO.SocketManager(socketURL: url, config: [
             .log(false),
             .forceWebsockets(true),     // 仅 websocket，匹配服务端
@@ -340,6 +341,7 @@ final class SocketService {
         }
 
         manager = mgr
+        socketScope = scope
         socket = sock
         status.send(.connecting)
         sock.connect(withPayload: ["token": token])
@@ -349,8 +351,9 @@ final class SocketService {
     /// clientMsgId：幂等键。后端据 (sender_id, client_msg_id) 去重——ack 丢失后若上层复用
     /// 同一 clientMsgId 重发（或 socket 重连缓冲自动补发），服务端只落库一次、不产生重复气泡
     /// （对齐 Web / Android）。为兼容旧调用点，默认随机生成一次。
-    func sendMessage(conversationId: String, content: String, replyToId: String? = nil, clientMsgId: String? = nil) async -> Result<Message, Error> {
-        guard let sock = socket, sock.status == .connected else {
+    func sendMessage(conversationId: String, content: String, replyToId: String? = nil, clientMsgId: String? = nil, scope: MessageScope? = nil) async -> Result<Message, Error> {
+        guard let scope, scope.isCurrent, scope == socketScope,
+              let sock = socket, sock.status == .connected else {
             return .failure(SocketError.notConnected)
         }
         var payload: [String: Any] = [
@@ -449,6 +452,7 @@ final class SocketService {
         socket?.disconnect()
         manager?.disconnect()
         socket = nil
+        socketScope = nil
         manager = nil
         status.send(.disconnected)
     }

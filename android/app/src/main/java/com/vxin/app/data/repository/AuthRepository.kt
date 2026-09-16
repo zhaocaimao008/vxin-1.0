@@ -16,6 +16,7 @@ class AuthRepository @Inject constructor(
     private val api: AuthApi,
     private val tokenStore: TokenStore,
     private val accountStore: AccountStore,
+    private val messageScopes: com.vxin.app.core.storage.MessageScopeProvider,
 ) {
     suspend fun login(phone: String, password: String): User {
         android.util.Log.d("LOGIN_DIAG", "LOGIN_REQUEST_OBJECT_CREATE_START")
@@ -24,7 +25,7 @@ class AuthRepository @Inject constructor(
 
         android.util.Log.d("LOGIN_DIAG", "LOGIN_RETROFIT_CALL_START")
         val res = api.login(request)
-        android.util.Log.d("LOGIN_DIAG", "LOGIN_RETROFIT_CALL_SUCCESS token=${res.token.take(10)}... userId=${res.user.id}")
+        android.util.Log.d("LOGIN_DIAG", "LOGIN_RETROFIT_CALL_SUCCESS userId=${res.user.id}")
 
         applyAuth(res.token, res.user)
         return res.user
@@ -36,7 +37,7 @@ class AuthRepository @Inject constructor(
         android.util.Log.d("LOGIN_DIAG", "LOGIN_VXIN_REQUEST_CREATED vxinId=${request.wechat_id?.take(3)}***")
 
         val res = api.login(request)
-        android.util.Log.d("LOGIN_DIAG", "LOGIN_VXIN_SUCCESS token=${res.token.take(10)}... userId=${res.user.id}")
+        android.util.Log.d("LOGIN_DIAG", "LOGIN_VXIN_SUCCESS userId=${res.user.id}")
 
         applyAuth(res.token, res.user)
         return res.user
@@ -59,7 +60,9 @@ class AuthRepository @Inject constructor(
     }
 
     suspend fun logout() {
+        val owner = messageScopes.current()
         runCatching { api.logout() }
+        if (tokenStore.token != null && !messageScopes.isCurrent(owner)) return
         accountStore.activeId()?.let { accountStore.remove(it) }
         tokenStore.clear()
     }

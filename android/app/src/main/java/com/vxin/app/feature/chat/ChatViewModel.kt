@@ -118,6 +118,7 @@ class ChatViewModel @Inject constructor(
     private val msgCacheStore: com.vxin.app.core.storage.MsgCacheStore,
     private val configApi: com.vxin.app.data.api.ConfigApi,
     sessionManager: SessionManager,
+    private val messageScopes: com.vxin.app.core.storage.MessageScopeProvider,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -128,8 +129,10 @@ class ChatViewModel @Inject constructor(
 
     val myId: String = (sessionManager.state.value as? AuthState.Authenticated)?.user?.id.orEmpty()
 
+    private val messageScope = messageScopes.current()
+
     // 进入会话即恢复上次未发送的草稿(对齐微信/Web)
-    private val _uiState = MutableStateFlow(ChatUiState(title = title, loading = true, input = draftStore.get(conversationId)))
+    private val _uiState = MutableStateFlow(ChatUiState(title = title, loading = true, input = draftStore.get(conversationId, scope = messageScope)))
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
     /** 一次性提示消费：Screen 展示 error 后调用，清空以免常驻（错误与"已收藏/已转发"等成功提示共用 error 字段） */
@@ -209,13 +212,13 @@ class ChatViewModel @Inject constructor(
 
     fun appendMention(member: com.vxin.app.data.model.GroupMember) {
         _uiState.update { it.copy(input = it.input + "@${member.username} ") }
-        draftStore.set(conversationId, _uiState.value.input)   // @追加也存草稿
+        draftStore.set(conversationId, _uiState.value.input, scope = messageScope)   // @追加也存草稿
     }
 
     /** @所有人（仅群主/管理员可用，UI 已按 canManageGroup 控制入口）。 */
     fun appendMentionAll() {
         _uiState.update { it.copy(input = it.input + "@所有人 ") }
-        draftStore.set(conversationId, _uiState.value.input)
+        draftStore.set(conversationId, _uiState.value.input, scope = messageScope)
     }
 
     private fun observeGroupGone() {
@@ -483,7 +486,7 @@ class ChatViewModel @Inject constructor(
     // ── 表情/贴纸 ──────────────────────────────────────
     fun appendEmoji(emoji: String) {
         _uiState.update { it.copy(input = it.input + emoji) }
-        draftStore.set(conversationId, _uiState.value.input)   // 表情追加也存草稿
+        draftStore.set(conversationId, _uiState.value.input, scope = messageScope)   // 表情追加也存草稿
     }
 
     fun loadStickers() {
@@ -556,19 +559,19 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             chatRepository.messageDeletedEvents.collect { msgId ->
                 _uiState.update { it.copy(messages = it.messages.filterNot { m -> m.id == msgId }) }
-                msgCacheStore.remove(conversationId, msgId)   // 撤回/删除 → 缓存同步移除
+                msgCacheStore.remove(conversationId, msgId, scope = messageScope)   // 撤回/删除 → 缓存同步移除
             }
         }
         viewModelScope.launch {
             chatRepository.messageVanishedEvents.collect { msgId ->
                 _uiState.update { it.copy(messages = it.messages.filterNot { m -> m.id == msgId }) }
-                msgCacheStore.remove(conversationId, msgId)
+                msgCacheStore.remove(conversationId, msgId, scope = messageScope)
             }
         }
         viewModelScope.launch {
             chatRepository.batchDeletedEvents.collect { ids ->
                 _uiState.update { it.copy(messages = it.messages.filterNot { m -> ids.contains(m.id) }) }
-                ids.forEach { msgCacheStore.remove(conversationId, it) }
+                ids.forEach { msgCacheStore.remove(conversationId, it, scope = messageScope) }
             }
         }
     }
@@ -579,7 +582,7 @@ class ChatViewModel @Inject constructor(
             chatRepository.conversationClearedEvents.collect { convId ->
                 if (convId == conversationId) {
                     _uiState.update { it.copy(messages = emptyList()) }
-                    msgCacheStore.clear(conversationId)   // 清空聊天记录 → 缓存整会话清除（隐私红线）
+                    msgCacheStore.clear(conversationId, scope = messageScope)   // 清空聊天记录 → 缓存整会话清除（隐私红线）
                 }
             }
         }
@@ -743,9 +746,9 @@ class ChatViewModel @Inject constructor(
     private fun primeFromCache() {
         if (conversationId.isBlank() || uiBurnAfterEnabled()) return
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            val cached = msgCacheStore.load(conversationId)
+            val cached = msgCacheStore.load(conversationId, scope = messageScope)
             if (cached.isEmpty()) return@launch
-            val pending = outboxStore.load(conversationId)
+            val pending = outboxStore.load(conversationId, scope = messageScope)
             val merged = (cached + pending).sortedBy { it.created_at }
             // 切回主线程更新 UI
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
@@ -760,8 +763,8 @@ class ChatViewModel @Inject constructor(
     private fun persistCache(messages: List<Message>) {
         if (conversationId.isBlank()) return
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            if (uiBurnAfterEnabled()) { msgCacheStore.clear(conversationId); return@launch }
-            msgCacheStore.save(conversationId, messages)
+            if (uiBurnAfterEnabled()) { msgCacheStore.clear(conversationId, scope = messageScope); return@launch }
+            msgCacheStore.save(conversationId, messages, scope = messageScope)
         }
     }
 
@@ -774,13 +777,13 @@ class ChatViewModel @Inject constructor(
                     // 合并本地待发件箱：上次发送失败且未成功的文本消息，切走/重启后仍在。
                     // 服务端可能已幂等落库(id==outbox 的 clientMsgId) → 已成功,剔除并清理。
                     val serverIds = list.mapTo(HashSet()) { it.id }
-                    val pending = outboxStore.load(conversationId)
+                    val pending = outboxStore.load(conversationId, scope = messageScope)
                     val stillPending = pending.filter { it.id !in serverIds }
-                    pending.filterNot { it in stillPending }.forEach { outboxStore.remove(conversationId, it.id) }
+                    pending.filterNot { it in stillPending }.forEach { outboxStore.remove(conversationId, it.id, scope = messageScope) }
                     val merged = (list + stillPending).sortedBy { it.created_at }
                     _uiState.update { it.copy(loading = false, messages = merged, reachedStart = list.size < HISTORY_PAGE) }
                     // 离线缓存：server 覆盖旧缓存（含已编辑/已删同步），再落盘最近 50。
-                    persistCache(com.vxin.app.core.storage.MsgCacheStore.mergeById(msgCacheStore.load(conversationId), list))
+                    persistCache(com.vxin.app.core.storage.MsgCacheStore.mergeById(msgCacheStore.load(conversationId, scope = messageScope), list))
                     markReadLatest()   // 打开会话即标记已读
                     healFailedMessages()   // 连线且有失败气泡 → 进会话自动重发一次
                 }
@@ -840,7 +843,7 @@ class ChatViewModel @Inject constructor(
             if (cid != null) {
                 val idx = state.messages.indexOfFirst { it.clientMsgId == cid || it.id == cid }
                 if (idx >= 0) {
-                    outboxStore.remove(conversationId, state.messages[idx].id)
+                    outboxStore.remove(conversationId, state.messages[idx].id, scope = messageScope)
                     // 若真实消息已因其它路径存在，避免重复
                     val deduped = state.messages.filterIndexed { i, m -> i == idx || m.id != msg.id }
                     return@update state.copy(messages = deduped.map { if (it.clientMsgId == cid || it.id == cid) msg else it })
@@ -909,7 +912,7 @@ class ChatViewModel @Inject constructor(
         // 粘贴多行文本时把换行折叠为空格，消息始终保持单行高度（用户需求）
         val normalized = v.replace("\n", " ").replace("\r", " ")
         _uiState.update { it.copy(input = normalized) }
-        draftStore.set(conversationId, normalized)
+        draftStore.set(conversationId, normalized, scope = messageScope)
         // 节流：非空且距上次 emit > 2s 才发 typing，避免刷屏
         val now = System.currentTimeMillis()
         if (v.isNotBlank() && now - lastTypingEmit > 2000) {
@@ -942,20 +945,24 @@ class ChatViewModel @Inject constructor(
             clientMsgId = clientMsgId,
         )
         _uiState.update { it.copy(input = "", error = null, replyingTo = null, messages = it.messages + optimistic) }
-        draftStore.clear(conversationId)
+        draftStore.clear(conversationId, scope = messageScope)
         chatRepository.emitStopTyping(conversationId)
         dispatchSend(optimistic)
     }
 
     /** 发送一条乐观消息并处理成功/失败落地；失败入待发件箱，可自动/手动重发。 */
     private fun dispatchSend(optimistic: Message) {
+        if (!messageScopes.isCurrent(messageScope) ||
+            messageScope?.owns(optimistic.sender_id, optimistic.conversation_id, conversationId) != true) return
+        outboxStore.upsert(conversationId, optimistic, scope = messageScope)
         val cid = optimistic.clientMsgId ?: optimistic.id
         // 标记为发送中（重发场景从 failed 回到 sending）
         replaceMessage(optimistic.id) { it.copy(localStatus = LocalMsgStatus.SENDING) }
         viewModelScope.launch {
-            chatRepository.sendText(optimistic.conversation_id, optimistic.content, optimistic.reply_to_id, cid)
+            chatRepository.sendText(optimistic.conversation_id, optimistic.content, optimistic.reply_to_id, cid, messageScope)
                 .onSuccess { real ->
-                    outboxStore.remove(conversationId, optimistic.id)
+                    if (!messageScopes.isCurrent(messageScope)) return@onSuccess
+                    outboxStore.remove(conversationId, optimistic.id, scope = messageScope)
                     // 用真实消息替换乐观气泡（保留位置）；若真实消息已由广播先到，去重
                     _uiState.update { state ->
                         val withoutDup = state.messages.filterNot { it.id == real.id }
@@ -963,8 +970,9 @@ class ChatViewModel @Inject constructor(
                     }
                 }
                 .onFailure {
+                    if (!messageScopes.isCurrent(messageScope)) return@onFailure
                     replaceMessage(optimistic.id) { it.copy(localStatus = LocalMsgStatus.FAILED) }
-                    outboxStore.upsert(conversationId, optimistic.copy(localStatus = LocalMsgStatus.FAILED))
+                    outboxStore.upsert(conversationId, optimistic.copy(localStatus = LocalMsgStatus.FAILED), scope = messageScope)
                 }
         }
     }

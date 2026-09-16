@@ -33,6 +33,10 @@ class SessionManager @Inject constructor(
     private val remoteConfig: com.vxin.app.core.config.RemoteConfig,
     private val tokenStore: com.vxin.app.core.storage.TokenStore,
     private val accountStore: com.vxin.app.core.storage.AccountStore,
+    private val draftStore: com.vxin.app.core.storage.DraftStore,
+    private val outboxStore: com.vxin.app.core.storage.OutboxStore,
+    private val messageScopes: com.vxin.app.core.storage.MessageScopeProvider,
+    private val serverConfig: com.vxin.app.core.storage.ServerConfig,
     private val msgCacheStore: com.vxin.app.core.storage.MsgCacheStore,
     authInterceptor: AuthInterceptor,
     @AppScope private val scope: CoroutineScope,
@@ -42,7 +46,11 @@ class SessionManager @Inject constructor(
 
     init {
         scope.launch {
-            authInterceptor.unauthorizedEvents.collect {
+            authInterceptor.unauthorizedEvents.collect { expired ->
+                if (tokenStore.token != null || accountStore.activeId() != expired.userId ||
+                    serverConfig.baseUrl.trim().trimEnd('/') != expired.server) return@collect
+                draftStore.clearScope(expired)
+                outboxStore.clearScope(expired)
                 socketManager.disconnect()
                 msgCacheStore.clear()   // 401 被动登出也清离线缓存（隐私红线）
                 _state.value = AuthState.Unauthenticated
@@ -56,7 +64,9 @@ class SessionManager @Inject constructor(
     }
 
     suspend fun restoreSession() {
+        val session = messageScopes.current()
         val user = authRepository.restoreSession()
+        if (session != null && !messageScopes.isCurrent(session) && tokenStore.token != null) return
         if (user != null) {
             socketManager.connect()
             pushManager.registerCurrentToken()
@@ -95,6 +105,7 @@ class SessionManager @Inject constructor(
     fun switchAccount(accountId: String) {
         val token = accountStore.tokenFor(accountId) ?: return
         scope.launch {
+            _state.value = AuthState.Loading
             socketManager.disconnect()
             accountStore.setActive(accountId)
             tokenStore.token = token
@@ -114,7 +125,11 @@ class SessionManager @Inject constructor(
 
     /** 注销账户成功后本地收尾：与 logout 一致清理，回到登录页。 */
     suspend fun deleteAccount() {
+        val scope = messageScopes.current()
         pushManager.unregisterCurrentToken()   // 须在清 auth token 前
+        if (!messageScopes.isCurrent(scope)) return
+        draftStore.clearScope(scope)
+        outboxStore.clearScope(scope)
         socketManager.disconnect()
         tokenStore.clear()
         msgCacheStore.clear()                  // 离线消息缓存全清（隐私红线）
@@ -123,9 +138,14 @@ class SessionManager @Inject constructor(
     }
 
     suspend fun logout() {
+        val scope = messageScopes.current()
         pushManager.unregisterCurrentToken()   // 须在清 auth token 前
+        if (!messageScopes.isCurrent(scope)) return
+        draftStore.clearScope(scope)
+        outboxStore.clearScope(scope)
         socketManager.disconnect()
         authRepository.logout()
+        if (tokenStore.token != null && !messageScopes.isCurrent(scope)) return
         msgCacheStore.clear()                  // 离线消息缓存全清（隐私红线：登出/切账号）
         _state.value = AuthState.Unauthenticated
     }

@@ -5,7 +5,12 @@ import Foundation
 /// 只存纯文本（type=="text"）；每会话最多 50 条防膨胀。
 final class OutboxStore {
     static let shared = OutboxStore()
-    private init() {}
+    private let defaults: UserDefaults
+    private let currentScope: () -> MessageScope?
+    init(defaults: UserDefaults = .standard, currentScope: @escaping () -> MessageScope? = { MessageScope.current }) {
+        self.defaults = defaults
+        self.currentScope = currentScope
+    }
 
     private let prefix = "vxin_outbox_"
     private let maxPerConv = 50
@@ -27,8 +32,8 @@ final class OutboxStore {
     // MARK: - Public
 
     /// 读取某会话的待发件箱，还原为 failed 态的 Message 列表
-    func load(_ conversationId: String) -> [Message] {
-        loadItems(conversationId).map { item in
+    func load(_ conversationId: String, scope: MessageScope? = MessageScope.current) -> [Message] {
+        loadItems(conversationId, scope: scope).map { item in
             let reply: ReplyPreview? = item.replyToId2.map {
                 ReplyPreview(id: $0, type: item.replyToType ?? "text",
                              content: item.replyToContent ?? "", senderName: item.replyToSenderName ?? "")
@@ -43,9 +48,10 @@ final class OutboxStore {
     }
 
     /// 新增/更新一条失败消息（按 id 去重；仅文本）
-    func upsert(_ conversationId: String, _ msg: Message) {
-        guard !conversationId.isEmpty, msg.type == "text" else { return }
-        var items = loadItems(conversationId)
+    func upsert(_ conversationId: String, _ msg: Message, scope: MessageScope? = MessageScope.current) {
+        guard let scope, scope == currentScope(), msg.type == "text",
+              scope.owns(senderId: msg.senderId, messageConversationId: msg.conversationId, conversationId: conversationId) else { return }
+        var items = loadItems(conversationId, scope: scope)
         let item = Item(
             id: msg.id, conversationId: conversationId, senderId: msg.senderId,
             content: msg.content, replyToId: msg.replyToId, createdAt: msg.createdAt,
@@ -54,27 +60,39 @@ final class OutboxStore {
         )
         if let idx = items.firstIndex(where: { $0.id == msg.id }) { items[idx] = item }
         else { items.append(item) }
-        save(conversationId, Array(items.suffix(maxPerConv)))
+        save(conversationId, Array(items.suffix(maxPerConv)), scope: scope)
     }
 
     /// 消息成功送达后移除（按 id）
-    func remove(_ conversationId: String, _ msgId: String) {
+    func remove(_ conversationId: String, _ msgId: String, scope: MessageScope? = MessageScope.current) {
         guard !conversationId.isEmpty else { return }
-        let items = loadItems(conversationId)
+        let items = loadItems(conversationId, scope: scope)
         let next = items.filter { $0.id != msgId }
-        if next.count != items.count { save(conversationId, next) }
+        if next.count != items.count { save(conversationId, next, scope: scope) }
     }
 
     // MARK: - Private
 
-    private func loadItems(_ conversationId: String) -> [Item] {
-        guard let data = UserDefaults.standard.data(forKey: prefix + conversationId) else { return [] }
-        return (try? JSONDecoder().decode([Item].self, from: data)) ?? []
+    func clearScope(_ scope: MessageScope? = MessageScope.current) {
+        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix(prefix) {
+            if !key.hasPrefix(prefix + "v2_") || scope.map({ key.hasPrefix(prefix + $0.key + ":") }) == true {
+                defaults.removeObject(forKey: key)
+            }
+        }
     }
 
-    private func save(_ conversationId: String, _ items: [Item]) {
-        let key = prefix + conversationId
-        if items.isEmpty { UserDefaults.standard.removeObject(forKey: key); return }
-        if let data = try? JSONEncoder().encode(items) { UserDefaults.standard.set(data, forKey: key) }
+    private func loadItems(_ conversationId: String, scope: MessageScope?) -> [Item] {
+        guard let scope, scope == currentScope(), !conversationId.isEmpty else { return [] }
+        guard let data = defaults.data(forKey: prefix + scope.key + ":" + conversationId) else { return [] }
+        return ((try? JSONDecoder().decode([Item].self, from: data)) ?? []).filter {
+            scope.owns(senderId: $0.senderId, messageConversationId: $0.conversationId, conversationId: conversationId)
+        }
+    }
+
+    private func save(_ conversationId: String, _ items: [Item], scope: MessageScope?) {
+        guard let scope, scope == currentScope() else { return }
+        let key = prefix + scope.key + ":" + conversationId
+        if items.isEmpty { defaults.removeObject(forKey: key); return }
+        if let data = try? JSONEncoder().encode(items) { defaults.set(data, forKey: key) }
     }
 }

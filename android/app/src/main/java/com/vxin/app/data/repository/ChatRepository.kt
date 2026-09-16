@@ -81,8 +81,9 @@ class ChatRepository @Inject constructor(
         content: String,
         replyToId: String? = null,
         clientMsgId: String? = null,
+        scope: com.vxin.app.core.storage.MessageScope? = null,
     ): Result<Message> =
-        socketManager.sendMessage(conversationId, content, replyToId, clientMsgId)
+        socketManager.sendMessage(conversationId, content, replyToId, clientMsgId, scope)
 
     /** 上传媒体并返回服务端创建的消息（同时会经 Socket 广播给其他端） */
     suspend fun uploadMedia(conversationId: String, part: MultipartBody.Part): Message =

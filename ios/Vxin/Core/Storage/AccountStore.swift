@@ -14,8 +14,8 @@ final class AccountStore {
     private init() {}
 
     private let service = "com.vxin.app"
-    private let account = "vxin.accounts"
-    private let activeKey = "vxin_active_account_id"
+    private var account: String { "vxin.accounts.v2:" + ServerConfig.shared.baseURL }
+    private var activeKey: String { "vxin_active_account_v2:" + ServerConfig.shared.baseURL }
 
     func accounts() -> [StoredAccount] {
         guard let data = read(), let list = try? JSONDecoder().decode([StoredAccount].self, from: data) else { return [] }

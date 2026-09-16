@@ -76,6 +76,7 @@ final class APIClient {
         body: Encodable? = nil,
         authorized: Bool = true
     ) async throws -> T {
+        let scope = authorized ? MessageScope.current : nil
         var request = try makeRequest(path: path, method: method, authorized: authorized)
         if let body {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -85,12 +86,13 @@ final class APIClient {
             let (data, response): (Data, URLResponse)
             do { (data, response) = try await self.session.data(for: request) }
             catch { throw APIError.network }
-            return try self.handle(data: data, response: response)
+            return try self.handle(data: data, response: response, scope: scope)
         }
     }
 
     /// 取原始字节（带 Bearer），用于二维码 PNG 等非 JSON 响应。
     func fetchData(_ path: String) async throws -> Data {
+        let scope = MessageScope.current
         let request = try makeRequest(path: path, method: "GET", authorized: true)
         let (data, response): (Data, URLResponse)
         do { (data, response) = try await session.data(for: request) }
@@ -99,8 +101,7 @@ final class APIClient {
         switch http.statusCode {
         case 200..<300: return data
         case 401:
-            KeychainStore.shared.token = nil
-            NotificationCenter.default.post(name: Self.unauthorizedNotification, object: nil)
+            expireIfCurrent(scope)
             throw APIError.unauthorized
         default: throw APIError.server(http.statusCode, nil)
         }
@@ -115,6 +116,7 @@ final class APIClient {
         fieldName: String = "file",
         method: String = "POST"
     ) async throws -> T {
+        let scope = MessageScope.current
         var request = try makeRequest(path: path, method: method, authorized: true)
         let boundary = "Boundary-\(UUID().uuidString)"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
@@ -129,7 +131,7 @@ final class APIClient {
         let (data, response): (Data, URLResponse)
         do { (data, response) = try await session.upload(for: request, from: body) }
         catch { throw APIError.network }
-        return try handle(data: data, response: response)
+        return try handle(data: data, response: response, scope: scope)
     }
 
     // MARK: - 指数退避重试（5xx / 网络超时自动重试）
@@ -161,6 +163,15 @@ final class APIClient {
     }
 
     // MARK: - 内部
+    private func expireIfCurrent(_ scope: MessageScope?) {
+        guard let scope, scope.isCurrent else { return }
+        DraftStore.shared.clearScope(scope)
+        OutboxStore.shared.clearScope(scope)
+        MsgCacheStore.shared.clear()
+        KeychainStore.shared.clear()
+        NotificationCenter.default.post(name: Self.unauthorizedNotification, object: scope)
+    }
+
     private func makeRequest(path: String, method: String, authorized: Bool) throws -> URLRequest {
         guard let url = URL(string: ServerConfig.shared.baseURL + "/" + path) else { throw APIError.network }
         var request = URLRequest(url: url)
@@ -171,7 +182,7 @@ final class APIClient {
         return request
     }
 
-    private func handle<T: Decodable>(data: Data, response: URLResponse) throws -> T {
+    private func handle<T: Decodable>(data: Data, response: URLResponse, scope: MessageScope?) throws -> T {
         guard let http = response as? HTTPURLResponse else { throw APIError.network }
         switch http.statusCode {
         case 200..<300:
@@ -179,8 +190,7 @@ final class APIClient {
             do { return try decoder.decode(T.self, from: data) }
             catch { throw APIError.decoding }
         case 401:
-            KeychainStore.shared.token = nil
-            NotificationCenter.default.post(name: Self.unauthorizedNotification, object: nil)
+            expireIfCurrent(scope)
             throw APIError.unauthorized
         default:
             let message = try? decoder.decode(APIErrorBody.self, from: data).error

@@ -78,6 +78,7 @@ final class ChatViewModel: ObservableObject {
     /// 通话发起用。为空时回退扫历史消息。
     private var peerUserId: String?
 
+    private let messageScope: MessageScope?
     private let repo = ChatRepository.shared
     private let recorder = AudioRecorder.shared
     private let player = AudioPlayerService.shared
@@ -86,12 +87,13 @@ final class ChatViewModel: ObservableObject {
     private var typingClearTask: Task<Void, Never>?
 
     init(conversationId: String, title: String, myId: String, isGroup: Bool = false, peerUserId: String? = nil) {
+        self.messageScope = MessageScope.current
         self.conversationId = conversationId
         self.title = title
         self.myId = myId
         self.isGroup = isGroup
         self.peerUserId = peerUserId
-        self.input = DraftStore.shared.get(conversationId)   // 恢复未发送草稿(对齐微信/Web/Android)
+        self.input = DraftStore.shared.get(conversationId, scope: self.messageScope)   // 恢复未发送草稿(对齐微信/Web/Android)
 
         // 输入变化即持久化草稿(去抖，避免每字符都写盘)
         $input
@@ -99,7 +101,7 @@ final class ChatViewModel: ObservableObject {
             .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
             .sink { [weak self] text in
                 guard let self else { return }
-                DraftStore.shared.set(self.conversationId, text)
+                DraftStore.shared.set(self.conversationId, text, scope: self.messageScope)
             }
             .store(in: &cancellables)
 
@@ -119,7 +121,7 @@ final class ChatViewModel: ObservableObject {
             .sink { [weak self] msgId in Task { @MainActor in
                 guard let self else { return }
                 self.messages.removeAll { $0.id == msgId }
-                MsgCacheStore.shared.remove(self.conversationId, msgId)   // 撤回/删除 → 缓存同步移除
+                MsgCacheStore.shared.remove(self.conversationId, msgId, scope: self.messageScope)   // 撤回/删除 → 缓存同步移除
             }}
             .store(in: &cancellables)
 
@@ -127,7 +129,7 @@ final class ChatViewModel: ObservableObject {
             .sink { [weak self] msgId in Task { @MainActor in
                 guard let self else { return }
                 self.messages.removeAll { $0.id == msgId }
-                MsgCacheStore.shared.remove(self.conversationId, msgId)
+                MsgCacheStore.shared.remove(self.conversationId, msgId, scope: self.messageScope)
             }}
             .store(in: &cancellables)
 
@@ -151,7 +153,7 @@ final class ChatViewModel: ObservableObject {
                 guard let self else { return }
                 let idSet = Set(msgIds)
                 self.messages.removeAll { idSet.contains($0.id) }
-                for id in msgIds { MsgCacheStore.shared.remove(self.conversationId, id) }
+                for id in msgIds { MsgCacheStore.shared.remove(self.conversationId, id, scope: self.messageScope) }
             }}
             .store(in: &cancellables)
 
@@ -159,7 +161,7 @@ final class ChatViewModel: ObservableObject {
             .sink { [weak self] convId in Task { @MainActor in
                 guard let self, convId == self.conversationId else { return }
                 self.messages.removeAll()
-                MsgCacheStore.shared.clear(self.conversationId)   // 清空聊天记录 → 缓存整会话清除（隐私红线）
+                MsgCacheStore.shared.clear(self.conversationId, scope: self.messageScope)   // 清空聊天记录 → 缓存整会话清除（隐私红线）
             }}
             .store(in: &cancellables)
 
@@ -672,9 +674,9 @@ final class ChatViewModel: ObservableObject {
     /// 阅后即焚会话不读缓存（该会话本就不落盘）；已存在 outbox 待发消息也一并合并。
     private func primeFromCache() {
         guard !conversationId.isEmpty, burnAfter == 0 else { return }
-        let cached = MsgCacheStore.shared.load(conversationId)
+        let cached = MsgCacheStore.shared.load(conversationId, scope: self.messageScope)
         guard !cached.isEmpty, messages.isEmpty else { return }   // 已被 loadHistory 抢先则不覆盖
-        let pending = OutboxStore.shared.load(conversationId)
+        let pending = OutboxStore.shared.load(conversationId, scope: self.messageScope)
         messages = (cached + pending).sorted { $0.createdAt < $1.createdAt }
     }
 
@@ -682,8 +684,8 @@ final class ChatViewModel: ObservableObject {
     /// 阅后即焚会话不落盘（隐私红线）——并顺手清掉可能残留的缓存。
     private func persistCache() {
         guard !conversationId.isEmpty else { return }
-        guard burnAfter == 0 else { MsgCacheStore.shared.clear(conversationId); return }
-        MsgCacheStore.shared.save(conversationId, messages)
+        guard burnAfter == 0 else { MsgCacheStore.shared.clear(conversationId, scope: self.messageScope); return }
+        MsgCacheStore.shared.save(conversationId, messages, scope: self.messageScope)
     }
 
     // MARK: - 历史 / 实时
@@ -693,19 +695,19 @@ final class ChatViewModel: ObservableObject {
             // 合并本地待发件箱：上次发送失败且未成功的文本消息，切走/重启/重连后仍在。
             // 服务端可能已幂等落库(id==outbox 的 clientMsgId) → 已成功,剔除并清理。
             let serverIds = Set(list.map { $0.id })
-            let pending = OutboxStore.shared.load(conversationId)
+            let pending = OutboxStore.shared.load(conversationId, scope: self.messageScope)
             let stillPending = pending.filter { !serverIds.contains($0.id) }
             for done in pending where !stillPending.contains(where: { $0.id == done.id }) {
-                OutboxStore.shared.remove(conversationId, done.id)
+                OutboxStore.shared.remove(conversationId, done.id, scope: self.messageScope)
             }
             messages = (list + stillPending).sorted { $0.createdAt < $1.createdAt }
             reachedStart = list.count < 50
             // 离线缓存：server 覆盖旧缓存（含已编辑/已删同步），落盘最近 50。
             if burnAfter == 0 {
-                let merged = MsgCacheStore.mergeById(MsgCacheStore.shared.load(conversationId), list)
-                MsgCacheStore.shared.save(conversationId, merged)
+                let merged = MsgCacheStore.mergeById(MsgCacheStore.shared.load(conversationId, scope: self.messageScope), list)
+                MsgCacheStore.shared.save(conversationId, merged, scope: self.messageScope)
             } else {
-                MsgCacheStore.shared.clear(conversationId)   // 焚毁会话不落盘
+                MsgCacheStore.shared.clear(conversationId, scope: self.messageScope)   // 焚毁会话不落盘
             }
             markReadLatest()   // 打开会话即标记已读
             healFailedMessages(announce: announceHeal)   // 连线且有失败气泡 → 进会话/重连自动重发
@@ -750,7 +752,7 @@ final class ChatViewModel: ObservableObject {
     private func claimOrAppend(_ msg: Message) {
         if let cid = msg.clientMsgId,
            let idx = messages.firstIndex(where: { $0.clientMsgId == cid || $0.id == cid }) {
-            OutboxStore.shared.remove(conversationId, messages[idx].id)
+            OutboxStore.shared.remove(conversationId, messages[idx].id, scope: self.messageScope)
             // 若真实消息已因其它路径存在，先去重再替换
             messages.removeAll { $0.id == msg.id && $0.clientMsgId != cid }
             if let i = messages.firstIndex(where: { $0.clientMsgId == cid || $0.id == cid }) { messages[i] = msg }
@@ -818,7 +820,7 @@ final class ChatViewModel: ObservableObject {
                                  senderId: myId, content: text, replyToId: replyId,
                                  replyTo: replySnap, clientMsgId: clientMsgId)
         input = ""
-        DraftStore.shared.clear(conversationId)
+        DraftStore.shared.clear(conversationId, scope: self.messageScope)
         replyingTo = nil
         error = nil
         messages.append(optimistic)
@@ -828,6 +830,9 @@ final class ChatViewModel: ObservableObject {
 
     /// 发送一条乐观消息并处理成功/失败落地；失败入待发件箱，可自动/手动重发。
     private func dispatchSend(_ optimistic: Message) {
+        guard let messageScope, messageScope.isCurrent,
+              messageScope.owns(senderId: optimistic.senderId, messageConversationId: optimistic.conversationId, conversationId: conversationId) else { return }
+        OutboxStore.shared.upsert(conversationId, optimistic, scope: messageScope)
         let cid = optimistic.clientMsgId ?? optimistic.id
         // 标记发送中（重发场景从 failed 回到 sending）
         setLocalStatus(optimistic.id, LocalMsgStatus.sending)
@@ -835,10 +840,11 @@ final class ChatViewModel: ObservableObject {
             guard let self else { return }
             let result = await repo.sendText(conversationId: optimistic.conversationId,
                                              content: optimistic.content,
-                                             replyToId: optimistic.replyToId, clientMsgId: cid)
+                                             replyToId: optimistic.replyToId, clientMsgId: cid, scope: messageScope)
+            guard messageScope.isCurrent else { return }
             switch result {
             case .success(let real):
-                OutboxStore.shared.remove(conversationId, optimistic.id)
+                OutboxStore.shared.remove(conversationId, optimistic.id, scope: self.messageScope)
                 // 用真实消息替换乐观气泡（保留位置）；若广播已先到则去重
                 messages.removeAll { $0.id == real.id }
                 if let idx = messages.firstIndex(where: { $0.id == optimistic.id }) { messages[idx] = real }
@@ -847,7 +853,7 @@ final class ChatViewModel: ObservableObject {
                 setLocalStatus(optimistic.id, LocalMsgStatus.failed)
                 var failed = optimistic
                 failed.localStatus = LocalMsgStatus.failed
-                OutboxStore.shared.upsert(conversationId, failed)
+                OutboxStore.shared.upsert(conversationId, failed, scope: self.messageScope)
             }
         }
     }

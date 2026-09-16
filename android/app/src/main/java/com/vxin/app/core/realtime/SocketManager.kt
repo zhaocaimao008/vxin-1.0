@@ -62,9 +62,11 @@ data class GroupCallEndedEvent(val callId: String, val reason: String)  // 服�
 class SocketManager @Inject constructor(
     private val tokenStore: TokenStore,
     private val serverConfig: ServerConfig,
+    private val messageScopes: com.vxin.app.core.storage.MessageScopeProvider,
     private val json: Json,
 ) {
     private var socket: Socket? = null
+    private var socketScope: com.vxin.app.core.storage.MessageScope? = null
 
     private val _status = MutableStateFlow(SocketStatus.DISCONNECTED)
     val status: StateFlow<SocketStatus> = _status.asStateFlow()
@@ -180,8 +182,10 @@ class SocketManager @Inject constructor(
 
     @Synchronized
     fun connect() {
-        val token = tokenStore.token ?: return        // 未登录不连
-        if (socket?.connected() == true) return
+        val scope = messageScopes.current() ?: return
+        val token = tokenStore.token ?: return
+        if (!messageScopes.isCurrent(scope)) return
+        if (socket?.connected() == true && socketScope == scope) return
 
         // 已有实例先清理，避免 token/地址变更后复用旧连接
         disconnectInternal()
@@ -201,11 +205,12 @@ class SocketManager @Inject constructor(
         }
 
         val s = try {
-            IO.socket(serverConfig.baseUrl, opts)
+            IO.socket(scope.server, opts)
         } catch (e: Exception) {
             Log.e(TAG, "build socket failed: ${e.message}")
             return
         }
+        socketScope = scope
         socket = s
 
         s.on(Socket.EVENT_CONNECT) { _status.value = SocketStatus.CONNECTED }
@@ -461,9 +466,14 @@ class SocketManager @Inject constructor(
         content: String,
         replyToId: String? = null,
         clientMsgId: String? = null,
+        scope: com.vxin.app.core.storage.MessageScope? = null,
     ): Result<Message> =
         suspendCancellableCoroutine { cont ->
             val s = socket
+            if (!messageScopes.isCurrent(scope) || scope != socketScope) {
+                cont.resume(Result.failure(IllegalStateException("会话已切换，请重新打开聊天")))
+                return@suspendCancellableCoroutine
+            }
             if (s == null || !s.connected()) {
                 cont.resume(Result.failure(IllegalStateException("连接已断开")))
                 return@suspendCancellableCoroutine
@@ -594,6 +604,7 @@ class SocketManager @Inject constructor(
             disconnect()
         }
         socket = null
+        socketScope = null
     }
 
     private fun parseMessage(any: Any?): Message? {

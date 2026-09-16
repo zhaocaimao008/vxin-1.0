@@ -5,13 +5,15 @@ import XCTest
 /// 覆盖纯逻辑 normalize/mergeById（save/load/remove 的语义内核）+ FileManager IO 往返（用临时目录，不污染真实缓存）。
 final class MsgCacheStoreTests: XCTestCase {
 
+    private let scope = MessageScope(server: "https://test.invalid", userId: "u", credential: "test")
     private var store: MsgCacheStore!
     private var tmpDir: URL!
 
     override func setUpWithError() throws {
         tmpDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("msgcache_test_\(UUID().uuidString)", isDirectory: true)
-        store = MsgCacheStore(directory: tmpDir)
+        let captured = scope
+        store = MsgCacheStore(directory: tmpDir, currentScope: { captured })
     }
 
     override func tearDownWithError() throws {
@@ -94,46 +96,46 @@ final class MsgCacheStoreTests: XCTestCase {
     private func drain() { store.ioQueue.sync {} }
 
     func testSaveLoadRoundTrip() {
-        store.save("c1", [m(2), m(1), m(3)])
+        store.save("c1", [m(2), m(1), m(3)], scope: scope)
         drain()
-        XCTAssertEqual(ids(store.load("c1")), [1, 2, 3])
+        XCTAssertEqual(ids(store.load("c1", scope: scope)), [1, 2, 3])
     }
 
     func testSaveEmptyDeletesFile() {
-        store.save("c1", [m(1)])
-        store.save("c1", [])
+        store.save("c1", [m(1)], scope: scope)
+        store.save("c1", [], scope: scope)
         drain()
-        XCTAssertTrue(store.load("c1").isEmpty)
+        XCTAssertTrue(store.load("c1", scope: scope).isEmpty)
     }
 
     func testRemoveSingle() {
-        store.save("c1", [m(1), m(2), m(3)])
-        store.remove("c1", "2")
+        store.save("c1", [m(1), m(2), m(3)], scope: scope)
+        store.remove("c1", "2", scope: scope)
         drain()
-        XCTAssertEqual(ids(store.load("c1")), [1, 3])
+        XCTAssertEqual(ids(store.load("c1", scope: scope)), [1, 3])
     }
 
     func testClearConvOnly() {
-        store.save("c1", [m(1)])
-        store.save("c2", [m(9)])
-        store.clear("c1")
+        store.save("c1", [m(1)], scope: scope)
+        store.save("c2", [m(9)], scope: scope)
+        store.clear("c1", scope: scope)
         drain()
-        XCTAssertTrue(store.load("c1").isEmpty)
-        XCTAssertEqual(ids(store.load("c2")), [9])
+        XCTAssertTrue(store.load("c1", scope: scope).isEmpty)
+        XCTAssertEqual(ids(store.load("c2", scope: scope)), [9])
     }
 
     func testClearAllOnLogout() {
-        store.save("c1", [m(1)])
-        store.save("c2", [m(9)])
-        store.clear()
+        store.save("c1", [m(1)], scope: scope)
+        store.save("c2", [m(9)], scope: scope)
+        store.clear(scope: scope)
         drain()
-        XCTAssertTrue(store.load("c1").isEmpty)
-        XCTAssertTrue(store.load("c2").isEmpty)
+        XCTAssertTrue(store.load("c1", scope: scope).isEmpty)
+        XCTAssertTrue(store.load("c2", scope: scope).isEmpty)
     }
 
     func testEmptyConvIdSafe() {
-        XCTAssertTrue(store.load("").isEmpty)
-        store.save("", [m(1)])   // 不崩溃即可
+        XCTAssertTrue(store.load("", scope: scope).isEmpty)
+        store.save("", [m(1)], scope: scope)   // 不崩溃即可
         drain()
     }
 }

@@ -1,6 +1,7 @@
 package com.vxin.app.core.storage
 
 import android.content.Context
+import android.content.SharedPreferences
 import com.vxin.app.data.model.Message
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.serialization.builtins.ListSerializer
@@ -24,47 +25,51 @@ import javax.inject.Singleton
  *  - 退出登录 / 切换账号 → clear() 全清（由 SessionManager 触发）。
  */
 @Singleton
-class MsgCacheStore @Inject constructor(
-    @ApplicationContext context: Context,
+class MsgCacheStore internal constructor(
+    private val prefs: SharedPreferences,
+    private val scopes: MessageScopeProvider,
 ) {
+    @Inject constructor(@ApplicationContext context: Context, scopes: MessageScopeProvider) :
+        this(context.getSharedPreferences("vxin_msgcache_v1", Context.MODE_PRIVATE), scopes)
     // 键名带 schema 版本前缀；破坏性变更时改 KEY_PREFIX 弃用旧键。
-    private val prefs = context.getSharedPreferences("vxin_msgcache_v1", Context.MODE_PRIVATE)
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     private val listSerializer = ListSerializer(Message.serializer())
 
     /** 读取会话缓存（最近 50，created_at 升序）。任何异常 → 返回空。 */
-    fun load(conversationId: String): List<Message> {
-        if (conversationId.isBlank()) return emptyList()
-        val raw = prefs.getString(conversationId, null) ?: return emptyList()
+    fun load(conversationId: String, scope: MessageScope? = scopes.current()): List<Message> {
+        if (conversationId.isBlank() || !scopes.isCurrent(scope)) return emptyList()
+        val raw = prefs.getString("${scope!!.key}:$conversationId", null) ?: return emptyList()
         return runCatching { json.decodeFromString(listSerializer, raw) }.getOrDefault(emptyList())
     }
 
     /** 覆写会话缓存（内部 normalize：去乐观/焚毁、按 id 去重、升序、截断最近 50）。异常静默。 */
-    fun save(conversationId: String, msgs: List<Message>) {
-        if (conversationId.isBlank()) return
+    fun save(conversationId: String, msgs: List<Message>, scope: MessageScope? = scopes.current()) {
+        if (conversationId.isBlank() || !scopes.isCurrent(scope)) return
+        val key = "${scope!!.key}:$conversationId"
         val clean = normalize(msgs)
         runCatching {
             prefs.edit().apply {
                 // 空数组等价删除该会话键（与 Web saveCache 一致）。
-                if (clean.isEmpty()) remove(conversationId)
-                else putString(conversationId, json.encodeToString(listSerializer, clean))
+                if (clean.isEmpty()) remove(key)
+                else putString(key, json.encodeToString(listSerializer, clean))
             }.apply()
         }
     }
 
     /** 删除单条（撤回/删除）。 */
-    fun remove(conversationId: String, msgId: String) {
+    fun remove(conversationId: String, msgId: String, scope: MessageScope? = scopes.current()) {
         if (conversationId.isBlank()) return
-        val cur = load(conversationId)
+        val cur = load(conversationId, scope)
         val next = cur.filterNot { it.id == msgId }
-        if (next.size != cur.size) save(conversationId, next)
+        if (next.size != cur.size) save(conversationId, next, scope)
     }
 
     /** 清理：有 convId=清该会话；无参=清全部（登出/切账号，隐私红线）。 */
-    fun clear(conversationId: String? = null) {
+    fun clear(conversationId: String? = null, scope: MessageScope? = scopes.current()) {
         runCatching {
             prefs.edit().apply {
-                if (conversationId != null) remove(conversationId) else clear()
+                if (conversationId == null) clear()
+                else if (scopes.isCurrent(scope)) remove("${scope!!.key}:$conversationId")
             }.apply()
         }
     }
