@@ -5,8 +5,9 @@ const svc = require('./contacts.service');
 const io = req => req.app.get('io');
 
 exports.listContacts   = asyncHandler(async (req, res) => {
-  // 联系人列表变化频率低(添加/删除好友才变)，短暂缓存 30s 避免重连风暴中重复请求
-  res.setHeader('Cache-Control', 'private, max-age=30, stale-while-revalidate=60');
+  // Cookie sessions share one URL: cached responses can show a previous account's
+  // contacts, or resurrect removed friends after a reload.
+  res.setHeader('Cache-Control', 'private, no-store');
   res.json(svc.listContacts(req.user.id));
 });
 exports.deleteContact  = asyncHandler(async (req, res) => { svc.deleteContact(req.user.id, req.params.contactId); res.json({ success: true }); });

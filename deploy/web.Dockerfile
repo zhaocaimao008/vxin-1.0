@@ -1,6 +1,7 @@
 FROM node:22-bookworm-slim AS build
 WORKDIR /app
 COPY web/package*.json ./
+COPY web/scripts ./scripts
 RUN npm ci --legacy-peer-deps
 COPY web/ ./
 RUN npm run build

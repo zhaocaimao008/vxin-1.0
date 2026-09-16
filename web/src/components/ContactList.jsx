@@ -32,16 +32,10 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
   const { socket } = useSocketCore();
 
   // 统一兜底成数组：若接口异常返回非数组，避免下方 .filter/.map 抛错导致整页白屏
-  //
-  // fresh=true：绕开浏览器 HTTP 缓存。/api/users/contacts 响应带
-  // Cache-Control: private, max-age=30——真实复现过的 bug：接受好友申请后
-  // handleRequest/socket onAccepted 都会调 fetchContacts() 想立刻刷新列表，
-  // 但同一 URL 在 30 秒缓存窗口内会被浏览器直接吃缓存，连服务器都不请求，
-  // 拿到的是"接受之前"那份旧响应——新好友在列表里凭空消失，连手动刷新页面
-  // 都不会好（reload 不清 HTTP 缓存）。只在"刚做完一个会改变列表内容的操作"
-  // 之后才需要 fresh；首次挂载等常规加载沿用缓存，不吃这个开销。
-  const fetchContacts = useCallback((fresh = false) =>
-    axios.get('/api/users/contacts', fresh ? { params: { _: Date.now() } } : undefined).then(r => {
+  // A versioned query bypasses pre-upgrade HTTP entries that were cached without
+  // account ownership. New responses are no-store, including after reload/switch.
+  const fetchContacts = useCallback(() =>
+    axios.get('/api/users/contacts', { params: { cacheVersion: 'account-isolated-v2' } }).then(r => {
       const list = Array.isArray(r.data) ? r.data : [];
       setContacts(list);
       // 接口本身就带了真实 status，用它播种在线集合——否则页面刚打开、
@@ -69,7 +63,7 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
     const onOnline = ({ userId }) => setOnlineIds(prev => new Set([...prev, userId]));
     const onOffline = ({ userId }) => setOnlineIds(prev => { const s = new Set(prev); s.delete(userId); return s; });
     const onFriendReq = (req) => setRequests(prev => [req, ...prev]);
-    const onAccepted = () => { fetchContacts(true); fetchRequests(); fetchSent(); };
+    const onAccepted = () => { fetchContacts(); fetchRequests(); fetchSent(); };
     const onNewConv = () => fetchGroups();
     socket.on('user_online', onOnline);
     socket.on('user_offline', onOffline);
@@ -91,7 +85,7 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
     const handler = ({ detail }) => {
       const { userId, remark } = detail || {};
       if (userId) setContacts(prev => prev.map(c => c.id === userId ? { ...c, remark: remark || '' } : c));
-      fetchContacts(true);
+      fetchContacts();
     };
     window.addEventListener('vxin:remark-changed', handler);
     return () => window.removeEventListener('vxin:remark-changed', handler);
@@ -122,7 +116,7 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
     try {
       await axios.post(`/api/users/friend-request/${id}/handle`, { action });
       setRequests(prev => prev.filter(r => r.id !== id));
-      if (action === 'accepted') fetchContacts(true);
+      if (action === 'accepted') fetchContacts();
     } catch (err) {
       showToast(err.response?.data?.error || '操作失败，请重试', 'error');
     }
@@ -401,7 +395,7 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
           onClose={() => setViewProfile(null)}
           onStartChat={(conv) => { setViewProfile(null); onStartChat(conv); }}
           onFriendAdded={fetchContacts}
-          onFriendDeleted={() => { setViewProfile(null); fetchContacts(true); }}
+          onFriendDeleted={() => { setViewProfile(null); fetchContacts(); }}
         />
       )}
     </div>

@@ -1,6 +1,6 @@
 {
   "name": "v-xin-web",
-  "version": "8.0.14",
+  "version": "8.0.15",
   "description": "v信 — 企业级安全即时通讯客户端",
   "homepage": "",
   "author": {
@@ -32,7 +32,8 @@
     "lint:fix": "eslint src/ --fix",
     "test": "vitest run --config vitest.config.mjs",
     "test:watch": "vitest --config vitest.config.mjs",
-    "check:capacitor": "node scripts/check-capacitor-versions.mjs"
+    "check:capacitor": "node scripts/check-capacitor-versions.mjs && node scripts/check-capacitor-template.cjs",
+    "postinstall": "node scripts/patch-capacitor-tar.cjs"
   },
   "dependencies": {
     "@capacitor/app": "^4.0.0",

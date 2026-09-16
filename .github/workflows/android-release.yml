@@ -2,7 +2,7 @@ name: Android Release APK (signed)
 
 # 云端打「正式签名版」原生 APK（Kotlin/Compose）：用同一套密钥签名，可覆盖升级、可上架。
 # 用法：本仓库 → Actions → 「Android Release APK (signed)」→ Run workflow。
-# 跑完在运行页底部 Artifacts 下载 vxin-release-apk，同时自动部署到香港服务器。
+# 手动运行只构建；android-v* tag 在现有 self-hosted runner 发布。
 # 需要 4 个仓库 Secret：ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD /
 #                       ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD（已配置）。
 on:
@@ -55,36 +55,67 @@ jobs:
           GETUI_APP_KEY: ${{ secrets.GETUI_APP_KEY }}
           GETUI_APP_SECRET: ${{ secrets.GETUI_APP_SECRET }}
         run: |
-          ./gradlew assembleRelease --stacktrace --no-daemon
+          ./gradlew testReleaseUnitTest assembleRelease --stacktrace --no-daemon
+          APK=$(find app/build/outputs/apk/release -name '*.apk' -print -quit)
+          "$ANDROID_HOME/build-tools/33.0.1/apksigner" verify --verbose "$APK"
+          VN=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' app/build.gradle.kts | head -1)
+          VC=$(sed -n 's/.*versionCode = \([0-9]*\).*/\1/p' app/build.gradle.kts | head -1)
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then test "$GITHUB_REF_NAME" = "android-v$VN"; fi
+          SHA=$(sha256sum "$APK" | cut -d' ' -f1)
+          jq -n --arg versionName "$VN" --argjson versionCode "$VC" --arg sha256 "$SHA" --arg url "https://vxinchat.com/downloads/vxin-android-$VN.apk" '{versionName:$versionName,versionCode:$versionCode,sha256:$sha256,url:$url,notes:"修复页面恢复、账号与服务器隔离、重发及缓存问题。"}' > app/build/outputs/apk/release/vxin-android-version.json
 
       - name: Upload signed APK
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: vxin-release-apk
-          path: android/app/build/outputs/apk/release/*.apk
-          if-no-files-found: warn
+          path: |
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/apk/release/vxin-android-version.json
+          if-no-files-found: error
 
-      - name: 部署 APK 到香港服务器
-        if: success()
-        env:
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_HOST: ${{ secrets.DEPLOY_SERVER_HOST }}
+
+  deploy:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/android-v')
+    runs-on: [self-hosted, linux, x64, vxin-prod-deploy]
+    environment: production
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: vxin-release-apk
+          path: artifacts
+      - name: Publish verified signed APK and update manifest
+        shell: bash
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
-          APK=$(find android/app/build/outputs/apk/release -name "*.apk" | head -1)
-          echo "部署: $APK → /var/www/downloads/vxin-android-latest.apk"
-          ssh -i ~/.ssh/deploy_key "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p /var/www/downloads"
-          scp -i ~/.ssh/deploy_key "$APK" "${DEPLOY_USER}@${DEPLOY_HOST}:/var/www/downloads/vxin-android-latest.apk"
-          echo "✅ APK 已发布到 https://vxinchat.com/downloads/vxin-android-latest.apk"
-          # 同步应用内更新清单：从 build.gradle.kts 读出真实版本，生成 version.json 并部署。
-          # 安卓端"检查更新"靠这个文件比对版本；不同步会导致存量用户拉不到更新提示。
-          VN=$(grep -oP 'versionName\s*=\s*"\K[^"]+' android/app/build.gradle.kts | head -1)
-          VC=$(grep -oP 'versionCode\s*=\s*\K[0-9]+' android/app/build.gradle.kts | head -1)
-          echo "版本清单: versionName=$VN versionCode=$VC"
-          printf '{\n  "versionCode": %s,\n  "versionName": "%s",\n  "url": "https://vxinchat.com/downloads/vxin-android-latest.apk",\n  "notes": "当前最新版本 %s。"\n}\n' "$VC" "$VN" "$VN" > /tmp/vxin-android-version.json
-          scp -i ~/.ssh/deploy_key /tmp/vxin-android-version.json "${DEPLOY_USER}@${DEPLOY_HOST}:/var/www/downloads/vxin-android-version.json"
-          echo "✅ 版本清单已发布到 https://vxinchat.com/downloads/vxin-android-version.json"
+          set -euo pipefail
+          TARGET=/var/www/vxin-download
+          APK=$(find artifacts -name '*.apk' -print -quit)
+          MANIFEST=artifacts/vxin-android-version.json
+          VERSION=$(jq -r .versionName "$MANIFEST")
+          EXPECTED=$(jq -r .sha256 "$MANIFEST")
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          test "$(sha256sum "$APK" | cut -d' ' -f1)" = "$EXPECTED"
+          mkdir -p "$TARGET"
+          BACKUP=$(mktemp -d "$TARGET/.android-backup-XXXXXX")
+          for name in vxin-android-latest.apk vxin-android-version.json; do
+            if [[ -f "$TARGET/$name" ]]; then cp -a "$TARGET/$name" "$BACKUP/$name"; fi
+          done
+          rollback() {
+            for name in vxin-android-latest.apk vxin-android-version.json; do
+              if [[ -f "$BACKUP/$name" ]]; then cp -a "$BACKUP/$name" "$TARGET/$name"; else rm -f "$TARGET/$name"; fi
+            done
+          }
+          trap 'rollback' ERR
+          cp "$APK" "$TARGET/.android-new.apk"
+          mv "$TARGET/.android-new.apk" "$TARGET/vxin-android-$VERSION.apk"
+          cp "$TARGET/vxin-android-$VERSION.apk" "$TARGET/.android-latest.apk"
+          mv "$TARGET/.android-latest.apk" "$TARGET/vxin-android-latest.apk"
+          cp "$MANIFEST" "$TARGET/.android-version.json"
+          mv "$TARGET/.android-version.json" "$TARGET/vxin-android-version.json"
+          curl --fail --silent --show-error --max-time 30 "https://vxinchat.com/downloads/vxin-android-$VERSION.apk" -o "$BACKUP/live.apk"
+          test "$(sha256sum "$BACKUP/live.apk" | cut -d' ' -f1)" = "$EXPECTED"
+          curl --fail --silent --show-error --max-time 10 "https://vxinchat.com/downloads/vxin-android-version.json?release=$VERSION" | jq -e --arg v "$VERSION" '.versionName == $v'
+          trap - ERR
+          echo "Published signed Android $VERSION; previous files retained at $BACKUP"

@@ -191,3 +191,31 @@ jobs:
           fi
 
           echo "✅ 生产验证通过：https://vxinchat.com/downloads/updates/latest.yml 已是 $VERSION"
+
+  mac-build:
+    name: macOS package verification (unsigned)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --legacy-peer-deps
+        working-directory: web
+      - run: npm run build -- --mode desktop
+        working-directory: web
+      - run: npm ci
+        working-directory: desktop-electron
+      - run: npx electron-builder --mac --x64 --publish never
+        working-directory: desktop-electron
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vxin-macos-unsigned
+          path: |
+            desktop-electron/dist/*.dmg
+            desktop-electron/dist/*.zip
+          if-no-files-found: error
