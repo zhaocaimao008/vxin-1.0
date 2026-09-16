@@ -46,6 +46,7 @@ jobs:
           git -C "$REPO" diff --stat origin/main HEAD
           git -C "$REPO" remote get-url origin | sed -E 's#(https?://)[^/@]+:[^/@]+@#\1[redacted]@#'
           git -C "$REPO" rev-parse origin/main
+          git -C "$REPO" bundle create "$RUNNER_TEMP/vxin-production.bundle" origin/main..HEAD
           df -h "$REPO" /var/www/vxin-web/app
           node --version
           test -s /var/www/vxin-web/app/index.html
@@ -58,6 +59,12 @@ jobs:
           const fields = ['JWT_SECRET','ADMIN_JWT_SECRET','TURN_SECRET','TURN_URLS','VAPID_PUBLIC_KEY','VAPID_PRIVATE_KEY','FIREBASE_PROJECT_ID','FIREBASE_CLIENT_EMAIL','FIREBASE_PRIVATE_KEY','APNS_KEY_ID','APNS_TEAM_ID','APNS_P8','GETUI_APP_ID','GETUI_APP_KEY','GETUI_MASTER_SECRET','ASR_URL','SERVICE_TOKEN','S3_BUCKET','S3_ACCESS_KEY_ID','S3_SECRET_ACCESS_KEY','SMS_ACCESS_KEY_ID'];
           console.log(JSON.stringify(Object.fromEntries(fields.map(k => [k, !!env[k]]))));
           NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: production-local-commits
+          path: ${{ runner.temp }}/vxin-production.bundle
+          retention-days: 7
+
 
   test:
     if: ${{ !inputs.check_only }}
