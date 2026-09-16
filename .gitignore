@@ -44,6 +44,7 @@ backend-v2/uploads/
 
 # 源码备份
 *.bak
+*.bak[0-9]*
 
 # 独立配置仓库（自带 .git，单独管理）
 vxin-config/

@@ -83,8 +83,6 @@ export default defineConfig(({ mode }) => ({
           if (id.includes('qrcode')) return 'vendor-qrcode';
           // jsqr（扫码，ScanQR 组件动态 import，此处兜底）
           if (id.includes('jsqr')) return 'vendor-jsqr';
-          // timeago（消息时间格式化，低频）
-          if (id.includes('timeago')) return 'vendor-timeago';
 
           // ── 其余第三方统一归并 ───────────────────────────────────
           return 'vendor-misc';

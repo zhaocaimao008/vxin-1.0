@@ -7,14 +7,16 @@
 
 各端是**独立产品线**，版本号**不强行统一成同一个数字**，各以自己的 manifest 为准：
 
-| 端 | 版本真相源文件 | 字段 | 当前版本 |
-|----|--------------|------|---------|
-| 桌面端（Windows/Mac/Linux） | `desktop-electron/package.json` | `version` | 8.0.15 |
-| 桌面端渲染层内嵌 | `desktop-electron/src/package.json` | `version` | 与上一致（8.0.15，本文件自身不参与打包版本号，仅保持不漂移） |
-| Web 前端 | `web/package.json` | `version` | 8.0.18 |
-| 后端 | `backend-v2/package.json` | `version` | 8.0.0 |
-| Android | `android/app/build.gradle.kts` | `versionName` / `versionCode` | 8.0.7 / code 60 |
-| iOS | `ios/project.yml` | `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` | 8.0.3 / build 36 |
+| 端 | 版本真相源文件 | 字段 |
+|----|--------------|------|
+| 桌面端（Windows/Mac/Linux） | `desktop-electron/package.json` | `version` |
+| Web 前端 | `web/package.json` | `version` |
+| 后端 | `backend-v2/package.json` | `version` |
+| Android | `android/app/build.gradle.kts` | `versionName` / `versionCode` |
+| iOS | `ios/project.yml` | `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` |
+
+当前版本直接读取上述文件，文档不再重复记录版本数字。桌面端只保留根目录的
+`package.json`；渲染层版本由主进程通过 `app.getVersion()` 下发。
 
 > 桌面端走 electron-updater：`latest.yml` 的 `version` **必须**等于
 > `desktop-electron/package.json` 的 `version`，且每次发布**必须递增**，否则客户端认为「无更新」。
