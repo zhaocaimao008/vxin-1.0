@@ -22,6 +22,7 @@ jobs:
           git -C "$REPO" rev-parse origin/main
           df -h "$REPO" /var/www/vxin-web/app
           node --version
+          nginx -T 2>/dev/null | awk '/^# configuration file/{print} /^[[:space:]]*(server_name|root|alias|location)[[:space:]]/{print}'
           test -s /var/www/vxin-web/app/index.html
           pm2 jlist | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.stringify(JSON.parse(s).map(p=>({name:p.name,status:p.pm2_env.status,cwd:p.pm2_env.pm_cwd,script:p.pm2_env.pm_exec_path})))));'
           curl --fail --silent --max-time 10 http://127.0.0.1:3002/health
