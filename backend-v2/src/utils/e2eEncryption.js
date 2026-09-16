@@ -1,6 +1,7 @@
 /**
- * P6.1: 端到端加密模块 (Signal Protocol)
- * 消息加密 + 密钥交换 + 前向保密
+ * 历史加密实验工具，未接入生产消息链路。
+ * 不是 Signal Protocol，也不提供经过验证的端到端加密或前向保密。
+ * 服务端仍可读取聊天消息；参见 docs/CAPABILITIES.md。
  */
 
 const crypto = require('crypto');

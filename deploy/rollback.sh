@@ -61,7 +61,7 @@ if [[ "$MODE" == "code" ]]; then
 # ── 代码回滚 ───────────────────────────────────────────────────────
   # Rebuild the exact target lockfile, then publish backend + Web together.
   # release.sh preserves the current installation if the rollback target fails.
-  exec bash "$SCRIPT_DIR/release.sh" "$TARGET"
+  ALLOW_NON_FAST_FORWARD=1 exec bash "$SCRIPT_DIR/release.sh" "$TARGET"
 
 # ════════════════════════════════════════════════════════════════════
 elif [[ "$MODE" == "db" ]]; then

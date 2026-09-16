@@ -16,9 +16,12 @@ class AuthRepository @Inject constructor(
     private val api: AuthApi,
     private val tokenStore: TokenStore,
     private val accountStore: AccountStore,
+    private val server: com.vxin.app.core.storage.ServerConfig,
     private val messageScopes: com.vxin.app.core.storage.MessageScopeProvider,
 ) {
     suspend fun login(phone: String, password: String): User {
+        val authServer = server.baseUrl
+        val authOwner = messageScopes.current()
         android.util.Log.d("LOGIN_DIAG", "LOGIN_REQUEST_OBJECT_CREATE_START")
         val request = LoginRequest(phone = phone.trim(), password = password)
         android.util.Log.d("LOGIN_DIAG", "LOGIN_REQUEST_OBJECT_CREATED phone=${request.phone?.take(3)}***")
@@ -27,11 +30,14 @@ class AuthRepository @Inject constructor(
         val res = api.login(request)
         android.util.Log.d("LOGIN_DIAG", "LOGIN_RETROFIT_CALL_SUCCESS userId=${res.user.id}")
 
+        check(server.baseUrl == authServer && messageScopes.current() == authOwner) { "登录期间账号或服务器已切换，请重新登录" }
         applyAuth(res.token, res.user)
         return res.user
     }
 
     suspend fun loginWithVxinId(vxinId: String, password: String): User {
+        val authServer = server.baseUrl
+        val authOwner = messageScopes.current()
         android.util.Log.d("LOGIN_DIAG", "LOGIN_VXIN_REQUEST_START")
         val request = LoginRequest(wechat_id = vxinId.trim(), password = password)
         android.util.Log.d("LOGIN_DIAG", "LOGIN_VXIN_REQUEST_CREATED vxinId=${request.wechat_id?.take(3)}***")
@@ -39,12 +45,16 @@ class AuthRepository @Inject constructor(
         val res = api.login(request)
         android.util.Log.d("LOGIN_DIAG", "LOGIN_VXIN_SUCCESS userId=${res.user.id}")
 
+        check(server.baseUrl == authServer && messageScopes.current() == authOwner) { "登录期间账号或服务器已切换，请重新登录" }
         applyAuth(res.token, res.user)
         return res.user
     }
 
     suspend fun register(phone: String, password: String, username: String, inviteCode: String): User {
+        val authServer = server.baseUrl
+        val authOwner = messageScopes.current()
         val res = api.register(RegisterRequest(phone.trim(), password, username.trim(), inviteCode.trim()))
+        check(server.baseUrl == authServer && messageScopes.current() == authOwner) { "登录期间账号或服务器已切换，请重新登录" }
         applyAuth(res.token, res.user)
         return res.user
     }
@@ -61,7 +71,10 @@ class AuthRepository @Inject constructor(
 
     suspend fun logout() {
         val owner = messageScopes.current()
+        val authServer = server.baseUrl
+        val authId = accountStore.activeId()
         runCatching { api.logout() }
+        if (server.baseUrl != authServer || accountStore.activeId() != authId) return
         if (tokenStore.token != null && !messageScopes.isCurrent(owner)) return
         accountStore.activeId()?.let { accountStore.remove(it) }
         tokenStore.clear()

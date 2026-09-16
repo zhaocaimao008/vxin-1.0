@@ -17,22 +17,36 @@ final class AuthRepository {
     }
 
     func login(phone: String, password: String) async throws -> User {
+        let authServer = ServerConfig.shared.baseURL
+        let authOwner = MessageScope.current
         let res: AuthResponse = try await api.send(
             "api/auth/login", method: "POST",
             body: LoginBody(phone: phone.trimmingCharacters(in: .whitespaces), password: password),
             authorized: false
         )
-        applyAuth(res)
+        try await MainActor.run {
+            guard ServerConfig.shared.baseURL == authServer, MessageScope.current == authOwner else {
+                throw APIError.server(409, "登录期间账号或服务器已切换，请重新登录")
+            }
+            applyAuth(res)
+        }
         return res.user
     }
 
     func loginWithVxinId(vxinId: String, password: String) async throws -> User {
+        let authServer = ServerConfig.shared.baseURL
+        let authOwner = MessageScope.current
         let res: AuthResponse = try await api.send(
             "api/auth/login", method: "POST",
             body: LoginBody(wechat_id: vxinId.trimmingCharacters(in: .whitespaces), password: password),
             authorized: false
         )
-        applyAuth(res)
+        try await MainActor.run {
+            guard ServerConfig.shared.baseURL == authServer, MessageScope.current == authOwner else {
+                throw APIError.server(409, "登录期间账号或服务器已切换，请重新登录")
+            }
+            applyAuth(res)
+        }
         return res.user
     }
 
@@ -42,6 +56,8 @@ final class AuthRepository {
     }
 
     func register(phone: String, password: String, username: String, inviteCode: String) async throws -> User {
+        let authServer = ServerConfig.shared.baseURL
+        let authOwner = MessageScope.current
         let res: AuthResponse = try await api.send(
             "api/auth/register", method: "POST",
             body: RegisterBody(
@@ -52,7 +68,12 @@ final class AuthRepository {
             ),
             authorized: false
         )
-        applyAuth(res)
+        try await MainActor.run {
+            guard ServerConfig.shared.baseURL == authServer, MessageScope.current == authOwner else {
+                throw APIError.server(409, "登录期间账号或服务器已切换，请重新登录")
+            }
+            applyAuth(res)
+        }
         return res.user
     }
 
@@ -77,7 +98,10 @@ final class AuthRepository {
 
     func logout() async {
         let scope = MessageScope.current
+        let authServer = ServerConfig.shared.baseURL
+        let authId = AccountStore.shared.activeId()
         let _: EmptyResponse? = try? await api.send("api/auth/logout", method: "POST")
+        guard ServerConfig.shared.baseURL == authServer, AccountStore.shared.activeId() == authId else { return }
         if KeychainStore.shared.token != nil && scope?.isCurrent != true { return }
         if let active = AccountStore.shared.activeId() { AccountStore.shared.remove(active) }
         KeychainStore.shared.clear()

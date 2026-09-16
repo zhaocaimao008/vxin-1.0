@@ -13,6 +13,9 @@ TARGET=$(git -C "$REPO_DIR" rev-parse --verify "${1:?Usage: release.sh COMMIT}^{
 PREVIOUS=$(git -C "$REPO_DIR" rev-parse HEAD)
 BE="$REPO_DIR/backend-v2"
 
+if [[ ${ALLOW_NON_FAST_FORWARD:-0} != 1 ]] && ! git -C "$REPO_DIR" merge-base --is-ancestor "$PREVIOUS" "$TARGET"; then
+  echo 'Production has commits absent from the release. Integrate them before publishing.' >&2; exit 1
+fi
 [[ -z $(git -C "$REPO_DIR" status --porcelain --untracked-files=no) ]] || {
   echo 'Tracked production files have local changes; refusing to overwrite them.' >&2; exit 1;
 }

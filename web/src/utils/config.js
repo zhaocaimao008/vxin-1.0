@@ -25,6 +25,9 @@
 
 // 引导配置地址（按顺序尝试，任意一个成功即用）。互不依赖，单点故障不影响整体。
 const CONFIG_URLS = [
+  // Self-hosted installations publish their own config; same-origin also avoids a CDN round trip.
+  ...(window.location?.protocol?.startsWith('http') && !window.__ELECTRON_CONFIG__
+    ? [window.location.origin + '/config.json'] : []),
   'https://cdn.jsdelivr.net/gh/zhaocaimao008/vxin-config@main/config.json', // 主：GitHub+jsDelivr CDN
   'https://vxinchat.com/config.json',                                             // 兜底：当前应用服务器
 ];
@@ -80,6 +83,9 @@ export function loadRemoteConfig() {
         const res = await fetch(url, { signal: timeoutSignal(5000) });
         if (!res.ok) continue;
         const data = await res.json();
+        if (!data || typeof data !== 'object' || Array.isArray(data) ||
+            !['api', 'socket', 'cdn'].every(key => typeof data[key] === 'string' &&
+              (data[key] === '' || /^https?:\/\//.test(data[key])))) continue;
         _config = { ...DEFAULTS, ...data };
         // 缓存到 localStorage
         try {

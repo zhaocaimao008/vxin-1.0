@@ -3,6 +3,16 @@ import { beforeEach, afterEach, expect, it, vi } from 'vitest';
 beforeEach(() => { vi.stubGlobal('window', {}); vi.resetModules(); });
 afterEach(() => vi.unstubAllGlobals());
 
+it('uses the self-hosted same-origin config before public discovery', async () => {
+  vi.stubGlobal('window', { location: { protocol: 'http:', origin: 'http://localhost:8080' } });
+  const fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ api: '', socket: '', cdn: '' }) });
+  vi.stubGlobal('fetch', fetch);
+  const { loadRemoteConfig } = await import('./config');
+  expect(await loadRemoteConfig()).toMatchObject({ api: '', socket: '' });
+  expect(fetch).toHaveBeenCalledTimes(1);
+  expect(fetch.mock.calls[0][0]).toBe('http://localhost:8080/config.json');
+});
+
 it.each([404, 401, 500])('rejects HTTP %i from a proposed server', async status => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status }));
   const { testServerConnection } = await import('./config');

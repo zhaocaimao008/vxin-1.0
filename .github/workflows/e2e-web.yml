@@ -63,10 +63,19 @@ jobs:
         working-directory: e2e
         run: npx playwright install --with-deps chromium
 
-      - name: Run E2E web (35 用例)
+      - name: Start isolated TURN relay
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y coturn
+          sudo systemctl stop coturn
+          turnserver -c /dev/null --listening-ip=127.0.0.1 --relay-ip=127.0.0.1 --listening-port=13478 --min-port=19000 --max-port=19100 --realm=vxin-ci --use-auth-secret --static-auth-secret=vxin-ci-turn-secret --no-tls --no-dtls --no-cli --allow-loopback-peers --pidfile="$RUNNER_TEMP/turn.pid" --log-file=stdout > "$RUNNER_TEMP/turn.log" 2>&1 &
+      - name: Run E2E web + bidirectional media and TURN
         working-directory: e2e
         env:
           REDIS_URL: redis://127.0.0.1:6379
+          TURN_SECRET: vxin-ci-turn-secret
+          TURN_URLS: turn:127.0.0.1:13478?transport=udp
+          STUN_URLS: stun:127.0.0.1:13478
         run: npm run test:web
 
       - name: Upload Playwright report
