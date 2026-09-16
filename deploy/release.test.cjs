@@ -7,7 +7,7 @@ const http = require('node:http');
 const { execFileSync, spawn } = require('node:child_process');
 const release = path.join(__dirname, 'release.sh');
 
-for (const failure of ['none', 'install', 'restart', 'health']) {
+for (const failure of ['none', 'install', 'restart', 'health', 'revision']) {
   test(`release transaction: ${failure}`, async () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'vxin-release-test-'));
     const repo = path.join(root, 'repo'), web = path.join(root, 'public'), bin = path.join(root, 'bin');
@@ -48,7 +48,7 @@ if [[ "$1" == restart && "$FAILURE" == restart && $(cat src/server.js) == new ]]
       const html = fs.readFileSync(path.join(web, 'index.html'), 'utf8');
       const ok = source === deps && deps === lock && html === source && !(failure === 'health' && source === 'new');
       // HTTP 200 + false JSON must fail the gate, too.
-      res.end(JSON.stringify({ ok, db: ok ? 'ok' : 'failed' }));
+      res.end(JSON.stringify({ ok, db: ok ? 'ok' : 'failed', revision: failure === 'revision' && source === 'new' ? old : git('rev-parse', 'HEAD') }));
     });
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     try {
@@ -69,7 +69,7 @@ if [[ "$1" == restart && "$FAILURE" == restart && $(cat src/server.js) == new ]]
       assert.equal(fs.existsSync(path.join(web, 'new-only.js')), failure === 'none');
       assert.equal(fs.readFileSync(path.join(repo, 'backend-v2/.env'), 'utf8'), 'preserved-secret');
       assert.equal(fs.readFileSync(path.join(repo, 'backend-v2/wechat.db'), 'utf8'), 'preserved-database');
-      if (['restart', 'health'].includes(failure)) assert.match(logs, /Rollback health passed/);
+      if (['restart', 'health', 'revision'].includes(failure)) assert.match(logs, /Rollback health passed/);
     } finally {
       await new Promise(resolve => server.close(resolve));
       fs.rmSync(root, { recursive: true, force: true });

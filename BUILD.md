@@ -75,7 +75,9 @@ curl --fail http://localhost:8080/health
 
 ## 生产升级与回滚
 
-`deploy.yml` 的 main 发布先跑门禁，再在已有 self-hosted runner 上执行 `deploy/release.sh <commit>`。脚本先在隔离目录按锁文件安装依赖和构建；成功后才替换生产源码、依赖、前端并重启 `vxin-backend`。任一发布错误触发完整回滚并重新检查健康。备份保存在 `/var/lib/vxin-releases/`，不自动删除。
+`deploy.yml` 的 main 发布先跑门禁，再在已有 self-hosted runner 上执行 `deploy/release.sh <commit>`。脚本先在隔离目录按锁文件安装依赖和构建；成功后才替换生产源码、依赖、前端并重启 `vxin-backend`。任一发布错误触发完整回滚并重新检查健康。备份保存在 `/var/lib/vxin-releases/`，不自动删除。健康检查要求后端报告目标 commit，前端生成 `release.json` 供线上核对。发布拒绝覆盖未合并的生产提交。
+
+生产工作流显式启用 Web Push 初始化：仅在两把 VAPID 密钥都缺失时生成并写入环境文件，私密备份权限为 0600；已有密钥保持不变，不自动轮换。
 
 ```bash
 bash deploy/rollback.sh             # 上次成功发布之前的版本

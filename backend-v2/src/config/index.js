@@ -11,6 +11,7 @@ const config = {
   // backend-v2 验证期跑 3003，避免与生产 3002 冲突；上线切换时改回 3002
   port: parseInt(process.env.PORT_V2 || process.env.PORT, 10) || 3003,
   listenHost: process.env.LISTEN_HOST || '127.0.0.1',
+  releaseSha: process.env.RELEASE_SHA || null,
 
   // ── 数据库 ──────────────────────────────────────────────────
   dbPath: process.env.DB_PATH || path.resolve(__dirname, '../../wechat.db'),

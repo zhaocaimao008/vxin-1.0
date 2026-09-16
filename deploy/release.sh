@@ -31,9 +31,10 @@ CHANGED=0
 
 health() {
   local body
+  local expected=${1:-}
   for ((i=0; i<HEALTH_ATTEMPTS; i++)); do
     if body=$(curl --fail --silent --show-error --max-time 3 "$HEALTH_URL") &&
-      node -e 'try { const x=JSON.parse(process.argv[1]); process.exit(x.ok === true && x.db === "ok" ? 0 : 1); } catch { process.exit(1); }' "$body"; then
+      node -e 'try { const x=JSON.parse(process.argv[1]); process.exit(x.ok === true && x.db === "ok" && (!process.argv[2] || x.revision === process.argv[2]) ? 0 : 1); } catch { process.exit(1); }' "$body" "$expected"; then
       return 0
     fi
     sleep "$HEALTH_INTERVAL"
@@ -42,7 +43,8 @@ health() {
 }
 
 restart() {
-  (cd "$BE" && pm2 restart "$PM2_APP" --update-env)
+  local revision=${1:-$TARGET}
+  (cd "$BE" && RELEASE_SHA="$revision" pm2 restart "$PM2_APP" --update-env)
 }
 
 finish() {
@@ -56,7 +58,7 @@ finish() {
     rm -rf "$BE/node_modules"
     cp -a "$BACKUP/node_modules" "$BE/node_modules" || failed=1
     rsync -a --checksum --delete "$BACKUP/web/" "$WEB_ROOT/" || failed=1
-    restart || failed=1
+    restart "$PREVIOUS" || failed=1
     health || failed=1
     if ((failed)); then
       echo "ROLLBACK FAILED. Recovery files retained at $BACKUP" >&2
@@ -73,6 +75,7 @@ trap 'exit 143' TERM
 
 git -C "$REPO_DIR" archive "$TARGET" | tar -x -C "$STAGE"
 (cd "$STAGE/web" && npm ci --legacy-peer-deps && npm run build)
+printf '{"commit":"%s"}\n' "$TARGET" > "$STAGE/web/dist/release.json"
 (cd "$STAGE/backend-v2" && npm ci --omit=dev)
 [[ -s "$STAGE/web/dist/index.html" && -d "$STAGE/backend-v2/node_modules" ]]
 # Copy before touching live paths. Keep snapshots for explicit recovery; do not prune implicitly.
@@ -89,7 +92,7 @@ if [[ ${CONFIGURE_WEB_PUSH:-0} == 1 ]]; then
 fi
 rsync -a --checksum --delete "$STAGE/web/dist/" "$WEB_ROOT/"
 restart
-health
+health "$TARGET"
 pm2 save
 printf '%s\n' "$PREVIOUS" > "$STATE_ROOT/previous.sha.tmp"
 mv "$STATE_ROOT/previous.sha.tmp" "$STATE_ROOT/previous.sha"

@@ -31,6 +31,9 @@ services:
       ENABLE_FAKE_RECHARGE: 'false'
       TURN_SECRET: ${TURN_SECRET:-}
       TURN_URLS: ${TURN_URLS:-}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_EMAIL: ${VAPID_EMAIL:-mailto:support@vxinchat.com}
     volumes: [sqlite_data:/data, uploads_data:/uploads]
     depends_on:
       redis:
