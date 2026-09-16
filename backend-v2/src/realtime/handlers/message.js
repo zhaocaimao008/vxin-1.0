@@ -87,7 +87,10 @@ module.exports = function registerMessageHandler(io, socket) {
     // 与 HTTP 发送路径(messages.service.send)口径一致：content 必须是字符串，
     // 否则非 string（如对象）会绕过下方长度校验后原样入库。命中即 ack 失败拒绝。
     if (typeof content !== 'string') { ack?.({ success: false, error: '消息内容格式错误' }); return; }
-    if (!presence.checkMsgRate(userId)) { ack?.({ success: false, error: '发送频率过高，请稍后再试' }); return; }
+    if (!presence.checkMsgRate(userId)) {
+      ack?.({ success: false, code: 'RATE_LIMITED', retryAfterMs: config.limits.msgRateWindow, error: '发送频率过高，请稍后再试' });
+      return;
+    }
     if (content.length > MAX) {
       ack?.({ success: false, error: `消息内容不能超过 ${MAX} 个字符` }); return;
     }

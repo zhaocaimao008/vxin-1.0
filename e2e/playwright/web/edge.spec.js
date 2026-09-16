@@ -28,22 +28,35 @@ test.describe('边界/异常/性能 EDGE', () => {
     await expect(webPage.locator('.wc-msg-file-name').last()).toContainText('bigfile.txt');
   });
 
-  test('EDGE-02 并发快速发送 5 条 → 全部到达且不重复', async ({ webPage, seeded, baseURL }) => {
+  test('EDGE-02 并发快速发送 5 条 → 全部到达且不重复', async ({ webPage, seeded, baseURL, request }) => {
     test.skip(!seeded.convAB, '无会话');
     const chat = await loginOpen(webPage, baseURL, seeded);
-    const before = await chat.bubbleCount();
     const tag = 'concurrent-' + Date.now();
     // 不等 ack 连发 5 条(模拟手快)
     for (let i = 0; i < 5; i++) {
       await chat.tid('chat-msg-input').fill(`${tag}-${i}`);
       await chat.tid('chat-send-btn').click();
     }
-    // 5 条都出现,且总数恰好 +5(不丢不重)
+    // Verify only this burst: older history may still arrive and DOM rows are virtualized.
     for (let i = 0; i < 5; i++) {
       await expect(webPage.locator('[data-testid^="msg-bubble-"]', { hasText: `${tag}-${i}` }))
         .toHaveCount(1, { timeout: 10000 });
     }
-    await expect.poll(() => chat.bubbleCount(), { timeout: 8000 }).toBe(before + 5);
+    await expect.poll(async () => {
+      const response = await request.get(`${seeded.backendUrl}/api/messages/${seeded.convAB}?limit=100`, {
+        headers: { authorization: `Bearer ${seeded.users[0].token}` },
+      });
+      expect(response.ok()).toBe(true);
+      const messages = await response.json();
+      return messages.filter(m => m.content?.startsWith(tag)).map(m => m.content).sort();
+    }, { timeout: 12000 }).toEqual(Array.from({ length: 5 }, (_, i) => `${tag}-${i}`));
+    await expect(webPage.locator('[data-testid^="msg-bubble-"]', { hasText: tag }).getByRole('button', { name: '发送失败，点击重发' })).toHaveCount(0);
+    await webPage.reload();
+    await chat.waitReady();
+    await chat.openConv(seeded.convAB);
+    for (let i = 0; i < 5; i++) {
+      await expect(webPage.locator('[data-testid^="msg-bubble-"]', { hasText: `${tag}-${i}` })).toHaveCount(1);
+    }
   });
 
   test('EDGE-03 超长消息(4000字) → 正常渲染不崩', async ({ webPage, seeded, baseURL }) => {

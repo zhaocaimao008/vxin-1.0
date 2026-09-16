@@ -16,6 +16,7 @@ import MultiSelectBar from './MultiSelectBar';
 import { loadOutbox, upsertOutbox, removeFromOutbox } from '../utils/outbox';
 import { createMessageScope } from '../utils/messageScope';
 import { recoverMessages } from '../utils/recoverMessages';
+import { sendMessageWithRetry } from '../utils/sendMessageWithRetry';
 import { readDraft, saveDraft } from '../utils/drafts';
 import { loadCache, saveCache } from '../utils/msgCache';
 
@@ -1059,7 +1060,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
       setMessages(prev => prev.map(m => m._tempId === newTempId ? { ...m, _status: 'error' } : m));
     }, 5000);
     pendingMsgsRef.current.set(newTempId, timer);
-    socket.emit('send_message', {
+    sendMessageWithRetry(socket, {
       conversationId: failedMsg.conversation_id,
       content:        failedMsg.content,
       type:           failedMsg.type,
@@ -1076,7 +1077,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
         forceScrollRef.current = true;
         setMessages(prev => prev.map(m => m._tempId === newTempId ? { ...m, _status: 'error' } : m));
       }
-    });
+    }, () => pendingMsgsRef.current.has(newTempId));
   }, [socket, user.id, conversation.id]);
 
   // ── 断线重连后：自动自愈「发送失败」的消息（弱网/电梯/地铁场景）─────────
@@ -1224,7 +1225,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
     // 3. 发送并等待 socket.io ack（后端已在 send_message handler 中调用 ack()）
     const msgClientId = `perf_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     window.__vxinPerf?.send(msgClientId, user.id, conversation.id);
-    socket.emit('send_message', {
+    sendMessageWithRetry(socket, {
       conversationId: conversation.id,
       content,
       type:           'text',
@@ -1243,7 +1244,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
         forceScrollRef.current = true;
         setMessages(prev => prev.map(m => m._tempId === tempId ? { ...m, _status: 'error' } : m));
       }
-    });
+    }, () => pendingMsgsRef.current.has(tempId));
   };
 
   // ── 分享名片：发送一条 contact_card 消息（content 为被分享用户的 JSON 快照）──
@@ -1298,7 +1299,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
       setMessages(prev => prev.map(m => m._tempId === tempId ? { ...m, _status: 'error' } : m));
     }, 5000);
     pendingMsgsRef.current.set(tempId, timer);
-    socket.emit('send_message', { conversationId: conversation.id, content, type: 'contact_card', clientMsgId: tempId }, (ack) => {
+    sendMessageWithRetry(socket, { conversationId: conversation.id, content, type: 'contact_card', clientMsgId: tempId }, (ack) => {
       clearTimeout(pendingMsgsRef.current.get(tempId));
       pendingMsgsRef.current.delete(tempId);
       if (ack?.success && ack.message) {
@@ -1309,7 +1310,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
         forceScrollRef.current = true;
         setMessages(prev => prev.map(m => m._tempId === tempId ? { ...m, _status: 'error' } : m));
       }
-    });
+    }, () => pendingMsgsRef.current.has(tempId));
   };
 
   const startEdit = (msg) => {
