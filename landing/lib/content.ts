@@ -5,9 +5,9 @@
  */
 
 // 站点基址：换服务器时只需设环境变量 NEXT_PUBLIC_SITE_URL=https://新域名
-// （构建时注入），不填则默认 dipsin.com。下方所有下载/体验链接据此拼接，
+// （构建时注入），不填则默认 vxinchat.com。下方所有下载/体验链接据此拼接，
 // 与三端 App 的 vxin-config 一键切换机制对齐——换域名无需改本文件。
-const BASE = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.vxinchat.com').replace(/\/$/, '');
+const BASE = (process.env.NEXT_PUBLIC_SITE_URL || 'https://vxinchat.com').replace(/\/$/, '');
 
 export const site = {
   name: 'v信',
@@ -20,8 +20,8 @@ export const site = {
     webApp: `${BASE}/app/`,
     // 安卓/Windows 指向自托管下载。文件名带版本号（vxin-android-<ver>.apk / vxin-windows-<ver>-setup.exe），
     // 发新版时更新文件名即可绕过 CDN 缓存，无需 purge（latest 链接会被 Cloudflare 缓存旧版本）。
-    android: `${BASE}/downloads/vxin-android-8.0.5.apk`,
-    windows: `${BASE}/downloads/vxin-windows-8.0.7-setup.exe`,
+    android: `${BASE}/downloads/vxin-android-8.0.7.apk`,
+    windows: `${BASE}/downloads/vxin-8.0.12-setup.exe`,
     // iOS 走 TestFlight 公开外部测试链接（审核已通过，公开链接已启用）
     ios: 'https://testflight.apple.com/join/JQw5bjEz',
     email: 'admin@vxin.app',
@@ -195,9 +195,7 @@ export const footer = {
     {
       title: '关于',
       links: [
-        { label: '隐私政策', href: '#' },
-        { label: '用户协议', href: '#' },
-        { label: '团队', href: '#' },
+        { label: '隐私政策', href: `${BASE}/app/privacy.html` },
       ],
     },
     {

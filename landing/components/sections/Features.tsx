@@ -35,7 +35,7 @@ export function Features() {
                       fontFamily: '"Playfair Display", "Noto Serif SC", serif',
                       fontSize: 'clamp(1.75rem, 3vw, 2.25rem)',
                       fontWeight: 400,
-                      color: '#E6EDF3',
+                      color: '#0F172A',
                       letterSpacing: '-0.01em',
                       lineHeight: 1.2
                     }}
@@ -47,7 +47,7 @@ export function Features() {
                     style={{
                       fontSize: '1rem',
                       fontWeight: 300,
-                      color: '#94A3B8',
+                      color: '#475569',
                       lineHeight: '1.7'
                     }}
                   >
@@ -60,7 +60,7 @@ export function Features() {
                         className="flex items-start gap-3"
                         style={{
                           fontSize: '0.9375rem',
-                          color: '#E6EDF3'
+                          color: '#0F172A'
                         }}
                       >
                         <span
@@ -107,7 +107,7 @@ export function Features() {
                       className="absolute bottom-4 left-4 px-3 py-1.5 text-xs font-medium"
                       style={{
                         background: 'rgba(255, 255, 255, 0.9)',
-                        color: '#94A3B8',
+                        color: '#475569',
                         borderRadius: '8px',
                         backdropFilter: 'blur(8px)',
                         border: '1px solid rgba(231, 225, 215, 0.5)'

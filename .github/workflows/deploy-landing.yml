@@ -1,8 +1,5 @@
-name: 部署落地页 (landing → vxinchat.com/welcome)
+name: 部署官网 (landing → vxinchat.com)
 
-# 落地页是 Next.js 静态导出（output: 'export'，basePath /welcome），
-# 产物 landing/out/ 由生产机 Nginx 直接托管（root /root/v信/landing/out）。
-# 主 deploy.yml 只管 backend-v2 + web，不含 landing，故单列此 workflow。
 on:
   push:
     branches: [main]
@@ -13,64 +10,84 @@ on:
 
 permissions:
   contents: read
-
 concurrency:
   group: deploy-landing
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
-    name: 构建静态站并同步到生产机
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
-
-      - name: 安装 Node.js 20
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
-          cache: 'npm'
+          node-version: '22'
+          cache: npm
           cache-dependency-path: landing/package-lock.json
-
-      - name: 安装依赖
+      - run: npm ci
         working-directory: landing
-        run: npm ci
-
-      - name: 构建静态站（→ landing/out）
+      - run: npm run build
         working-directory: landing
-        run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: landing-static
+          path: landing/out/
+          if-no-files-found: error
 
-      - name: 配置 SSH
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, linux, x64, vxin-prod-deploy]
+    environment: production
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: landing-static
+          path: ${{ runner.temp }}/vxin-landing-${{ github.run_id }}/site
+      - name: Publish assets before HTML, preserving app and server configuration
+        shell: bash
+        working-directory: ${{ runner.temp }}/vxin-landing-${{ github.run_id }}
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.DEPLOY_SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
-
-      - name: rsync 同步 out/ 到生产机（Nginx 根目录）
-        env:
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_HOST: ${{ secrets.DEPLOY_SERVER_HOST }}
-          # Nginx root（见 /etc/nginx/sites-enabled/vxin-vxinchat.conf）
-          LANDING_PATH: /root/v信/landing/out
-        run: |
-          # --delete 保证生产目录与构建产物一致（清理已删除的旧资源）
-          rsync -az --delete \
-            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
-            landing/out/ "${DEPLOY_USER}@${DEPLOY_HOST}:${LANDING_PATH}/"
-
-      - name: 线上验证
-        env:
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_HOST: ${{ secrets.DEPLOY_SERVER_HOST }}
-          LANDING_PATH: /root/v信/landing/out
-        run: |
-          # 在生产机上核对产物已落盘
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
-            "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "test -f '${LANDING_PATH}/index.html' && echo '✅ 生产机 index.html 已更新' || (echo '❌ 产物缺失'; exit 1)"
-          # 公网侧核对（静态站，index.html 已设 no-store）
-          echo "公网 /welcome/ 抓取："
-          curl -s "https://vxinchat.com/welcome/?t=${GITHUB_SHA}" | grep -o 'TestFlight\|即将上线' | sort -u || true
+          set -euo pipefail
+          TARGET=/var/www/vxin-web
+          BACKUP=/var/lib/vxin-releases/landing/$GITHUB_RUN_ID
+          test -s site/index.html
+          test -s "$TARGET/app/index.html"
+          # Reject a stale/broken public download before changing the homepage.
+          python3 - <<'PYLINKS'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import urllib.request
+          class Links(HTMLParser):
+              def handle_starttag(self, tag, attrs):
+                  if tag != 'a': return
+                  href = dict(attrs).get('href', '')
+                  if '/downloads/' in href and href.endswith(('.exe', '.apk')):
+                      with urllib.request.urlopen(urllib.request.Request(href, method='HEAD'), timeout=30) as response:
+                          assert response.status == 200, href
+          Links().feed(Path('site/index.html').read_text())
+          PYLINKS
+          mkdir -p "$BACKUP"
+          cp -a "$TARGET/index.html" "$BACKUP/index.html"
+          if [ -f "$TARGET/landing-release.json" ]; then cp -a "$TARGET/landing-release.json" "$BACKUP/landing-release.json"; fi
+          rollback() {
+            cp -a "$BACKUP/index.html" "$TARGET/.landing-restore.html"
+            mv "$TARGET/.landing-restore.html" "$TARGET/index.html"
+            if [ -f "$BACKUP/landing-release.json" ]; then cp -a "$BACKUP/landing-release.json" "$TARGET/landing-release.json"; else rm -f "$TARGET/landing-release.json"; fi
+          }
+          trap rollback ERR
+          # No --delete: app/, config.json and previous hashed assets must survive.
+          rsync -a --checksum --exclude=index.html site/ "$TARGET/"
+          cp site/index.html "$TARGET/.landing-index.html"
+          mv "$TARGET/.landing-index.html" "$TARGET/index.html"
+          printf '{"commit":"%s"}\n' "$GITHUB_SHA" > "$TARGET/.landing-release.json"
+          mv "$TARGET/.landing-release.json" "$TARGET/landing-release.json"
+          curl --fail --silent --show-error --max-time 20 "https://vxinchat.com/landing-release.json?release=$GITHUB_SHA" | jq -e --arg sha "$GITHUB_SHA" '.commit == $sha'
+          curl --fail --silent --show-error --max-time 20 "https://vxinchat.com/?release=$GITHUB_SHA" > "$BACKUP/published.html"
+          grep -F 'vxin-android-8.0.7.apk' "$BACKUP/published.html" > /dev/null
+          grep -F 'vxin-8.0.12-setup.exe' "$BACKUP/published.html" > /dev/null
+          curl --fail --silent --show-error --max-time 20 https://vxinchat.com/app/ -o /dev/null
+          trap - ERR
+          echo "Landing published: $GITHUB_SHA; previous HTML: $BACKUP"

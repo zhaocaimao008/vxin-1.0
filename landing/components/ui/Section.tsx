@@ -17,8 +17,8 @@ export function Section({
     tone === 'dark'
       ? 'bg-ink-900 text-white'
       : tone === 'muted'
-        ? 'bg-ink-50'
-        : 'bg-white';
+        ? 'bg-ink-50 text-ink-900'
+        : 'bg-white text-ink-900';
   return (
     <section id={id} className={`py-20 sm:py-28 ${toneClass} ${className}`}>
       <Container>{children}</Container>

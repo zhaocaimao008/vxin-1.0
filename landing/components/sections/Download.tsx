@@ -2,6 +2,7 @@ import { Section, SectionHeading } from '../ui/Section';
 import { Button } from '../ui/Button';
 import { Reveal } from '../ui/Reveal';
 import { download } from '@/lib/content';
+import { QRCodeSVG } from 'qrcode.react';
 
 export function Download() {
   return (
@@ -11,7 +12,7 @@ export function Download() {
         title={download.heading}
         sub={download.sub}
       />
-      <div className="mx-auto mt-14 grid max-w-4xl gap-5 sm:grid-cols-3">
+      <div className="mx-auto mt-14 grid max-w-6xl gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {download.platforms.map((p, i) => (
           <Reveal key={p.key} delay={i * 80}>
             <div
@@ -30,24 +31,23 @@ export function Download() {
               </div>
               <h3
                 className="mt-5 font-medium"
-                style={{ fontSize: '1.0625rem', color: '#E6EDF3', fontWeight: 500 }}
+                style={{ fontSize: '1.0625rem', color: '#0F172A', fontWeight: 500 }}
               >
                 {p.name}
               </h3>
               <p
                 className="mt-1.5"
-                style={{ fontSize: '0.875rem', color: '#94A3B8', fontWeight: 300 }}
+                style={{ fontSize: '0.875rem', color: '#475569', fontWeight: 400 }}
               >
                 {p.desc}
               </p>
               {p.key === 'android' && (
                 <div className="mt-6">
                   {/* 二维码：手机扫码直接下载 APK */}
-                  <img
-                    src="/downloads/vxin-android-qr.png"
-                    alt="v信 Android 下载二维码"
-                    width={132}
-                    height={132}
+                  <QRCodeSVG
+                    value={p.href}
+                    title="v信 Android 下载二维码"
+                    size={132}
                     style={{
                       borderRadius: '0.75rem',
                       background: '#FFFFFF',
@@ -57,13 +57,13 @@ export function Download() {
                     }}
                   />
                   <p
-                    style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 300, marginTop: '0.5rem' }}
+                    style={{ fontSize: '0.75rem', color: '#475569', fontWeight: 400, marginTop: '0.5rem' }}
                   >
                     扫码直接下载
                   </p>
                 </div>
               )}
-              <div className="mt-8 w-full">
+              <div className="mt-auto w-full pt-8">
                 <Button
                   href={p.available ? p.href : undefined}
                   variant={p.available ? 'primary' : 'secondary'}
@@ -71,7 +71,7 @@ export function Download() {
                   download={p.key === 'android'}
                   className="w-full"
                   style={p.available ? {
-                    background: '#14B8A6',
+                    background: '#0F766E',
                     color: 'white',
                     borderRadius: '999px',
                     border: 'none',
