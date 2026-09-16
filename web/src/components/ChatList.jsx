@@ -8,6 +8,8 @@ import { format } from '../utils/time';
 import { showConfirm, showToast } from '../utils/toast';
 import { FixedSizeList } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
+import { createMessageScope } from '../utils/messageScope';
+import { readAllDrafts } from '../utils/drafts';
 
 const ITEM_HEIGHT = 64;
 
@@ -103,21 +105,6 @@ function previewMsg(conv, user) {
   return conv.lastMessage;
 }
 
-// 扫描 localStorage 里的所有草稿（键形如 draft_<convId>），供会话列表显示「[草稿]」标记
-function readAllDrafts() {
-  const out = {};
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && k.startsWith('draft_')) {
-        const v = localStorage.getItem(k);
-        if (v) out[k.slice(6)] = v;
-      }
-    }
-  } catch { /* localStorage 不可用时忽略 */ }
-  return out;
-}
-
 // 首屏骨架：8 行占位（头像 + 两行文本），shimmer 微光，避免加载时闪「暂无聊天」
 function ChatListSkeleton() {
   return (
@@ -136,13 +123,19 @@ function ChatListSkeleton() {
 }
 
 export default function ChatList({ onSelectConv, activeConvId, unread = {}, searchQuery = '', convRefreshKey = 0, onOpenMentions }) {
+  const { user } = useAuth();
+  const messageScope = useMemo(() => createMessageScope(user?.id, axios.defaults.baseURL || window.location.origin), [user?.id]);
   const [conversations, setConversations] = useState([]);
   const [loaded, setLoaded] = useState(false);   // 首屏是否已拉过一次：未拉完显示骨架，避免闪「暂无聊天」
   const [ctxMenu, setCtxMenu] = useState(null);
-  const [drafts, setDrafts] = useState(readAllDrafts);
+  const [drafts, setDrafts] = useState(() => readAllDrafts(messageScope));
+  const [draftScope, setDraftScope] = useState(messageScope);
+  if (draftScope !== messageScope) {
+    setDraftScope(messageScope);
+    setDrafts(readAllDrafts(messageScope));
+  }
   const [onlineIds, setOnlineIds] = useState(new Set()); // 在线用户集合，用于显示绿点
   const { socket, reconnectCount } = useSocket();
-  const { user } = useAuth();
 
   // 右键菜单打开时：Esc 关闭 + 滚动/窗口失焦自动收起(避免菜单悬浮在错位处)
   useEffect(() => {
@@ -162,8 +155,8 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
   // 监听 ChatWindow 派发的草稿变更事件，实时刷新列表里的「[草稿]」标记
   useEffect(() => {
     const onDraftChanged = (e) => {
-      const { convId, text } = e.detail || {};
-      if (convId == null) return;
+      const { convId, text, scopeKey } = e.detail || {};
+      if (convId == null || scopeKey !== messageScope?.key) return;
       setDrafts(prev => {
         const has = !!prev[convId];
         if (text) { if (prev[convId] === text) return prev; return { ...prev, [convId]: text }; }
@@ -173,7 +166,7 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
     };
     window.addEventListener('draft-changed', onDraftChanged);
     return () => window.removeEventListener('draft-changed', onDraftChanged);
-  }, []);
+  }, [messageScope]);
 
   const fetchConvs = useCallback(async () => {
     try {

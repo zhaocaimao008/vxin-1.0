@@ -805,7 +805,7 @@ body.dark-mode .wc-msg-status-delivered { color: rgba(255,255,255,.42); }
 /* .wc-msg-bubble.mine - see canonical definition below */
 .wc-msg-bubble.mine a { color: rgba(255,255,255,.88); }
 .wc-msg-bubble.mine .wc-msg-time,
-.wc-msg-bubble.mine .wc-msg-meta { color: rgba(255,255,255,.58); }
+.wc-msg-bubble.mine .wc-msg-meta { color: var(--bubble-mine-meta); }
 .wc-msg-bubble.other {
   background: var(--bg-msg-other);
   color: var(--text-primary);
@@ -937,7 +937,7 @@ body.dark-mode .wc-msg-status-delivered { color: rgba(255,255,255,.42); }
   opacity: .78;
 }
 /* 我方气泡内时间用半透明白 */
-.wc-msg-bubble.mine .wc-msg-time-small { color: rgba(255,255,255,.55); }
+.wc-msg-bubble.mine .wc-msg-time-small { color: var(--bubble-mine-meta); }
 /* chat-window 改版：已读/发送状态勾号挪进气泡内（原来贴在气泡外的中性背景上，
    现在坐在绿色气泡上），需要重新提供对比色，否则绿底配绿勾/深灰勾看不清。
    .wc-msg-read 原来靠 margin-bottom:2px 对齐外层 align-items:flex-end 的容器，
@@ -1784,7 +1784,7 @@ body.dark-mode .wc-moment-comment-submit { color: var(--link); }
 
 /* 气泡 — 暗色模式下我方气泡：企业微信浅绿，深色文字 */
 body.dark-mode .wc-msg-bubble { border-color: rgba(255,255,255,.06); box-shadow: none; }
-body.dark-mode .wc-msg-bubble.mine { background: var(--bg-msg-mine); color: #fff; border: none; box-shadow: 0 1px 3px rgba(0,0,0,.22); }
+body.dark-mode .wc-msg-bubble.mine { background: var(--bg-msg-mine); color: var(--bubble-mine-text); border: none; box-shadow: 0 1px 3px rgba(0,0,0,.22); }
 body.dark-mode .wc-msg-bubble.other { background: var(--bg-input-search); color: #e6e6e6; border-color: rgba(255,255,255,.06); }
 body.dark-mode .wc-msg-bubble.mine::after,
 body.dark-mode .wc-msg-bubble.other::after { display: none; }
@@ -4812,12 +4812,12 @@ body.dark-mode .wc-chat-header-btn:hover { background: rgba(255,255,255,.08); }
 }
 .wc-app.wc-mobile .home-chat-area { border-radius: 0; box-shadow: none; }
 
-/* ── 我方气泡：v信品牌绿（#07C160），白字，轻投影 ── */
+/* ── 我方气泡：v信品牌绿，深色正文，轻投影 ── */
 .wc-msg-bubble.mine {
   background: var(--bg-msg-mine) !important;
   box-shadow: 0 1px 4px rgba(7,193,96,.22);
   border: none;
-  color: #FFFFFF;
+  color: var(--bubble-mine-text);
 }
 /* ── 他人气泡：纯白浮起，轻投影，清晰从画布分离 ── */
 .wc-msg-bubble.other {
@@ -5551,4 +5551,3 @@ body.dark-mode .ch-item:hover { background: rgba(255,255,255,.04); }
   font-size: inherit;
 }
 .ch-retry:hover { text-decoration: underline; }
-

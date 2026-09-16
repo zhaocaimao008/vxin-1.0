@@ -35,6 +35,7 @@ module.exports = defineConfig({
       use: {
         baseURL: env.WEB_URL,
         headless: true,
+        serviceWorkers: 'block', // 故障注入由路由控制；PWA 缓存另作独立验收
         viewport: { width: 1280, height: 800 },
         actionTimeout: 10_000,
         trace: 'retain-on-failure',

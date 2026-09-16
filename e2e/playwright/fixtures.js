@@ -9,6 +9,20 @@ function loadState() {
   return JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
 }
 
+async function configureContext(context, backendUrl) {
+  await context.addInitScript((url) => {
+    try { localStorage.setItem('vxin_server_url', url); } catch {}
+  }, backendUrl);
+  await context.route('**/*', route => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith('/config.json')) {
+      return route.fulfill({ json: { api: backendUrl, socket: backendUrl, cdn: backendUrl } });
+    }
+    if (!['127.0.0.1', 'localhost'].includes(url.hostname)) return route.abort();
+    return route.continue();
+  });
+}
+
 /**
  * 扩展 test:
  *  - seeded: globalSetup 造的账号 { users:[{username,phone,password,token,id}], backendUrl }
@@ -21,11 +35,9 @@ const test = base.test.extend({
     await use(loadState());
   },
 
-  webPage: async ({ page, baseURL }, use) => {
+  webPage: async ({ page }, use) => {
     const { backendUrl } = loadState();
-    await page.addInitScript((url) => {
-      try { localStorage.setItem('vxin_server_url', url); } catch {}
-    }, backendUrl);
+    await configureContext(page.context(), backendUrl);
     await use(page);
   },
 
@@ -42,10 +54,8 @@ const test = base.test.extend({
     const { backendUrl } = loadState();
     const created = [];
     const make = async () => {
-      const ctx = await browser.newContext();
-      await ctx.addInitScript((url) => {
-        try { localStorage.setItem('vxin_server_url', url); } catch {}
-      }, backendUrl);
+      const ctx = await browser.newContext({ serviceWorkers: 'block' });
+      await configureContext(ctx, backendUrl);
       created.push(ctx);
       return ctx;
     };

@@ -130,7 +130,11 @@ export async function testServerConnection(url) {
   if (!url || !url.startsWith('http')) return { ok: false, msg: '格式错误' };
   try {
     const res = await fetch(`${url.replace(/\/$/, '')}/health`, { signal: timeoutSignal(6000) });
-    if (res.ok || res.status < 500) return { ok: true, msg: '连接成功 ✓' };
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.ok === true && data?.db === 'ok') return { ok: true, msg: '连接成功 ✓' };
+      return { ok: false, msg: '该地址不是可用的 v信服务器' };
+    }
     return { ok: false, msg: `服务器返回 ${res.status}` };
   } catch {
     return { ok: false, msg: '无法连接到该服务器' };

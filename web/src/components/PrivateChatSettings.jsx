@@ -24,6 +24,7 @@ export default function PrivateChatSettings({ conversation, onClose, onConvUpdat
   // saving 沿用同一忙碌标志（切换/清空互斥），保持原有交互不回归。
   const { muted, pinned, saving, toggleMute, togglePin, setSaving } = useConvSettings(conversation, onConvUpdate);
   const [burnAfter, setBurnAfter] = useState(conversation.burn_after || 0);
+  const [burnSaving, setBurnSaving] = useState(false);
 
   const clearMessages = async () => {
     const name = conversation.name || '当前聊天';
@@ -41,11 +42,14 @@ export default function PrivateChatSettings({ conversation, onClose, onConvUpdat
 
   const changeBurnAfter = async (val) => {
     const s = parseInt(val) || 0;
-    setBurnAfter(s);
+    if (burnSaving) return;
+    setBurnSaving(true);
     try {
       await axios.post(`/api/messages/conversation/${conversation.id}/burn-after`, { seconds: s });
+      setBurnAfter(s);
       onConvUpdate?.({ burn_after: s });
     } catch { showToast('设置失败', 'error'); }
+    finally { setBurnSaving(false); }
   };
 
   const exportChat = async () => {
@@ -114,6 +118,8 @@ export default function PrivateChatSettings({ conversation, onClose, onConvUpdat
           <div className="wc-settings-row">
             <span className="wc-settings-row-label">阅后即焚</span>
             <select
+              aria-label="阅后即焚"
+              disabled={burnSaving}
               value={burnAfter}
               onChange={e => changeBurnAfter(e.target.value)}
               className="wc-settings-select"

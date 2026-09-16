@@ -3,6 +3,7 @@ import axios from 'axios';
 import { clearCache } from '../utils/msgCache';
 import { clearOutbox } from '../utils/outbox';
 import { createMessageScope } from '../utils/messageScope';
+import { clearDrafts } from '../utils/drafts';
 
 // 所有请求自动携带 httpOnly Cookie（同源时浏览器自动附加，跨域需此选项）
 axios.defaults.withCredentials = true;
@@ -110,6 +111,7 @@ export const AuthProvider = ({ children }) => {
   // 会话失效统一清理：401 兜底踢出 / 被踢下线(SocketContext force_logout) /
   // refresh 失败(axiosInterceptor vxin:session_expired) 三处共用，避免各写一套、遗漏清理项。
   const forceLogout = useCallback(() => {
+    clearDrafts(createMessageScope(userRef.current?.id, axios.defaults.baseURL || window.location.origin));
     clearOutbox(createMessageScope(userRef.current?.id, axios.defaults.baseURL || window.location.origin));
     clearCache();
     clearCsrfCache();
@@ -194,6 +196,7 @@ export const AuthProvider = ({ children }) => {
 
   // ── 登出 ──────────────────────────────────────────────────────
   const logout = async () => {
+    clearDrafts(createMessageScope(userRef.current?.id, axios.defaults.baseURL || window.location.origin));
     try {
       if ('serviceWorker' in navigator) {
         const reg = await navigator.serviceWorker.getRegistration('/');
@@ -218,6 +221,7 @@ export const AuthProvider = ({ children }) => {
   // 2. 更新 axios baseURL
   // 3. 清除当前登录态 → PrivateRoute 自动跳转登录页 → 用户用新服务器账号重新登录
   const changeServer = async (newUrl) => {
+    clearDrafts(createMessageScope(userRef.current?.id, axios.defaults.baseURL || window.location.origin));
     const clean = newUrl.trim().replace(/\/$/, '');
     clearOutbox(createMessageScope(userRef.current?.id, axios.defaults.baseURL || window.location.origin));
     try { await axios.post('/api/auth/logout'); } catch { /* logout is best-effort on server switch */ }

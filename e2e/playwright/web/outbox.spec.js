@@ -28,7 +28,8 @@ test.describe('待发件箱 OUTBOX', () => {
 
     // 断网态下：失败消息已写入 localStorage 待发件箱（持久化的直接证据）
     const outboxRaw = await webPage.evaluate(
-      (cid) => localStorage.getItem(`outbox_${cid}`), seeded.convAB);
+      ({ cid, userId, server }) => localStorage.getItem(`outbox_v2_${JSON.stringify([server, userId])}_${cid}`),
+      { cid: seeded.convAB, userId: seeded.users[0].id, server: seeded.backendUrl });
     expect(outboxRaw, '待发件箱应已持久化失败消息').toContain(t);
 
     // 恢复网络后刷新页面（离线态无法加载 HTML）。刷新会清空内存 messages，

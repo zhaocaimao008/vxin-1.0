@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { format } from '../utils/time';
 
@@ -15,7 +15,7 @@ export default function ConvSearchBar({ convId, onJump, onClose }) {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const inputRef = useRef(null);
-  const timerRef = useRef(null);
+  const [searchError, setSearchError] = useState(false);
 
   // 自动聚焦
   useEffect(() => { inputRef.current?.focus(); }, []);
@@ -27,32 +27,40 @@ export default function ConvSearchBar({ convId, onJump, onClose }) {
     return () => document.removeEventListener('keydown', h);
   }, [onClose]);
 
-  const doSearch = useCallback((q) => {
-    const trimmed = q.trim();
-    if (!trimmed) { setResults([]); setSearched(false); return; }
-    clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(async () => {
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    const ac = new AbortController();
+    const timer = setTimeout(async () => {
       setLoading(true);
       try {
         const { data } = await axios.get(
           `/api/messages/conversation/${convId}/search`,
-          { params: { q: trimmed } }
+          { params: { q: trimmed }, signal: ac.signal }
         );
+        if (ac.signal.aborted) return;
         setResults(Array.isArray(data) ? data : []);
+        setSearchError(false);
         setSearched(true);
       } catch {
+        if (ac.signal.aborted) return;
         setResults([]);
+        setSearchError(true);
         setSearched(true);
       } finally {
-        setLoading(false);
+        if (!ac.signal.aborted) setLoading(false);
       }
     }, 280);
-  }, [convId]);
+    return () => { clearTimeout(timer); ac.abort(); };
+  }, [query, convId]);
 
   const handleChange = (e) => {
     const v = e.target.value;
     setQuery(v);
-    doSearch(v);
+    setResults([]);
+    setSearched(false);
+    setSearchError(false);
+    setLoading(false);
   };
 
   const handleJump = (msg) => {
@@ -138,7 +146,7 @@ export default function ConvSearchBar({ convId, onJump, onClose }) {
               padding: '16px 16px',
               fontSize: 'var(--text-sm2)', color: 'var(--text-secondary)', textAlign: 'center',
             }}>
-              未找到相关消息
+              {searchError ? '搜索失败，请稍后重试' : '未找到相关消息'}
             </div>
           )}
           {results.map(msg => (

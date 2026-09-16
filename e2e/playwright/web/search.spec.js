@@ -24,8 +24,7 @@ test.describe('搜索 SEARCH', () => {
     const searchInput = webPage.locator('input[placeholder="搜索"]').first();
     await expect(searchInput).toBeVisible();
     await searchInput.fill('test');
-    const val = await searchInput.inputValue();
-    expect(val).toBe('test');
+    await expect(searchInput).toHaveValue('test');
     await searchInput.fill('');
   });
 
@@ -38,10 +37,7 @@ test.describe('搜索 SEARCH', () => {
     await searchInput.fill('xxxnonexistentkeyword999');
     await webPage.waitForTimeout(500);
 
-    // 搜索结果：要么为空（暂无聊天）要么显示搜索结果
-    const emptyOrResult = await webPage.locator('.wc-chat-item, [role="status"]').count();
-    // 不崩溃即通过
-    expect(emptyOrResult).toBeGreaterThanOrEqual(0);
+    await expect(webPage.getByRole('button', { name: /未找到相关本地结果.*xxxnonexistentkeyword999/ })).toBeVisible();
 
     await searchInput.fill('');
     await webPage.screenshot({ path: 'shots/search.png' });

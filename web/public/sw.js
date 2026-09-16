@@ -6,7 +6,7 @@
  *   - 推送通知 → 本地展示
  * 版本号变更自动触发旧缓存清理
  */
-const SW_VERSION = 'vxin-sw-v5';;
+const SW_VERSION = 'vxin-sw-v6';
 const STATIC_CACHE = `${SW_VERSION}-static`;
 const DYNAMIC_CACHE = `${SW_VERSION}-dynamic`;
 const MAX_DYNAMIC_ENTRIES = 60;
@@ -34,7 +34,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.map(key => {
-        if (key !== STATIC_CACHE && key !== DYNAMIC_CACHE) {
+        if (key.startsWith('vxin-sw-') && key !== STATIC_CACHE && key !== DYNAMIC_CACHE) {
           return caches.delete(key);
         }
       }))
@@ -51,16 +51,15 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   // 2. Chrome 扩展、data: 等跳过
   if (!url.protocol.startsWith('http')) return;
+  // 跨域配置、私密文件必须使用真实网络鉴权，不能由旧账号的缓存响应代替。
+  if (url.origin !== self.location.origin) return;
+  if (request.headers.has('authorization') || url.searchParams.has('token') ||
+      /^\/(uploads|media|downloads)(\/|$)/.test(url.pathname)) return;
   // 3. Socket.IO 长连接跳过
   if (url.pathname.startsWith('/socket.io')) return;
   // 4. API 请求 → Network First
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(networkFirst(request));
-    return;
-  }
-  // 5. 媒体/上传文件 → Cache First（带 TTL 检查，图片/语音/视频离线可用）
-  if (url.pathname.startsWith('/uploads/') || url.pathname.startsWith('/media/')) {
-    event.respondWith(cacheFirst(request, DYNAMIC_CACHE));
     return;
   }
   // 6. 静态资源（JS/CSS/字体/图标）→ Cache First
@@ -86,7 +85,7 @@ async function cacheFirst(request, cacheName) {
   if (cached) return cached;
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    if (canCache(response)) {
       // 动态缓存容量控制
       if (cacheName === DYNAMIC_CACHE) await trimCache(cache, MAX_DYNAMIC_ENTRIES);
       cache.put(request, response.clone());
@@ -127,7 +126,7 @@ async function staleWhileRevalidate(request) {
   const cache = await caches.open(DYNAMIC_CACHE);
   const cached = await cache.match(request);
   const networkPromise = fetch(request).then(response => {
-    if (response.ok) {
+    if (canCache(response)) {
       cache.put(request, response.clone());
     }
     return response;
@@ -139,6 +138,10 @@ async function staleWhileRevalidate(request) {
 
 function isStaticAsset(url) {
   return /\.(js|css|woff2?|ttf|eot|svg|ico|png|jpg|jpeg|webp|avif)(\?.*)?$/.test(url.pathname);
+}
+
+function canCache(response) {
+  return response.ok && !/\b(no-store|private)\b/i.test(response.headers.get('Cache-Control') || '');
 }
 
 /** 裁剪动态缓存到最大条目数（LRU 近似：删除最早的条目） */

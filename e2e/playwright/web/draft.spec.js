@@ -16,6 +16,32 @@ async function loginAndOpenConv(webPage, baseURL, seeded) {
 }
 
 test.describe('输入草稿 DRAFT', () => {
+  test('DRAFT-04 切页和刷新后恢复草稿，表情也持久化', async ({ webPage, baseURL, seeded }) => {
+    const chat = await loginAndOpenConv(webPage, baseURL, seeded);
+    const draft = '未发送的草稿 👋 ' + Date.now();
+    await chat.typeText(draft);
+    await webPage.getByTestId('nav-tab-me').click();
+    await webPage.getByTestId('nav-tab-chats').click();
+    await chat.openConv(seeded.convAB);
+    await expect(webPage.getByTestId('chat-msg-input')).toHaveValue(draft);
+    await webPage.reload();
+    await chat.waitReady();
+    await chat.openConv(seeded.convAB);
+    await expect(webPage.getByTestId('chat-msg-input')).toHaveValue(draft);
+  });
+
+  test('DRAFT-05 其它账号草稿不会显示或填入当前输入框', async ({ webPage, baseURL, seeded }) => {
+    const chat = await loginAndOpenConv(webPage, baseURL, seeded);
+    await webPage.evaluate(({ cid, otherId, server }) => {
+      localStorage.setItem(`draft_v2_${JSON.stringify([server, otherId])}_${cid}`, 'OTHER_ACCOUNT_SECRET');
+      localStorage.setItem(`draft_${cid}`, 'LEGACY_SECRET');
+    }, { cid: seeded.convAB, otherId: seeded.users[1].id, server: seeded.backendUrl });
+    await webPage.reload();
+    await chat.waitReady();
+    await chat.openConv(seeded.convAB);
+    await expect(webPage.getByTestId('chat-msg-input')).toHaveValue('');
+    await expect(webPage.getByText(/OTHER_ACCOUNT_SECRET|LEGACY_SECRET/)).toHaveCount(0);
+  });
   test('DRAFT-01 输入未发送 → 列表显示「[草稿]」标记', async ({ webPage, seeded, baseURL }) => {
     test.skip(!seeded.convAB, '无会话(建会话失败)');
     const chat = await loginAndOpenConv(webPage, baseURL, seeded);

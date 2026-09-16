@@ -16,6 +16,7 @@ import MultiSelectBar from './MultiSelectBar';
 import { loadOutbox, upsertOutbox, removeFromOutbox } from '../utils/outbox';
 import { createMessageScope } from '../utils/messageScope';
 import { recoverMessages } from '../utils/recoverMessages';
+import { readDraft, saveDraft } from '../utils/drafts';
 import { loadCache, saveCache } from '../utils/msgCache';
 
 // ── 模块级常量，避免每次渲染重建 Set ────────────────────────────
@@ -102,6 +103,8 @@ function detectMention(val, caret) {
 }
 
 export default function ChatWindow({ conversation: initialConv, features = {}, onClose, onStartCall }) {
+  const { user } = useAuth();
+  const messageScope = useMemo(() => createMessageScope(user?.id, axios.defaults.baseURL || window.location.origin), [user?.id]);
   const [conversation, setConversation] = useState(initialConv);
   const [messages, setMessages] = useState([]);
   // 输入区（compose）状态收敛进 useReducer：input / voiceMode / editingMsg /
@@ -109,8 +112,13 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
   // 切换会话=全清），改为原子 dispatch，杜绝散落 setState 的不一致。见
   // reducers/composeReducer.js（已 vitest 穷举测试）。recording 由 MediaRecorder
   // 副作用驱动，仍用独立 useState。
-  const [compose, dispatchCompose] = useReducer(composeReducer, initialComposeState);
+  const [compose, dispatchCompose] = useReducer(composeReducer, initialComposeState, state => ({
+    ...state, input: readDraft(initialConv.id, messageScope),
+  }));
   const { input, voiceMode, editingMsg, replyTo } = compose;
+  useEffect(() => {
+    if (!editingMsg) saveDraft(conversation.id, input, messageScope);
+  }, [conversation.id, input, editingMsg, messageScope]);
   const [typingName, setTypingName] = useState('');
   // 三个输入区面板互斥（emoji / stickers / more）——收敛为单一 activePanel，
   // 消除此前反复出现的「打开一个就手动 set 另两个为 false」三连 setState 模式。
@@ -211,8 +219,6 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
   const textareaRef = useRef(null);
   const inputAreaRef = useRef(null);
   const { socket, reconnectCount, disconnectAtRef, registerDelivered } = useSocket();
-  const { user } = useAuth();
-  const messageScope = useMemo(() => createMessageScope(user?.id, axios.defaults.baseURL || window.location.origin), [user?.id]);
 
   // ── 点击输入区外部关闭 emoji / more / 表情包 面板 ────────────────────
   useEffect(() => {
@@ -470,11 +476,13 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
   // 切换会话时清空所有会话内 UI 状态：render 期派生（存上一次 conversation.id），
   // 避免在 effect 内同步 setState 触发级联渲染。等价于按会话 id 重挂载。
   const [prevConvId, setPrevConvId] = useState(conversation.id);
-  if (conversation.id !== prevConvId) {
+  const [prevScope, setPrevScope] = useState(messageScope);
+  if (conversation.id !== prevConvId || messageScope !== prevScope) {
     setPrevConvId(conversation.id);
+    setPrevScope(messageScope);
     setMessages([]);
     // compose 全清 + 载入新会话草稿（replyTo/editingMsg/voiceMode/input 原子重置）
-    dispatchCompose({ type: 'RESET', draft: localStorage.getItem(`draft_${conversation.id}`) || '' });
+    dispatchCompose({ type: 'RESET', draft: readDraft(conversation.id, messageScope) });
     setMention(null); // 清 @ 提及态,避免跨会话残留下拉
     setActivePanel(null);  // 关闭 emoji/stickers/more 任一展开面板
     setHasMore(true);
@@ -1197,8 +1205,6 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
     forceScrollRef.current = true; // 自己发消息：无条件滚到底(多帧贴底 effect 接管)
     setMessages(prev => [...prev, optimistic]);
     dispatchCompose({ type: 'SENT' });   // 清输入 + 清回复（原子）
-    localStorage.removeItem(`draft_${conversation.id}`);
-    window.dispatchEvent(new CustomEvent('draft-changed', { detail: { convId: conversation.id, text: '' } }));
     setActivePanel(null);
     socket?.emit('stop_typing', { conversationId: conversation.id });
 
@@ -1312,9 +1318,9 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
   };
 
   const cancelEdit = useCallback(() => {
-    dispatchCompose({ type: 'CANCEL_EDIT' });     // 退编辑 + 清输入（原子）
+    dispatchCompose({ type: 'RESET', draft: readDraft(conversation.id, messageScope) });
     textareaRef.current?.focus();
-  }, []);
+  }, [conversation.id, messageScope]);
   const cancelReply = useCallback(() => dispatchCompose({ type: 'CLEAR_REPLY' }), []);
 
   // 当前 @ 候选：按已输入的 atQuery 过滤成员（大小写不敏感），排除自己
@@ -2591,12 +2597,6 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
                       openMention(mentionToken.query);
                     } else if (atList) {
                       closeMention();
-                    }
-                    // 编辑态复用同一输入框：此时不写草稿，避免编辑文本污染并覆盖真实草稿
-                    if (conversation.id && !editingMsg) {
-                      if (val) localStorage.setItem(`draft_${conversation.id}`, val);
-                      else localStorage.removeItem(`draft_${conversation.id}`);
-                      window.dispatchEvent(new CustomEvent('draft-changed', { detail: { convId: conversation.id, text: val } }));
                     }
                   }}
                   onKeyDown={handleKeyDown}

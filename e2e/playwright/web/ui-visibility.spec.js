@@ -60,8 +60,8 @@ test.describe('UI 可见性 UI-VIS', () => {
     // 五个 Tab 均可见（消息/联系人/动态/收藏/设置）
     for (const key of ['chats', 'contacts', 'moments', 'favorites', 'me']) {
       const tab = webPage.locator(`[data-testid="${A.navTab(key)}"]`).first();
-      const visible = await tab.isVisible().catch(() => false);
-      if (visible) {
+      await expect(tab).toBeVisible();
+      {
         const box = await tab.boundingBox();
         expect(box.y).toBeGreaterThanOrEqual(0);
         expect(box.height).toBeGreaterThan(0);

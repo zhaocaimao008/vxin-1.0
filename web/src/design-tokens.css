@@ -51,9 +51,10 @@
   --bubble-mine-rgb: var(--color-primary-rgb);
   --bubble-other:    #F2F2F2;
   --shadow-bubble-other-soft: 0 1px 3px rgba(0,0,0,.06), 0 1px 6px rgba(0,0,0,.04);
-  /* 品牌绿气泡内用白色文字，对比度充足 */
-  --bubble-mine-text: #FFFFFF;
-  --bubble-mine-link: #D1F1DF;
+  /* 明亮绿底使用深色正文，保证长消息、链接和时间可读。 */
+  --bubble-mine-text: #092C19;
+  --bubble-mine-link: #083F2A;
+  --bubble-mine-meta: #164A2E;
 
   /* 品牌渐变（绿→浅绿）：我方气泡、侧栏头像、确认按钮等使用 */
   --grad-brand:       linear-gradient(135deg, #07C160 0%, #2BB86E 100%);
@@ -508,6 +509,7 @@ body.dark-mode {
 
   /* Backgrounds */
   --bg-app:               #0A0D11;
+  --bg-page:              #15171A;
   --bg-shell:             #111111;   /* 暗色外壳：v信深黑（与浅色一致）*/
   --bg-panel:             #1C1C1E;
   --bg-panel-header:      #1C1C1E;
@@ -602,7 +604,7 @@ body.dark-mode {
   --bg-active:      var(--bg-panel-item-active);
   --bg-active-hover:var(--bg-panel-item-active-hover);
   --border-color:   var(--border-default);
-  --text-tertiary:  var(--text-muted);
+  --text-tertiary:  #A0A3AA;
   --text-placeholder: var(--text-muted);
 
   color-scheme: dark;

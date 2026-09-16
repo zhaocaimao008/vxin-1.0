@@ -165,7 +165,7 @@ function CreateGroupModal({ onClose, onCreated }) {
   return (
     <div className="cgm-overlay" ref={trapRef}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="cgm-content"
+      <div className="cgm-content" role="dialog" aria-modal="true" aria-label="发起群聊"
         onClick={e => e.stopPropagation()}>
 
         {/* 标题栏 */}
