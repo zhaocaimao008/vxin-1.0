@@ -491,7 +491,8 @@
 .auth-privacy-content h2 { font-size: 17px; margin: 24px 0 8px; }
 .auth-privacy-content p, .auth-privacy-content ul { margin: 10px 0; }
 .auth-privacy-content ul { padding-left: 20px; }
-.auth-document-dialog .auth-privacy-content a { color: #075d44; }
+.auth-document-dialog .auth-privacy-content a,
+body.dark-mode .auth-document-dialog .auth-privacy-content a { color: #075d44; }
 .auth-document-body { padding: 0 20px 24px; }
 .auth-document-body p { margin: 12px 0; }
 

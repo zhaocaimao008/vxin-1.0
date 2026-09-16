@@ -11,12 +11,14 @@ test('AUTH-LINKS current manifests select immutable Windows and Android packages
 
 test('AUTH-DOCS privacy is readable on narrow screens without losing form input', async ({ webPage, baseURL }) => {
   await webPage.setViewportSize({ width: 320, height: 568 });
+  await webPage.addInitScript(() => localStorage.setItem('wc_theme', 'dark'));
   await webPage.goto(baseURL + '/login');
   await webPage.getByTestId('login-phone-input').fill('13912345678');
   await webPage.getByRole('link', { name: '《隐私政策》', exact: true }).click();
   const dialog = webPage.getByRole('dialog', { name: '隐私政策', exact: true });
   await expect(dialog).toBeVisible();
   await expect(dialog.locator('.auth-privacy-content').getByRole('heading', { name: '隐私政策', exact: true })).toBeVisible();
+  await expect(dialog.locator('.auth-privacy-content a').first()).toHaveCSS('color', 'rgb(7, 93, 68)');
   const box = await dialog.boundingBox();
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(320);

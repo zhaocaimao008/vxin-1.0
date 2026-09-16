@@ -9,9 +9,9 @@
 
 | 端 | 版本真相源文件 | 字段 | 当前版本 |
 |----|--------------|------|---------|
-| 桌面端（Windows/Mac/Linux） | `desktop-electron/package.json` | `version` | 8.0.14 |
-| 桌面端渲染层内嵌 | `desktop-electron/src/package.json` | `version` | 与上一致（8.0.14，本文件自身不参与打包版本号，仅保持不漂移） |
-| Web 前端 | `web/package.json` | `version` | 8.0.17 |
+| 桌面端（Windows/Mac/Linux） | `desktop-electron/package.json` | `version` | 8.0.15 |
+| 桌面端渲染层内嵌 | `desktop-electron/src/package.json` | `version` | 与上一致（8.0.15，本文件自身不参与打包版本号，仅保持不漂移） |
+| Web 前端 | `web/package.json` | `version` | 8.0.18 |
 | 后端 | `backend-v2/package.json` | `version` | 8.0.0 |
 | Android | `android/app/build.gradle.kts` | `versionName` / `versionCode` | 8.0.7 / code 60 |
 | iOS | `ios/project.yml` | `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` | 8.0.3 / build 36 |
