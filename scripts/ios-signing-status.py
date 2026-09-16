@@ -16,5 +16,10 @@ for resource in ['certificates?limit=200', 'bundleIds?filter[identifier]=com.vxi
         with urllib.request.urlopen(req, timeout=30) as response:
             data = json.load(response)['data']
         print(json.dumps({'resource': resource, 'count': len(data), 'items': [{'id': item['id'], **{key: value for key, value in item['attributes'].items() if key in ['serialNumber', 'expirationDate', 'certificateType', 'identifier', 'name']}} for item in data]}))
+        if resource.startswith('apps?') and data:
+            builds = urllib.request.Request('https://api.appstoreconnect.apple.com/v1/builds?filter[app]=' + data[0]['id'] + '&sort=-uploadedDate&limit=5', headers={'Authorization': 'Bearer ' + token})
+            with urllib.request.urlopen(builds, timeout=30) as response:
+                records = json.load(response)['data']
+            print(json.dumps({'recentBuilds': [{'id': item['id'], **{key: value for key, value in item['attributes'].items() if key in ['version', 'processingState', 'uploadedDate', 'expired']}} for item in records]}))
     except urllib.error.HTTPError as error:
         print(json.dumps({'resource': resource, 'status': error.code, 'errors': json.loads(error.read()).get('errors')}))
