@@ -46,7 +46,9 @@ jobs:
           git -C "$REPO" diff --stat origin/main HEAD
           git -C "$REPO" remote get-url origin | sed -E 's#(https?://)[^/@]+:[^/@]+@#\1[redacted]@#'
           git -C "$REPO" rev-parse origin/main
-          git -C "$REPO" bundle create "$RUNNER_TEMP/vxin-production.bundle" origin/main..HEAD
+          if [ "$(git -C "$REPO" rev-list --count origin/main..HEAD)" -gt 0 ]; then
+            git -C "$REPO" bundle create "$RUNNER_TEMP/vxin-production.bundle" origin/main..HEAD
+          fi
           df -h "$REPO" /var/www/vxin-web/app
           node --version
           test -s /var/www/vxin-web/app/index.html
@@ -64,6 +66,7 @@ jobs:
           name: production-local-commits
           path: ${{ runner.temp }}/vxin-production.bundle
           retention-days: 7
+          if-no-files-found: ignore
 
 
   test:
