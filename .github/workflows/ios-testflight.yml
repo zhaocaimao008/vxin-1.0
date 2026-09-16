@@ -3,6 +3,14 @@ name: iOS TestFlight
 on:
   workflow_dispatch:
     inputs:
+      repair_signing:
+        description: '新增发布证书与描述文件，使用恢复公钥加密导出'
+        type: boolean
+        default: false
+      recovery_public_key:
+        description: '签名恢复 RSA 公钥（PEM，仅公钥）'
+        type: string
+        required: false
       signing_check_only:
         description: '仅诊断证书有效期与 Apple API 权限，不上传'
         type: boolean
@@ -93,6 +101,17 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode \
             > ~/Library/MobileDevice/Provisioning\ Profiles/vxin.mobileprovision
+          # Apply the installed profile only to the app target, leaving SPM dependencies alone.
+          security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/vxin.mobileprovision > "$RUNNER_TEMP/profile.plist"
+          python3 - <<'PYPROFILE'
+          import json, os, plistlib, re
+          from pathlib import Path
+          profile = plistlib.loads(Path(os.environ['RUNNER_TEMP'] + '/profile.plist').read_bytes())
+          name = profile['Name']
+          project = Path('ios/Vxin.xcodeproj/project.pbxproj')
+          text = re.sub(r'PROVISIONING_PROFILE_SPECIFIER = [^;]+;', lambda _: 'PROVISIONING_PROFILE_SPECIFIER = ' + json.dumps(name) + ';', project.read_text())
+          project.write_text(text)
+          PYPROFILE
 
       - name: Resolve Swift packages
         working-directory: ios
@@ -241,3 +260,18 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
         run: python3 scripts/ios-signing-status.py
+      - name: Create new signing identity and encrypted export
+        if: inputs.repair_signing
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
+          RECOVERY_PUBLIC_KEY: ${{ inputs.recovery_public_key }}
+        run: python3 scripts/ios-renew-signing.py
+      - uses: actions/upload-artifact@v4
+        if: always() && inputs.repair_signing
+        with:
+          name: encrypted-signing-recovery
+          path: ${{ runner.temp }}/signing-recovery/encrypted.json
+          retention-days: 1
+          if-no-files-found: error

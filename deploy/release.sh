@@ -84,6 +84,9 @@ CHANGED=1
 git -C "$REPO_DIR" reset --hard "$TARGET"
 rm -rf "$BE/node_modules"
 mv "$STAGE/backend-v2/node_modules" "$BE/node_modules"
+if [[ ${CONFIGURE_WEB_PUSH:-0} == 1 ]]; then
+  node "$REPO_DIR/deploy/configure-web-push.cjs" "$BE/.env"
+fi
 rsync -a --checksum --delete "$STAGE/web/dist/" "$WEB_ROOT/"
 restart
 health

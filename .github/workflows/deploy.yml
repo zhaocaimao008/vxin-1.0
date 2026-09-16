@@ -170,6 +170,7 @@ jobs:
           STATE_ROOT: /var/lib/vxin-releases
           PM2_APP: vxin-backend
           HEALTH_URL: http://127.0.0.1:3002/health
+          CONFIGURE_WEB_PUSH: '1'
         run: |
           set -euo pipefail
           git -C "$REPO_DIR" fetch origin main
