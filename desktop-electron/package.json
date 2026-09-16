@@ -41,11 +41,7 @@
         "nsis"
       ],
       "icon": "assets/icon.ico",
-      "artifactName": "vxin-${version}-setup.${ext}",
-      "signingHashAlgorithms": null,
-      "sign": null,
-      "certificateFile": null,
-      "certificatePassword": null
+      "artifactName": "vxin-${version}-setup.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -82,12 +78,12 @@
     }
   },
   "dependencies": {
+    "electron-log": "^5.0.0",
     "electron-store": "^8.1.0",
-    "electron-updater": "^6.1.0",
-    "electron-log": "^5.0.0"
+    "electron-updater": "^6.1.0"
   },
   "devDependencies": {
-    "electron": "^30.0.0",
-    "electron-builder": "^24.13.0"
+    "electron": "^44.4.1",
+    "electron-builder": "^26.15.3"
   }
 }

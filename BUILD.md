@@ -4,7 +4,7 @@
 
 ## 本地运行
 
-需要 Node 22、npm、Redis；Android 需要完整 JDK 17、Android SDK Platform 34 / Build Tools 33.0.1；iOS 需要 macOS、Xcode 和 XcodeGen。
+需要 Node 22.12 或更新的 22.x、npm、Redis；Android 需要完整 JDK 17、Android SDK Platform 34 / Build Tools 33.0.1；iOS 需要 macOS、Xcode 和 XcodeGen。
 
 ```bash
 # 后端：复制 backend-v2/.env.example，填写本地专用配置，Redis 需先启动
@@ -57,7 +57,9 @@ cd ..
 node --test desktop-electron/test/*.test.js deploy/release.test.cjs
 ```
 
-Web E2E：构建 production Web 后，在 `e2e` 安装依赖，运行 `npm run test:web`。测试会创建独立后端与数据库；应配置专用 Redis。Electron E2E 必须先构建 desktop 模式，再运行 `playwright test --project=electron`，无桌面的 Linux 使用 `xvfb-run -a`。双端媒体测试用浏览器生成的音视频源验证真实 RTP；配置独立 coturn 的 `TURN_SECRET`、`TURN_URLS` 后还会强制验收中继，未配置的中继项明确跳过。
+Web E2E：构建 production Web 后，在 `e2e` 安装依赖，运行 `npm run test:web`。测试会创建独立后端与数据库；应配置专用 Redis。Electron E2E 必须先构建 desktop 模式，在 `desktop-electron` 执行 `npx --no-install install-electron` 下载运行时，再运行 `playwright test --project=electron`，无桌面的 Linux 使用 `xvfb-run -a`。Electron 44 不再在 npm postinstall 阶段下载自身；详情见 [官方迁移说明](https://www.electronjs.org/docs/latest/breaking-changes#behavior-changed-electron-no-longer-downloads-itself-via-postinstall-script)。双端媒体测试用浏览器生成的音视频源验证真实 RTP；配置独立 coturn 的 `TURN_SECRET`、`TURN_URLS` 后还会强制验收中继，未配置的中继项明确跳过。
+
+桌面依赖与打包工具纳入 CI 的高危审计门禁。Electron 44 的 macOS 最低要求为 macOS 12；macOS 通知需要签名的应用，未签名包仅供构建验证。
 
 ## Docker（独立部署）
 

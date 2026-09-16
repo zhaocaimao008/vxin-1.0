@@ -144,6 +144,9 @@ jobs:
       - name: Backend audit
         working-directory: backend-v2
         run: npm audit --audit-level=high
+      - name: Desktop runtime and build tool audit
+        working-directory: desktop-electron
+        run: npm audit --audit-level=high
 
   release-tests:
     name: Desktop HTTP + deployment rollback
