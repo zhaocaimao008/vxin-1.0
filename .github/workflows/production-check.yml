@@ -1,0 +1,29 @@
+name: Production readiness (read only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  readiness:
+    runs-on: [self-hosted, linux, x64, vxin-prod-deploy]
+    timeout-minutes: 5
+    steps:
+      - name: Inspect current installation without exposing credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          REPO=/root/vxin-1.0
+          git -C "$REPO" rev-parse HEAD
+          git -C "$REPO" status --short
+          df -h "$REPO" /var/www/vxin-web/app
+          node --version
+          test -s /var/www/vxin-web/app/index.html
+          pm2 jlist | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.stringify(JSON.parse(s).map(p=>({name:p.name,status:p.pm2_env.status,cwd:p.pm2_env.pm_cwd,script:p.pm2_env.pm_exec_path})))));'
+          curl --fail --silent --max-time 10 http://127.0.0.1:3002/health
+          cd "$REPO/backend-v2"
+          node <<'NODE'
+          const fs = require('fs');
+          const env = require('dotenv').parse(fs.readFileSync('.env'));
+          const fields = ['JWT_SECRET','ADMIN_JWT_SECRET','TURN_SECRET','TURN_URLS','VAPID_PUBLIC_KEY','VAPID_PRIVATE_KEY','FIREBASE_SERVICE_ACCOUNT','APNS_KEY_PATH','GETUI_APP_ID','GETUI_APP_KEY','GETUI_APP_SECRET','ASR_URL','SERVICE_TOKEN','S3_BUCKET','S3_ACCESS_KEY_ID','S3_SECRET_ACCESS_KEY','SMS_ACCESS_KEY_ID'];
+          console.log(JSON.stringify(Object.fromEntries(fields.map(k => [k, !!env[k]]))));
+          NODE
