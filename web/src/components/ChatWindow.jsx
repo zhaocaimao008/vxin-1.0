@@ -675,6 +675,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
     autoScrollingRef.current = true;
     stickPendingRef.current = true;
     const snap = () => {
+      if (!stickBottomRef.current || !stickPendingRef.current) return;
       const o = listOuterRef.current;
       if (!o) return;
       virtListRef.current?.scrollToLast();
@@ -759,14 +760,30 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
   // 故用 rAF 轮询等容器就绪再挂，容器变化时重挂。
   useEffect(() => {
     const stableHandler = () => handleScrollRef.current?.();
+    const stopFollowing = () => {
+      stickBottomRef.current = false;
+      stickPendingRef.current = false;
+      autoScrollingRef.current = false;
+    };
+    const onWheel = event => { if (event.deltaY < 0) stopFollowing(); };
+    const onKeyDown = event => { if (['ArrowUp', 'PageUp', 'Home'].includes(event.key)) stopFollowing(); };
+    let touchY = null;
+    const onTouchStart = event => { touchY = event.touches[0]?.clientY ?? null; };
+    const onTouchMove = event => {
+      const nextY = event.touches[0]?.clientY;
+      if (touchY !== null && nextY > touchY) stopFollowing();
+      touchY = nextY ?? null;
+    };
+    const listeners = { scroll: stableHandler, wheel: onWheel, keydown: onKeyDown, touchstart: onTouchStart, touchmove: onTouchMove };
+    const detach = node => { for (const [event, handler] of Object.entries(listeners)) node.removeEventListener(event, handler); };
     let attached = null;   // 已挂监听的元素
     let raf = 0;
     // 挂到当前 outer；若 outer 已换新节点则先摘旧再挂新。返回是否已挂上。
     const attach = () => {
       const outer = listOuterRef.current;
       if (outer && outer !== attached) {
-        if (attached) attached.removeEventListener('scroll', stableHandler);
-        outer.addEventListener('scroll', stableHandler, { passive: true });
+        if (attached) detach(attached);
+        for (const [event, handler] of Object.entries(listeners)) outer.addEventListener(event, handler, { passive: true });
         attached = outer;
       }
       return !!attached;
@@ -781,7 +798,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
     return () => {
       if (raf) cancelAnimationFrame(raf);
       window.removeEventListener('resize', onResize);
-      if (attached) attached.removeEventListener('scroll', stableHandler);
+      if (attached) detach(attached);
     };
   }, []);
 
