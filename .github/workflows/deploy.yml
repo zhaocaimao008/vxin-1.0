@@ -41,6 +41,11 @@ jobs:
           REPO=/root/vxin-1.0
           git -C "$REPO" rev-parse HEAD
           git -C "$REPO" status --short
+          git -C "$REPO" log -5 --oneline
+          git -C "$REPO" log --oneline origin/main..HEAD
+          git -C "$REPO" diff --stat origin/main HEAD
+          git -C "$REPO" remote get-url origin | sed -E 's#(https?://)[^/@]+:[^/@]+@#\1[redacted]@#'
+          git -C "$REPO" rev-parse origin/main
           df -h "$REPO" /var/www/vxin-web/app
           node --version
           test -s /var/www/vxin-web/app/index.html
@@ -50,7 +55,7 @@ jobs:
           node <<'NODE'
           const fs = require('fs');
           const env = require('dotenv').parse(fs.readFileSync('.env'));
-          const fields = ['JWT_SECRET','ADMIN_JWT_SECRET','TURN_SECRET','TURN_URLS','VAPID_PUBLIC_KEY','VAPID_PRIVATE_KEY','FIREBASE_SERVICE_ACCOUNT','APNS_KEY_PATH','GETUI_APP_ID','GETUI_APP_KEY','GETUI_APP_SECRET','ASR_URL','SERVICE_TOKEN','S3_BUCKET','S3_ACCESS_KEY_ID','S3_SECRET_ACCESS_KEY','SMS_ACCESS_KEY_ID'];
+          const fields = ['JWT_SECRET','ADMIN_JWT_SECRET','TURN_SECRET','TURN_URLS','VAPID_PUBLIC_KEY','VAPID_PRIVATE_KEY','FIREBASE_PROJECT_ID','FIREBASE_CLIENT_EMAIL','FIREBASE_PRIVATE_KEY','APNS_KEY_ID','APNS_TEAM_ID','APNS_P8','GETUI_APP_ID','GETUI_APP_KEY','GETUI_MASTER_SECRET','ASR_URL','SERVICE_TOKEN','S3_BUCKET','S3_ACCESS_KEY_ID','S3_SECRET_ACCESS_KEY','SMS_ACCESS_KEY_ID'];
           console.log(JSON.stringify(Object.fromEntries(fields.map(k => [k, !!env[k]]))));
           NODE
 
