@@ -2,6 +2,7 @@
 const { test, expect } = require('../fixtures');
 const { LoginPage } = require('../pages/LoginPage');
 const { ChatPage } = require('../pages/ChatPage');
+const { seedUsers, uniquePhone, befriendAndOpenConv } = require('../../shared/backend/seed');
 
 test.use({ launchOptions: { args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] } });
 
@@ -39,8 +40,13 @@ async function mediaStats(page) {
 
 for (const relay of [false, true]) {
   for (const kind of ['audio', 'video']) {
-    test(`MEDIA ${kind} ${relay ? 'TURN relay' : 'direct'} 双向媒体、静音、挂断释放`, async ({ makeCtx, seeded, baseURL }, info) => {
+    test(`MEDIA ${kind} ${relay ? 'TURN relay' : 'direct'} 双向媒体、静音、挂断释放`, async ({ makeCtx, baseURL }, info) => {
       test.skip(relay && !process.env.TURN_URLS, '此项必须配置独立 coturn 和 TURN_SECRET；未配置不计为通过');
+      // 每例独立主叫，避免上一例尚未结束的 5 秒呼叫冷却污染媒体验收。
+      const users = await seedUsers([uniquePhone(), uniquePhone()].map(phone => ({
+        username: `Media${phone}`, phone,
+      })));
+      const convAB = await befriendAndOpenConv(users[0], users[1]);
       const contexts = await Promise.all([makeCtx(), makeCtx()]);
       await Promise.all(contexts.map(ctx => observeMedia(ctx, relay)));
       const pages = await Promise.all(contexts.map(ctx => ctx.newPage()));
@@ -48,9 +54,10 @@ for (const relay of [false, true]) {
       for (let i = 0; i < pages.length; i++) {
         const login = new LoginPage(pages[i]);
         await login.gotoLogin(baseURL);
-        await login.login(seeded.users[i].phone, seeded.users[i].password);
+        await login.login(users[i].phone, users[i].password);
         await chats[i].waitReady();
-        await chats[i].openConv(seeded.convAB);
+        await chats[i].openConv(convAB);
+        await chats[i].waitSocketConnected();
       }
       await chats[0].startCall(kind);
       await pages[1].getByTestId('call-accept-btn').click();
