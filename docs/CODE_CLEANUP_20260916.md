@@ -33,7 +33,18 @@
 
 测试使用隔离数据库、账号和端口。后端覆盖率比例因删除未使用文件改变，不能将分母变小写成新增测试覆盖。原有 Web 中危依赖和跳过/待实现测试仍保留实际记录，详情见 [上一轮复查](RECHECK_20260916.md)。
 
-本地证据位于 `/home/ubuntu/vxin-cleanup-20260916/`。云端验证结果见本提交触发的 CI、端到端测试和自动部署运行。
+本地证据位于 `/home/ubuntu/vxin-cleanup-20260916/`。云端验证结果如下。
+
+## 云端与公网验证
+
+清理代码提交为 `002f669ad17fb62f7b255661333ca7d77628eb18`，已推送到远程 `main` 和 `fix/navigation-reliability-20260916`。
+
+- [CI Gate](https://github.com/zhaocaimao008/vxin-1.0/actions/runs/35097787472)：全部通过，包含 Web 单测、Lint、后端覆盖率、依赖审计、包体积与桌面回滚测试。
+- [完整端到端](https://github.com/zhaocaimao008/vxin-1.0/actions/runs/35097787365)：74/74 首次通过，无重试，4.2 分钟。
+- [Web/API 自动部署](https://github.com/zhaocaimao008/vxin-1.0/actions/runs/35097787565)：成功。2026-09-16 12:52 UTC 公网 `/health` 的 revision 和 `/app/release.json` 的 commit 均为上述清理提交，API 与数据库健康。
+- 公网匿名私密附件请求仍为 401，响应保持 `private, no-store`。
+- 本轮清理无需递增客户端版本：Web 的实际构建内容保持一致；现有版本继续为 Web 8.0.19、桌面 8.0.16。
+- 本轮临时 Redis、测试后端和静态服务均已关闭。
 
 ## 删除文件清单
 
