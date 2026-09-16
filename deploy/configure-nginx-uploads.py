@@ -7,8 +7,6 @@ import re
 import shutil
 import subprocess
 import time
-import urllib.error
-import urllib.request
 
 
 def block_end(text, start):
@@ -78,14 +76,11 @@ def main():
         # systemd reload acknowledges the signal before all workers have switched.
         for attempt in range(10):
             url = 'https://vxinchat.com/uploads/__release_auth_probe_' + str(time.time_ns())
-            request = urllib.request.Request(url, headers={'Cache-Control': 'no-cache'})
-            try:
-                response = urllib.request.urlopen(request, timeout=10)
-            except urllib.error.HTTPError as error:
-                response = error
-            with response:
-                status = response.status
-                cache = response.headers.get('Cache-Control', '')
+            headers = subprocess.run(['curl', '--silent', '--show-error', '--max-time', '10',
+                                      '--dump-header', '-', '--output', '/dev/null', url],
+                                     check=True, capture_output=True, text=True).stdout
+            status = int(re.findall(r'(?mi)^HTTP/\S+\s+(\d{3})', headers)[-1])
+            cache = ', '.join(re.findall(r'(?mi)^cache-control:\s*([^\r\n]+)', headers))
             print('Anonymous media probe:', status, cache)
             if status == 401 and 'no-store' in cache:
                 break

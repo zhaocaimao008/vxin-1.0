@@ -59,14 +59,13 @@ jobs:
           python3 - <<'PYLINKS'
           from html.parser import HTMLParser
           from pathlib import Path
-          import urllib.request
+          import subprocess
           class Links(HTMLParser):
               def handle_starttag(self, tag, attrs):
                   if tag != 'a': return
                   href = dict(attrs).get('href', '')
                   if '/downloads/' in href and href.endswith(('.exe', '.apk')):
-                      with urllib.request.urlopen(urllib.request.Request(href, method='HEAD'), timeout=30) as response:
-                          assert response.status == 200, href
+                      subprocess.run(['curl', '--fail', '--silent', '--show-error', '--head', '--max-time', '30', href], check=True, stdout=subprocess.DEVNULL)
           Links().feed(Path('site/index.html').read_text())
           PYLINKS
           mkdir -p "$BACKUP"
