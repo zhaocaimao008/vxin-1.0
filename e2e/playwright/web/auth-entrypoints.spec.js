@@ -19,6 +19,8 @@ test('AUTH-DOCS privacy is readable on narrow screens without losing form input'
   await expect(dialog).toBeVisible();
   await expect(dialog.locator('.auth-privacy-content').getByRole('heading', { name: '隐私政策', exact: true })).toBeVisible();
   await expect(dialog.locator('.auth-privacy-content a').first()).toHaveCSS('color', 'rgb(7, 93, 68)');
+  await dialog.locator('.auth-privacy-content a').first().hover();
+  await expect(dialog.locator('.auth-privacy-content a').first()).toHaveCSS('color', 'rgb(7, 93, 68)');
   const box = await dialog.boundingBox();
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(320);
