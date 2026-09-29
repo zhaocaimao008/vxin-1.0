@@ -570,6 +570,12 @@
   color: var(--bg-msg-other);
   box-shadow: 0 1px 4px rgba(0,0,0,.15);
 }
+/* 已领取 / 已领完 / 已过期：与微信一致变淡，一眼区分还能不能领 */
+.wc-redpacket-card.is-opened {
+  background: linear-gradient(135deg, var(--rp-orange-alt), var(--rp-orange));
+  filter: saturate(.55) brightness(1.08);
+  opacity: .78;
+}
 .wc-redpacket-body {
   display: flex;
   align-items: center;

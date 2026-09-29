@@ -362,10 +362,11 @@ const MessageItem = memo(function MessageItem({ item, cbRef, measure }) {
             {msg.type === 'red_packet' && (() => {
               let rp = {};
               try { rp = JSON.parse(msg.content); } catch { rp = {}; }
+              const rpHint = { claimed: '已领取', empty: '已被领完', expired: '已过期' }[msg.rpState] || '点击领取红包';
               return (
                 <div
                   onClick={() => cbs.openRedPacket(rp.packetId)}
-                  className="wc-redpacket-card"
+                  className={`wc-redpacket-card${msg.rpState ? ' is-opened' : ''}`}
                   role="button" tabIndex={0}
                   aria-label="打开红包"
                   onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cbs.openRedPacket(rp.packetId); } }}
@@ -376,7 +377,7 @@ const MessageItem = memo(function MessageItem({ item, cbRef, measure }) {
                       <div className="wc-redpacket-greeting">
                         {rp.greeting || '恭喜发财，大吉大利'}
                       </div>
-                      <div className="wc-redpacket-hint">点击领取红包</div>
+                      <div className="wc-redpacket-hint">{rpHint}</div>
                     </div>
                   </div>
                   <div className="wc-redpacket-footer">v信红包</div>

@@ -1187,6 +1187,16 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
         }
       }
       setRedPacketDetail({ ...detail, justClaimed });
+      // 同步卡片状态（已领取 / 已领完 / 已过期），不必等重新拉历史
+      const rpState = detail.myClaim ? 'claimed'
+        : detail.claimed_count >= detail.total_count ? 'empty'
+        : (detail.status && detail.status !== 'active') ? 'expired' : null;
+      if (rpState) {
+        setMessages(prev => prev.map(m => {
+          if (m.type !== 'red_packet' || m.rpState === rpState) return m;
+          try { return JSON.parse(m.content).packetId === packetId ? { ...m, rpState } : m; } catch { return m; }
+        }));
+      }
     } catch (e) {
       showToast(e.response?.data?.error || '红包打开失败', 'error');
     } finally {

@@ -19,6 +19,33 @@ const convSvc = require('../conversations/conversations.service');
 const MAX = config.limits.maxMsgLength;
 
 // ── 历史消息（批量 replyTo + reactions，群已读数 / 私聊送达）──────
+// 红包卡片状态：历史消息里的红包按当前用户标注 rpState，
+// 'claimed' 已领取 / 'empty' 已被领完 / 'expired' 已过期；可领时不带该字段。
+function attachRedPacketState(messages, userId) {
+  const byPacket = new Map();
+  for (const m of messages) {
+    if (m.type !== 'red_packet') continue;
+    try { const id = JSON.parse(m.content)?.packetId; if (id) byPacket.set(m.id, id); } catch { /* 旧格式忽略 */ }
+  }
+  if (!byPacket.size) return;
+  const ids = [...new Set(byPacket.values())];
+  const ph = ids.map(() => '?').join(',');
+  const packets = new Map(db.prepare(
+    `SELECT id, status, claimed_count, total_count, created_at FROM red_packets WHERE id IN (${ph})`
+  ).all(...ids).map(r => [r.id, r]));
+  const mine = new Set(db.prepare(
+    `SELECT packet_id FROM red_packet_claims WHERE user_id=? AND packet_id IN (${ph})`
+  ).all(userId, ...ids).map(r => r.packet_id));
+  const now = Math.floor(Date.now() / 1000);
+  for (const m of messages) {
+    const p = packets.get(byPacket.get(m.id));
+    if (!p) continue;
+    if (mine.has(p.id)) m.rpState = 'claimed';
+    else if (p.claimed_count >= p.total_count) m.rpState = 'empty';
+    else if ((p.status && p.status !== 'active') || now - p.created_at > 24 * 3600) m.rpState = 'expired';
+  }
+}
+
 function history(convId, userId, { before, after, limit, beforeId, afterId }) {
   requireMember(convId, userId);
 
@@ -118,6 +145,7 @@ function history(convId, userId, { before, after, limit, beforeId, afterId }) {
     });
   }
 
+  attachRedPacketState(messages, userId);
   return messages.map(msg => {
     msg.replyTo   = msg.reply_to_id ? (replyMap.get(msg.reply_to_id) || null) : null;
     msg.reactions = reactionsMap.get(msg.id) || [];
@@ -670,6 +698,7 @@ function aroundMessage(convId, msgId, userId) {
     });
   }
 
+  attachRedPacketState(messages, userId);
   return {
     messages: messages.map(msg => {
       msg.replyTo   = msg.reply_to_id ? (replyMap.get(msg.reply_to_id) || null) : null;
