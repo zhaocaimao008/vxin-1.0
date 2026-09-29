@@ -101,7 +101,7 @@ export default function Register() {
     // 后台关闭「注册需邀请码」后隐藏邀请码输入框（四端一致）；重新开启后恢复
     ...(inviteRequired ? [{ key: 'inviteCode', label: '邀请码', type: 'text', inputMode: 'numeric', autocomplete: 'off', placeholder: '请输入邀请码', maxLength: 6, optional: false, icon: (
       <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M10 11a4 4 0 100-8 4 4 0 000 8zM3 18c0-3.3 3.1-6 7-6s7 2.7 7 6"/>
+        <path d="M3 6.5A1.5 1.5 0 014.5 5h11A1.5 1.5 0 0117 6.5V8a2 2 0 000 4v1.5a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 013 13.5V12a2 2 0 000-4z"/><path d="M12.5 5.5v9" strokeDasharray="1.6 1.6"/>
       </svg>
     ) }] : []),
   ];

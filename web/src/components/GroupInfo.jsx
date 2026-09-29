@@ -84,7 +84,8 @@ const GroupMemberRow = React.memo(function GroupMemberRow({ index, style, data }
   const m = filtered[index];
   const q = kickSearch.toLowerCase();
   return (
-    <div className="gi-mi" style={style}>
+    // tabIndex：桌面端管理按钮悬停/聚焦才出现，行本身可聚焦才能用键盘触达按钮
+    <div className="gi-mi" style={style} tabIndex={isOwner || isAdmin ? 0 : undefined}>
       <Avatar src={m.avatar} name={m.username} size={38} />
       <div className="gi-f1">
         <div className="gi-mn">
@@ -109,6 +110,7 @@ const GroupMemberRow = React.memo(function GroupMemberRow({ index, style, data }
           <RoleBadge role={m.role} />
         </div>
       </div>
+      <div className="gi-mi-actions">
       {isOwner && m.role !== 'owner' && (
         <button
           className="gi-btn-admin"
@@ -126,6 +128,7 @@ const GroupMemberRow = React.memo(function GroupMemberRow({ index, style, data }
       {isAdmin && m.id !== currentUserId && m.role === 'member' && (
         <button className="gi-btn-kick" onClick={() => kickMember(m.id)}>移出</button>
       )}
+      </div>
     </div>
   );
 });
@@ -537,7 +540,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
               </div>
               <div className="gi-f1">
                 <span className="gi-text14 gi-fw5">群管理</span>
-                {(info.mute_all || info.no_private_chat || info.no_add_friend) && (
+                {!!(info.mute_all || info.no_private_chat || info.no_add_friend) && (
                   <div className="gi-mg-active">
                     {[info.mute_all && '全员禁言', info.no_private_chat && '禁止私聊', info.no_add_friend && '禁止互加好友'].filter(Boolean).join(' · ')}
                   </div>
@@ -603,21 +606,21 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
         )}
 
         {/* 状态提示条（非管理员时展示当前限制） */}
-        {!isAdmin && (info.mute_all || info.no_private_chat || info.no_add_friend) && (
+        {!isAdmin && !!(info.mute_all || info.no_private_chat || info.no_add_friend) && (
           <div className="gi-warn">
-            {info.mute_all && (
+            {!!info.mute_all && (
               <div className="gi-warn-row">
                 <svg viewBox="0 0 24 24" className="gi-s12 gi-warn-icon"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
                 全员禁言已开启，您当前无法发送消息
               </div>
             )}
-            {info.no_private_chat && (
+            {!!info.no_private_chat && (
               <div className="gi-warn-row">
                 <svg viewBox="0 0 24 24" className="gi-s12 gi-warn-icon"><path d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zm-1 5h2v6h-2zm0 8h2v2h-2z"/></svg>
                 禁止私聊已开启，您无法与群成员私信
               </div>
             )}
-            {info.no_add_friend && (
+            {!!info.no_add_friend && (
               <div className="gi-warn-row">
                 <svg viewBox="0 0 24 24" className="gi-s12 gi-warn-icon"><path d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zm-1 5h2v6h-2zm0 8h2v2h-2z"/></svg>
                 禁止互加好友已开启，不可通过本群添加群成员为好友

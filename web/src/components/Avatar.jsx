@@ -42,7 +42,9 @@ export default memo(function Avatar({ src, name = '', size = 40, style = {}, onl
 
   return (
     <div
-      style={{ position: 'relative', display: 'inline-flex', flexShrink: 0,
+      // isolation：图片的 z-index:1 只在头像内部生效。否则会盖住外层叠放的未读角标/在线点
+      // (有真实头像时会话列表的未读数只露出一小段弧)。
+      style={{ position: 'relative', display: 'inline-flex', flexShrink: 0, isolation: 'isolate',
                cursor: onClick ? 'pointer' : undefined, ...style }}
       onClick={onClick}
       role={onClick ? 'button' : undefined}

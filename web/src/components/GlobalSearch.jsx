@@ -6,8 +6,11 @@ import { GroupAvatar } from './GroupAvatar';
 const gsHlCls = 'gs-highlight';
 
 function highlight(text, q) {
-  const s = String(text || '');
+  let s = String(text || '');
   if (!q) return s;
+  // 长消息的命中位置靠后时，单行截断会把关键词藏在省略号里：从命中处前几个字开始显示
+  const first = s.toLowerCase().indexOf(q);
+  if (first > 12) s = '…' + s.slice(first - 8);
   const lower = s.toLowerCase();
   const parts = [];
   let from = 0;
