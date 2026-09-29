@@ -33,7 +33,7 @@ it('accepts a healthy v信 backend', async () => {
 });
 
 it('desktop probes a new origin via the restricted main-process health API', async () => {
-  const testServerUrl = vi.fn().mockResolvedValue({ ok: true, msg: '连接成功 ✓' });
+  const testServerUrl = vi.fn().mockResolvedValue({ ok: true, msg: '连接成功' });
   vi.stubGlobal('window', { __ELECTRON_CONFIG__: {}, electronAPI: { testServerUrl } });
   const fetch = vi.fn(); vi.stubGlobal('fetch', fetch);
   const { testServerConnection } = await import('./config');

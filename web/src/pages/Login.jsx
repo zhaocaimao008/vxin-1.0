@@ -11,7 +11,7 @@ import {
   lastRememberedUsername,
 } from '../utils/rememberedCreds';
 import { isDeprecatedServerUrl } from '../utils/url';
-import { IcoClose } from '../components/Icons';
+import { IcoBadge, IcoClose, IcoLock, IcoPhoneIphone, IcoVisibility, IcoVisibilityOff } from '../components/Icons';
 import AuthDocuments from '../components/AuthDocuments';
 import { DOWNLOAD_FALLBACK, loadDownloadLinks } from '../utils/downloadLinks';
 import '../styles/login.css';
@@ -234,10 +234,7 @@ export default function Login() {
             <div className={`auth-field ${focusedField === 'phone' ? 'focused' : ''} ${phone ? 'has-value' : ''}`}>
               <label className="auth-field-label" htmlFor="login-phone">手机号</label>
               <div className="auth-field-input-wrap">
-                <svg className="auth-field-icon" viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-                  <rect x="3" y="1" width="14" height="18" rx="3"/>
-                  <line x1="8" y1="15" x2="12" y2="15"/>
-                </svg>
+                <IcoPhoneIphone size={18} className="auth-field-icon" aria-hidden="true" />
                 <input
                   id="login-phone"
                   data-testid="login-phone-input"
@@ -262,10 +259,7 @@ export default function Login() {
             <div className={`auth-field ${focusedField === 'vxin' ? 'focused' : ''} ${vxinId ? 'has-value' : ''}`}>
               <label className="auth-field-label" htmlFor="login-vxin">v信号</label>
               <div className="auth-field-input-wrap">
-                <svg className="auth-field-icon" viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-                  <circle cx="10" cy="10" r="8"/>
-                  <path d="M10 6v4l3 2"/>
-                </svg>
+                <IcoBadge size={18} className="auth-field-icon" aria-hidden="true" />
                 <input
                   id="login-vxin"
                   data-testid="login-vxin-input"
@@ -286,10 +280,7 @@ export default function Login() {
           <div className={`auth-field ${focusedField === 'password' ? 'focused' : ''} ${password ? 'has-value' : ''}`}>
             <label className="auth-field-label" htmlFor="login-password">密码</label>
             <div className="auth-field-input-wrap">
-              <svg className="auth-field-icon" viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-                <rect x="3" y="9" width="14" height="10" rx="2"/>
-                <path d="M6 9V6a4 4 0 018 0v3"/>
-              </svg>
+              <IcoLock size={18} className="auth-field-icon" aria-hidden="true" />
               <input
                 id="login-password"
                 data-testid="login-password-input"
@@ -305,16 +296,9 @@ export default function Login() {
               />
               <button type="button" className="auth-pwd-toggle" onClick={() => setShowPwd(v => !v)} aria-label={showPwd ? '隐藏密码' : '显示密码'}>
                 {showPwd ? (
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
-                    <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
-                    <line x1="1" y1="1" x2="23" y2="23"/>
-                  </svg>
+                  <IcoVisibilityOff size={18} aria-hidden="true" />
                 ) : (
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                  </svg>
+                  <IcoVisibility size={18} aria-hidden="true" />
                 )}
               </button>
             </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { IcoBell } from './Icons';
 import { prewarmAudio } from '../utils/callSound';
 
 const LS_KEY = 'vxin_call_sound_ready';
@@ -51,7 +52,7 @@ export default function CallSoundGuide() {
         boxShadow: '0 1px 6px rgba(0,0,0,.25)',
       }}
     >
-      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🔔 开启来电铃声提醒</span>
+      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}><IcoBell size={15} style={{ verticalAlign: '-3px' }} /> 开启来电铃声提醒</span>
       <button
         onClick={enable}
         style={{

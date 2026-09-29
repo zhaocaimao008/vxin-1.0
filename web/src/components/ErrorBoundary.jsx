@@ -1,4 +1,5 @@
 import React from 'react';
+import { IcoAlert } from './Icons';
 
 /**
  * 全局错误边界：捕获子树渲染期/生命周期抛出的 JS 异常，
@@ -71,7 +72,7 @@ export default class ErrorBoundary extends React.Component {
     return (
       <div style={styles.page}>
         <div style={styles.card}>
-          <div style={styles.icon}>😵</div>
+          <div style={styles.icon}><IcoAlert size={56} /></div>
           <h1 style={styles.title}>页面出了点小问题</h1>
           <p style={styles.desc}>
             抱歉，刚才的操作触发了一个异常。你可以重试，或返回首页继续使用。

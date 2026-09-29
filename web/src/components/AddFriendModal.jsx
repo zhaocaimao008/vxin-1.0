@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { IcoSearchSm } from './Icons';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import Avatar from './Avatar';
@@ -113,12 +114,7 @@ export default function AddFriendModal({ onClose, initialQuery = '' }) {
           {/* 搜索框 */}
           <div className="afm-search-pad">
             <div className={`afm-search-wrap${focused ? ' afm-search-wrap-focused' : ''}`}>
-              <svg viewBox="0 0 24 24" width="17" height="17" fill="none"
-                stroke={focused ? GREEN : 'var(--text-tertiary)'} strokeWidth="2" strokeLinecap="round"
-                className="afm-search-icon">
-                <circle cx="11" cy="11" r="7" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
+              <IcoSearchSm size={18} className="afm-search-icon" style={{ color: focused ? GREEN : 'var(--text-tertiary)' }} />
               <input
                 ref={inputRef}
                 placeholder="搜索 v信号、手机号或昵称"
@@ -170,9 +166,7 @@ export default function AddFriendModal({ onClose, initialQuery = '' }) {
                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); doSearch(query); } }}
                 className="afm-search-row"
               >
-                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" className="afm-search-icon">
-                  <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
+                <IcoSearchSm size={18} className="afm-search-icon" style={{ color: GREEN }} />
                 <span className="afm-search-text">
                   搜索：<span className="afm-search-hl">{query}</span>
                 </span>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { downloadFile } from '../utils/download';
 import { shareMessage, canShare } from '../utils/share';
-import { IcoClose } from './Icons';
+import { IcoChevronLeft, IcoChevronRight, IcoClose } from './Icons';
 
 // 从(可能带 ?token= 的)图片地址里抽一个像样的下载文件名
 function filenameFromUrl(u) {
@@ -191,8 +191,8 @@ export default function ImagePreview({ url, urls = null, initialIdx = 0, onClose
       {/* Gallery navigation arrows */}
       {gallery && (
         <>
-          <button data-testid="lightbox-prev" onClick={(e) => { e.stopPropagation(); prev(); }} style={arrowStyle('left')} aria-label="上一张">‹</button>
-          <button data-testid="lightbox-next" onClick={(e) => { e.stopPropagation(); next(); }} style={arrowStyle('right')} aria-label="下一张">›</button>
+          <button data-testid="lightbox-prev" onClick={(e) => { e.stopPropagation(); prev(); }} style={arrowStyle('left')} aria-label="上一张"><IcoChevronLeft size={32} /></button>
+          <button data-testid="lightbox-next" onClick={(e) => { e.stopPropagation(); next(); }} style={arrowStyle('right')} aria-label="下一张"><IcoChevronRight size={32} /></button>
           <div style={{ position: 'absolute', top: 18, left: '50%', transform: 'translateX(-50%)',
             color: 'rgba(255,255,255,.7)', fontSize: 'var(--text-sm2)', zIndex: 10, pointerEvents: 'none' }}>
             {idx + 1} / {urls.length}

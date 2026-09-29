@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { IcoPin } from './Icons';
+import { IcoExpandLess, IcoExpandMore, IcoPin } from './Icons';
 
 /* ── 置顶消息 Banner / 详情（从 ChatWindow 抽离）────────────────────
    纯展示子组件：只读置顶列表与展开态，交互经回调上抛父级。memo 化后，
@@ -20,7 +20,7 @@ function PinnedBanner({ pinnedMessages, showPinnedDetail, onToggleDetail, onUnpi
           {first?.type === 'image' ? '[图片]' : first?.content}
         </span>
         {pinnedMessages.length > 1 && <span className="wc-pinned-count">+{pinnedMessages.length - 1}</span>}
-        <span className="wc-pinned-toggle">{showPinnedDetail ? '▲' : '▼'}</span>
+        <span className="wc-pinned-toggle">{showPinnedDetail ? <IcoExpandLess /> : <IcoExpandMore />}</span>
       </div>
       {showPinnedDetail && (
         <div className="wc-pinned-detail">

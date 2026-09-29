@@ -7,7 +7,7 @@ import { mediaUrl } from '../utils/url';
 import { showToast, showConfirm } from '../utils/toast';
 import { getAspect, rememberAspect } from '../utils/imgDimCache';
 import { linkify } from '../utils/linkify';
-import { IcoClose } from './Icons';
+import { IcoCheck, IcoClose, IcoHeart } from './Icons';
 
 function ago(sec) {
   // 钳到 0：时钟偏差/服务器时间超前时避免出现「-3分钟前」
@@ -179,7 +179,7 @@ const MomentCard = memo(function MomentCard({ m, meId, desktop, onLike, onCommen
         {/* 点赞者 */}
         {m.likes?.length > 0 && (
           <div className="wc-moment-likes">
-            <span className="wc-moment-heart">♥ </span>
+            <span className="wc-moment-heart"><IcoHeart size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} /></span>
             {m.likes.map(l => l.username).join('、')}
           </div>
         )}
@@ -586,7 +586,7 @@ export default function Moments({ desktop = false }) {
                     onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); saveVisibleDays(o.d); } }}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', cursor: 'pointer', borderTop: '1px solid var(--divider)' }}>
                     <span>{o.label}</span>
-                    {visibleDays === o.d && <span style={{ color: 'var(--green)' }}>✓</span>}
+                    {visibleDays === o.d && <IcoCheck size={18} style={{ color: 'var(--green)' }} />}
                   </div>
                 ))}
               </div>
@@ -643,7 +643,7 @@ export default function Moments({ desktop = false }) {
                     <div className="wc-moment-notif-body">
                       <div className="wc-moment-notif-text">{f.remark || f.username}</div>
                     </div>
-                    <span style={{ width: 20, height: 20, borderRadius: 'var(--radius-full)', border: `2px solid ${checked ? 'var(--green)' : 'var(--border-medium)'}`, background: checked ? 'var(--green)' : 'var(--bg-card)', color: 'var(--text-inverse)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-sm)' }}>{checked ? '✓' : ''}</span>
+                    <span style={{ width: 20, height: 20, borderRadius: 'var(--radius-full)', border: `2px solid ${checked ? 'var(--green)' : 'var(--border-medium)'}`, background: checked ? 'var(--green)' : 'var(--bg-card)', color: 'var(--text-inverse)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-sm)' }}>{checked ? <IcoCheck size={14} /> : null}</span>
                   </div>
                 );
               })}
@@ -719,11 +719,11 @@ export default function Moments({ desktop = false }) {
                 onChange={handleImagePick} />
               <select className="wc-moment-vis-select" value={visibility}
                 onChange={e => onVisibilityChange(e.target.value)} title="谁可以看">
-                <option value="all">🌐 公开</option>
-                <option value="friends">👥 仅好友</option>
-                <option value="private">🔒 仅自己</option>
-                <option value="include">✅ 部分可见</option>
-                <option value="exclude">🚫 不给谁看</option>
+                <option value="all">公开</option>
+                <option value="friends">仅好友</option>
+                <option value="private">仅自己</option>
+                <option value="include">部分可见</option>
+                <option value="exclude">不给谁看</option>
               </select>
               {(visibility === 'include' || visibility === 'exclude') && (
                 <button className="wc-moment-img-btn" type="button"
