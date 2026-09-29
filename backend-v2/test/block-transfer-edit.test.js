@@ -35,6 +35,7 @@ describe('拉黑后转账与编辑被拒', () => {
       .send({ to_user_id: u2.userId, amount: 10, note: '借转账骚扰' });
     expect(res.status).toBe(403);
     expect(res.body.error).toMatch(/拒收/);
+    expect(res.body.error).toMatch(/转账未发出/);
     expect((await request(app).get('/api/wallet').set(auth(u1))).body.balance).toBe(before);
   });
 

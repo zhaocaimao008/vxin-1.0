@@ -88,7 +88,8 @@ async function transfer(senderId, { to_user_id, amount, note }) {
   // 转账会在私聊里落一条带附言的消息，与发消息/发红包一致做黑名单与屏蔽陌生人校验，
   // 防止被拉黑后借转账继续骚扰。
   const guardReason = privateSendGuard(conv.id, senderId);
-  if (guardReason) throw forbidden(guardReason);
+  // 被对方拉黑时通用文案是「消息已发出，但被对方拒收」，对转账会误导成钱已转出，这里明确说明未扣款。
+  if (guardReason) throw forbidden(guardReason.startsWith('消息已发出') ? '对方已拒收，转账未发出' : guardReason);
 
   const fromUser = db.prepare('SELECT username FROM users WHERE id=?').get(senderId);
   const safeNote = note && typeof note === 'string' ? note.trim().slice(0, 50) : '';
