@@ -47,25 +47,26 @@ class PostgreSQLMigration {
           updated_at TIMESTAMP DEFAULT NOW(),
           deleted_at TIMESTAMP
         );
-        CREATE INDEX idx_users_phone ON users(phone);
-        CREATE INDEX idx_users_status ON users(status);
+        CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
+        CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
 
         -- 消息表 (分区)
         CREATE TABLE IF NOT EXISTS messages (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          id UUID DEFAULT gen_random_uuid(),
           sender_id UUID NOT NULL REFERENCES users(id),
           conversation_id UUID NOT NULL,
           content TEXT,
           type VARCHAR(20) DEFAULT 'text',
           created_at TIMESTAMP DEFAULT NOW(),
-          deleted_at TIMESTAMP
+          deleted_at TIMESTAMP,
+          PRIMARY KEY (id, created_at)
         ) PARTITION BY RANGE (created_at);
 
-        CREATE TABLE messages_2026_08 PARTITION OF messages
+        CREATE TABLE IF NOT EXISTS messages_2026_08 PARTITION OF messages
           FOR VALUES FROM ('2026-08-01') TO ('2026-09-01');
 
-        CREATE INDEX idx_messages_conv ON messages(conversation_id);
-        CREATE INDEX idx_messages_sender ON messages(sender_id);
+        CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id);
+        CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id);
 
         -- 好友关系表
         CREATE TABLE IF NOT EXISTS friendships (
@@ -76,7 +77,7 @@ class PostgreSQLMigration {
           created_at TIMESTAMP DEFAULT NOW(),
           UNIQUE(user_id, friend_id)
         );
-        CREATE INDEX idx_friendships_user ON friendships(user_id);
+        CREATE INDEX IF NOT EXISTS idx_friendships_user ON friendships(user_id);
 
         -- 群组表
         CREATE TABLE IF NOT EXISTS groups (
@@ -89,7 +90,7 @@ class PostgreSQLMigration {
           created_at TIMESTAMP DEFAULT NOW(),
           updated_at TIMESTAMP DEFAULT NOW()
         );
-        CREATE INDEX idx_groups_owner ON groups(owner_id);
+        CREATE INDEX IF NOT EXISTS idx_groups_owner ON groups(owner_id);
       `);
       console.log('✅ PostgreSQL schema 初始化完成');
     } catch (err) {
