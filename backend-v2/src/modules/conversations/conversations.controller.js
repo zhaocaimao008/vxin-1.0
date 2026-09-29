@@ -18,8 +18,9 @@ exports.createPrivateBatch = asyncHandler(async (req, res) => {
 exports.fileHelper    = asyncHandler(async (req, res) => res.json(svc.getOrCreateFileHelper(req.user.id)));
 exports.createGroup   = asyncHandler(async (req, res) => res.json(svc.createGroup(io(req), req.user.id, req.body)));
 exports.list          = asyncHandler(async (req, res) => {
-  // 会话列表变化频率高，短时缓存 10s 防重连风暴批量请求；stale-while-revalidate 保证实时感
-  res.setHeader('Cache-Control', 'private, max-age=10, stale-while-revalidate=30');
+  // 不能让浏览器缓存：客户端收到 new_conversation / 重连等事件后会立刻重拉，
+  // 命中 HTTP 缓存就会拿到旧列表（缺新群、旧的最后消息与未读）。重连风暴由服务端 2s 内存缓存吸收。
+  res.setHeader('Cache-Control', 'private, no-cache');
   res.json(await svc.listConversations(req.user.id));
 });
 exports.members       = asyncHandler(async (req, res) => res.json(svc.listMembers(req.params.conversationId, req.user.id)));
