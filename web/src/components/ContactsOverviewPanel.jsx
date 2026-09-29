@@ -159,7 +159,10 @@ export default function ContactsOverviewPanel({ onStartChat, onStartCall }) {
               <Avatar src={c.avatar} name={c.remark || c.username} size={44} style={{ borderRadius: 'var(--radius-sm)' }} />
               <div className="cop-info">
                 <div className="cop-name">{c.remark || c.username}</div>
-                <div className="cop-username">{c.username}</div>
+                {/* 有备注时显示原昵称；否则显示 v信号(此前无备注时与上一行完全重复) */}
+                {(c.remark || c.wechat_id) && (
+                  <div className="cop-username">{c.remark ? `昵称：${c.username}` : `v信号：${c.wechat_id}`}</div>
+                )}
                 {c.bio && <div className="cop-bio">{c.bio}</div>}
               </div>
               <div className={`cop-status${online ? ' online' : ''}`}>

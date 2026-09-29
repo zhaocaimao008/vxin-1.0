@@ -6,6 +6,7 @@
  * 普通用户的 vxin_token 无 admin 声明，无法越权进后台。
  */
 const jwt = require('jsonwebtoken');
+const { adminJwtKey } = require('../utils/jwtKeys');
 const config = require('../config');
 const { csrfCookieOptions } = require('../utils/cookies');
 const { isBlacklisted } = require('../utils/tokenBlacklist');
@@ -20,7 +21,7 @@ module.exports = function adminAuth(req, res, next) {
       return res.status(401).json({ error: '后台登录已过期' });
     }
     try {
-      const payload = jwt.verify(token, config.adminJwtSecret, { algorithms: ['HS256'] });
+      const payload = jwt.verify(token, adminJwtKey(), { algorithms: ['HS256'] });
       if (!payload.admin) return res.status(403).json({ error: '无后台权限' });
       req.admin = payload;
       req.adminToken = token;

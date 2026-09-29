@@ -8,6 +8,7 @@
  * 命中时跳过 DB SELECT，大幅降低每请求的 SQLite 读压力。
  */
 const jwt = require('jsonwebtoken');
+const { userJwtKey } = require('../utils/jwtKeys');
 const config = require('../config');
 const { csrfCookieOptions } = require('../utils/cookies');
 const { isBlacklisted } = require('../utils/tokenBlacklist');
@@ -29,7 +30,7 @@ module.exports = function auth(req, res, next) {
     }
 
     try {
-      const payload = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] });
+      const payload = jwt.verify(token, userJwtKey(), { algorithms: ['HS256'] });
       // 校验账号状态：封禁即拒（与 socket 握手一致），及 token 是否早于密码修改时间。
       // 优先命中进程内缓存（30s TTL），未命中才查 DB 并回填缓存。
       if (!payload.id) return res.status(401).json({ error: 'Token无效' });

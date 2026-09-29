@@ -1,6 +1,7 @@
 'use strict';
 /** Refresh 仅接受尚未过期的 JWT，撤销记录的 exp 与可续期截止时间一致。 */
 const jwt = require('jsonwebtoken');
+const { userJwtKey } = require('../utils/jwtKeys');
 const config = require('../config');
 const { csrfCookieOptions } = require('../utils/cookies');
 const { isBlacklisted } = require('../utils/tokenBlacklist');
@@ -22,7 +23,7 @@ module.exports = function authRefresh(req, res, next) {
 
     try {
       // 校验 exp，禁止已撤销 JWT 在黑名单到期后重新续期。
-      const payload = jwt.verify(token, config.jwtSecret, {
+      const payload = jwt.verify(token, userJwtKey(), {
         algorithms: ['HS256'],
       });
 

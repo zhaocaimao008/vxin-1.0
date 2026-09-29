@@ -86,6 +86,7 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 // H9: /uploads 静态文件鉴权 — 用户JWT或Admin JWT均可访问，同时校验黑名单
 const jwt = require('jsonwebtoken');
+const { userJwtKey, adminJwtKey } = require('./utils/jwtKeys');
 const { isBlacklisted } = require('./utils/tokenBlacklist');
 app.use('/uploads', async (req, res, next) => {
   res.setHeader('Cache-Control', 'private, no-store');
@@ -95,9 +96,9 @@ app.use('/uploads', async (req, res, next) => {
   if (!token) return res.status(401).json({ error: '未授权' });
   let payload, isAdmin = false;
   try {
-    try { payload = jwt.verify(token, config.adminJwtSecret, { algorithms: ['HS256'] }); isAdmin = payload.admin === true; }
+    try { payload = jwt.verify(token, adminJwtKey(), { algorithms: ['HS256'] }); isAdmin = payload.admin === true; }
     catch { /* 普通用户 JWT 使用独立密钥 */ }
-    if (!isAdmin) payload = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] });
+    if (!isAdmin) payload = jwt.verify(token, userJwtKey(), { algorithms: ['HS256'] });
   } catch { return res.status(401).json({ error: '未授权' }); }
   try {
     if (await isBlacklisted(token)) return res.status(401).json({ error: '登录已失效，请重新登录' });

@@ -31,6 +31,7 @@ export default function Login() {
   const [focusedField, setFocusedField] = useState(null);
   const [showPwd, setShowPwd] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [agreeHint, setAgreeHint] = useState(false);
   const [downloads, setDownloads] = useState({ windows: DOWNLOAD_FALLBACK, android: DOWNLOAD_FALLBACK });
   useEffect(() => {
     if (isElectron) return;
@@ -90,6 +91,12 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return; // 防连点/回车重复提交
+    // 按钮不因未勾协议而置灰(用户不知道为何点不动)：点击时明确提示并高亮协议行
+    if (!agreed) {
+      setError('请先阅读并同意用户协议和隐私政策');
+      setAgreeHint(true); setTimeout(() => setAgreeHint(false), 1200);
+      return;
+    }
     // 与注册页对齐的手机号前端校验，避免非法手机号直接打到后端
     if (loginMode === 'phone' && !/^\d{11}$/.test(phone)) {
       setError('请输入 11 位手机号');
@@ -336,7 +343,7 @@ export default function Login() {
             <Link to="/forgot-password" className="auth-link" style={{ fontSize: 'var(--text-sm2)' }}>忘记密码？</Link>
           </div>
 
-          <button type="submit" className="auth-submit" data-testid="login-submit-btn" disabled={loading || !identifierOk || !password || !agreed}>
+          <button type="submit" className="auth-submit" data-testid="login-submit-btn" disabled={loading || !identifierOk || !password}>
             {loading ? (
               <span className="auth-spinner" />
             ) : (
@@ -350,14 +357,14 @@ export default function Login() {
         </p>
 
         {/* 文档在对话框中打开，保留尚未提交的账号和密码输入。 */}
-        <div className="auth-agreement-row">
+        <div className={`auth-agreement-row${agreeHint ? ' auth-agreement-row--hint' : ''}`}>
           <input
             type="checkbox"
             className="auth-agreement-box"
             data-testid="login-agreement-checkbox"
             aria-label="同意用户协议和隐私政策"
             checked={agreed}
-            onChange={e => setAgreed(e.target.checked)}
+            onChange={e => { setAgreed(e.target.checked); if (e.target.checked) setError(''); }}
           />
           <div className="auth-agreement">我已阅读并同意 <AuthDocuments /></div>
         </div>

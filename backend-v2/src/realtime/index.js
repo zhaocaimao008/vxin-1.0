@@ -6,6 +6,7 @@
  *   - disconnect：清理 typing、下线广播
  */
 const jwt = require('jsonwebtoken');
+const { userJwtKey } = require('../utils/jwtKeys');
 const config = require('../config');
 const { db, readDb } = require('../db/connection');
 const { isBlacklisted, revocations } = require('../utils/tokenBlacklist');
@@ -55,7 +56,7 @@ module.exports = function setupRealtime(io, app) {
     const token = cookieToken || bearerToken;
     if (!token) { prodMetrics.recordConnResult(false); return next(new Error('未授权')); }
     try {
-      socket.user = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] });
+      socket.user = jwt.verify(token, userJwtKey(), { algorithms: ['HS256'] });
       socket.token = token;
       // 黑名单（logout / 强制下线的 token 不得接入）
       if (await isBlacklisted(token)) {

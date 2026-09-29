@@ -150,4 +150,26 @@ db.prepare("UPDATE users SET status='offline' WHERE status='online'").run();
 const readDb = new Database(config.dbPath, { readonly: true });
 tunePragmas(readDb, { readonly: true });
 
+// 按 SQL 文本缓存已编译语句：业务代码有数百处 db.prepare(sql)，每次调用都重新编译，
+// 压测中 prepare 占主线程 CPU ~6%。better-sqlite3 语句可安全复用(同步执行、无 .iterate/
+// .pluck/.raw 等会改语句状态的用法)；schema 变化时 SQLite 自动重新编译。LRU 上限防止
+// IN (?,?,…) 这类按参数个数变化的 SQL 无限增长。
+function cachePreparedStatements(conn, max = 500) {
+  const prepare = conn.prepare.bind(conn);
+  const cache = new Map();
+  conn.prepare = (sql) => {
+    let stmt = cache.get(sql);
+    if (stmt) {
+      cache.delete(sql); cache.set(sql, stmt); // 最近使用移到末尾
+      return stmt;
+    }
+    stmt = prepare(sql);
+    if (cache.size >= max) cache.delete(cache.keys().next().value);
+    cache.set(sql, stmt);
+    return stmt;
+  };
+}
+cachePreparedStatements(db);
+cachePreparedStatements(readDb);
+
 module.exports = { db, readDb, generateGroupNumber, generateVxinId, generateUserInviteCode };

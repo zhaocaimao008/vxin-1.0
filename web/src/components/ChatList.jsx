@@ -184,15 +184,13 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
     onSelectConv(conv);
   }, [onSelectConv]);
 
-  useEffect(() => { fetchConvs(); }, [fetchConvs]);
-
   // 重连后刷新会话列表（补回未读数和最新消息预览）
   useEffect(() => {
     if (reconnectCount === 0) return;
     fetchConvs();
   }, [reconnectCount, fetchConvs]);
 
-  // 好友通过 / new_conversation 事件触发时刷新
+  // 首次挂载 + 好友通过 / new_conversation 事件触发时刷新（挂载时只请求一次）
   useEffect(() => { fetchConvs(); }, [convRefreshKey, fetchConvs]);
 
   useEffect(() => {

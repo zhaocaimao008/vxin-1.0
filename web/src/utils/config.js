@@ -24,13 +24,18 @@
  */
 
 // 引导配置地址（按顺序尝试，任意一个成功即用）。互不依赖，单点故障不影响整体。
-const CONFIG_URLS = [
-  // Self-hosted installations publish their own config; same-origin also avoids a CDN round trip.
-  ...(window.location?.protocol?.startsWith('http') && !window.__ELECTRON_CONFIG__
-    ? [window.location.origin + '/config.json'] : []),
+// 原生 App(Capacitor)的页面也跑在 https://localhost 上，但它必须用远程配置里的完整服务器地址，
+// 不能读打包进 App 的同源 config.json（那份给网页版用，api 为空 = 相对路径）。
+const IS_NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+const SAME_ORIGIN_WEB = !!window.location?.protocol?.startsWith('http') && !window.__ELECTRON_CONFIG__ && !IS_NATIVE;
+const BASE_PATH = (import.meta.env?.BASE_URL || '/').replace(/\/?$/, '/');
+const CONFIG_URLS = [...new Set([
+  // 网页版自带 <base>/config.json(见 web/public)：同源、随页面一起部署，启动不再等境外 CDN。
+  // 站点根目录的 /config.json 保留给自托管部署覆盖。
+  ...(SAME_ORIGIN_WEB ? [window.location.origin + BASE_PATH + 'config.json', window.location.origin + '/config.json'] : []),
   'https://cdn.jsdelivr.net/gh/zhaocaimao008/vxin-config@main/config.json', // 主：GitHub+jsDelivr CDN
   'https://vxinchat.com/config.json',                                             // 兜底：当前应用服务器
-];
+])];
 const CACHE_KEY   = 'vxin_remote_config';
 const CACHE_TS    = 'vxin_remote_config_ts';
 

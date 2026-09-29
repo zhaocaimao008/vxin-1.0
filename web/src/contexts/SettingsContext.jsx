@@ -14,7 +14,11 @@ export function SettingsProvider({ children }) {
   const [themeMode, setThemeMode] = useState(() => {
     const t = localStorage.getItem('wc_theme');
     if (t === 'light' || t === 'dark' || t === 'auto') return t;
-    return localStorage.getItem('wc_dark') === '1' ? 'dark' : 'light';
+    const legacy = localStorage.getItem('wc_dark');
+    if (legacy === '1') return 'dark';
+    if (legacy === '0') return 'light';
+    // 从未选择过：跟随系统（系统深色时不再强制亮屏）
+    return 'auto';
   });
   const [systemDark, setSystemDark] = useState(getSystemDark);
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('wc_font') || 'normal');
