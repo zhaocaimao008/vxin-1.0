@@ -660,7 +660,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
 
           <div className="gi-ml-body">
             {/* 邀请按钮：管理员始终可见；普通成员需群开启了允许成员邀请 */}
-            {!kickSearch && (isAdmin || info.member_can_invite) && (
+            {!kickSearch && (isAdmin || !!info.member_can_invite) && (
               <div className="gi-inv-row" role="button" tabIndex={0} onClick={openInvite} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openInvite(); } }}>
                 <div className="gi-inv-box"><IcoPlus size={22} /></div>
                 <span className="gi-inv-txt">邀请成员</span>
