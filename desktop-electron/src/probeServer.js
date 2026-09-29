@@ -13,7 +13,7 @@ async function probeServer(value) {
     const body = await fetchBuffer(url.href.replace(/\/+$/, '') + '/health', { allowHttp: true, timeout: 6000, maxBytes: 65536 });
     const data = JSON.parse(body.toString('utf8'));
     return data?.ok === true && data?.db === 'ok'
-      ? { ok: true, msg: '连接成功 ✓' }
+      ? { ok: true, msg: '连接成功' }
       : { ok: false, msg: '该地址不是可用的 v信服务器' };
   } catch (error) {
     const status = /^HTTP (\d{3})$/.exec(error.message)?.[1];

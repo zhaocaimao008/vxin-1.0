@@ -1,4 +1,5 @@
 import React from 'react';
+import { IcoWarn } from './Icons';
 
 /**
  * ChatWindow 专属错误边界。
@@ -50,7 +51,7 @@ export default class ChatWindowBoundary extends React.Component {
     return (
       <div style={styles.wrap}>
         <div style={styles.inner}>
-          <div style={styles.icon}>⚠️</div>
+          <div style={styles.icon}><IcoWarn size={36} /></div>
           <p style={styles.msg}>消息加载出错</p>
           {this.state.error?.message && (
             <pre style={styles.detail}>{String(this.state.error.message)}</pre>

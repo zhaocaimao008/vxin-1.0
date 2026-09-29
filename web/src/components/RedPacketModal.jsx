@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { IcoWarn } from './Icons';
 import axios from 'axios';
 import useFocusTrap from '../hooks/useFocusTrap';
 
@@ -79,7 +80,7 @@ export default function RedPacketModal({ conversation, onClose, onSent }) {
           <div className="rpm-preview">
             <div className="rpm-preview-label">平均每个</div>
             <div className="rpm-preview-amount">{perPerson} 金币</div>
-            {amountNum < countNum && <div className="rpm-preview-warn">⚠ 总金币不能少于红包个数</div>}
+            {amountNum < countNum && <div className="rpm-preview-warn"><IcoWarn size={14} style={{ verticalAlign: '-3px' }} /> 总金币不能少于红包个数</div>}
           </div>
         )}
 

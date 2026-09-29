@@ -55,7 +55,7 @@ import { copyToClipboard, copyImageToClipboard } from '../utils/clipboard';
 import { downloadFile } from '../utils/download';
 import { shareMessage, canShare } from '../utils/share';
 import './ChatWindow.css';
-import { IcoClose } from './Icons';
+import { IcoCampaign, IcoClose, IcoExpandLess, IcoExpandMore, IcoRedPacket, IcoVolumeOff } from './Icons';
 
 // 云存储直传不可用(后端返回 503)时置位，见 uploadToCloud
 let cloudUploadUnavailable = false;
@@ -2338,11 +2338,11 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
             role="button" tabIndex={0} aria-expanded={showAnnounceDetail} aria-label="群公告"
             onClick={() => setShowAnnounceDetail(v => !v)}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowAnnounceDetail(v => !v); } }}>
-            <span className="wc-announce-badge">📢 群公告</span>
+            <span className="wc-announce-badge"><IcoCampaign size={15} style={{ verticalAlign: '-3px' }} /> 群公告</span>
             <div className="wc-announce-marquee">
               <span className="wc-announce-text">{announcement.replace(/\n/g, '   ')}</span>
             </div>
-            <span className="wc-announce-toggle">{showAnnounceDetail ? '▲' : '▼'}</span>
+            <span className="wc-announce-toggle">{showAnnounceDetail ? <IcoExpandLess /> : <IcoExpandMore />}</span>
           </div>
           {showAnnounceDetail && (
             <div className="wc-announce-detail">{announcement}</div>
@@ -2525,7 +2525,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
       {/* ── 全群禁言提示（普通成员被禁言时替换输入区） ── */}
       {!multiSelect && conversation.type === 'group' && groupSettings.mute_all && myGroupRole === 'member' ? (
         <div className="wc-mute-notice">
-          <span>🔇 全员禁言已开启，只有群主和管理员可以发送消息</span>
+          <span><IcoVolumeOff size={15} style={{ verticalAlign: '-3px' }} /> 全员禁言已开启，只有群主和管理员可以发送消息</span>
         </div>
       ) : (
       /* ── Input area ── */
@@ -2846,7 +2846,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
           defaultContent={input}
           onClose={() => setShowScheduleSend(false)}
           onScheduled={(_content) => {
-            showToast('定时消息已设置，到点自动发出 ✓', 'success');
+            showToast('定时消息已设置，到点自动发出', 'success');
             dispatchCompose({ type: 'SET_INPUT', value: '' });
             setShowScheduleSend(false);
           }}
@@ -2863,7 +2863,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
             className="wc-rp-detail-card"
           >
             <div className="wc-rp-detail-header">
-              <div className="wc-rp-detail-icon">🧧</div>
+              <div className="wc-rp-detail-icon"><IcoRedPacket size={40} /></div>
               <div className="wc-rp-detail-sender">{redPacketDetail.senderName} 的红包</div>
               <div className="wc-rp-detail-greeting">{redPacketDetail.greeting}</div>
             </div>

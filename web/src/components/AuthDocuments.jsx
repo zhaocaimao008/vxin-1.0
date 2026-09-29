@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { IcoClose } from './Icons';
 import { Link } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import privacyHtml from '../../public/privacy.html?raw';
@@ -25,7 +26,7 @@ export default function AuthDocuments({ footer = false }) {
     <a href={`${import.meta.env.BASE_URL}privacy.html`} onClick={event => open(event, '隐私政策')}>{footer ? '隐私政策' : '《隐私政策》'}</a>
     {footer && <> | <a href="#help" onClick={event => open(event, '帮助中心')}>帮助中心</a></>}
     <dialog ref={dialog} className="auth-document-dialog" aria-label={document || '帮助与政策'}>
-      <div className="auth-document-heading"><h2>{document}</h2><button type="button" onClick={close} aria-label="关闭文档">×</button></div>
+      <div className="auth-document-heading"><h2>{document}</h2><button type="button" onClick={close} aria-label="关闭文档"><IcoClose size={18} /></button></div>
       {document === '隐私政策' ? <div className="auth-privacy-content" dangerouslySetInnerHTML={{ __html: privacyContent }} /> :
         <div className="auth-document-body">
           {document === '用户协议' ? <p>当前未提供用户协议正文。请向服务管理员获取完整条款，再决定是否同意和使用本服务。</p> : <>

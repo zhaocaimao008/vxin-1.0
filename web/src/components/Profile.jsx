@@ -8,7 +8,7 @@ import { goLogin } from '../utils/url';
 import { showConfirm, showToast } from '../utils/toast';
 import { copyToClipboard } from '../utils/clipboard';
 import { normalizeServerUrl, testServerConnection } from '../utils/config';
-import { IcoDesktop as IcoDeviceDesktop, IcoMobile as IcoDeviceMobile, IcoClose, IcoGlobe, IcoSun, IcoMoon as IcoMoonFilled, IcoAuto } from './Icons';
+import { IcoAuto, IcoChevronLeft, IcoClose, IcoDesktop as IcoDeviceDesktop, IcoGlobe, IcoMobile as IcoDeviceMobile, IcoMoon as IcoMoonFilled, IcoSun } from './Icons';
 
 /* ─── 小工具 ─── */
 // role="button" 的 div 应同时支持 Enter 和空格触发（空格默认会滚动页面，需 preventDefault）
@@ -58,7 +58,7 @@ function PageHeader({ title, onBack, right }) {
   return (
     <div className="wc-page-header">
       {/* 内嵌进两栏设置面板时不传 onBack：没有"返回"这个概念（换点别的导航项即可），隐藏按钮 */}
-      {onBack && <button className="wc-page-header-back" onClick={onBack}>‹ 返回</button>}
+      {onBack && <button className="wc-page-header-back" onClick={onBack}><IcoChevronLeft size={20} style={{ verticalAlign: '-5px', marginLeft: -6 }} />返回</button>}
       <span className="wc-page-header-title">{title}</span>
       <div className="wc-page-header-right">{right}</div>
     </div>
@@ -1495,7 +1495,7 @@ function ShortcutSettings({ onBack }) {
     const ok = await window.electronAPI?.setShortcut?.(key, accel);
     if (ok) {
       setShortcuts(prev => ({ ...prev, [key]: accel }));
-      setStatus(prev => ({ ...prev, [key]: { ok: true, msg: '已保存 ✓' } }));
+      setStatus(prev => ({ ...prev, [key]: { ok: true, msg: '已保存' } }));
     } else {
       setStatus(prev => ({ ...prev, [key]: { ok: false, msg: '快捷键无效或被系统占用' } }));
     }
@@ -1532,7 +1532,7 @@ function ShortcutSettings({ onBack }) {
     await window.electronAPI?.resetShortcuts?.(key);
     const fresh = await window.electronAPI?.getShortcuts?.();
     setShortcuts(fresh || {});
-    setStatus(prev => ({ ...prev, [key]: { ok: true, msg: '已恢复默认 ✓' } }));
+    setStatus(prev => ({ ...prev, [key]: { ok: true, msg: '已恢复默认' } }));
     setTimeout(() => setStatus(prev => ({ ...prev, [key]: null })), 2500);
   };
 

@@ -8,7 +8,7 @@ import { showToast } from '../utils/toast';
 import { downloadFile } from '../utils/download';
 import { getAspect, rememberAspect } from '../utils/imgDimCache';
 import { linkify } from '../utils/linkify';
-import { IcoFile, IcoRedPacket, IcoTransfer } from './Icons';
+import { IcoAlert, IcoCheck, IcoFile, IcoRedPacket, IcoTransfer } from './Icons';
 
 // chat-window 改版：气泡内右下角时间戳只需要 HH:MM，不带日期——formatFull() 对非
 // 当天消息会返回"昨天 HH:MM"/"M月D日 HH:MM"这种带日期的长字符串，塞进气泡角落的小
@@ -75,7 +75,7 @@ const MessageItem = memo(function MessageItem({ item, cbRef, measure }) {
         role="button" tabIndex={0} aria-label="发送失败，点击重发"
         onClick={() => cbs.retryMessage(msg)}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cbs.retryMessage(msg); } }}
-      >❗</div>
+      ><IcoAlert size={18} /></div>
     ) : isLastMine && convType === 'private' ? (
       showRead ? (
         /* 双勾-已读：绿色 */
@@ -149,7 +149,7 @@ const MessageItem = memo(function MessageItem({ item, cbRef, measure }) {
       {multiSelect && (
         <div style={{ display: 'flex', alignItems: 'center', marginRight: 8, flexShrink: 0, alignSelf: 'center' }}>
           <div style={{ width: 20, height: 20, borderRadius: 'var(--radius-full)', border: `2px solid ${isSelected ? 'var(--green)' : 'var(--border-default)'}`, background: isSelected ? 'var(--green)' : 'var(--text-inverse)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background var(--dur-fast), border-color var(--dur-fast)' }}>
-            {isSelected && <span style={{ color: 'var(--text-inverse)', fontSize: 'var(--text-sm)', fontWeight: 700, lineHeight: 1 }}>✓</span>}
+            {isSelected && <IcoCheck size={14} style={{ color: 'var(--text-inverse)' }} />}
           </div>
         </div>
       )}

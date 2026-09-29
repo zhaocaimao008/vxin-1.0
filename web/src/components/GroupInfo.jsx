@@ -6,7 +6,7 @@ import { mediaUrl } from '../utils/url';
 import { showToast, showConfirm } from '../utils/toast';
 import { useConvSettings } from '../hooks/useConvSettings';
 import { GroupAvatar } from './GroupAvatar';
-import { IcoClose, IcoEdit } from './Icons';
+import { IcoCheck, IcoChevronRight, IcoClose, IcoEdit, IcoPlus } from './Icons';
 export { GroupAvatar } from './GroupAvatar'; // re-export 向后兼容
 
 /* ── 群头像上传（管理员 hover 显示相机图标） ── */
@@ -662,7 +662,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
             {/* 邀请按钮：管理员始终可见；普通成员需群开启了允许成员邀请 */}
             {!kickSearch && (isAdmin || info.member_can_invite) && (
               <div className="gi-inv-row" role="button" tabIndex={0} onClick={openInvite} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openInvite(); } }}>
-                <div className="gi-inv-box">+</div>
+                <div className="gi-inv-box"><IcoPlus size={22} /></div>
                 <span className="gi-inv-txt">邀请成员</span>
               </div>
             )}
@@ -723,7 +723,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
           </div>
           <div className={`gi-row${conversation.background ? '' : ' gi-row-noborder'}`} style={{ cursor: 'pointer' }} role="button" tabIndex={0} onClick={() => onPickBackground?.()} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPickBackground?.(); } }}>
             <span className="gi-label">设置聊天背景</span>
-            <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-sm2)' }}>{conversation.background ? '更换 ›' : '选择图片 ›'}</span>
+            <span style={{ color: 'var(--text-tertiary)', fontSize: 'var(--text-sm2)' }}>{conversation.background ? '更换' : '选择图片'} <IcoChevronRight size={16} style={{ verticalAlign: '-3px' }} /></span>
           </div>
           {conversation.background && (
             <div className="gi-row gi-row-noborder" style={{ cursor: 'pointer' }} role="button" tabIndex={0} onClick={() => onClearBackground?.()} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClearBackground?.(); } }}>
@@ -849,7 +849,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
                   ? <div className="gi-inv-empty">所有好友已在群内</div>
                   : myContacts.map(c => (
                     <div key={c.id} className="wc-group-member-item" role="checkbox" tabIndex={0} aria-checked={selectedInvite.has(c.id)} onClick={() => setSelectedInvite(prev => { const s = new Set(prev); s.has(c.id) ? s.delete(c.id) : s.add(c.id); return s; })} onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && setSelectedInvite(prev => { const s = new Set(prev); s.has(c.id) ? s.delete(c.id) : s.add(c.id); return s; })}>
-                      <div className={`wc-group-check${selectedInvite.has(c.id) ? ' checked' : ''}`}>{selectedInvite.has(c.id) ? '✓' : ''}</div>
+                      <div className={`wc-group-check${selectedInvite.has(c.id) ? ' checked' : ''}`}>{selectedInvite.has(c.id) ? <IcoCheck size={14} /> : null}</div>
                       <Avatar src={c.avatar} name={c.remark || c.username} size={36} />
                       <span className="gi-inv-name">{c.remark || c.username}</span>
                     </div>

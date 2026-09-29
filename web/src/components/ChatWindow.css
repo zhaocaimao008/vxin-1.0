@@ -585,6 +585,8 @@
 .wc-redpacket-icon {
   font-size: 30px;
   line-height: var(--lh-none);
+  color: var(--rp-gold);
+  display: flex;
 }
 .wc-redpacket-info {
   flex: 1;
@@ -675,6 +677,8 @@
 }
 .wc-rp-detail-icon {
   font-size: 36px;
+  color: var(--rp-gold);
+  line-height: 0;
 }
 .wc-rp-detail-sender {
   font-size: var(--text-md);

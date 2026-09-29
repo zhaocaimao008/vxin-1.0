@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { IcoChevronLeft } from './Icons';
 import Avatar from './Avatar';
 import { GroupAvatar } from './GroupAvatar';
 
@@ -41,7 +42,7 @@ function ChatHeader({
     <div className="wc-chat-header">
       {/* 桌面端不渲染返回按钮（CSS 已隐藏，此处仅移动端展示） */}
       <button className="wc-chat-header-back wc-back-btn" onClick={onClose} title="返回" aria-label="返回">
-        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        <IcoChevronLeft size={28} />
       </button>
 
       {/* 头像（桌面端点击头像可打开资料卡）*/}

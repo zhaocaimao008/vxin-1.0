@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { IcoClose } from './Icons';
 import axios from 'axios';
 import { mediaUrl } from '../utils/url';
 import { showToast, showConfirm } from '../utils/toast';
@@ -109,7 +110,7 @@ export default function StickerPanel({ onSend }) {
           <div key={s.id} className="sticker-item" role="button" tabIndex={0} aria-label="发送表情" onClick={() => onSend(s.id)}
             onKeyDown={e => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onSend(s.id); } }}>
             <img loading="lazy" src={mediaUrl(s.url)} alt="" onError={e => { e.currentTarget.style.display = 'none'; }} />
-            <button className="sticker-del" onClick={(e) => del(e, s.id)} title="删除" aria-label="删除表情">✕</button>
+            <button className="sticker-del" onClick={(e) => del(e, s.id)} title="删除" aria-label="删除表情"><IcoClose size={12} /></button>
           </div>
         ))}
         {/* 底部哨兵元素：滚动到此处自动加载更多 */}

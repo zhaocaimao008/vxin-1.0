@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { IcoCelebrate } from './Icons';
 import { useAndroidVersionCheck } from '../hooks/useAndroidVersionCheck';
 
 /**
@@ -68,7 +69,7 @@ export default function AndroidUpdatePrompt() {
       {/* 对话框内容 */}
       <div style={{ position: 'relative', zIndex: 9999 }}>
         <h2 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 600 }}>
-          🎉 发现新版本 {latestVersion.name}
+          <IcoCelebrate size={18} style={{ verticalAlign: '-3px' }} /> 发现新版本 {latestVersion.name}
         </h2>
 
         <p style={{ margin: '8px 0 16px 0', fontSize: '14px', color: 'var(--text-secondary)' }}>

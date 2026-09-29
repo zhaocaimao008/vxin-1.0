@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { IcoLightbulb, IcoLock, IcoPhoneIphone, IcoTicket, IcoVisibility, IcoVisibilityOff } from '../components/Icons';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import '../styles/login.css';
@@ -50,27 +51,16 @@ export default function ForgotPassword() {
 
   const fields = [
     { key: 'phone', label: '手机号', type: 'tel', inputMode: 'tel', autocomplete: 'username', placeholder: '请输入注册时的手机号', icon: (
-      <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <rect x="3" y="1" width="14" height="18" rx="3"/>
-        <line x1="8" y1="15" x2="12" y2="15"/>
-      </svg>
+      <IcoPhoneIphone size={18} aria-hidden="true" />
     )},
     { key: 'inviteCode', label: '邀请码', type: 'text', inputMode: 'numeric', autocomplete: 'off', placeholder: '请输入6位邀请码', maxLength: 6, icon: (
-      <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M3 6.5A1.5 1.5 0 014.5 5h11A1.5 1.5 0 0117 6.5V8a2 2 0 000 4v1.5a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 013 13.5V12a2 2 0 000-4z"/><path d="M12.5 5.5v9" strokeDasharray="1.6 1.6"/>
-      </svg>
+      <IcoTicket size={18} aria-hidden="true" />
     )},
     { key: 'newPassword', label: '新密码', type: 'password', autocomplete: 'new-password', placeholder: '至少8位，含字母和数字', icon: (
-      <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <rect x="3" y="9" width="14" height="10" rx="2"/>
-        <path d="M6 9V6a4 4 0 018 0v3"/>
-      </svg>
+      <IcoLock size={18} aria-hidden="true" />
     )},
     { key: 'confirmPassword', label: '确认新密码', type: 'password', autocomplete: 'new-password', placeholder: '再次输入新密码', icon: (
-      <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <rect x="3" y="9" width="14" height="10" rx="2"/>
-        <path d="M6 9V6a4 4 0 018 0v3"/>
-      </svg>
+      <IcoLock size={18} aria-hidden="true" />
     )},
   ];
 
@@ -128,7 +118,7 @@ export default function ForgotPassword() {
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="auth-note">
-            💡 需要邀请码？请向已有账号的用户询问，或联系管理员获取
+            <IcoLightbulb size={15} style={{ verticalAlign: '-3px' }} /> 需要邀请码？请向已有账号的用户询问，或联系管理员获取
           </div>
 
           {fields.map(f => (
@@ -153,16 +143,9 @@ export default function ForgotPassword() {
                 {(f.key === 'newPassword' || f.key === 'confirmPassword') && (
                   <button type="button" className="auth-pwd-toggle" onClick={() => setShowPwd(v => !v)} aria-label={showPwd ? '隐藏密码' : '显示密码'}>
                     {showPwd ? (
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
-                        <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
-                        <line x1="1" y1="1" x2="23" y2="23"/>
-                      </svg>
+                      <IcoVisibilityOff size={18} aria-hidden="true" />
                     ) : (
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                      </svg>
+                      <IcoVisibility size={18} aria-hidden="true" />
                     )}
                   </button>
                 )}

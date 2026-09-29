@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { showToast, showConfirm } from '../utils/toast';
 import { useConvSettings } from '../hooks/useConvSettings';
-import { IcoClose } from './Icons';
+import { IcoChevronRight, IcoClose } from './Icons';
 
 const BURN_OPTIONS = [
   { value: 0,      label: '关闭' },
@@ -98,7 +98,7 @@ export default function PrivateChatSettings({ conversation, onClose, onConvUpdat
           </div>
           <div className="wc-settings-row wc-settings-row-clickable" role="button" tabIndex={0} onClick={() => onPickBackground?.()} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPickBackground?.(); } }}>
             <span className="wc-settings-row-label">设置聊天背景</span>
-            <span className="wc-settings-row-action">{conversation.background ? '更换 ›' : '选择图片 ›'}</span>
+            <span className="wc-settings-row-action">{conversation.background ? '更换' : '选择图片'} <IcoChevronRight size={16} style={{ verticalAlign: '-3px' }} /></span>
           </div>
           {conversation.background && (
             <div className="wc-settings-row wc-settings-row-clickable" role="button" tabIndex={0} onClick={() => onClearBackground?.()} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClearBackground?.(); } }}>
@@ -108,12 +108,12 @@ export default function PrivateChatSettings({ conversation, onClose, onConvUpdat
           {onOpenChatFiles && (
             <div className="wc-settings-row wc-settings-row-clickable" role="button" tabIndex={0} onClick={() => onOpenChatFiles()} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenChatFiles(); } }}>
               <span className="wc-settings-row-label">聊天文件</span>
-              <span className="wc-settings-row-action">图片 / 视频 / 文件 ›</span>
+              <span className="wc-settings-row-action">图片 / 视频 / 文件 <IcoChevronRight size={16} style={{ verticalAlign: '-3px' }} /></span>
             </div>
           )}
           <div className="wc-settings-row wc-settings-row-clickable" role="button" tabIndex={0} onClick={() => !saving && exportChat()} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (!saving) exportChat(); } }}>
             <span className="wc-settings-row-label">导出聊天记录</span>
-            <span className="wc-settings-row-action">保存为 .txt ›</span>
+            <span className="wc-settings-row-action">保存为 .txt <IcoChevronRight size={16} style={{ verticalAlign: '-3px' }} /></span>
           </div>
           <div className="wc-settings-row">
             <span className="wc-settings-row-label">阅后即焚</span>
