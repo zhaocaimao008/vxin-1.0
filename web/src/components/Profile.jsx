@@ -418,7 +418,7 @@ function Wallet({ onBack }) {
     setRecharging(false);
   };
 
-  const TYPE_LABEL = { recharge: '充值', red_packet: '发红包', red_packet_refund: '红包退回', red_packet_claim: '领红包' };
+  const TYPE_LABEL = { recharge: '充值', admin_grant: '系统发放', red_packet: '发红包', red_packet_send: '发红包', red_packet_refund: '红包退回', red_packet_claim: '领红包', transfer_out: '转账', transfer_in: '收到转账' };
   const fmtTime = (s) => { try { return new Date(s * 1000).toLocaleString(); } catch { return ''; } };
 
   return (

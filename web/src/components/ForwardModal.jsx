@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { messagePreview } from '../utils/messagePreview';
 import axios from 'axios';
 import Avatar from './Avatar';
 import { GroupAvatar } from './GroupAvatar';
@@ -139,11 +140,8 @@ export default function ForwardModal({ message, messages, onClose }) {
 
   const typePreview = (m) => {
     if (!m) return '';
-    if (m.type === 'image') return '[图片]';
     if (m.type === 'file') return `[文件] ${m.content}`;
-    if (m.type === 'voice') return '[语音]';
-    if (m.type === 'video') return '[视频]';
-    if (m.type === 'red_packet') return '[红包]';
+    if (m.type && m.type !== 'text') return messagePreview(m);
     return (m.content?.slice(0, 50) || '') + (m.content?.length > 50 ? '…' : '');
   };
   const msgPreview = () => {

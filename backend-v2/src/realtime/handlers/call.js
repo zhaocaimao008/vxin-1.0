@@ -15,6 +15,7 @@
  *   - socket.on('disconnect')：断线时彻底清理该用户涉及的全部通话（fix: 防网络闪断泄漏）
  */
 const { v4: uuidv4 } = require('uuid');
+const { privateSendGuard } = require('../../modules/messages/shared');
 const { db } = require('../../db/connection');
 const { pushCallInvite } = require('../../utils/push');
 
@@ -90,11 +91,12 @@ module.exports = function registerCallHandler(io, socket) {
     // 防骚扰 / 防绕过拉黑：被叫已拉黑主叫，或双方无私聊会话(非任意ID都能拨)，则拒接。
     const blocked = db.prepare('SELECT 1 FROM blocked_users WHERE user_id=? AND blocked_id=?').get(to, userId);
     const shareConv = db.prepare(`
-      SELECT 1 FROM conversation_members cm1
+      SELECT cm1.conversation_id AS id FROM conversation_members cm1
       JOIN conversation_members cm2 ON cm1.conversation_id = cm2.conversation_id
       JOIN conversations c ON c.id = cm1.conversation_id AND c.type='private'
       WHERE cm1.user_id=? AND cm2.user_id=? LIMIT 1`).get(userId, to);
-    if (blocked || !shareConv) {
+    // 与发消息同口径：双向拉黑、对方开启「屏蔽陌生人」且我已不是其好友，都不能来电骚扰
+    if (blocked || !shareConv || privateSendGuard(shareConv.id, userId)) {
       socket.emit('call:response', { from: to, accepted: false }); // 给主叫一个"被拒"信号，避免界面一直转
       return;
     }

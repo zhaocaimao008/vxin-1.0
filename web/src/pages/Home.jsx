@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, Suspense, lazy } from 'react';
+import { messagePreview } from '../utils/messagePreview';
 import { playMessageTone } from '../utils/notifySound';
 import { playIncomingRing, stopIncomingRing } from '../utils/callSound';
 import { startCallVisualAlert, stopCallVisualAlert } from '../utils/callVisualAlert';
@@ -390,12 +391,7 @@ export default function Home() {
       });
       // 不在当前会话 或 窗口不可见时，推送浏览器通知
       if (!isActiveConv || document.hidden) {
-        const bodyText =
-          msg.type === 'image' ? '[图片]' :
-          msg.type === 'voice' ? '[语音消息]' :
-          msg.type === 'file'  ? '[文件]' :
-          msg.type === 'video' ? '[视频]' :
-          (msg.content || '').slice(0, 80) || '发来了一条消息';
+        const bodyText = messagePreview(msg).slice(0, 80) || '发来了一条消息';
         showNotification(msg.senderName || '新消息', bodyText, msg.senderAvatar);
         if (msg.sender_id !== myId) playMessageTone(); // 提示音，独立于通知权限
       }
@@ -438,12 +434,7 @@ export default function Home() {
       for (const msg of arr) latestByConv.set(msg.conversation_id, msg);
       for (const msg of latestByConv.values()) {
         if (msg.conversation_id !== activeConvIdRef.current || document.hidden) {
-          const bodyText =
-            msg.type === 'image' ? '[图片]' :
-            msg.type === 'voice' ? '[语音消息]' :
-            msg.type === 'file'  ? '[文件]' :
-            msg.type === 'video' ? '[视频]' :
-            (msg.content || '').slice(0, 80) || '发来了一条消息';
+          const bodyText = messagePreview(msg).slice(0, 80) || '发来了一条消息';
           showNotification(msg.senderName || '新消息', bodyText, msg.senderAvatar);
           if (msg.sender_id !== myId) playMessageTone();
         }

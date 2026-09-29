@@ -51,6 +51,11 @@ async function send(io, userId, { conversationId, totalAmount, totalCount, greet
   const msg = db.prepare('SELECT m.*, u.username as senderName, u.avatar as senderAvatar FROM messages m JOIN users u ON u.id=m.sender_id WHERE m.id=?').get(msgId);
   msg.reactions = [];
   broadcaster.broadcastMessage(conversationId, msg);
+  // 离线/锁屏成员也应收到「[红包]」推送(此前红包不走推送，对方不在线就毫无提示)
+  require('../../utils/push').pushNewMessage({
+    conversationId, senderId: userId, senderName: msg.senderName, content: msgContent,
+    type: 'red_packet', timestamp: msg.created_at,
+  }).catch(() => {});
   return { packetId, message: msg };
 }
 

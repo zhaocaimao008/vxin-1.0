@@ -214,7 +214,12 @@ function buildBody(type, content) {
     case 'location':     return '[位置]';
     case 'red_packet':   return '[红包] 恭喜发财';
     case 'contact_card': return '[名片]';
-    default:             return content?.slice(0, 100) || '';
+    // 以下类型的 content 是 JSON 或文件地址，锁屏推送里不能原样显示
+    case 'video':        return '[视频]';
+    case 'sticker':      return '[表情]';
+    case 'transfer':     return '[转账]';
+    case 'nudge':        return '[拍一拍]';
+    default:             return type && type !== 'text' ? '[消息]' : (content?.slice(0, 100) || '');
   }
 }
 
@@ -471,4 +476,4 @@ async function pushCallInvite({ toUserId, fromUserId, callerName, callType, call
   await Promise.allSettled(promises);
 }
 
-module.exports = { pushToUser, pushNewMessage, pushCallInvite, sendVoipPush, isAllowedPushEndpoint, isInQuietHours };
+module.exports = { pushToUser, pushNewMessage, pushCallInvite, sendVoipPush, isAllowedPushEndpoint, isInQuietHours, buildBody };

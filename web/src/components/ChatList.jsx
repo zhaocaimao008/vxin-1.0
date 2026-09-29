@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, memo, useMemo } from 'react';
+import { messagePreview } from '../utils/messagePreview';
 import axios from 'axios';
 import Avatar from './Avatar';
 import { GroupAvatar } from './GroupAvatar';
@@ -84,21 +85,7 @@ const ConvRow = memo(function ConvRow({ index, style, data }) {
 
 function previewMsg(conv, user) {
   const t = conv.lastMessageType;
-  if (t === 'image') return '[图片]';
-  if (t === 'voice') return '[语音]';
-  if (t === 'video') return '[视频]';
-  if (t === 'file') return '[文件]';
-  if (t === 'contact_card' || t === 'contact') return '[名片]';
-  if (t === 'red_packet') return '[红包]';
-  if (t === 'sticker') return '[表情]';
-  if (t === 'nudge') {
-    try {
-      const n = JSON.parse(conv.lastMessage);
-      const a = String(n.actor) === String(user?.id) ? '你' : (n.actorName || '某人');
-      const b = String(n.target) === String(user?.id) ? '你' : (n.targetName || '某人');
-      return `${a} 拍了拍 ${b}`;
-    } catch { return '[拍一拍]'; }
-  }
+  if (t && t !== 'text') return messagePreview({ type: t, content: conv.lastMessage }, user);
   if (!conv.lastMessage) return '';
   if (conv.type === 'group' && conv.lastSenderName && conv.lastSenderName !== user?.username)
     return `${conv.lastSenderName}: ${conv.lastMessage}`;

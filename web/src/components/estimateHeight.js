@@ -85,6 +85,7 @@ export function estimateHeight(item) {
   else if (msg.type === 'file') base = 88;
   else if (msg.type === 'video') base = MEDIA_MAX_H + MEDIA_ROW_PAD + MEDIA_ROW_PAD_BOTTOM;
   else if (msg.type === 'red_packet') base = 130;
+  else if (msg.type === 'transfer') base = 120;
   else if (msg.type === 'contact_card') base = 100;
   else if (msg.type === 'sticker') base = 140 + MEDIA_ROW_PAD_BOTTOM;
   else {

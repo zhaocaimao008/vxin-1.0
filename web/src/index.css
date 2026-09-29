@@ -838,11 +838,12 @@ body.dark-mode .wc-msg-status-delivered { color: rgba(255,255,255,.42); }
   border-color: transparent var(--bg-msg-other) transparent transparent;
 }
 
-/* 图片/视频/贴纸/红包/名片：自带卡片样式，气泡设为透明无内边距无尾巴，避免双层框与尖角错位 */
+/* 图片/视频/贴纸/红包/转账/名片：自带卡片样式，气泡设为透明无内边距无尾巴，避免双层框与尖角错位 */
 .wc-msg-bubble:has(.wc-msg-img),
 .wc-msg-bubble:has(.wc-msg-video),
 .wc-msg-bubble:has(.wc-msg-sticker),
 .wc-msg-bubble:has(.wc-redpacket-card),
+.wc-msg-bubble:has(.wc-transfer-card),
 .wc-msg-bubble:has(.wc-contact-card) {
   padding: 0;
   background: transparent !important;
@@ -853,6 +854,7 @@ body.dark-mode .wc-msg-status-delivered { color: rgba(255,255,255,.42); }
 .wc-msg-bubble:has(.wc-msg-sticker)::after,
 .wc-msg-bubble:has(.wc-msg-file-link)::after,
 .wc-msg-bubble:has(.wc-redpacket-card)::after,
+.wc-msg-bubble:has(.wc-transfer-card)::after,
 .wc-msg-bubble:has(.wc-contact-card)::after {
   display: none;
 }
