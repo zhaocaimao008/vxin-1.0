@@ -1408,8 +1408,8 @@ function AccountSecurityPanel({ user, navigateTo, logout }) {
       <SLabel>其他</SLabel>
       <div className="wc-section-pad">
         <Card>
-          <CRow icon={<IcoLogoutRow />} bg="var(--icon-bg-neutral)" label="退出登录" desc="退出当前账号，聊天记录保留"
-            right={<button className="wc-crow-btn" onClick={() => doLogout(logout)}>退出</button>} />
+          <CRow icon={<IcoLogoutRow />} bg="var(--icon-bg-neutral)" label="登录状态" desc="已登录，退出后聊天记录保留"
+            right={<button className="wc-crow-btn" onClick={() => doLogout(logout)}>退出登录</button>} />
           <CRow icon={<IcoTrashRow />} bg="var(--icon-bg-newfriend)" label="清除缓存" desc="释放存储空间，不会删除聊天记录"
             right={<button className="wc-crow-btn" onClick={handleClearCache} disabled={clearingCache}>{clearingCache ? '清除中…' : '清除'}</button>} />
         </Card>
