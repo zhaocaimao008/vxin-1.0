@@ -411,6 +411,8 @@ async function remove(io, userId, msgId, forEveryone, vanish) {
   }
 
   if (forEveryone) {
+    // 红包/转账消息承载资金状态，撤回会清空内容让对方无法领取或查看，与微信一致不允许撤回
+    if (msg.type === 'red_packet' || msg.type === 'transfer') throw badRequest('红包和转账消息不能撤回');
     const isOwn = msg.sender_id === userId;
     const callerRole = memberRole(msg.conversation_id, userId);
     if (!callerRole) throw forbidden('您已不在该会话中');
@@ -419,9 +421,14 @@ async function remove(io, userId, msgId, forEveryone, vanish) {
     if (msg.deleted === 2) throw badRequest('消息已彻底删除，无法再次操作');
     // 撤回不限时间：任意时长的消息本人（或群管理员）均可撤回
     await writeAsync("UPDATE messages SET deleted=2, content='', file_url='' WHERE id=?", [msgId]);
+    // 被置顶的消息撤回后内容已清空，同步取消置顶，避免置顶栏显示空白
+    const unpinned = db.prepare('DELETE FROM pinned_messages WHERE message_id=?').run(msgId).changes > 0;
     cache.delPattern(`search:*${userId}*`).catch(() => {});
     convSvc.invalidateConvCacheForConversation(msg.conversation_id);
-    if (io) io.to(msg.conversation_id).emit('message_deleted', { msgId, conversationId: msg.conversation_id });
+    if (io) {
+      io.to(msg.conversation_id).emit('message_deleted', { msgId, conversationId: msg.conversation_id });
+      if (unpinned) io.to(msg.conversation_id).emit('message_unpinned', { msgId, convId: msg.conversation_id });
+    }
   }
   // 仅自己隐藏：前端处理，不改库
 }

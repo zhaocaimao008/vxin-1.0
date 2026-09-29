@@ -87,7 +87,7 @@ export const SocketProvider = ({ children }) => {
     s.on('message_delivered', (payload) => {
       deliveredListeners.current.forEach(fn => fn(payload));
     });
-    ['new_moment', 'moment_liked', 'moment_commented'].forEach((ev) => {
+    ['new_moment', 'moment_liked', 'moment_commented', 'moment_deleted'].forEach((ev) => {
       s.on(ev, (payload) => {
         try { window.dispatchEvent(new CustomEvent('vxin:moment', { detail: { type: ev, payload } })); } catch { /* ignore */ }
       });
