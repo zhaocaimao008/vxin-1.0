@@ -312,11 +312,16 @@ function purgeMoment(momentId) {
 }
 
 // ── 删除动态（仅作者，级联清理点赞/评论）──────────────────────
-function deleteMoment(userId, momentId) {
+function deleteMoment(io, userId, momentId) {
   const m = db.prepare('SELECT * FROM moments WHERE id=?').get(momentId);
   if (!m) throw notFound('动态不存在');
   if (m.user_id !== userId) throw forbidden('只能删除自己的动态');
   purgeMoment(momentId);
+  // 已打开朋友圈的好友（及自己其他端）实时移除该条，不必等刷新；只带 id，不泄露内容
+  if (io) {
+    const targets = db.prepare('SELECT contact_id FROM contacts WHERE user_id=?').all(userId).map(r => r.contact_id);
+    io.to([userId, ...targets].map(t => `user_${t}`)).emit('moment_deleted', { momentId });
+  }
   return { success: true };
 }
 

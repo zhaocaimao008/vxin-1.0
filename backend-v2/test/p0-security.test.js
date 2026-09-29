@@ -40,7 +40,7 @@ test('P0-02 deleting a moment never unlinks client supplied attachments', () => 
   const id = crypto.randomUUID();
   db.prepare('INSERT INTO moments (id,user_id,content,images) VALUES (?,?,?,?)').run(id, a.userId, 'x', '["/uploads/files/victim.pdf"]');
   const unlink = jest.spyOn(fs, 'unlink').mockImplementation((p, cb) => cb && cb());
-  try { moments.deleteMoment(a.userId, id); expect(unlink).not.toHaveBeenCalled(); }
+  try { moments.deleteMoment(null, a.userId, id); expect(unlink).not.toHaveBeenCalled(); }
   finally { unlink.mockRestore(); }
 });
 
@@ -141,7 +141,7 @@ test('P0-07 moment URL cannot grant access to another user private image', async
   expect(canAccessUpload(b.userId, url)).toBe(false);
   expect(() => moments.createMoment(null, b.userId, { content: 'steal', images: [url] })).toThrow();
   expect((await request(app).post('/api/stickers/collect').auth(b.token, { type: 'bearer' }).send({ url })).status).toBe(403);
-  moments.deleteMoment(a.userId, moment.id);
+  moments.deleteMoment(null, a.userId, moment.id);
 });
 
 test('P0-07 HTTP GET/HEAD/Range obey membership and retraction; cache never becomes public', async () => {

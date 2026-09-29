@@ -1472,6 +1472,27 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
     setTimeout(() => { el?.focus(); el?.setSelectionRange(pos, pos); }, 0);
   };
 
+  // 私聊对方改了昵称/头像：实时更新标题（已设备注时标题显示备注，不覆盖）
+  const otherUserId = conversation.type === 'private' ? conversation.otherUser?.id : null;
+  const otherRemark = conversation.otherUser?.remark;
+  useEffect(() => {
+    if (!socket || !otherUserId) return;
+    const onUserUpdated = ({ userId }) => {
+      if (String(userId) !== String(otherUserId)) return;
+      axios.get(`/api/users/${otherUserId}`).then(({ data }) => {
+        if (!data?.username) return;
+        setConversation(prev => ({
+          ...prev,
+          name: otherRemark || data.username,
+          avatar: data.avatar ?? prev.avatar,
+          otherUser: { ...prev.otherUser, username: data.username, avatar: data.avatar ?? prev.otherUser?.avatar },
+        }));
+      }).catch(() => {});
+    };
+    socket.on('user_updated', onUserUpdated);
+    return () => socket.off('user_updated', onUserUpdated);
+  }, [socket, otherUserId, otherRemark]);
+
   // ── 云存储直传（XHR 支持进度回调）─────────────────────────────
   const uploadToCloud = useCallback(async (fileOrBlob, contentType, filename, onProgress) => {
     // 云存储未配置(503)是持久状态：本次会话记住，后续直接走本地上传，不再每次先失败一轮

@@ -242,6 +242,12 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
         return next.sort(byPinnedThenTime);
       });
     };
+    // 撤回/编辑/删除会改变「最后一条消息」预览；好友改昵称/头像会改变会话名。
+    // 这些事件只携带 id，统一合并 300ms 后重拉一次列表（服务端缓存已失效）。
+    let refetchTimer = null;
+    const refetchSoon = () => { clearTimeout(refetchTimer); refetchTimer = setTimeout(fetchConvs, 300); };
+    const LIST_EVENTS = ['message_deleted', 'message_vanished', 'messages_batch_deleted', 'message_edited', 'user_updated'];
+    LIST_EVENTS.forEach(ev => socket.on(ev, refetchSoon));
     // 在线状态：监听 presence 事件更新绿点（只做 UI 展示，不影响业务）
     const onOnline  = ({ userId }) => setOnlineIds(s => { const n = new Set(s); n.add(userId); return n; });
     const onOffline = ({ userId }) => setOnlineIds(s => { const n = new Set(s); n.delete(userId); return n; });
@@ -255,6 +261,8 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
     socket.on('user_online', onOnline);
     socket.on('user_offline', onOffline);
     return () => {
+      clearTimeout(refetchTimer);
+      LIST_EVENTS.forEach(ev => socket.off(ev, refetchSoon));
       socket.off('new_message', onMsg);
       socket.off('new_message_batch', onMsgBatch);
       socket.off('new_conversation', onNewConv);

@@ -339,6 +339,12 @@ export default function Moments({ desktop = false }) {
   useEffect(() => {
     let timer = null;
     const onMoment = (e) => {
+      // 好友删除动态：直接从列表移除，无需整页刷新
+      if (e?.detail?.type === 'moment_deleted') {
+        const id = e.detail.payload?.momentId;
+        if (id) setList(prev => prev.filter(m => m.id !== id));
+        return;
+      }
       loadNotifCount();
       // 新动态、以及别人赞/评了我的动态：刷新时间线，让点赞数和评论即时出现(合并 800ms 内的连续事件)
       clearTimeout(timer);

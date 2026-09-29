@@ -18,12 +18,28 @@ exports.getSettings    = asyncHandler(async (req, res) => res.json(svc.getSettin
 exports.updateSettings = asyncHandler(async (req, res) => res.json(svc.updateSettings(req.user.id, req.body)));
 exports.search         = asyncHandler(async (req, res) => res.json(svc.search(req.user.id, req.query.q)));
 
-exports.updateProfile  = asyncHandler(async (req, res) => res.json(await svc.updateProfile(req.user.id, req.body)));
+// 昵称/头像变化后通知好友（及自己其他端）刷新会话列表与聊天标题，不必等重新登录
+function notifyProfileChanged(req) {
+  const { db } = require('../../db/connection');
+  const convSvc = require('../conversations/conversations.service');
+  const ids = [req.user.id, ...db.prepare('SELECT user_id FROM contacts WHERE contact_id=?').all(req.user.id).map(r => r.user_id)];
+  // 会话名来自对方昵称：先失效这些人的会话列表缓存，否则收到事件后的重拉可能命中 2s 旧缓存
+  ids.forEach(id => convSvc.invalidateConvCacheForUser(id));
+  const io = req.app.get('io');
+  if (io) io.to(ids.map(id => `user_${id}`)).emit('user_updated', { userId: req.user.id });
+}
+
+exports.updateProfile  = asyncHandler(async (req, res) => {
+  const result = await svc.updateProfile(req.user.id, req.body);
+  if (req.body?.username !== undefined || req.body?.avatar !== undefined) notifyProfileChanged(req);
+  res.json(result);
+});
 
 exports.uploadAvatar = asyncHandler(async (req, res) => {
   if (!req.file) throw badRequest('请选择图片');
   const url = `/uploads/avatars/${req.file.filename}`;
   await svc.setAvatar(req.user.id, url);
+  notifyProfileChanged(req);
   res.json({ avatar: url });
 });
 
