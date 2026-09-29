@@ -10,6 +10,8 @@ const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
 const { badRequest } = require('../utils/http');
 
+const MAX_ACK_IDS = 100;
+
 /**
  * @swagger
  * /api/optimization/search/rank:
@@ -108,7 +110,13 @@ router.get('/search/suggestions', auth, async (req, res, next) => {
  */
 router.post('/ack/batch', auth, async (req, res, next) => {
   try {
-    const { deliveries = [], reads = [] } = req.body;
+    const { deliveries = [], reads = [] } = req.body || {};
+    // 每项都进入内存批次与 Redis，必须限定为有限长度的字符串 ID 数组。
+    const validIds = (v) => Array.isArray(v) && v.length <= MAX_ACK_IDS
+      && v.every(id => typeof id === 'string' && id.length > 0 && id.length <= 64);
+    if (!validIds(deliveries) || !validIds(reads)) {
+      throw badRequest(`deliveries / reads 须为最多 ${MAX_ACK_IDS} 个消息 ID 的数组`);
+    }
     const batchAckManager = req.app.get('batchAckManager');
 
     if (!batchAckManager) {
@@ -135,7 +143,7 @@ router.post('/ack/batch', auth, async (req, res, next) => {
  *     tags: [Optimization]
  *     security: [{ bearerAuth: [] }]
  */
-router.post('/ack/flush', auth, async (req, res, next) => {
+router.post('/ack/flush', adminAuth, async (req, res, next) => {
   try {
     const batchAckManager = req.app.get('batchAckManager');
 

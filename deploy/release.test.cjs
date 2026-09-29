@@ -7,7 +7,7 @@ const http = require('node:http');
 const { execFileSync, spawn } = require('node:child_process');
 const release = path.join(__dirname, 'release.sh');
 
-for (const failure of ['none', 'install', 'restart', 'health', 'revision']) {
+for (const failure of ['none', 'install', 'config', 'restart', 'health', 'revision', 'devmode']) {
   test(`release transaction: ${failure}`, async () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'vxin-release-test-'));
     const repo = path.join(root, 'repo'), web = path.join(root, 'public'), bin = path.join(root, 'bin');
@@ -15,6 +15,9 @@ for (const failure of ['none', 'install', 'restart', 'health', 'revision']) {
     const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
     const prepare = version => {
       write(path.join(repo, 'backend-v2/src/server.js'), version);
+      // The release loads the new config in production mode before touching live files.
+      write(path.join(repo, 'backend-v2/src/config/index.js'),
+        version === 'new' ? "if (process.env.FAILURE === 'config' && process.env.NODE_ENV === 'production') process.exit(1);\n" : '');
       write(path.join(repo, 'backend-v2/package-lock.json'), JSON.stringify({ version }));
       write(path.join(repo, 'web/version'), version);
       git('add', '.'); git('commit', '-qm', version); return git('rev-parse', 'HEAD');
@@ -39,10 +42,16 @@ elif [[ "$*" == 'run build' ]]; then
 fi
 `);
     shim('pm2', `
+if [[ "$1" == restart ]]; then printf '%s' "\${NODE_ENV:-}" > "$PM2_ENV_LOG"; fi
 if [[ "$1" == restart && "$FAILURE" == restart && $(cat src/server.js) == new ]]; then exit 34; fi
 `);
     const server = http.createServer((req, res) => {
       const source = fs.readFileSync(path.join(repo, 'backend-v2/src/server.js'), 'utf8');
+      if (req.url === '/api/metrics') {
+        // Development mode serves metrics; production answers 404.
+        res.statusCode = failure === 'devmode' && source === 'new' ? 200 : 404;
+        return res.end('{}');
+      }
       const deps = fs.readFileSync(path.join(repo, 'backend-v2/node_modules/version'), 'utf8');
       const lock = JSON.parse(fs.readFileSync(path.join(repo, 'backend-v2/package-lock.json'))).version;
       const html = fs.readFileSync(path.join(web, 'index.html'), 'utf8');
@@ -54,7 +63,7 @@ if [[ "$1" == restart && "$FAILURE" == restart && $(cat src/server.js) == new ]]
     try {
       const child = spawn('bash', [release, next], { env: {
         ...process.env, PATH: bin + ':' + process.env.PATH, REPO_DIR: repo, WEB_ROOT: web,
-        STATE_ROOT: path.join(root, 'releases'), FAILURE: failure, HEALTH_ATTEMPTS: '1', HEALTH_INTERVAL: '0',
+        STATE_ROOT: path.join(root, 'releases'), FAILURE: failure, PM2_ENV_LOG: path.join(root, 'pm2-env'), NODE_ENV: '', HEALTH_ATTEMPTS: '1', HEALTH_INTERVAL: '0',
         HEALTH_URL: `http://127.0.0.1:${server.address().port}/health`,
       }, stdio: ['ignore', 'pipe', 'pipe'] });
       let logs = ''; child.stdout.on('data', d => logs += d); child.stderr.on('data', d => logs += d);
@@ -69,7 +78,10 @@ if [[ "$1" == restart && "$FAILURE" == restart && $(cat src/server.js) == new ]]
       assert.equal(fs.existsSync(path.join(web, 'new-only.js')), failure === 'none');
       assert.equal(fs.readFileSync(path.join(repo, 'backend-v2/.env'), 'utf8'), 'preserved-secret');
       assert.equal(fs.readFileSync(path.join(repo, 'backend-v2/wechat.db'), 'utf8'), 'preserved-database');
-      if (['restart', 'health', 'revision'].includes(failure)) assert.match(logs, /Rollback health passed/);
+      if (['restart', 'health', 'revision', 'devmode'].includes(failure)) assert.match(logs, /Rollback health passed/);
+      if (failure === 'config') assert.match(logs, /nothing was changed/);
+      // --update-env takes the runner's environment: every restart must pin production.
+      if (!['install', 'config'].includes(failure)) assert.equal(fs.readFileSync(path.join(root, 'pm2-env'), 'utf8'), 'production');
     } finally {
       await new Promise(resolve => server.close(resolve));
       fs.rmSync(root, { recursive: true, force: true });

@@ -10,6 +10,7 @@ const { v4: uuidv4 } = require('uuid');
 const { db } = require('../../db/connection');
 const { badRequest, notFound, forbidden } = require('../../utils/http');
 const broadcaster = require('../../realtime/broadcaster');
+const { privateSendGuard } = require('../messages/shared');
 
 const nowSec = () => Math.floor(Date.now() / 1000);
 
@@ -84,6 +85,10 @@ async function transfer(senderId, { to_user_id, amount, note }) {
     WHERE c.type='private' LIMIT 1
   `).get(senderId, to_user_id);
   if (!conv) throw badRequest('请先与对方建立会话后再转账');
+  // 转账会在私聊里落一条带附言的消息，与发消息/发红包一致做黑名单与屏蔽陌生人校验，
+  // 防止被拉黑后借转账继续骚扰。
+  const guardReason = privateSendGuard(conv.id, senderId);
+  if (guardReason) throw forbidden(guardReason);
 
   const fromUser = db.prepare('SELECT username FROM users WHERE id=?').get(senderId);
   const safeNote = note && typeof note === 'string' ? note.trim().slice(0, 50) : '';

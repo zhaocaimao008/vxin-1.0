@@ -433,6 +433,12 @@ async function edit(io, userId, msgId, content) {
   requireMember(msg.conversation_id, userId, '您已不在该会话中，无法编辑消息');
   if (msg.type !== 'text') throw badRequest('只能编辑文字消息');
   if (msg.deleted) throw badRequest('已撤回的消息无法编辑');
+  // 编辑后的内容会实时推给会话成员，等同一次发言：与发送一致校验拉黑/屏蔽陌生人与全员禁言，
+  // 否则被拉黑者或被禁言成员可改旧消息继续"说话"。
+  const conv = db.prepare('SELECT mute_all, type FROM conversations WHERE id=?').get(msg.conversation_id);
+  const guardReason = privateSendGuard(msg.conversation_id, userId, conv);
+  if (guardReason) throw forbidden(guardReason);
+  if (conv?.mute_all && memberRole(msg.conversation_id, userId) === 'member') throw forbidden('全员禁言中，您没有发言权限');
   // 编辑不限时间：本人文字消息任意时长均可编辑
 
   const trimmed = content.trim();
