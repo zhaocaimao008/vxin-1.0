@@ -119,6 +119,11 @@ async function transfer(senderId, { to_user_id, amount, note }) {
   ).get(msgId);
   msg.reactions = [];
   broadcaster.broadcastMessage(conv.id, msg);
+  // 收款方不在线时也要有「[转账]」推送(此前转账不走推送)
+  require('../../utils/push').pushNewMessage({
+    conversationId: conv.id, senderId, senderName: msg.senderName, content: msgContent,
+    type: 'transfer', timestamp: msg.created_at,
+  }).catch(() => {});
 
   return { success: true, balance: getBalance(senderId), message: msg };
 }

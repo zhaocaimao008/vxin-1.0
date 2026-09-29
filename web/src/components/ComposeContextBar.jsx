@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { messagePreview } from '../utils/messagePreview';
 import { IcoClose } from './Icons';
 
 /* ── 输入区上方的上下文条（从 ChatWindow 抽离）─────────────────────
@@ -6,14 +7,7 @@ import { IcoClose } from './Icons';
    只读 editingMsg / replyTo，取消动作经回调上抛父级。memo 化后，父组件
    因打字/来消息等高频重渲染时，只要这些 props 未变本条不重渲染。 */
 function replyPreview(type, content) {
-  switch (type) {
-    case 'image': return '[图片]';
-    case 'voice': return '[语音]';
-    case 'video': return '[视频]';
-    case 'red_packet': return '[红包]';
-    case 'file': return '[文件]';
-    default: return content;
-  }
+  return messagePreview({ type, content });
 }
 
 function ComposeContextBar({ editingMsg, replyTo, onCancelEdit, onCancelReply }) {

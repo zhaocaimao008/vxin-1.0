@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo, useReducer, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, useReducer, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { composeReducer, initialComposeState } from '../reducers/composeReducer';
 import { showToast, showConfirm } from '../utils/toast';
@@ -703,6 +703,16 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
     o.scrollTop = o.scrollHeight;
   }, []);
 
+  // 向上加载历史后的视口锚点：DOM 已按新消息排版时立刻补偿，保持用户看到的位置不动
+  const prependAnchorRef = useRef(null);
+  useLayoutEffect(() => {
+    const anchor = prependAnchorRef.current;
+    const o = listOuterRef.current;
+    if (!anchor || !o) return;
+    prependAnchorRef.current = null;
+    o.scrollTop = anchor.top + (o.scrollHeight - anchor.height);
+  }, [messages]);
+
   // Load more on scroll to top — RAF 节流，避免高频 scroll 事件触发多次 setState
   const scrollRafRef = useRef(null);
   const handleScrollRef = useRef(null);
@@ -735,17 +745,16 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
           if (!data || data.length === 0) {
             setHasMore(false);
           } else {
-            // 锚定滚动位置：prepend 历史消息后保持当前视口位置不跳动
-            const prevHeight = container.scrollHeight;
+            // 锚定滚动位置：prepend 历史消息后保持当前视口位置不跳动。
+            // 在 React 提交后的 layout effect 里补偿(见 prependAnchorRef)：此前在下一帧 rAF 里补偿，
+            // 列表可能尚未按新数据排版 → 补偿量偏小、scrollTop 停在 0；而停在顶部时继续上滑不再
+            // 产生 scroll 事件，更早的历史就再也加载不出来。
+            prependAnchorRef.current = { height: container.scrollHeight, top: container.scrollTop };
             setMessages(prev => {
               // 按 id 去重：同一游标窗口重复拉取时过滤已存在的消息，与 onMsgBatch 的 have Set 逻辑一致
               const have = new Set(data.map(m => m.id));
               const filtered = prev.filter(m => !have.has(m.id));
               return [...data, ...filtered];
-            });
-            requestAnimationFrame(() => {
-              if (listOuterRef.current)
-                listOuterRef.current.scrollTop += listOuterRef.current.scrollHeight - prevHeight;
             });
           }
         } catch {
@@ -769,13 +778,14 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
       stickPendingRef.current = false;
       autoScrollingRef.current = false;
     };
-    const onWheel = event => { if (event.deltaY < 0) stopFollowing(); };
+    // 已在顶部时继续上滑不会产生 scroll 事件：滚轮/下拉手势也检查一次是否需要加载更早消息
+    const onWheel = event => { if (event.deltaY < 0) { stopFollowing(); handleScrollRef.current?.(); } };
     const onKeyDown = event => { if (['ArrowUp', 'PageUp', 'Home'].includes(event.key)) stopFollowing(); };
     let touchY = null;
     const onTouchStart = event => { touchY = event.touches[0]?.clientY ?? null; };
     const onTouchMove = event => {
       const nextY = event.touches[0]?.clientY;
-      if (touchY !== null && nextY > touchY) stopFollowing();
+      if (touchY !== null && nextY > touchY) { stopFollowing(); handleScrollRef.current?.(); }
       touchY = nextY ?? null;
     };
     const listeners = { scroll: stableHandler, wheel: onWheel, keydown: onKeyDown, touchstart: onTouchStart, touchmove: onTouchMove };

@@ -293,8 +293,9 @@ export default function Moments({ desktop = false }) {
 
   // 重试/刷新/切 tab 共用：'mine' 复用现成的 GET /api/moments/user/:userId(看自己），
   // 'all' 是原有 timeline。tab 变化时这个 callback 引用跟着变，下面的 effect 会自动重拉。
-  const load = useCallback(() => {
-    setLoading(true);
+  const load = useCallback((opts) => {
+    // silent：实时事件触发的后台刷新，不切换加载态(避免每次有人点赞时列表闪骨架)
+    if (!opts?.silent) setLoading(true);
     const url = tab === 'mine' && meId ? `/api/moments/user/${meId}` : '/api/moments';
     axios.get(url)
       .then(r => { setList(r.data); setLoadError(false); })
@@ -336,12 +337,15 @@ export default function Moments({ desktop = false }) {
 
   // 实时朋友圈（对齐安卓/iOS）：socket 广播 → 刷新互动红点；好友发新动态 → 刷新 feed
   useEffect(() => {
+    let timer = null;
     const onMoment = (e) => {
       loadNotifCount();
-      if (e?.detail?.type === 'new_moment') load();
+      // 新动态、以及别人赞/评了我的动态：刷新时间线，让点赞数和评论即时出现(合并 800ms 内的连续事件)
+      clearTimeout(timer);
+      timer = setTimeout(() => load({ silent: true }), e?.detail?.type === 'new_moment' ? 0 : 800);
     };
     window.addEventListener('vxin:moment', onMoment);
-    return () => window.removeEventListener('vxin:moment', onMoment);
+    return () => { clearTimeout(timer); window.removeEventListener('vxin:moment', onMoment); };
   }, [load, loadNotifCount]);
 
   useEffect(() => {

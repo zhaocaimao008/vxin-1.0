@@ -42,6 +42,11 @@ function setIo(io) { _io = io; }
  */
 function broadcastMessage(room, msg) {
   stats.totalMessages++;
+  // 所有新消息(socket/HTTP/文件/红包/转账/拍一拍/转发)都经过这里：统一失效成员的会话列表缓存，
+  // 否则 2s 缓存窗口内重新拉列表(切回消息页、重连)会看到旧的最后一条消息和排序。
+  try {
+    require('../modules/conversations/conversations.service').invalidateConvCacheForConversation(msg?.conversation_id || room);
+  } catch { /* 缓存失效失败不影响消息派发 */ }
   // 压测对照开关：BCAST_IMMEDIATE=1 时退回逐条立即派发（不合并），用于 A/B
   if (process.env.BCAST_IMMEDIATE === '1') { if (_io) { _io.to(room).emit('new_message', msg); stats.totalEmits++; } return; }
   let slot = pending.get(room);
