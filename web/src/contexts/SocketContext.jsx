@@ -1,3 +1,4 @@
+import axios from 'axios';
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
@@ -69,9 +70,26 @@ export const SocketProvider = ({ children }) => {
       if (everConnectedRef.current) setReconnectCount(n => n + 1);
       everConnectedRef.current = true;
     });
-    s.on('disconnect', () => {
+    s.on('disconnect', (reason) => {
       setConnected(false);
       disconnectAtRef.current = Math.floor(Date.now() / 1000);
+      // 服务端主动断开（改密码/注销/撤销会话后 disconnectSockets）时 socket.io 不会自动重连，
+      // 界面会一直停在「正在重连…」。主动重连一次：凭证仍有效（如改密码的本机已拿到新 Cookie）
+      // 则恢复实时；已失效则握手被拒 → 下面 connect_error 确认会话并跳登录页。
+      if (reason === 'io server disconnect') setTimeout(() => { if (!s.connected) s.connect(); }, 1000);
+    });
+    // 重连被服务端以「登录失效」拒绝（改密码/被封禁/token 失效后服务端断开了所有旧连接）：
+    // 否则界面会一直显示「网络连接已断开，正在重连…」。这里用一次 HTTP 请求确认会话：
+    // 真失效 → axios 拦截器刷新失败后派发 vxin:session_expired 跳登录页；刷新成功则继续重连。
+    // 改密码的那台设备已拿到新凭证，重连成功，不会走到这里。
+    let lastAuthCheck = 0;
+    s.on('connect_error', (err) => {
+      const msg = String(err?.message || '');
+      if (!/未授权|失效|密码已修改|封禁|Token无效/.test(msg)) return;
+      const now = Date.now();
+      if (now - lastAuthCheck < 30000) return;
+      lastAuthCheck = now;
+      axios.get('/api/auth/me').catch(() => {});
     });
     // 本设备被「踢下线」（其它端删除该会话）：后端已定向断开，这里只需触发前端的
     // 登出清理 + 跳登录页——复用 401 刷新失败时同一条 vxin:session_expired 事件通道

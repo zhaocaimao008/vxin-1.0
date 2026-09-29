@@ -10,6 +10,7 @@ import { showConfirm, showToast } from '../utils/toast';
 import { FixedSizeList } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { createMessageScope } from '../utils/messageScope';
+import { loadCache, saveCache, removeFromCache, clearCache } from '../utils/msgCache';
 import { readAllDrafts } from '../utils/drafts';
 
 const ITEM_HEIGHT = 64;
@@ -274,6 +275,33 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
       socket.off('user_offline', onOffline);
     };
   }, [socket, fetchConvs]);
+
+  // 撤回/删除/清空记录：同步清掉本地离线缓存（msgCache）。未打开的会话收不到 ChatWindow 的更新，
+  // 否则下次打开会先从缓存闪现已撤回的原文（离线打开则一直可见），违背「撤回即彻底删除」。
+  useEffect(() => {
+    if (!socket || !messageScope) return;
+    const key = (cid) => `${messageScope.key}:${cid}`;
+    const onDeleted = ({ msgId, conversationId }) => { if (conversationId) removeFromCache(key(conversationId), msgId); };
+    const onBatch = ({ msgIds, conversationId }) => {
+      if (!conversationId || !Array.isArray(msgIds)) return;
+      loadCache(key(conversationId)).then(cur => {
+        const drop = new Set(msgIds.map(String));
+        const next = cur.filter(m => !drop.has(String(m.id)));
+        if (next.length !== cur.length) saveCache(key(conversationId), next);
+      });
+    };
+    const onCleared = ({ conversationId }) => { if (conversationId) clearCache(key(conversationId)); };
+    socket.on('message_deleted', onDeleted);
+    socket.on('message_vanished', onDeleted);
+    socket.on('messages_batch_deleted', onBatch);
+    socket.on('conversation_messages_cleared', onCleared);
+    return () => {
+      socket.off('message_deleted', onDeleted);
+      socket.off('message_vanished', onDeleted);
+      socket.off('messages_batch_deleted', onBatch);
+      socket.off('conversation_messages_cleared', onCleared);
+    };
+  }, [socket, messageScope]);
 
   // 备注变更后刷新会话列表
   useEffect(() => {
