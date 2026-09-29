@@ -6,6 +6,14 @@ const config = require('../../config');
 const { badRequest, forbidden, notFound } = require('../../utils/http');
 const { isMember, requireMember, memberRole, purgeConversation } = require('../messages/shared');
 
+// 成员变动/群名群头像变化后失效相关用户的会话列表缓存：客户端收到事件会立即重拉列表，
+// 命中旧缓存就会漏掉新群或留着已退/已解散的群。延迟 require 避免与 conversations 循环依赖。
+function invalidateLists(convId, extraUserIds = []) {
+  const convSvc = require('../conversations/conversations.service');
+  if (convId) convSvc.invalidateConvCacheForConversation(convId);
+  extraUserIds.forEach(uid => convSvc.invalidateConvCacheForUser(uid));
+}
+
 // ── 群昵称 ──────────────────────────────────────────────────────
 function setNickname(io, convId, userId, nickname) {
   if (nickname !== undefined && (typeof nickname !== 'string' || nickname.length > 30))
@@ -97,6 +105,7 @@ function joinByToken(io, userId, token) {
   if (alreadyMember) {
     return { success: true, conversationId: invite.conversation_id, alreadyMember: true };
   }
+  invalidateLists(invite.conversation_id);
   const conv = db.prepare('SELECT id,type,name,avatar FROM conversations WHERE id=?').get(invite.conversation_id);
   if (io) {
     // 全端即时入群房间，否则扫码入群后首条消息要等重连才收到。
@@ -122,6 +131,7 @@ function updateInfo(io, convId, userId, { name, announcement }) {
 
   if (name !== undefined) db.prepare('UPDATE conversations SET name=? WHERE id=?').run(name.trim(), convId);
   if (announcement !== undefined) db.prepare('UPDATE conversations SET announcement=? WHERE id=?').run(announcement, convId);
+  if (name !== undefined) invalidateLists(convId);
   const updated = db.prepare('SELECT id, name, announcement, owner_id FROM conversations WHERE id=?').get(convId);
   if (io) io.to(convId).emit('group_updated', updated);
   return updated;
@@ -132,6 +142,7 @@ function setAvatar(io, convId, userId, url) {
   if (!role) throw forbidden('不在群内');
   if (role === 'member') throw forbidden('仅群主和管理员可修改群头像');
   db.prepare('UPDATE conversations SET avatar=? WHERE id=?').run(url, convId);
+  invalidateLists(convId);
   if (io) io.to(convId).emit('group_updated', { id: convId, avatar: url });
   return url;
 }
@@ -175,6 +186,7 @@ function invite(io, convId, userId, userIds) {
       if (add.run(convId, uid).changes > 0) added.push(uid);
     });
   })();
+  if (added.length > 0) invalidateLists(convId);
   if (io && added.length > 0) {
     const conv = db.prepare('SELECT id,type,name,avatar FROM conversations WHERE id=?').get(convId);
     added.forEach(uid => {
@@ -200,6 +212,7 @@ function kick(io, convId, callerId, uid) {
   if (callerRole === 'admin' && targetRole !== 'member') throw forbidden('管理员只能移除普通成员');
 
   db.prepare('DELETE FROM conversation_members WHERE conversation_id=? AND user_id=?').run(convId, uid);
+  invalidateLists(convId, [uid]);
   require('../../realtime/handlers/groupCall').revokeMembership(io, convId, uid);
   if (io) {
     io.in(`user_${uid}`).socketsLeave(convId);
@@ -216,6 +229,7 @@ function leave(io, convId, userId) {
   if (conv.owner_id === userId) throw badRequest('群主不能直接退出群聊，请先转让群主后再退出，或解散群聊');
   const result = db.prepare('DELETE FROM conversation_members WHERE conversation_id=? AND user_id=?').run(convId, userId);
   if (result.changes === 0) throw forbidden('您不在此群中');
+  invalidateLists(convId, [userId]);
   require('../../realtime/handlers/groupCall').revokeMembership(io, convId, userId);
   if (io) {
     io.in(`user_${userId}`).socketsLeave(convId);
@@ -229,7 +243,9 @@ function dissolve(io, convId, userId) {
   const conv = db.prepare('SELECT owner_id FROM conversations WHERE id=?').get(convId);
   if (!conv) throw notFound('群不存在');
   if (conv.owner_id !== userId) throw forbidden('仅群主可解散群聊');
+  const memberIds = db.prepare('SELECT user_id FROM conversation_members WHERE conversation_id=?').all(convId).map(r => r.user_id);
   purgeConversation(convId);
+  invalidateLists(null, memberIds);
   require('../../realtime/handlers/groupCall').revokeMembership(io, convId);
   if (io) {
     // 先广播再离开：emit 之后才 socketsLeave，否则房间已空事件送达 0 人

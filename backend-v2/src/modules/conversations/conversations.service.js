@@ -46,6 +46,8 @@ function getOrCreatePrivate(myId, otherId, { internal = false, io = null } = {})
     if (won) return { conversationId: won.id };
     throw new Error('无法创建私聊会话');
   }
+  // 新会话须立即出现在双方列表里：客户端收到 new_conversation 会马上重拉列表，不能命中旧缓存。
+  invalidateConvCacheForUser(myId); invalidateConvCacheForUser(otherId);
   // 主动建私聊(controller 传 io)时让双方在线端即时入房间；internal 调用方(contacts)自行在 emit 处 join。
   if (io) { io.in(`user_${myId}`).socketsJoin(id); io.in(`user_${otherId}`).socketsJoin(id); }
   return { conversationId: id };
@@ -123,6 +125,7 @@ function createGroup(io, ownerId, { name, memberIds }) {
     throw e;
   }
 
+  invalidateConvCacheForConversation(id);
   if (io) {
     const conv = { id, type: 'group', name, avatar: '', pinned: 0, muted: 0, group_number: groupNumber };
     [ownerId, ...validMemberIds].forEach(uid => {
