@@ -45,7 +45,9 @@ const IcoKeyboard = () => <Ico d="M20 5H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.
 const IcoPhoneRow = () => <Ico d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>;
 const IcoKeyRow   = () => <Ico d="M12.65 10A5.99 5.99 0 0 0 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6a5.99 5.99 0 0 0 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>;
 const IcoLockRow  = () => <Ico d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm3 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>;
-const IcoGlobeRow = () => <Ico d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56A8.03 8.03 0 0 1 18.93 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.81 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.987 7.987 0 0 1 5.07 16zm2.95-8H5.07a7.987 7.987 0 0 1 4.33-3.56C8.8 5.55 8.34 6.75 8.02 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/>;
+const IcoLockNav = () => <Ico d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />;
+const IcoUserNav = () => <Ico d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />;
+const IcoLogoutRow = () => <Ico d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />;
 const IcoTrashRow = () => <Ico d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>;
 /* ─── 通用 UI 零件 ─── */
 function PageBg({ children }) {
@@ -1406,8 +1408,8 @@ function AccountSecurityPanel({ user, navigateTo, logout }) {
       <SLabel>其他</SLabel>
       <div className="wc-section-pad">
         <Card>
-          <CRow icon={<IcoGlobeRow />} bg="var(--icon-bg-neutral)" label="v信网页版" desc="在浏览器中使用 v信"
-            right={<button className="wc-crow-btn" onClick={() => doLogout(logout)}>退出登录</button>} />
+          <CRow icon={<IcoLogoutRow />} bg="var(--icon-bg-neutral)" label="退出登录" desc="退出当前账号，聊天记录保留"
+            right={<button className="wc-crow-btn" onClick={() => doLogout(logout)}>退出</button>} />
           <CRow icon={<IcoTrashRow />} bg="var(--icon-bg-newfriend)" label="清除缓存" desc="释放存储空间，不会删除聊天记录"
             right={<button className="wc-crow-btn" onClick={handleClearCache} disabled={clearingCache}>{clearingCache ? '清除中…' : '清除'}</button>} />
         </Card>
@@ -1434,11 +1436,11 @@ function WebSettingsShell({ user, updateUser, navigateTo, logout }) {
   // 是空壳——按已确认的方案不放进菜单。
   const NAV = [
     { key: 'account',       label: '账号与安全', icon: <IcoShield /> },
-    { key: 'privacy',       label: '隐私设置', icon: <IcoShield /> },
+    { key: 'privacy',       label: '隐私设置', icon: <IcoLockNav /> },
     { key: 'notifications', label: '通知设置', icon: <IcoBell /> },
     { key: 'general',       label: '通用设置', icon: <IcoDesktop /> },
     { key: 'shortcuts',     label: '快捷键', icon: <IcoKeyboard /> },
-    { key: 'profile',       label: '个人资料', icon: <IcoDesktop /> },
+    { key: 'profile',       label: '个人资料', icon: <IcoUserNav /> },
     { key: 'about',         label: '关于 v信', icon: <IcoServer /> },
   ];
 
@@ -1659,7 +1661,7 @@ export default function Profile({ isMobile = false }) {
       <SLabel>设备与安全</SLabel>
       <div className="wc-section-pad">
         <Card>
-          <CRow icon={<IcoDesktop />} bg="var(--icon-bg-neutral)" label="设备管理" desc="查看同时登录的设备" onClick={() => setSubPage('devices')} />
+          <CRow icon={<IcoDeviceMobile />} bg="var(--icon-bg-device)" label="设备管理" desc="查看同时登录的设备" onClick={() => setSubPage('devices')} />
           <CRow icon={<IcoShield />}  bg="var(--icon-bg-neutral)" label="隐私与安全" desc="添加方式和好友权限" onClick={() => setSubPage('privacy')} />
         </Card>
       </div>

@@ -57,7 +57,7 @@ export default function ForgotPassword() {
     )},
     { key: 'inviteCode', label: '邀请码', type: 'text', inputMode: 'numeric', autocomplete: 'off', placeholder: '请输入6位邀请码', maxLength: 6, icon: (
       <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M10 2l2.4 4.8 5.3.8-3.85 3.75.9 5.3L10 14.1l-4.75 2.55.9-5.3L2.3 7.6l5.3-.8z"/>
+        <path d="M3 6.5A1.5 1.5 0 014.5 5h11A1.5 1.5 0 0117 6.5V8a2 2 0 000 4v1.5a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 013 13.5V12a2 2 0 000-4z"/><path d="M12.5 5.5v9" strokeDasharray="1.6 1.6"/>
       </svg>
     )},
     { key: 'newPassword', label: '新密码', type: 'password', autocomplete: 'new-password', placeholder: '至少8位，含字母和数字', icon: (
@@ -77,40 +77,54 @@ export default function ForgotPassword() {
   if (success) {
     return (
       <div className="auth-page">
-        <div className="auth-bg-circle auth-bg-circle-1" />
-        <div className="auth-bg-circle auth-bg-circle-2" />
-        <div className="auth-bg-circle auth-bg-circle-3" />
-        <div className="auth-container" style={{ width: 400 }}>
+      <div className="auth-split">
+        <div className="auth-split-left">
           <div className="auth-brand">
-            <h1 className="auth-brand-name">密码已重置</h1>
-            <p className="auth-brand-desc">请使用新密码登录</p>
+            <div className="auth-brand-logo">
+              <svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
+                <rect x="0" y="0" width="100" height="100" rx="22" fill="#0A0A0A"/>
+                <path d="M 31.5 29.3 L 50 64.9 L 68.6 29.3" fill="none" stroke="#FFD700" strokeWidth="12.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="50" cy="69" r="5.9" fill="#FFD700"/>
+              </svg>
+            </div>
+            <h1 className="auth-brand-name auth-brand-name--brand">v信</h1>
+            <p className="auth-brand-desc">连接 · 沟通 · 未来</p>
           </div>
+        </div>
+        <div className="auth-split-right">
+        <div className="auth-container">
+          <h1 className="auth-brand-name" style={{ fontSize: 22, textAlign: 'left', marginBottom: 4 }}>密码已重置</h1>
+          <p className="auth-brand-desc" style={{ textAlign: 'left', marginBottom: 24 }}>请使用新密码登录</p>
           <button type="button" className="auth-submit" onClick={() => navigate('/login')}>
             返回登录
           </button>
         </div>
+        </div>
+      </div>
       </div>
     );
   }
 
   return (
     <div className="auth-page">
-      <div className="auth-bg-circle auth-bg-circle-1" />
-      <div className="auth-bg-circle auth-bg-circle-2" />
-      <div className="auth-bg-circle auth-bg-circle-3" />
-
-      <div className="auth-container" style={{ width: 400 }}>
-        <div className="auth-brand">
-          <div className="auth-brand-icon">
-            <svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
-              <rect x="0" y="0" width="100" height="100" rx="22" fill="#0A0A0A"/>
-              <path d="M 31.5 29.3 L 50 64.9 L 68.6 29.3" fill="none" stroke="#FFD700" strokeWidth="12.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <circle cx="50" cy="69" r="5.9" fill="#FFD700"/>
-            </svg>
+      <div className="auth-split">
+        <div className="auth-split-left">
+          <div className="auth-brand">
+            <div className="auth-brand-logo">
+              <svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
+                <rect x="0" y="0" width="100" height="100" rx="22" fill="#0A0A0A"/>
+                <path d="M 31.5 29.3 L 50 64.9 L 68.6 29.3" fill="none" stroke="#FFD700" strokeWidth="12.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="50" cy="69" r="5.9" fill="#FFD700"/>
+              </svg>
+            </div>
+            <h1 className="auth-brand-name auth-brand-name--brand">v信</h1>
+            <p className="auth-brand-desc">连接 · 沟通 · 未来</p>
           </div>
-          <h1 className="auth-brand-name">忘记密码</h1>
-          <p className="auth-brand-desc">使用注册时的手机号和邀请码重置</p>
         </div>
+        <div className="auth-split-right">
+      <div className="auth-container">
+        <h1 className="auth-brand-name" style={{ fontSize: 22, textAlign: 'left', marginBottom: 4 }}>忘记密码</h1>
+        <p className="auth-brand-desc" style={{ textAlign: 'left', marginBottom: 20 }}>使用注册时的手机号和邀请码重置</p>
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="auth-note">
@@ -177,6 +191,8 @@ export default function ForgotPassword() {
         <p className="auth-footer">
           想起密码了？<Link to="/login" className="auth-link">返回登录</Link>
         </p>
+      </div>
+        </div>
       </div>
     </div>
   );

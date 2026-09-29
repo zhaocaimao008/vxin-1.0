@@ -757,6 +757,15 @@ body.dark-mode .wc-conv-filter-tab.active { background: rgba(var(--color-primary
   gap: var(--sp-1);
 }
 .wc-msg-row.mine .wc-msg-bubble-wrap { flex-direction: row-reverse; }
+/* 非文字消息(图片/文件/红包/转账…)的状态图标挂在气泡外：绝对定位到气泡左下外侧，不占布局宽度。
+   原先作为 row-reverse 的第一个子元素排在最右侧，只有「最后一条」带图标 → 那张卡片被挤得和上面不对齐。 */
+.wc-msg-row.mine .wc-msg-bubble-wrap { position: relative; }
+.wc-msg-row.mine .wc-msg-bubble-wrap > .wc-msg-read {
+  position: absolute;
+  left: -20px;
+  bottom: 2px;
+  margin: 0;
+}
 /* ── 消息状态指示（SVG 勾号）── */
 .wc-msg-read {
   flex-shrink: 0;
@@ -2845,6 +2854,16 @@ body.dark-mode .wc-msg-time span { background: rgba(255,255,255,.08); }
   background: var(--bg-hover);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
+/* 我方绿色气泡里的引用块：浅灰底 + #888 字在绿底上几乎读不出，改用气泡正文色的半透明层 */
+.wc-msg-bubble.mine .wc-msg-reply {
+  background: rgba(0,0,0,.08);
+  border-left-color: rgba(0,0,0,.28);
+}
+.wc-msg-bubble.mine .wc-msg-reply .wc-msg-reply-name,
+.wc-msg-bubble.mine .wc-msg-reply .wc-msg-reply-text {
+  color: var(--bubble-mine-text);
+  opacity: .72;
+}
 
 /* 消息右键菜单 */
 .wc-ctx-menu {
@@ -3570,6 +3589,22 @@ body.dark-mode .wc-msg-time span { background: rgba(255,255,255,.08); }
 .gi-ml-body { padding:4px 8px; }
 .gi-mi { display:flex; align-items:center; gap:9px; padding:6px 6px; border-radius:var(--radius-button); }
 .gi-mn { font-size: var(--text-sm2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; }
+/* 成员名至少留出可读宽度：面板约 270px，头像 + 三个管理按钮会把名字挤成 0 宽(只剩头像和按钮) */
+.gi-mi > .gi-f1 { min-width: 64px; }
+/* 有鼠标的设备：管理按钮悬停/键盘聚焦该行时才出现，平时名字完整可见 */
+.gi-mi-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.gi-mi-actions:empty { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  /* 悬停时按钮浮在行右侧(带渐隐底色)，不挤占名字宽度：侧栏 286px 放不下「名字 + 三个按钮」 */
+  .gi-mi { position: relative; }
+  .gi-mi-actions {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    padding-left: 18px; opacity: 0; pointer-events: none;
+    background: linear-gradient(to right, transparent, var(--bg-card, var(--bg-panel)) 14px);
+    transition: opacity var(--dur-fast, .12s);
+  }
+  .gi-mi:hover .gi-mi-actions, .gi-mi:focus-within .gi-mi-actions { opacity: 1; pointer-events: auto; }
+}
 .gi-inv-row { display:flex; align-items:center; gap: var(--sp-2h); padding:7px 6px; cursor:pointer; border-radius:var(--radius-button); }
 .gi-inv-box { width:38px; height:38px; border-radius:var(--radius-md); border:1.5px dashed var(--green); display:flex; align-items:center; justify-content:center; color:var(--green); font-size: var(--text-2xl); }
 .gi-inv-txt { font-size: var(--text-sm2); color:var(--green); }
@@ -4282,11 +4317,11 @@ body.dark-mode .wc-confirm-ok { background: var(--color-danger, #FF6B6B); }
 .wc-announce-banner { display: flex; align-items: center; gap: 8px; padding: 7px 14px; background: var(--info-banner-bg); cursor: pointer; border-bottom: 1px solid rgba(0,0,0,.04); overflow: hidden; }
 .wc-announce-badge { flex-shrink: 0; color: var(--info-banner-fg); font-size: var(--text-sm); font-weight: 600; }
 .wc-announce-marquee { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; position: relative; }
-.wc-announce-text { display: inline-block; padding-left: 100%; font-size: var(--text-sm2); color: var(--text-primary); animation: wcAnnounceScroll 18s linear infinite; }
-.wc-announce-banner:hover .wc-announce-text { animation-play-state: paused; }
+/* 静态单行 + 省略号，点击展开全文。原跑马灯从右侧空白处滚入(18s/圈)：大部分时间只看到半句，
+   短公告也要等它滚过来，且不利于阅读与减少动效。 */
+.wc-announce-text { display: block; overflow: hidden; text-overflow: ellipsis; font-size: var(--text-sm2); color: var(--text-primary); }
 .wc-announce-toggle { flex-shrink: 0; color: var(--text-secondary); font-size: var(--text-xs); }
 .wc-announce-detail { padding: 10px 14px; background: var(--info-banner-bg-soft); font-size: var(--text-sm2); color: var(--text-primary); white-space: pre-wrap; word-break: break-word; border-bottom: 1px solid rgba(0,0,0,.04); }
-@keyframes wcAnnounceScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 body.dark-mode .wc-announce-banner { background: var(--info-banner-bg); border-bottom-color: rgba(255,255,255,.06); }
 body.dark-mode .wc-announce-detail { background: var(--info-banner-bg-soft); }
 
@@ -4823,6 +4858,17 @@ body.dark-mode .wc-chat-header-btn:hover { background: rgba(255,255,255,.08); }
   box-shadow: 0 1px 4px rgba(7,193,96,.22);
   border: none;
   color: var(--bubble-mine-text);
+}
+/* 自带卡片样式的消息仍保持透明气泡：上面这条 !important 与前文「媒体/卡片气泡透明」规则同优先级
+   且更靠后，会把绿底盖回来 → 图片/卡片圆角后面漏出一角绿色。这里提高一级优先级。 */
+.wc-msg-bubble.mine:has(.wc-msg-img),
+.wc-msg-bubble.mine:has(.wc-msg-video),
+.wc-msg-bubble.mine:has(.wc-msg-sticker),
+.wc-msg-bubble.mine:has(.wc-redpacket-card),
+.wc-msg-bubble.mine:has(.wc-transfer-card),
+.wc-msg-bubble.mine:has(.wc-contact-card) {
+  background: transparent !important;
+  box-shadow: none;
 }
 /* ── 他人气泡：纯白浮起，轻投影，清晰从画布分离 ── */
 .wc-msg-bubble.other {

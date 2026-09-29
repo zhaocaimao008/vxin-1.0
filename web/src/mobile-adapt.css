@@ -260,3 +260,30 @@ html.capacitor-app {
 html.capacitor-app body {
   overflow: auto !important;
 }
+
+/* ── 手机宽度：群资料 / 聊天设置改为全屏覆盖 ─────────────────────
+   桌面端是聊天区右侧的 240–286px 侧栏；390px 宽的手机上照搬会把聊天区挤成
+   一条窄缝(消息一行一个字竖排)，成员管理按钮也会超出屏幕。 */
+@media (max-width: 767px) {
+  .gi-panel,
+  .wc-settings-panel {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    border-left: none;
+    z-index: var(--z-modal);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    animation: mPanelIn .22s var(--ease, ease-out);
+  }
+}
+@keyframes mPanelIn { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .gi-panel, .wc-settings-panel { animation: none; } }
+
+/* ── 手机「我的」子页面(钱包/外观/通知/邀请…)：只保留子页标题栏 ──
+   外层已有「我的」顶栏，子页又有「‹ 返回 + 标题」，两层标题叠在一起浪费一行。
+   子页出现返回按钮时隐藏外层顶栏，并把安全区留给子页标题栏。 */
+.m-page:has(.m-content .wc-page-header-back) > .m-topbar { display: none; }
+.m-page:has(.m-content .wc-page-header-back) .m-content .wc-page-header:has(.wc-page-header-back) {
+  padding-top: env(safe-area-inset-top);
+}
