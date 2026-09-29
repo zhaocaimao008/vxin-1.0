@@ -44,7 +44,16 @@ health() {
 
 restart() {
   local revision=${1:-$TARGET}
-  (cd "$BE" && RELEASE_SHA="$revision" pm2 restart "$PM2_APP" --update-env)
+  # --update-env replaces the process environment with this shell's. The CI
+  # runner has no NODE_ENV, so without it every release left production running
+  # in development mode (metrics exposed, production-only startup checks off).
+  (cd "$BE" && NODE_ENV=production RELEASE_SHA="$revision" pm2 restart "$PM2_APP" --update-env)
+}
+
+production_mode() {
+  # Development mode serves /api/metrics; production returns 404.
+  local base=${HEALTH_URL%/health}
+  [[ $(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 3 "$base/api/metrics") == 404 ]]
 }
 
 finish() {
@@ -78,6 +87,12 @@ git -C "$REPO_DIR" archive "$TARGET" | tar -x -C "$STAGE"
 printf '{"commit":"%s"}\n' "$TARGET" > "$STAGE/web/dist/release.json"
 (cd "$STAGE/backend-v2" && npm ci --omit=dev)
 [[ -s "$STAGE/web/dist/index.html" && -d "$STAGE/backend-v2/node_modules" ]]
+# Before touching live paths: the new code must load its config in production
+# mode with the live .env (production requires ADMIN_USERNAME/PASSWORD and
+# ADMIN_JWT_SECRET). Otherwise the restart and the rollback would both fail.
+(cd "$BE" && NODE_ENV=production node -e 'require(process.argv[1])' "$STAGE/backend-v2/src/config") || {
+  echo 'Production configuration check failed; nothing was changed.' >&2; exit 1;
+}
 # Copy before touching live paths. Keep snapshots for explicit recovery; do not prune implicitly.
 mkdir -p "$BACKUP"
 printf '%s\n' "$PREVIOUS" > "$BACKUP/revision"
@@ -93,6 +108,7 @@ fi
 rsync -a --checksum --delete "$STAGE/web/dist/" "$WEB_ROOT/"
 restart
 health "$TARGET"
+production_mode || { echo 'Backend is not running with NODE_ENV=production.' >&2; exit 1; }
 pm2 save
 printf '%s\n' "$PREVIOUS" > "$STATE_ROOT/previous.sha.tmp"
 mv "$STATE_ROOT/previous.sha.tmp" "$STATE_ROOT/previous.sha"
