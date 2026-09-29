@@ -16,6 +16,14 @@ const list = async (u) => {
 };
 const has = (convs, id) => convs.some(c => c.id === id);
 
+test('会话列表不允许浏览器缓存', async () => {
+  const u = await makeUser();
+  const r = await request(app).get('/api/messages/conversations').set(auth(u));
+  expect(r.status).toBe(200);
+  expect(r.headers['cache-control']).toMatch(/no-cache|no-store/);
+  expect(r.headers['cache-control']).not.toMatch(/max-age=[1-9]/);
+});
+
 describe('群变动后会话列表立即刷新', () => {
   let owner, a, b, gid;
 

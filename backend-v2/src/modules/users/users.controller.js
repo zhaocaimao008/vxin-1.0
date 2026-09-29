@@ -8,7 +8,8 @@ exports.qrcode = asyncHandler(async (req, res) => {
     type: 'png', margin: 1, width: 280, errorCorrectionLevel: 'M',
   });
   res.setHeader('Content-Type', 'image/png');
-  res.setHeader('Cache-Control', 'private, max-age=86400');
+  // 同一 URL 对应当前登录账号，切换账号后不能复用上一个账号的二维码缓存
+  res.setHeader('Cache-Control', 'private, no-cache');
   res.send(png);
 });
 
