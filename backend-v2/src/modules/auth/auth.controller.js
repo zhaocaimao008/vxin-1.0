@@ -1,6 +1,7 @@
 'use strict';
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const { userJwtKey } = require('../../utils/jwtKeys');
 const config = require('../../config');
 const { authCookieOptions, walletCookieOptions, csrfCookieOptions } = require('../../utils/cookies');
 const { asyncHandler, badRequest } = require('../../utils/http');
@@ -95,7 +96,7 @@ exports.logout = asyncHandler(async (req, res) => {
       (bearerHeader?.startsWith('Bearer ') ? bearerHeader.slice(7) : null);
     const walletId = req.cookies?.[config.walletCookie];
     if (tok) {
-      const payload = jwt.verify(tok, config.jwtSecret, { algorithms: ['HS256'] });
+      const payload = jwt.verify(tok, userJwtKey(), { algorithms: ['HS256'] });
       const { addToBlacklist } = require('../../utils/tokenBlacklist');
       await addToBlacklist(tok, payload.exp);
       if (walletId) {

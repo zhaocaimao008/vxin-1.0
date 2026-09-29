@@ -8,7 +8,9 @@ const { tracing } = require('./integrations/tracing');
 
 async function startServer() {
   // 初始化分布式追踪（必须同步等待完成）
-  await tracing.initialize({ enabled: process.env.TRACING_ENABLED !== 'false' }).catch(err => {
+  // 追踪需显式开启(TRACING_ENABLED=true)并部署 OTLP 收集器。此前默认开启而线上没有收集器：
+  // 每个请求都做全量自动插桩，每 2s 导出失败刷一条 ECONNREFUSED 127.0.0.1:4317，白耗 CPU。
+  await tracing.initialize({ enabled: process.env.TRACING_ENABLED === 'true' }).catch(err => {
     console.warn('[Tracing] 初始化失败，将降级运行:', err.message);
   });
 

@@ -59,3 +59,24 @@ it('preserves the desktop custom server without contacting remote discovery', as
   expect(await loadRemoteConfig()).toMatchObject({ api: 'http://127.0.0.1:19000', socket: 'http://127.0.0.1:19000' });
   expect(fetch).not.toHaveBeenCalled();
 });
+
+it('web build reads its bundled same-origin config under the app base path first', async () => {
+  vi.stubEnv('BASE_URL', '/app/');
+  vi.stubGlobal('window', { location: { protocol: 'https:', origin: 'https://chat.example' } });
+  const fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ api: '', socket: '', cdn: '' }) });
+  vi.stubGlobal('fetch', fetch);
+  const { loadRemoteConfig } = await import('./config');
+  expect(await loadRemoteConfig()).toMatchObject({ api: '' });
+  expect(fetch.mock.calls.map(c => c[0])).toEqual(['https://chat.example/app/config.json']);
+  vi.unstubAllEnvs();
+});
+
+it('native app never uses the bundled same-origin config', async () => {
+  vi.stubGlobal('window', { location: { protocol: 'https:', origin: 'https://localhost' },
+    Capacitor: { isNativePlatform: () => true } });
+  const fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ api: 'https://vxinchat.com', socket: 'https://vxinchat.com', cdn: 'https://vxinchat.com' }) });
+  vi.stubGlobal('fetch', fetch);
+  const { loadRemoteConfig } = await import('./config');
+  expect(await loadRemoteConfig()).toMatchObject({ api: 'https://vxinchat.com' });
+  expect(fetch.mock.calls[0][0]).not.toContain('localhost');
+});

@@ -23,6 +23,7 @@ export default function Register() {
   const [focusedField, setFocusedField] = useState(null);
   const [showPwd, setShowPwd] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [agreeHint, setAgreeHint] = useState(false);
   // 是否需要邀请码由后台开关决定（GET /api/config）。默认 true，避免加载前误放行 UI。
   const [inviteRequired, setInviteRequired] = useState(true); // 默认开启：拉取失败/未返回时保守显示邀请码，避免无码注册被误放行
   const { login } = useAuth();
@@ -59,7 +60,9 @@ export default function Register() {
       setError('邀请码必须是6位数字'); setLoading(false); return;
     }
     if (!agreed) {
-      setError('请先阅读并同意用户协议和隐私政策'); setLoading(false); return;
+      setError('请先阅读并同意用户协议和隐私政策'); setLoading(false);
+      setAgreeHint(true); setTimeout(() => setAgreeHint(false), 1200);
+      return;
     }
 
     try {
@@ -202,19 +205,19 @@ export default function Register() {
             </div>
           )}
 
-          <button type="submit" data-testid="register-submit-btn" className="auth-submit" disabled={loading || (registerMode === 'phone' ? !form.phone : !form.vxinId) || !form.password || !agreed}>
+          <button type="submit" data-testid="register-submit-btn" className="auth-submit" disabled={loading || (registerMode === 'phone' ? !form.phone : !form.vxinId) || !form.password}>
             {loading ? <span className="auth-spinner" /> : '注册'}
           </button>
 
           {/* 打开文档时保留注册输入。 */}
-          <div className="auth-agreement-row">
+          <div className={`auth-agreement-row${agreeHint ? ' auth-agreement-row--hint' : ''}`}>
             <input
               type="checkbox"
               className="auth-agreement-box"
               data-testid="register-agreement-checkbox"
               aria-label="同意用户协议和隐私政策"
               checked={agreed}
-              onChange={e => setAgreed(e.target.checked)}
+              onChange={e => { setAgreed(e.target.checked); if (e.target.checked) setError(''); }}
             />
             <div className="auth-agreement">我已阅读并同意 <AuthDocuments /></div>
           </div>

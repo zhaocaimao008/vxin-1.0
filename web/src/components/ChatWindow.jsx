@@ -57,6 +57,9 @@ import { shareMessage, canShare } from '../utils/share';
 import './ChatWindow.css';
 import { IcoClose } from './Icons';
 
+// 云存储直传不可用(后端返回 503)时置位，见 uploadToCloud
+let cloudUploadUnavailable = false;
+
 const REACTIONS = ['👍','❤️','😄','😮','😢','🙏'];
 
 // 发送图片前从本地 File 解码出真实像素宽高（w/h）。用于在拿到最终 url 后预置 aspect
@@ -212,6 +215,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
   const itemCacheRef = useRef(new Map());
   const fileInputRef = useRef(null);
   const typingTimer = useRef(null);
+  const lastTypingEmitRef = useRef(0);
   const typingClearTimer = useRef(null); // 接收侧兜底：stop_typing 丢包时自动收起"正在输入"
   const recorderRef = useRef(null);
   const recordingLockRef = useRef(false); // 同步锁：防触摸设备补发合成鼠标事件导致重复开麦（麦克风流泄漏）
@@ -807,6 +811,8 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
     const onMsg = (msg) => {
       const currentConvId = convIdRef.current;
       if (msg.conversation_id !== currentConvId) return;
+      // 对方的消息到达即说明他已输入完：立刻收起「正在输入」，不等 stop_typing
+      if (msg.sender_id !== user.id) { clearTimeout(typingClearTimer.current); setTypingName(''); }
       if (confirmedMsgIds.current.has(msg.id)) {
         confirmedMsgIds.current.delete(msg.id);
         return;
@@ -1182,6 +1188,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
     // 复制多行文本粘贴进来时，把换行折叠成空格——消息始终保持单行高度（对齐需求）。
     const text = input.replace(/[\r\n]+/g, ' ').trim();
     if (!text) return;
+    notifyTyping(false);
     // 防 Enter 连击：500ms 内相同内容只发一次
     const now = Date.now();
     if (text === lastSendRef.current.text && now - lastSendRef.current.time < 500) return;
@@ -1406,9 +1413,29 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
       sendMessage();
       return;
     }
-    socket?.emit('typing', { conversationId: conversation.id });
+  };
+
+  // 「正在输入」按内容变化触发(onChange)，不依赖 keydown：输入法上屏、语音输入、粘贴、
+  // 联想选词都不产生普通按键，此前对方看不到提示。节流为最多每 2s 一次(原先每个按键发一次)，
+  // 接收端 6s 兜底收起，停顿 3s 或清空/发送后立即 stop_typing。
+  const notifyTyping = (hasText) => {
+    if (!socket) return;
+    const convId = conversation.id;
     clearTimeout(typingTimer.current);
-    typingTimer.current = setTimeout(() => socket?.emit('stop_typing', { conversationId: conversation.id }), 2000);
+    if (!hasText) {
+      if (lastTypingEmitRef.current) socket.emit('stop_typing', { conversationId: convId });
+      lastTypingEmitRef.current = 0;
+      return;
+    }
+    const now = Date.now();
+    if (now - lastTypingEmitRef.current > 2000) {
+      socket.emit('typing', { conversationId: convId });
+      lastTypingEmitRef.current = now;
+    }
+    typingTimer.current = setTimeout(() => {
+      socket.emit('stop_typing', { conversationId: convId });
+      lastTypingEmitRef.current = 0;
+    }, 3000);
   };
 
   const insertAtMention = (member) => {
@@ -1427,10 +1454,18 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
 
   // ── 云存储直传（XHR 支持进度回调）─────────────────────────────
   const uploadToCloud = useCallback(async (fileOrBlob, contentType, filename, onProgress) => {
-    const { data } = await axios.post('/api/upload/credential', {
-      filename, contentType, conversationId: conversation.id,
-      fileSize: fileOrBlob?.size,   // 后端据此校验上限（1GB）；不传则不校验
-    });
+    // 云存储未配置(503)是持久状态：本次会话记住，后续直接走本地上传，不再每次先失败一轮
+    if (cloudUploadUnavailable) throw new Error('云存储未配置');
+    let data;
+    try {
+      ({ data } = await axios.post('/api/upload/credential', {
+        filename, contentType, conversationId: conversation.id,
+        fileSize: fileOrBlob?.size,   // 后端据此校验上限（1GB）；不传则不校验
+      }));
+    } catch (e) {
+      if (e.response?.status === 503) cloudUploadUnavailable = true;
+      throw e;
+    }
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.upload.addEventListener('progress', (e) => {
@@ -2606,6 +2641,7 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
                   onChange={e => {
                     const val = e.target.value;
                     dispatchCompose({ type: 'SET_INPUT', value: val });
+                    notifyTyping(!!val.trim());
                     // @提及：群聊内解析光标处 @token，驱动候选列表开关与过滤
                     // （token 为局部解析结果，勿与 mention 状态混淆）
                     const mentionToken = conversation.type === 'group'

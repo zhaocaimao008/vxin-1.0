@@ -667,3 +667,28 @@ body.dark-mode .auth-lang-item.active { color: #FFD700; }
 body.dark-mode .auth-lang-item:hover { background: rgba(255,215,0,.1); }
 
 body.dark-mode .auth-page-footer a:hover { color: #FFD700; }
+
+/* 未勾协议就点登录/注册：协议行短暂高亮提示 */
+.auth-agreement-row--hint { animation: authAgreeHint 1.2s ease; border-radius: 8px; }
+@keyframes authAgreeHint {
+  0%, 100% { background: transparent; transform: translateX(0); }
+  10%, 30% { transform: translateX(-4px); }
+  20%, 40% { transform: translateX(4px); }
+  15%, 60% { background: rgba(255,215,0,.12); }
+}
+@media (prefers-reduced-motion: reduce) { .auth-agreement-row--hint { animation: none; background: rgba(255,215,0,.12); } }
+
+/* 副标题均衡换行，避免末尾单字掉到第二行 */
+.auth-brand-desc, .auth-subtitle, .auth-page-footer { text-wrap: balance; }
+.auth-download-btn { white-space: nowrap; }
+
+/* 手机宽度：卡片铺满、收窄内边距，给输入框留足宽度(原先 390px 屏上表单只剩 ~247px) */
+@media (max-width: 480px) {
+  /* 顶部品牌角标/语言切换是绝对定位；内容高于一屏时卡片会顶上去与之重叠 */
+  .auth-page { padding: 64px 16px 24px; justify-content: flex-start; }
+  .auth-split { width: 100%; min-height: 0; border-radius: 16px; box-shadow: none; }
+  .auth-split-right { padding: 32px 20px; }
+  .auth-download-row { flex-wrap: wrap; }
+}
+
+.auth-page-footer a, .auth-page-footer button { white-space: nowrap; }

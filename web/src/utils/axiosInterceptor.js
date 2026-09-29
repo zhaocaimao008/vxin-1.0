@@ -78,6 +78,11 @@ async function refreshToken(axios) {
  */
 function shouldRetry(error) {
   if (!error.config || error.config.__retryCount >= 3) return false;
+  // 只自动重试幂等请求。POST/PUT/DELETE 在网关超时(502/504)或断网时，后端可能已经处理成功，
+  // 自动重发会造成重复转账、重复发红包、重复发消息。写操作需自行按业务幂等键重试，
+  // 或显式标记 config.retryable = true。
+  const method = (error.config.method || 'get').toLowerCase();
+  if (!['get', 'head', 'options'].includes(method) && !error.config.retryable) return false;
   
   // 网络错误或 5xx 服务器错误才重试
   if (!error.response) return true; // 网络错误

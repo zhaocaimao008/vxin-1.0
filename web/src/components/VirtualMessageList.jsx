@@ -49,6 +49,13 @@ function createSizeFlusher(listRef, onSettle) {
       minIndex = Infinity;
       maxIndex = -Infinity;
     },
+    // 取出并清空尚未执行的最小重排下标。items 变化时不能直接丢弃：这些行的新高度已写入
+    // sizeMap，若不 reset，react-window 会一直沿用旧偏移(估算高度)→ 消息之间出现大块空白。
+    takePending() {
+      const min = minIndex;
+      this.cancel();
+      return min;
+    },
   };
 }
 
@@ -73,6 +80,10 @@ const Row = memo(function Row({ index, style, data }) {
     }
   }, [index, sizeMapRef, sizeFlusher]);
 
+  // 列表分配的高度一旦变化(如缓存被清空、回退到估算值)就重新测量：内容本身没变时
+  // ResizeObserver 不会触发，否则该行会永久停在估算高度上。
+  React.useEffect(() => { updateSize(); }, [style.height, updateSize]);
+
   // Observe height changes (images loading, content expanding)
   React.useEffect(() => {
     const el = rowInnerRef.current;
@@ -85,7 +96,9 @@ const Row = memo(function Row({ index, style, data }) {
 
   return (
     <div style={style}>
-      <div ref={rowInnerRef} style={{ paddingLeft: 20, paddingRight: 20 }}>
+      {/* flow-root：把子元素的 margin(如移动端 .wc-msg-row margin-top)包进来。
+          否则外边距折叠穿出测量容器，offsetHeight 少算 → 每行压进下一行、贴底差一截。 */}
+      <div ref={rowInnerRef} style={{ paddingLeft: 20, paddingRight: 20, display: 'flow-root' }}>
         {item.type === 'divider'
           ? <TimeDivider time={item.time} />
           : <MessageItem item={item} cbRef={cbRef} measure={updateSize} />
@@ -134,20 +147,28 @@ const VirtualMessageList = forwardRef(function VirtualMessageList(
   // When items array length changes (prepend/append), reset indices that shifted
   const prevItemsRef = useRef(items);
   if (prevItemsRef.current !== items) {
-    // items 变化会重排索引，取消基于旧索引的挂起行高刷新，避免作用到错位的新列表。
-    sizeFlusherRef.current.cancel();
+    // items 变化会重排索引：取出挂起的重排下标(不能丢弃，见 takePending)。
+    const pendingMin = sizeFlusherRef.current.takePending();
     const prevLen = prevItemsRef.current.length;
     const curLen = items.length;
-    // 整批替换(如切换会话):首尾 item 都对不上 → 旧高度缓存全失效,清空避免错位行高
+    // 用稳定 key 比较：服务端 ack 会用新对象替换乐观消息(同一 key)，这不是换会话，
+    // 不能清空整张高度缓存——否则已测好的行全部退回估算高度，长消息后留下大块空白。
+    const keyOf = (it, i) => it?.key ?? i;
+    const sameKey = (a, b, i) => a === b || (a && b && keyOf(a, i) === keyOf(b, i));
+    const prev = prevItemsRef.current;
     const sameEnds = curLen > 0 && prevLen > 0
-      && items[0] === prevItemsRef.current[0]
-      && items[curLen - 1] === prevItemsRef.current[prevLen - 1];
-    if (curLen === prevLen && !sameEnds) {
+      && sameKey(items[0], prev[0], 0)
+      && sameKey(items[curLen - 1], prev[prevLen - 1], curLen - 1);
+    if (curLen === prevLen && sameEnds) {
+      // 原位替换(ack/状态更新)：缓存仍有效，只补上挂起的重排
+      if (pendingMin !== Infinity) listRef.current?.resetAfterIndex(pendingMin, false);
+    } else if (curLen === prevLen) {
+      // 整批替换(如切换到消息数相同的会话)：旧高度缓存全失效
       sizeMapRef.current = {};
       listRef.current?.resetAfterIndex(0, false);
     } else if (curLen !== prevLen) {
       // On prepend: all indices shifted; clear cache to avoid wrong heights
-      if (curLen > prevLen && items[curLen - 1] === prevItemsRef.current[prevLen - 1]) {
+      if (curLen > prevLen && sameKey(items[curLen - 1], prev[prevLen - 1], curLen - 1)) {
         // Last item is same → items were prepended
         const diff = curLen - prevLen;
         const newMap = {};
@@ -156,12 +177,13 @@ const VirtualMessageList = forwardRef(function VirtualMessageList(
         });
         sizeMapRef.current = newMap;
         listRef.current?.resetAfterIndex(0, false);
-      } else if (items[0] !== prevItemsRef.current[0]) {
+      } else if (!sameKey(items[0], prev[0], 0)) {
         // 首个 item 变了但非「前插」→ 整批替换(切到消息数不同的会话),清空旧缓存
         sizeMapRef.current = {};
         listRef.current?.resetAfterIndex(0, false);
-      } else {
-        // 纯追加(尾部新增),首个 item 不变,已有缓存仍有效,不动
+      } else if (pendingMin !== Infinity) {
+        // 纯追加(尾部新增)：已有缓存仍有效，只补上挂起的重排
+        listRef.current?.resetAfterIndex(pendingMin, false);
       }
     }
     prevItemsRef.current = items;

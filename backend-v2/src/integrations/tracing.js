@@ -98,25 +98,9 @@ class DistributedTracing {
    */
   startSpan(name, attributes = {}) {
     if (!this.isEnabled || !this.tracer) {
-      // 降级：使用简单的内存追踪
-      const spanId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      this.spans.set(spanId, {
-        name,
-        attributes,
-        startTime: Date.now(),
-      });
-      return {
-        spanId,
-        setAttribute: () => {},
-        setStatus: () => {},
-        end: () => {
-          const span = this.spans.get(spanId);
-          if (span) {
-            span.endTime = Date.now();
-            span.duration = span.endTime - span.startTime;
-          }
-        },
-      };
+      // 未启用：返回空操作 span。此前降级为「每个请求往 this.spans 里存一条且从不删除」，
+      // 进程内存随请求数无限增长。
+      return { setAttribute: () => {}, setStatus: () => {}, end: () => {}, recordException: () => {} };
     }
 
     const span = this.tracer.startSpan(name, {
@@ -178,6 +162,8 @@ class DistributedTracing {
    */
   middleware() {
     return (req, res, next) => {
+      // 未启用追踪时直接放行，不包装 res.send、不挂 finish 监听
+      if (!this.isEnabled || !this.tracer) return next();
       const span = this.startSpan(`HTTP ${req.method} ${req.path}`, {
         'http.method': req.method,
         'http.url': req.url,

@@ -1135,6 +1135,9 @@ body.dark-mode .wc-msg-status-delivered { color: rgba(255,255,255,.42); }
   border: none;
   outline: none;
 }
+/* 焦点由外层 .wc-input-box:focus-within 的圆角描边表示；全局 textarea:focus-visible
+   的直角 outline 会在圆角框里再套一层方框(文本框点击也会命中 :focus-visible)。 */
+.wc-input-box .wc-textarea:focus-visible { outline: none; }
 
 /* 底部：发送按钮 */
 .wc-input-footer {
