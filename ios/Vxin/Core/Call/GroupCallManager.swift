@@ -2,6 +2,8 @@ import Foundation
 import Combine
 import AVFoundation
 import WebRTC
+import UIKit
+import UserNotifications
 
 enum GroupCallStage { case idle, connecting, connected, ended }
 
@@ -35,6 +37,7 @@ final class GroupCallManager: NSObject, ObservableObject {
     @Published private(set) var remoteTracks: [String: RTCVideoTrack] = [:]
     @Published var pendingInvite: GroupCallInvite?
 
+    private var sessionGeneration = UUID()
     private let factory: RTCPeerConnectionFactory
     private var localAudioTrack: RTCAudioTrack?
     private(set) var localVideoTrack: RTCVideoTrack?
@@ -128,15 +131,40 @@ final class GroupCallManager: NSObject, ObservableObject {
         } catch { /* 兜底 STUN */ }
     }
 
+    func incomingFromPush(callId: String, conversationId: String, type: String, from: String, name: String, notify: Bool = true) {
+        guard !callId.isEmpty, !conversationId.isEmpty, state.stage == .idle || state.stage == .ended else { return }
+        pendingInvite = GroupCallInvite(callId: callId, conversationId: conversationId, type: type, from: from, fromName: name)
+        guard notify, UIApplication.shared.applicationState != .active else { return }
+        let content = UNMutableNotificationContent()
+        content.title = name.isEmpty ? "群通话邀请" : name
+        content.body = type == "video" ? "邀请你加入群视频通话" : "邀请你加入群语音通话"
+        content.sound = .default
+        content.categoryIdentifier = "INCOMING_CALL"
+        content.userInfo = ["type": "group_call", "callId": callId, "conversationId": conversationId,
+                            "callType": type, "from": from, "callerName": name]
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "group_call_\(callId)", content: content, trigger: nil))
+    }
+
+    func dismissInvite(callId: String) {
+        if pendingInvite?.callId == callId { pendingInvite = nil }
+        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ["group_call_\(callId)"])
+        VoipCallManager.shared.endActiveCall(groupCallId: callId)
+    }
+
     // MARK: - 对外动作
     func start(conversationId: String, video: Bool) {
         guard state.stage == .idle || state.stage == .ended else { return }
         pendingInvite = nil
         state = GroupCallState(stage: .connecting, conversationId: conversationId, isVideo: video)
+        let generation = UUID()
+        sessionGeneration = generation
         startConnectTimeout()                   // 连接超时自动结束
         Task { @MainActor in
             await refreshIceServers()
-            guard state.stage != .ended else { return }
+            guard sessionGeneration == generation else { return }
+            let permitted = await CallManager.requestMediaPermissions(video: video)
+            guard sessionGeneration == generation else { return }
+            guard permitted else { hangup(); return }
             configureAudioSession()             // 建流前配好通话音频会话
             createLocalMedia(video: video)
             socket.emitGroupCallStart(conversationId: conversationId, type: video ? "video" : "audio")
@@ -146,11 +174,17 @@ final class GroupCallManager: NSObject, ObservableObject {
     func join(callId: String, conversationId: String, video: Bool) {
         guard state.stage == .idle || state.stage == .ended else { return }
         pendingInvite = nil
+        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ["group_call_\(callId)"])
         state = GroupCallState(stage: .connecting, callId: callId, conversationId: conversationId, isVideo: video)
+        let generation = UUID()
+        sessionGeneration = generation
         startConnectTimeout()                   // 连接超时自动结束
         Task { @MainActor in
             await refreshIceServers()
-            guard state.stage != .ended else { return }
+            guard sessionGeneration == generation else { return }
+            let permitted = await CallManager.requestMediaPermissions(video: video)
+            guard sessionGeneration == generation else { return }
+            guard permitted else { hangup(); return }
             configureAudioSession()             // 建流前配好通话音频会话
             createLocalMedia(video: video)
             socket.emitGroupCallJoin(callId: callId)
@@ -184,11 +218,15 @@ final class GroupCallManager: NSObject, ObservableObject {
         socket.gcInvite.receive(on: DispatchQueue.main).sink { [weak self] inv in
             guard let self else { return }
             if self.state.stage == .connecting || self.state.stage == .connected { return }
-            self.pendingInvite = GroupCallInvite(callId: inv.callId, conversationId: inv.conversationId, type: inv.type, from: inv.from, fromName: inv.fromName)
+            self.incomingFromPush(callId: inv.callId, conversationId: inv.conversationId, type: inv.type, from: inv.from, name: inv.fromName)
         }.store(in: &cancellables)
 
         socket.gcStarted.receive(on: DispatchQueue.main).sink { [weak self] (callId, _) in
-            guard let self, self.state.stage != .ended else { return }
+            guard let self else { return }
+            guard self.state.stage == .connecting else {
+                if self.state.stage != .connected { self.socket.emitGroupCallLeave(callId: callId) }
+                return
+            }
             self.cancelConnectTimeout()         // 服务端已确认，撤销连接超时
             if self.state.connectedAt == nil { self.state.connectedAt = Date() }
             self.state.stage = .connected; self.state.callId = callId
@@ -196,6 +234,7 @@ final class GroupCallManager: NSObject, ObservableObject {
 
         socket.gcPeers.receive(on: DispatchQueue.main).sink { [weak self] (callId, _, peers) in
             guard let self else { return }
+            guard self.state.stage == .connecting else { return }
             if !self.state.callId.isEmpty && callId != self.state.callId { return }
             self.cancelConnectTimeout()         // 服务端已确认，撤销连接超时
             if self.state.connectedAt == nil { self.state.connectedAt = Date() }
@@ -254,6 +293,7 @@ final class GroupCallManager: NSObject, ObservableObject {
         // 服务端强制结束（如超过时长上限）：无条件结束本地通话并回收资源
         socket.gcEnded.receive(on: DispatchQueue.main).sink { [weak self] (callId, _) in
             guard let self else { return }
+            if self.pendingInvite?.callId == callId { self.dismissInvite(callId: callId) }
             guard self.state.stage != .idle, callId.isEmpty || callId == self.state.callId else { return }
             self.cleanup()
         }.store(in: &cancellables)
@@ -335,6 +375,8 @@ final class GroupCallManager: NSObject, ObservableObject {
     }
 
     private func cleanup() {
+        sessionGeneration = UUID()
+        VoipCallManager.shared.endActiveCall(groupCallId: state.callId)
         cancelConnectTimeout()              // 取消连接超时，避免泄漏
         peers.values.forEach { $0.pc.close() }
         peers.removeAll()

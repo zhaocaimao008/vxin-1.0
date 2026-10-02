@@ -4,6 +4,7 @@ import CallKit
 import Combine
 import UIKit
 import AVFoundation
+import WebRTC
 
 /// PushKit(VoIP push) + CallKit：App 被彻底杀死时也能被系统唤醒并弹出系统来电界面。
 /// 与后端 sendVoipPush(platform=ios_voip) 配对；前台/后台静默推送(content-available)
@@ -18,6 +19,7 @@ final class VoipCallManager: NSObject, PKPushRegistryDelegate, CXProviderDelegat
 
     private var latestVoipToken: String?
     private var pendingCallUUID: UUID?
+    private var groupInvite: GroupCallInvite?
     private var pendingCallInfo: (callId: String, from: String, callerName: String, callType: String)?
 
     /// App 启动后调用一次：建 CXProvider + 注册 PushKit VoIP。
@@ -71,23 +73,28 @@ final class VoipCallManager: NSObject, PKPushRegistryDelegate, CXProviderDelegat
         defer { completion() }
         guard type == .voIP else { return }
         let d = payload.dictionaryPayload
-        guard d["type"] as? String == "call" else { return }
+        guard ["call", "group_call"].contains(d["type"] as? String ?? "") else { return }
         let callId = d["callId"] as? String ?? ""
         let from = d["from"] as? String ?? ""
         let callerName = d["callerName"] as? String ?? ""
         let callType = d["callType"] as? String ?? "audio"
+        let conversationId = d["type"] as? String == "group_call" ? (d["conversationId"] as? String ?? "") : ""
 
         // 前台不弹 CallKit 全屏：应用内 CallHostView 已有来电 UI，避免双 UI（与 Android appForeground 去重对齐）。
         // 但 iOS 13+ 要求每个 PushKit VoIP push 必须上报 CallKit，否则进程会被终止、后续 VoIP push 被抑制
         // （Codex review P1）→ 前台也 reportNewIncomingCall，随后立即以 remoteEnded 结束，满足系统要求且不干扰应用内 UI。
         guard UIApplication.shared.applicationState != .active else {
-            CallManager.shared.incomingFromPush(from: from, callType: callType, callerName: callerName, callId: callId)
+            if !conversationId.isEmpty {
+                GroupCallManager.shared.incomingFromPush(callId: callId, conversationId: conversationId, type: callType, from: from, name: callerName, notify: false)
+            } else {
+                CallManager.shared.incomingFromPush(from: from, callType: callType, callerName: callerName, callId: callId)
+            }
             reportAndImmediatelyEnd(callId: callId, from: from, callerName: callerName, callType: callType)
             return
         }
         // 同 callId 幂等忽略（对齐 incomingFromPush 的 peerId 去重）
         if let p = pendingCallInfo, p.callId == callId { return }
-        reportIncomingCall(callId: callId, from: from, callerName: callerName, callType: callType)
+        reportIncomingCall(callId: callId, from: from, callerName: callerName, callType: callType, conversationId: conversationId)
     }
 
     /// 前台场景：上报 CallKit 后立即结束，满足「每个 VoIP push 必须上报 CallKit」的系统要求（iOS 13+），
@@ -103,12 +110,18 @@ final class VoipCallManager: NSObject, PKPushRegistryDelegate, CXProviderDelegat
         }
     }
 
-    private func reportIncomingCall(callId: String, from: String, callerName: String, callType: String) {
+    private func reportIncomingCall(callId: String, from: String, callerName: String, callType: String, conversationId: String) {
         let uuid = UUID()
         pendingCallUUID = uuid
         pendingCallInfo = (callId: callId, from: from, callerName: callerName, callType: callType)
         // 先置本地通话状态，防止随后到达的 socket call:incoming 与 CallKit 竞态
-        CallManager.shared.incomingFromPush(from: from, callType: callType, callerName: callerName, callId: callId)
+        if !conversationId.isEmpty {
+            groupInvite = GroupCallInvite(callId: callId, conversationId: conversationId, type: callType, from: from, fromName: callerName)
+            GroupCallManager.shared.incomingFromPush(callId: callId, conversationId: conversationId, type: callType, from: from, name: callerName, notify: false)
+        } else {
+            groupInvite = nil
+            CallManager.shared.incomingFromPush(from: from, callType: callType, callerName: callerName, callId: callId)
+        }
 
         let update = CXCallUpdate()
         update.remoteHandle = CXHandle(type: .generic, value: from)
@@ -127,21 +140,34 @@ final class VoipCallManager: NSObject, PKPushRegistryDelegate, CXProviderDelegat
         // 接听后 pendingCallInfo 会被置 nil，此处据此跳过，避免已接通通话被定时器误挂。
         DispatchQueue.main.asyncAfter(deadline: .now() + 120) { [weak self] in
             guard let self, self.pendingCallUUID == uuid, self.pendingCallInfo != nil else { return }
+            if let group = self.groupInvite { GroupCallManager.shared.dismissInvite(callId: group.callId) }
+            else { CallManager.shared.hangup() }
             self.endCallIfNeeded(uuid: uuid)
-            CallManager.shared.reject()
         }
     }
 
     // MARK: - CXProviderDelegate
 
-    func providerDidReset(_ provider: CXProvider) {}
+    func providerDidReset(_ provider: CXProvider) {
+        if let group = groupInvite {
+            if pendingCallInfo != nil { GroupCallManager.shared.dismissInvite(callId: group.callId) }
+            else { GroupCallManager.shared.hangup() }
+        } else if pendingCallUUID != nil { CallManager.shared.hangup() }
+    }
 
-    func provider(_ provider: CXProvider, didActivate audioSession: AVAudioSession) {}
+    func provider(_ provider: CXProvider, didActivate audioSession: AVAudioSession) {
+        RTCAudioSession.sharedInstance().audioSessionDidActivate(audioSession)
+    }
 
-    func provider(_ provider: CXProvider, didDeactivate audioSession: AVAudioSession) {}
+    func provider(_ provider: CXProvider, didDeactivate audioSession: AVAudioSession) {
+        RTCAudioSession.sharedInstance().audioSessionDidDeactivate(audioSession)
+    }
 
     func provider(_ provider: CXProvider, perform action: CXAnswerCallAction) {
-        CallManager.shared.accept()
+        guard action.callUUID == pendingCallUUID else { action.fail(); return }
+        if let group = groupInvite {
+            GroupCallManager.shared.join(callId: group.callId, conversationId: group.conversationId, video: group.type == "video")
+        } else { CallManager.shared.accept() }
         // 保留 pendingCallUUID 供 endActiveCall() 在通话结束时关闭系统通话 UI；
         // 清空 pendingCallInfo，使后续 CXEndCallAction 走 hangup() 而非 reject()（已不是 incoming 态）。
         pendingCallInfo = nil
@@ -149,7 +175,11 @@ final class VoipCallManager: NSObject, PKPushRegistryDelegate, CXProviderDelegat
     }
 
     func provider(_ provider: CXProvider, perform action: CXEndCallAction) {
-        if pendingCallInfo != nil {
+        guard action.callUUID == pendingCallUUID else { action.fulfill(); return }
+        if let group = groupInvite {
+            if pendingCallInfo != nil { GroupCallManager.shared.dismissInvite(callId: group.callId) }
+            else { GroupCallManager.shared.hangup() }
+        } else if pendingCallInfo != nil {
             CallManager.shared.reject()
         } else {
             CallManager.shared.hangup()
@@ -163,7 +193,10 @@ final class VoipCallManager: NSObject, PKPushRegistryDelegate, CXProviderDelegat
     }
 
     func provider(_ provider: CXProvider, perform action: CXSetMutedCallAction) {
-        CallManager.shared.toggleMic()
+        guard action.callUUID == pendingCallUUID else { action.fail(); return }
+        if groupInvite != nil {
+            if GroupCallManager.shared.state.micEnabled == action.isMuted { GroupCallManager.shared.toggleMic() }
+        } else if CallManager.shared.state.micEnabled == action.isMuted { CallManager.shared.toggleMic() }
         action.fulfill()
     }
 
@@ -174,11 +207,13 @@ final class VoipCallManager: NSObject, PKPushRegistryDelegate, CXProviderDelegat
         if pendingCallUUID == uuid {
             pendingCallUUID = nil
             pendingCallInfo = nil
+            groupInvite = nil
         }
     }
 
     /// 供 CallManager 在 accept/reject/hangup/socket call:end 时同步收尾 CallKit 界面。
-    func endActiveCall() {
+    func endActiveCall(groupCallId: String? = nil) {
+        guard groupInvite?.callId == groupCallId else { return }
         guard let uuid = pendingCallUUID else { return }
         endCallIfNeeded(uuid: uuid)
     }

@@ -6,6 +6,9 @@ import com.vxin.app.core.auth.SessionManager
 import com.vxin.app.core.di.AppScope
 import com.vxin.app.core.realtime.SocketManager
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import com.vxin.app.core.realtime.GroupCallInviteEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -61,6 +64,29 @@ class GroupCallManager @Inject constructor(
     @AppScope private val scope: CoroutineScope,
 ) {
     val eglBase: EglBase = EglBase.create()
+
+    private var sessionGeneration = 0L
+    private var connectTimeout: Job? = null
+    private val _pendingInvite = MutableStateFlow<GroupCallInviteEvent?>(null)
+    val pendingInvite = _pendingInvite.asStateFlow()
+
+    fun incomingFromPush(callId: String, conversationId: String, type: String, from: String, name: String) {
+        if (callId.isBlank() || conversationId.isBlank()) return
+        if (_state.value.stage !in listOf(GroupCallStage.IDLE, GroupCallStage.ENDED)) return
+        _pendingInvite.value = GroupCallInviteEvent(callId, conversationId, type, from, name)
+    }
+
+    fun dismissInvite(callId: String? = null) {
+        if (callId == null || _pendingInvite.value?.callId == callId) _pendingInvite.value = null
+    }
+
+    private fun startConnectTimeout() {
+        connectTimeout?.cancel()
+        connectTimeout = scope.launch {
+            delay(45_000)
+            if (_state.value.stage == GroupCallStage.CONNECTING) hangup()
+        }
+    }
 
     private var factory: PeerConnectionFactory? = null
     private var audioSource: AudioSource? = null
@@ -131,10 +157,14 @@ class GroupCallManager @Inject constructor(
     fun start(conversationId: String, video: Boolean) {
         if (_state.value.stage != GroupCallStage.IDLE && _state.value.stage != GroupCallStage.ENDED) return
         _state.value = GroupCallState(GroupCallStage.CONNECTING, conversationId = conversationId, isVideo = video)
+        val generation = ++sessionGeneration
+        dismissInvite()
+        startConnectTimeout()
         scope.launch {
             refreshIceServers()
-            if (_state.value.stage == GroupCallStage.ENDED) return@launch
-            createLocalMedia(video)
+            if (generation != sessionGeneration || _state.value.stage != GroupCallStage.CONNECTING) return@launch
+            try { createLocalMedia(video) } catch (e: Exception) { cleanup(); return@launch }
+            CallForegroundService.start(context, video, "group")
             socketManager.emitGroupCallStart(conversationId, if (video) "video" else "audio")
         }
     }
@@ -143,10 +173,14 @@ class GroupCallManager @Inject constructor(
     fun join(callId: String, conversationId: String, video: Boolean) {
         if (_state.value.stage != GroupCallStage.IDLE && _state.value.stage != GroupCallStage.ENDED) return
         _state.value = GroupCallState(GroupCallStage.CONNECTING, callId, conversationId, isVideo = video)
+        val generation = ++sessionGeneration
+        dismissInvite()
+        startConnectTimeout()
         scope.launch {
             refreshIceServers()
-            if (_state.value.stage == GroupCallStage.ENDED) return@launch
-            createLocalMedia(video)
+            if (generation != sessionGeneration || _state.value.stage != GroupCallStage.CONNECTING) return@launch
+            try { createLocalMedia(video) } catch (e: Exception) { cleanup(); return@launch }
+            CallForegroundService.start(context, video, "group")
             socketManager.emitGroupCallJoin(callId)
         }
     }
@@ -180,7 +214,11 @@ class GroupCallManager @Inject constructor(
     private fun observeSignaling() {
         scope.launch {
             socketManager.groupCallStartedEvents.collect { e ->
-                if (_state.value.stage == GroupCallStage.ENDED) return@collect
+                if (_state.value.stage != GroupCallStage.CONNECTING) {
+                    if (_state.value.stage != GroupCallStage.CONNECTED) socketManager.emitGroupCallLeave(e.callId)
+                    return@collect
+                }
+                connectTimeout?.cancel()
                 _state.update { it.copy(stage = GroupCallStage.CONNECTED, callId = e.callId, connectedAt = if (it.connectedAt == 0L) android.os.SystemClock.elapsedRealtime() else it.connectedAt) }
             }
         }
@@ -188,18 +226,22 @@ class GroupCallManager @Inject constructor(
             // 后台/被杀时的群通话邀请提醒：前台由 Compose 横幅承接（不动），这里只补后台通知，
             // 复用 1对1 来电通知样式（接听/拒绝按钮语义不适用群通话，但好过完全无提醒）。
             socketManager.groupCallInviteEvents.collect { e ->
+                incomingFromPush(e.callId, e.conversationId, e.type, e.from, e.fromName)
                 if (!com.vxin.app.core.push.MessageNotificationBridge.appForeground) {
                     notificationHelper.showCallNotification(
                         callId = e.callId,
                         from = e.from,
                         callerName = e.fromName,
                         callType = e.type,
+                        conversationId = e.conversationId,
                     )
                 }
             }
         }
         scope.launch {
             socketManager.groupCallPeersEvents.collect { e ->
+                if (_state.value.stage != GroupCallStage.CONNECTING) return@collect
+                connectTimeout?.cancel()
                 if (_state.value.callId.isNotEmpty() && e.callId != _state.value.callId) return@collect
                 _state.update { it.copy(stage = GroupCallStage.CONNECTED, callId = e.callId, connectedAt = if (it.connectedAt == 0L) android.os.SystemClock.elapsedRealtime() else it.connectedAt) }
                 // 作为 answerer：为既有成员预建 PC，等其 offer
@@ -359,8 +401,12 @@ class GroupCallManager @Inject constructor(
     }
 
     private fun cleanup() {
-        peers.values.forEach { runCatching { it.pc.close(); it.pc.dispose() } }
+        sessionGeneration += 1
+        connectTimeout?.cancel(); connectTimeout = null
+        CallForegroundService.stop(context, "group")
+        val closing = peers.values.toList()
         peers.clear()
+        closing.forEach { runCatching { it.pc.close(); it.pc.dispose() } }
         _remoteTracks.value = emptyMap()
         runCatching { videoCapturer?.stopCapture() }
         runCatching { videoCapturer?.dispose() }; videoCapturer = null

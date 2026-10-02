@@ -27,6 +27,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    @Inject lateinit var groupCallManager: com.vxin.app.core.call.GroupCallManager
     @Inject lateinit var callManager: CallManager
     @Inject lateinit var socketManager: SocketManager
     @Inject lateinit var notificationHelper: NotificationHelper
@@ -120,6 +121,14 @@ class MainActivity : ComponentActivity() {
         // 后台被唤醒时 socket 可能已断，接听/拒绝的信令需要它 → 先确保连接
         socketManager.connect()
 
+        val groupId = intent.getStringExtra(NotificationHelper.EXTRA_GROUP_CONVERSATION_ID).orEmpty()
+        if (groupId.isNotEmpty()) {
+            val callId = intent.getStringExtra(NotificationHelper.EXTRA_CALL_ID).orEmpty()
+            if (action == NotificationHelper.ACTION_CALL_DECLINE) groupCallManager.dismissInvite(callId)
+            else groupCallManager.incomingFromPush(callId, groupId, callType, from, callerName)
+            intent.action = null
+            return
+        }
         when (action) {
             NotificationHelper.ACTION_CALL_DECLINE -> {
                 callManager.incomingFromPush(from, callType, callerName)

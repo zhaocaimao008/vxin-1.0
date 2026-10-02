@@ -484,7 +484,7 @@ export default function Home() {
   // 全局来电监听（不论哪个会话打开，都能收到来电）
   useEffect(() => {
     if (!socket) return;
-    const onIncoming = ({ from, type, caller }) => {
+    const onIncoming = ({ from, type, caller, callId }) => {
       // 通话中忽略新来电（busy）；用 ref 取最新值，避免 effect 闭包里的陈旧 activeCall
       if (activeCallRef.current) {
         socket.emit('call:response', { to: from, accepted: false, busy: true });
@@ -499,7 +499,7 @@ export default function Home() {
         playIncomingRing();        // AudioContext 未解锁时静默，视觉提醒兜底
         startCallVisualAlert(callerName);
       }
-      setActiveCall({ type, direction: 'incoming', remoteUser: { id: from, name: caller?.name, avatar: caller?.avatar }, remoteId: from });
+      setActiveCall({ type, direction: 'incoming', callId, remoteUser: { id: from, name: caller?.name, avatar: caller?.avatar }, remoteId: from });
       // 桌面端：来电时若窗口在后台/最小化，拉到前台并闪烁 + 弹原生通知，
       // 否则用户看不到来电界面（Electron 端此前完全无后台来电提醒）。
       if (window.__ELECTRON_CONFIG__ && (document.hidden || !document.hasFocus())) {

@@ -4,7 +4,6 @@ import Avatar from './Avatar';
 import UserProfile from './UserProfile';
 import './ContactsOverviewPanel.css';
 import { useSocketCore } from '../contexts/SocketContext';
-import { useAuth } from '../contexts/AuthContext';
 import { showToast, showConfirm } from '../utils/toast';
 import { seedOnlineIds, filterContactsByStatus } from '../utils/contactsStatus';
 
@@ -36,7 +35,6 @@ export default function ContactsOverviewPanel({ onStartChat, onStartCall }) {
   const [ctxMenu, setCtxMenu] = useState(null); // { x, y, contact }
   const [busyId, setBusyId] = useState(null);
   const { socket } = useSocketCore();
-  const { user } = useAuth();
 
   const fetchContacts = useCallback(() =>
     axios.get('/api/users/contacts').then(r => {
@@ -90,11 +88,6 @@ export default function ContactsOverviewPanel({ onStartChat, onStartCall }) {
 
   const callContact = (contact) => {
     const remoteUser = { id: contact.id, name: contact.remark || contact.username, avatar: contact.avatar };
-    socket?.emit('call:request', {
-      to: contact.id,
-      type: 'video',
-      caller: { id: user.id, name: user.username, avatar: user.avatar },
-    });
     onStartCall?.({ type: 'video', direction: 'outgoing', remoteUser, remoteId: contact.id });
   };
 

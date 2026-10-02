@@ -110,7 +110,7 @@ module.exports = function registerGroupCallHandler(io, socket) {
     const members = db.prepare('SELECT user_id FROM conversation_members WHERE conversation_id=?').all(conversationId);
     for (const { user_id: toUserId } of members) {
       if (toUserId === userId) continue;
-      pushCallInvite({ toUserId, fromUserId: userId, callerName: starter?.username || '', callType: t, callId })
+      pushCallInvite({ toUserId, fromUserId: userId, callerName: starter?.username || '', callType: t, callId, conversationId })
         .catch(e => console.warn(`[groupCall] 来电推送失败 callId=${callId} to=${toUserId}:`, e.message));
     }
   });

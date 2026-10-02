@@ -556,8 +556,8 @@ class SocketManager @Inject constructor(
                 .put("sdpMLineIndex", sdpMLineIndex)))
     }
 
-    fun emitCallEnd(to: String) {
-        socket?.emit("call:end", JSONObject().put("to", to))
+    fun emitCallEnd(to: String, reason: String = "") {
+        socket?.emit("call:end", JSONObject().put("to", to).put("reason", reason))
     }
 
     // ── 群通话信令发送 ──

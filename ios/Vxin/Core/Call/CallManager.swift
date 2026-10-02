@@ -41,6 +41,7 @@ final class CallManager: NSObject, ObservableObject {
     @Published private(set) var state = CallState()
 
     private let factory: RTCPeerConnectionFactory
+    private var sessionGeneration = UUID()
     private var pc: RTCPeerConnection?
     private var localAudioTrack: RTCAudioTrack?
     private(set) var localVideoTrack: RTCVideoTrack?
@@ -126,15 +127,15 @@ final class CallManager: NSObject, ObservableObject {
 
     // MARK: - 呼叫超时
     /// 主叫发起后启动 45s 超时；期间未接通则自动挂断并提示"对方未接听"。
-    private func startCallTimeout() {
+    private func startCallTimeout(seconds: UInt64? = nil) {
         cancelCallTimeout()
         callTimeoutTask = Task { @MainActor [weak self] in
             guard let self else { return }
-            try? await Task.sleep(nanoseconds: self.callTimeoutSeconds * 1_000_000_000)
+            try? await Task.sleep(nanoseconds: (seconds ?? self.callTimeoutSeconds) * 1_000_000_000)
             guard !Task.isCancelled else { return }
             // 仍在呼叫/连接中（未接通、未挂断）才判定为未接听
             guard self.state.stage == .outgoing || self.state.stage == .connecting else { return }
-            if !self.state.peerId.isEmpty { self.socket.emitCallEnd(to: self.state.peerId) }
+            if !self.state.peerId.isEmpty { self.socket.emitCallEnd(to: self.state.peerId, reason: self.state.stage == .outgoing ? "timeout" : "connection_timeout") }
             self.cleanup(.ended)
             self.state.timedOut = true
         }
@@ -145,14 +146,26 @@ final class CallManager: NSObject, ObservableObject {
         callTimeoutTask = nil
     }
 
+    static func requestMediaPermissions(video: Bool) async -> Bool {
+        let audio = await AVCaptureDevice.requestAccess(for: .audio)
+        guard audio else { return false }
+        if video { return await AVCaptureDevice.requestAccess(for: .video) }
+        return true
+    }
+
     // MARK: - 对外动作
     func startCall(peerId: String, peerName: String, video: Bool, callerName: String) {
         guard state.stage == .idle || state.stage == .ended else { return }
         state = CallState(stage: .outgoing, peerId: peerId, peerName: peerName, isVideo: video, isCaller: true)
+        let generation = UUID()
+        sessionGeneration = generation
         startCallTimeout()                      // 未接听 45s 自动挂断
         Task { @MainActor in
             await refreshIceServers()           // 先拿到含 TURN 的 ICE，再建连接
-            guard state.stage != .ended else { return }   // 期间被取消
+            guard sessionGeneration == generation else { return }
+            let permitted = await Self.requestMediaPermissions(video: state.isVideo)
+            guard sessionGeneration == generation else { return }
+            guard permitted else { hangup(); return }   // 期间被取消
             configureAudioSession()             // 建流前配好通话音频会话
             tonePlayer.playRingback()           // 会话就绪后→主叫回铃音（接通/挂断时停）
             createPeerConnection()
@@ -164,9 +177,15 @@ final class CallManager: NSObject, ObservableObject {
     func accept() {
         guard state.stage == .incoming else { return }
         state.stage = .connecting
+        let generation = UUID()
+        sessionGeneration = generation
+        startCallTimeout(seconds: 30)
         Task { @MainActor in
             await refreshIceServers()
-            guard state.stage != .ended else { return }
+            guard sessionGeneration == generation else { return }
+            let permitted = await Self.requestMediaPermissions(video: state.isVideo)
+            guard sessionGeneration == generation else { return }
+            guard permitted else { hangup(); return }
             configureAudioSession()             // 建流前配好通话音频会话
             createPeerConnection()
             createLocalTracks(video: state.isVideo)
@@ -241,8 +260,8 @@ final class CallManager: NSObject, ObservableObject {
         }.store(in: &cancellables)
 
         socket.callResponse.receive(on: DispatchQueue.main).sink { [weak self] (from, accepted) in
-            guard let self, self.state.isCaller, from == self.state.peerId else { return }
-            if accepted { self.state.stage = .connecting; self.createOfferAndSend() }
+            guard let self, self.state.isCaller, from == self.state.peerId, self.state.stage == .outgoing else { return }
+            if accepted { self.state.stage = .connecting; self.startCallTimeout(seconds: 30); self.createOfferAndSend() }
             else { self.cleanup(.ended) }
         }.store(in: &cancellables)
 
@@ -250,7 +269,7 @@ final class CallManager: NSObject, ObservableObject {
             guard let self, from == self.state.peerId, let pc = self.pc else { return }
             let desc = RTCSessionDescription(type: .offer, sdp: sdp)
             pc.setRemoteDescription(desc) { [weak self] err in
-                guard let self, err == nil else { return }
+                guard let self, self.pc === pc, err == nil else { return }
                 self.remoteDescSet = true
                 self.drainIce()
                 self.createAnswerAndSend()
@@ -261,7 +280,7 @@ final class CallManager: NSObject, ObservableObject {
             guard let self, from == self.state.peerId, let pc = self.pc else { return }
             let desc = RTCSessionDescription(type: .answer, sdp: sdp)
             pc.setRemoteDescription(desc) { [weak self] err in
-                guard let self, err == nil else { return }
+                guard let self, self.pc === pc, err == nil else { return }
                 self.remoteDescSet = true
                 self.drainIce()
             }
@@ -314,7 +333,7 @@ final class CallManager: NSObject, ObservableObject {
     private func createOfferAndSend() {
         guard let pc = pc else { return }
         pc.offer(for: mediaConstraints()) { [weak self] desc, err in
-            guard let self, let desc, err == nil else { return }
+            guard let self, self.pc === pc, let desc, err == nil else { return }
             pc.setLocalDescription(desc) { _ in }
             self.socket.emitCallOffer(to: self.state.peerId, sdp: desc.sdp)
         }
@@ -323,7 +342,7 @@ final class CallManager: NSObject, ObservableObject {
     private func createAnswerAndSend() {
         guard let pc = pc else { return }
         pc.answer(for: mediaConstraints()) { [weak self] desc, err in
-            guard let self, let desc, err == nil else { return }
+            guard let self, self.pc === pc, let desc, err == nil else { return }
             pc.setLocalDescription(desc) { _ in }
             self.socket.emitCallAnswer(to: self.state.peerId, sdp: desc.sdp)
         }
@@ -385,6 +404,9 @@ final class CallManager: NSObject, ObservableObject {
 
     // MARK: - 清理
     private func cleanup(_ finalStage: CallStage) {
+        sessionGeneration = UUID()
+        cancelDisconnectGrace()
+        VoipCallManager.shared.endActiveCall()
         tonePlayer.stop()                   // 停回铃/接通音
         cancelCallTimeout()                 // 取消未接听超时，避免正常挂断被误判超时
         videoCapturer?.stopCapture()
@@ -392,8 +414,9 @@ final class CallManager: NSObject, ObservableObject {
         localVideoTrack = nil
         remoteVideoTrack = nil
         localAudioTrack = nil
-        pc?.close()
+        let closing = pc
         pc = nil
+        closing?.close()
         remoteDescSet = false
         pendingIce.removeAll()
         deactivateAudioSession()            // 释放通话音频会话
@@ -406,6 +429,7 @@ final class CallManager: NSObject, ObservableObject {
 // MARK: - RTCPeerConnectionDelegate
 extension CallManager: RTCPeerConnectionDelegate {
     func peerConnection(_ peerConnection: RTCPeerConnection, didGenerate candidate: RTCIceCandidate) {
+        guard pc === peerConnection else { return }
         let peer = state.peerId
         socket.emitCallIce(to: peer, candidate: candidate.sdp, sdpMid: candidate.sdpMid, sdpMLineIndex: candidate.sdpMLineIndex)
     }
@@ -413,6 +437,7 @@ extension CallManager: RTCPeerConnectionDelegate {
     func peerConnection(_ peerConnection: RTCPeerConnection, didAdd rtpReceiver: RTCRtpReceiver, streams mediaStreams: [RTCMediaStream]) {
         if let track = rtpReceiver.track as? RTCVideoTrack {
             DispatchQueue.main.async {
+                guard self.pc === peerConnection else { return }
                 self.remoteVideoTrack = track
                 self.state.remoteVideoActive = true
             }
@@ -421,6 +446,7 @@ extension CallManager: RTCPeerConnectionDelegate {
 
     func peerConnection(_ peerConnection: RTCPeerConnection, didChange newState: RTCIceConnectionState) {
         DispatchQueue.main.async {
+            guard self.pc === peerConnection else { return }
             switch newState {
             case .connected, .completed:
                 self.cancelCallTimeout()        // 已接通，撤销未接听超时
@@ -444,7 +470,7 @@ extension CallManager: RTCPeerConnectionDelegate {
                     self.state.networkEnded = true
                     self.cleanup(.ended)
                 }
-            case .failed:
+            case .failed, .closed:
                 // 连接彻底失败：结束通话并通知对方（不能静默挂断）
                 self.cancelDisconnectGrace()
                 if self.state.stage == .connected || self.state.stage == .connecting {

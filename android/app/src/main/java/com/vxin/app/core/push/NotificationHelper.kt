@@ -138,7 +138,7 @@ class NotificationHelper @Inject constructor(
      * data 来自后端 data-only FCM（type=call）。点击/接听/拒绝均拉起 MainActivity 并带 extra，
      * 由 MainActivity 交给 CallManager 进入 INCOMING（accept 时并置接听意图）。
      */
-    fun showCallNotification(callId: String, from: String, callerName: String, callType: String) {
+    fun showCallNotification(callId: String, from: String, callerName: String, callType: String, conversationId: String? = null) {
         fun callIntent(action: String) = Intent(context, MainActivity::class.java).apply {
             this.action = action
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -146,6 +146,7 @@ class NotificationHelper @Inject constructor(
             putExtra(EXTRA_CALL_FROM, from)
             putExtra(EXTRA_CALL_NAME, callerName)
             putExtra(EXTRA_CALL_TYPE, callType)
+            putExtra(EXTRA_GROUP_CONVERSATION_ID, conversationId)
             // 内部令牌：防外部应用伪造来电/拒接 Intent（MainActivity 校验）
             putExtra(EXTRA_INTERNAL_TOKEN, internalToken(context))
         }
@@ -283,6 +284,7 @@ class NotificationHelper @Inject constructor(
         const val ACTION_CALL_SHOW = "com.vxin.app.action.CALL_SHOW"
         const val ACTION_CALL_ACCEPT = "com.vxin.app.action.CALL_ACCEPT"
         const val ACTION_CALL_DECLINE = "com.vxin.app.action.CALL_DECLINE"
+        const val EXTRA_GROUP_CONVERSATION_ID = "groupCallConversationId"
         const val EXTRA_CALL_ID = "callId"
         const val EXTRA_CALL_FROM = "callFrom"
         const val EXTRA_CALL_NAME = "callerName"

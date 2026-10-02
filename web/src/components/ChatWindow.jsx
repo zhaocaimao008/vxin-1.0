@@ -262,13 +262,8 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
   const startCall = useCallback((type) => {
     if (conversation.type !== 'private') return;
     const remoteUser = { id: conversation.otherUser?.id, name: conversation.name, avatar: conversation.avatar };
-    socket?.emit('call:request', {
-      to: conversation.otherUser?.id,
-      type,
-      caller: { id: user.id, name: user.username, avatar: user.avatar },
-    });
     onStartCall?.({ type, direction: 'outgoing', remoteUser, remoteId: conversation.otherUser?.id });
-  }, [socket, conversation, user, onStartCall]);
+  }, [conversation, onStartCall]);
 
   // 发起群通话（群聊）
   const startGroupCall = useCallback((type) => {

@@ -156,6 +156,10 @@ export default function CallModal({ socket, call, onClose }) {
   const statusRef = useRef(status);
   useEffect(() => { statusRef.current = status; }, [status]);
 
+  const endedRef = useRef(false);
+  const generationRef = useRef(0);
+  const initPromiseRef = useRef(null);
+  const callIdRef = useRef(call.callId);
   const pcRef           = useRef(null);
   const localStreamRef  = useRef(null);
   const remoteStreamRef = useRef(null); // 保存远端流，元素重挂时用于恢复 srcObject
@@ -266,192 +270,205 @@ export default function CallModal({ socket, call, onClose }) {
     osc.start(t); osc.stop(t + 0.3);
   }, [getCtx]);
 
+  const emit = useCallback((event, payload = {}) => {
+    socket?.emit(event, { to: remoteId, ...payload, ...(callIdRef.current ? { callId: callIdRef.current } : {}) });
+  }, [socket, remoteId]);
+
   const cleanup = useCallback(() => {
+    endedRef.current = true;
+    generationRef.current += 1;
+    initPromiseRef.current = null;
     clearTimeout(timeoutRef.current);
     clearTimeout(iceTimeoutRef.current);
     clearTimeout(disconnectRef.current);
     clearTimeout(endCallTimeoutRef.current);
     localStreamRef.current?.getTracks().forEach(t => t.stop());
-    if (pcRef.current) {
-      pcRef.current.onicecandidate          = null;
-      pcRef.current.ontrack                 = null;
-      pcRef.current.onconnectionstatechange = null;
-      pcRef.current.close();
-      pcRef.current = null;
+    const pc = pcRef.current;
+    pcRef.current = null;
+    if (pc) {
+      pc.onicecandidate = pc.ontrack = pc.onconnectionstatechange = null;
+      pc.close();
     }
-    localStreamRef.current = null;
+    localStreamRef.current = remoteStreamRef.current = null;
+    pendingOfferRef.current = null;
+    pendingIceRef.current = [];
+    for (const ref of [localVideoRef, remoteVideoRef, miniVideoRef, remoteAudioRef]) {
+      if (ref.current) ref.current.srcObject = null;
+    }
   }, []);
 
   const endCall = useCallback((notify, reason = '') => {
-    if (notify) socket?.emit('call:end', { to: remoteId, reason });
+    if (endedRef.current) return;
+    if (notify) emit('call:end', { reason });
     cleanup();
-    if (reason) setEndReason(reason);
+    stopIncomingRing();
+    setEndReason(reason);
+    statusRef.current = 'ended';
     setStatus('ended');
     endCallTimeoutRef.current = setTimeout(onClose, 1800);
-  }, [socket, remoteId, cleanup, onClose]);
+  }, [emit, cleanup, onClose]);
 
-  const initPC = useCallback(async () => {
-    const constraints = { audio: true, video: isVideo };
-    let stream;
-    try { stream = await navigator.mediaDevices.getUserMedia(constraints); setMediaError(false); }
-    catch { stream = new MediaStream(); setMediaError(true); } // 权限拒绝/设备占用：仍建连但提示用户
-    localStreamRef.current = stream;
-    if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-
-    const iceConfig = await fetchIceConfig();
-    const pc = new RTCPeerConnection(iceConfig);
-    pcRef.current = pc;
-    stream.getTracks().forEach(t => pc.addTrack(t, stream));
-
-    pc.onicecandidate = ({ candidate }) => {
-      if (candidate) socket?.emit('call:ice', { to: remoteId, candidate });
-    };
-    pc.ontrack = (e) => attachRemoteStream(e.streams[0]);
-    pc.onconnectionstatechange = () => {
-      const s = pc.connectionState;
-      if (s === 'connected' && statusRef.current === 'connecting') {
-        clearTimeout(iceTimeoutRef.current);
-        clearTimeout(disconnectRef.current);
-        setStatus('connected');
-      } else if (s === 'disconnected') {
-        // iOS 锁屏/切后台时 ICE 会短暂进入 disconnected(网络探测间隙)，
-        // 几秒内会自动恢复 connected。旧逻辑 5s 宽限太短 → iOS 长语音被误挂断。
-        // 延长到 15s 且允许 disconnected→connected 恢复路径(上面分支已 clearTimeout)。
-        // 只有持续 disconnected 超过宽限才挂断，且挂断必须通知对方(notify=true)。
-        disconnectRef.current = setTimeout(() => {
-          if (pcRef.current?.connectionState === 'disconnected' && statusRef.current === 'connected')
-            endCall(true, 'network');
-        }, 15000);
-      } else {
-        clearTimeout(disconnectRef.current);
-        if (['failed', 'closed'].includes(s) && statusRef.current === 'connected')
-          endCall(true, 'network');
+  // One initialization per session. A permission prompt can resolve after hangup.
+  const initPC = useCallback(() => {
+    if (endedRef.current) return Promise.resolve(null);
+    if (initPromiseRef.current) return initPromiseRef.current;
+    const generation = generationRef.current;
+    const alive = () => !endedRef.current && generation === generationRef.current;
+    initPromiseRef.current = (async () => {
+      let stream;
+      try { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideo }); }
+      catch {
+        if (alive()) { setMediaError(true); endCall(true, 'media_error'); }
+        return null;
       }
-    };
-    return pc;
-  }, [isVideo, socket, remoteId, endCall, attachRemoteStream]);
+      if (!alive()) { stream.getTracks().forEach(t => t.stop()); return null; }
+      setMediaError(false);
+      localStreamRef.current = stream;
+      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+      const iceConfig = await fetchIceConfig();
+      if (!alive()) return null;
+      const pc = new RTCPeerConnection(iceConfig);
+      pcRef.current = pc;
+      stream.getTracks().forEach(t => pc.addTrack(t, stream));
+      pc.onicecandidate = ({ candidate }) => {
+        if (alive() && candidate) emit('call:ice', { candidate });
+      };
+      pc.ontrack = (e) => { if (alive()) attachRemoteStream(e.streams[0]); };
+      pc.onconnectionstatechange = () => {
+        if (!alive() || pcRef.current !== pc) return;
+        const state = pc.connectionState;
+        if (state === 'connected') {
+          clearTimeout(iceTimeoutRef.current);
+          clearTimeout(disconnectRef.current);
+          statusRef.current = 'connected';
+          setStatus('connected');
+        } else if (state === 'disconnected') {
+          clearTimeout(disconnectRef.current);
+          disconnectRef.current = setTimeout(() => {
+            if (alive() && pc.connectionState === 'disconnected') endCall(true, 'network');
+          }, 15000);
+        } else if (['failed', 'closed'].includes(state)) {
+          endCall(true, 'network');
+        }
+      };
+      return pc;
+    })().catch(() => { if (alive()) endCall(true, 'error'); return null; });
+    return initPromiseRef.current;
+  }, [isVideo, emit, endCall, attachRemoteStream]);
+
+  const startConnecting = useCallback(() => {
+    clearTimeout(timeoutRef.current);
+    clearTimeout(iceTimeoutRef.current);
+    statusRef.current = 'connecting';
+    setStatus('connecting');
+    iceTimeoutRef.current = setTimeout(() => endCall(true, 'connection_timeout'), 30000);
+  }, [endCall]);
 
   const processOffer = useCallback(async (offer) => {
     const pc = pcRef.current;
-    if (!pc) return;
+    if (!pc || endedRef.current) return;
+    const alive = () => !endedRef.current && pcRef.current === pc;
     try {
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
-      // remoteDescription 就绪 → flush 之前早到的 ICE 候选（对齐原生端 pendingIce）
+      if (!alive()) return;
       for (const c of pendingIceRef.current.splice(0)) {
         try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch { /* stale */ }
       }
       const answer = await pc.createAnswer();
+      if (!alive()) return;
       await pc.setLocalDescription(answer);
-      socket?.emit('call:answer', { to: remoteId, answer });
-      setStatus('connecting');
-    } catch (err) {
-      console.error('[call] processOffer 失败:', err);
-      endCall(false, 'error');
-    }
-  }, [socket, remoteId, endCall]);
+      if (alive()) emit('call:answer', { answer });
+    } catch { if (alive()) endCall(true, 'error'); }
+  }, [emit, endCall]);
 
   const accept = useCallback(async () => {
-    stopIncomingRing(); // 接听瞬间停来电铃声（activeCall 仍在，Home 兜底不触发）
-    setStatus('connecting');
-    await initPC();
-    socket?.emit('call:response', { to: remoteId, accepted: true });
+    if (endedRef.current || statusRef.current !== 'incoming') return;
+    stopIncomingRing();
+    startConnecting();
+    const pc = await initPC();
+    if (!pc || endedRef.current) return;
+    emit('call:response', { accepted: true });
     if (pendingOfferRef.current) {
-      await processOffer(pendingOfferRef.current);
+      const offer = pendingOfferRef.current;
       pendingOfferRef.current = null;
+      await processOffer(offer);
     }
-  }, [socket, remoteId, initPC, processOffer]);
+  }, [emit, initPC, processOffer, startConnecting]);
 
   const reject = useCallback(() => {
+    if (endedRef.current) return;
     stopIncomingRing();
-    socket?.emit('call:response', { to: remoteId, accepted: false, reason: 'rejected' });
+    emit('call:response', { accepted: false, reason: 'rejected' });
+    cleanup();
     onClose();
-  }, [socket, remoteId, onClose]);
+  }, [emit, cleanup, onClose]);
 
   useEffect(() => {
     if (!socket) return;
-    const onResponse = async ({ from, accepted, reason, busy }) => {
-      if (from !== remoteId) return; // 防伪造拒接信号
-      clearTimeout(timeoutRef.current);
-      if (!accepted) {
-        setEndReason(busy ? 'busy' : (reason || 'rejected'));
-        setStatus('ended');
-        cleanup();
-        setTimeout(onClose, 1800);
-        return;
-      }
-      setStatus('connecting');
-      // ICE 协商超时保护：对称 NAT 无 TURN 时 connectionState 可能永远不变
-      iceTimeoutRef.current = setTimeout(() => {
-        if (statusRef.current === 'connecting') endCall(true, 'timeout');
-      }, 30000);
-      const pc = pcRef.current;
-      if (!pc) return;
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      socket.emit('call:offer', { to: remoteId, offer });
+    const matches = data => data && !endedRef.current && data.from === remoteId &&
+      (!data.callId || !callIdRef.current || data.callId === callIdRef.current);
+    const onCreated = ({ to, callId } = {}) => {
+      if (to === remoteId && !endedRef.current) callIdRef.current = callId;
     };
-    const onOffer = async ({ offer }) => {
-      if (!pcRef.current) { pendingOfferRef.current = offer; return; }
-      await processOffer(offer);
-    };
-    const onAnswer = async ({ answer }) => {
-      const pc = pcRef.current;
-      if (!pc) return;
-      await pc.setRemoteDescription(new RTCSessionDescription(answer));
-      // remoteDescription 就绪 → flush 之前早到的 ICE 候选（对齐原生端 pendingIce）
-      for (const c of pendingIceRef.current.splice(0)) {
-        try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch { /* stale */ }
-      }
-    };
-    const onIce = async ({ candidate }) => {
-      const pc = pcRef.current;
-      if (!pc || !candidate) return;
-      // 对齐 Android/iOS：remoteDescription 未就绪时，早到的候选必须入队而非丢弃，
-      // 否则对端（尤其原生端 trickle ICE 发得早）的关键候选丢失 → 永久卡"连接中"。
-      if (!pc.remoteDescription || !pc.remoteDescription.type) {
-        pendingIceRef.current.push(candidate);
-        return;
-      }
+    const onResponse = async (data) => {
+      if (!matches(data) || direction !== 'outgoing' || statusRef.current !== 'calling') return;
+      const { accepted, reason, busy, callId } = data;
+      if (callId) callIdRef.current = callId;
+      if (!accepted) { endCall(false, busy ? 'busy' : (reason || 'rejected')); return; }
+      startConnecting();
+      const pc = await initPC();
+      if (!pc || endedRef.current) return;
       try {
-        await pc.addIceCandidate(new RTCIceCandidate(candidate));
-      } catch { /* stale/duplicate ICE candidate; safe to ignore */ }
+        const offer = await pc.createOffer();
+        if (endedRef.current || pcRef.current !== pc) return;
+        await pc.setLocalDescription(offer);
+        if (!endedRef.current && pcRef.current === pc) emit('call:offer', { offer });
+      } catch { if (!endedRef.current && pcRef.current === pc) endCall(true, 'error'); }
     };
-    const onEnd = ({ from, reason } = {}) => {
-      if (from !== remoteId) return; // 防任意用户强制关闭通话界面
-      if (reason) setEndReason(reason);
-      setStatus('ended');
-      cleanup();
-      setTimeout(onClose, 1800);
+    const onOffer = async (data) => {
+      if (!matches(data) || direction !== 'incoming') return;
+      if (!pcRef.current) { pendingOfferRef.current = data.offer; return; }
+      await processOffer(data.offer);
     };
-    socket.on('call:response', onResponse);
-    socket.on('call:offer',    onOffer);
-    socket.on('call:answer',   onAnswer);
-    socket.on('call:ice',      onIce);
-    socket.on('call:end',      onEnd);
-    return () => {
-      socket.off('call:response', onResponse);
-      socket.off('call:offer',    onOffer);
-      socket.off('call:answer',   onAnswer);
-      socket.off('call:ice',      onIce);
-      socket.off('call:end',      onEnd);
+    const onAnswer = async (data) => {
+      const pc = pcRef.current;
+      if (!matches(data) || !pc || direction !== 'outgoing') return;
+      try {
+        await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+        if (endedRef.current || pcRef.current !== pc) return;
+        for (const c of pendingIceRef.current.splice(0)) {
+          try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch { /* stale */ }
+        }
+      } catch { if (!endedRef.current && pcRef.current === pc) endCall(true, 'error'); }
     };
-  }, [socket, remoteId, cleanup, onClose, processOffer, endCall]);
+    const onIce = async (data) => {
+      if (!matches(data) || !data.candidate) return;
+      const pc = pcRef.current;
+      if (!pc?.remoteDescription?.type) {
+        if (pendingIceRef.current.length < 256) pendingIceRef.current.push(data.candidate);
+        return;
+      }
+      try { await pc.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch { /* stale */ }
+    };
+    const onEnd = data => { if (matches(data)) endCall(false, data.reason); };
+    const onDisconnect = () => endCall(false, 'network');
+    const onError = () => endCall(true, 'error');
+    const events = { 'call:created': onCreated, 'call:response': onResponse, 'call:offer': onOffer,
+      'call:answer': onAnswer, 'call:ice': onIce, 'call:end': onEnd, 'call:error': onError, disconnect: onDisconnect };
+    for (const [name, handler] of Object.entries(events)) socket.on(name, handler);
+    return () => { for (const [name, handler] of Object.entries(events)) socket.off(name, handler); };
+  }, [socket, remoteId, direction, processOffer, endCall, startConnecting, initPC, emit]);
 
-  // 挂载即发起/准备通话：initPC 建立 RTCPeerConnection、getUserMedia 等外部系统副作用，
-  // 其内部 setState 属正当的取媒体流程，非可派生同步状态。
+  // Listeners above are installed before requesting a call, including lazy-loaded UI.
   useEffect(() => {
+    endedRef.current = false;
     if (direction === 'outgoing') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- 见上：WebRTC 初始化副作用
-      initPC().then(() => {
-        timeoutRef.current = setTimeout(() => {
-          if (statusRef.current === 'calling') endCall(true, 'timeout');
-        }, CALL_TIMEOUT_MS);
+      timeoutRef.current = setTimeout(() => endCall(true, 'timeout'), CALL_TIMEOUT_MS);
+      initPC().then(pc => {
+        if (pc && !endedRef.current && statusRef.current === 'calling') emit('call:request', { type });
       });
     }
-    const onUnload = () => {
-      if (['calling', 'connecting', 'connected'].includes(statusRef.current))
-        socket?.emit('call:end', { to: remoteId });
-    };
+    const onUnload = () => { if (!endedRef.current) emit('call:end'); };
     window.addEventListener('beforeunload', onUnload);
     return () => { window.removeEventListener('beforeunload', onUnload); cleanup(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -479,7 +496,7 @@ export default function CallModal({ socket, call, onClose }) {
     if (t) { t.enabled = cameraOff; setCameraOff(c => !c); }
   }, [cameraOff]);
 
-  const END_TEXT = { rejected: '对方已拒绝', busy: '对方正忙', timeout: '无人接听', network: '网络已断开' };
+  const END_TEXT = { rejected: '对方已拒绝', busy: '对方正忙', timeout: '无人接听', connection_timeout: '连接超时', network: '网络已断开', disconnected: '网络已断开', rate_limited: '操作太快，请稍后重试', answered_elsewhere: '已在其他设备接听', media_error: '无法使用麦克风或摄像头', error: '通话连接失败' };
   const inProgress  = ['calling', 'connecting', 'connected'].includes(status);
   const canMinimize = inProgress && status !== 'incoming';
 
@@ -504,7 +521,7 @@ export default function CallModal({ socket, call, onClose }) {
 
         {isVideo ? (
           <div className="cm-bubble-video">
-            <video ref={onMiniVideoMount} autoPlay playsInline />
+            <video ref={onMiniVideoMount} autoPlay muted playsInline />
             <div className="cm-bubble-video-overlay">
               <span className="cm-bubble-timer">
                 {isConnected ? timer : '连接中…'}
@@ -516,6 +533,7 @@ export default function CallModal({ socket, call, onClose }) {
               aria-label="挂断"
               title="挂断"
               onPointerDown={e => e.stopPropagation()}
+              onPointerUp={e => e.stopPropagation()}
               onClick={e => { e.stopPropagation(); endCall(true); }}
             >
               <IcoHangup />
@@ -544,6 +562,7 @@ export default function CallModal({ socket, call, onClose }) {
                 title="挂断"
                 style={{ width: 26, height: 26, bottom: -4, right: -4 }}
                 onPointerDown={e => e.stopPropagation()}
+              onPointerUp={e => e.stopPropagation()}
                 onClick={e => { e.stopPropagation(); endCall(true); }}
               >
                 <IcoHangup />

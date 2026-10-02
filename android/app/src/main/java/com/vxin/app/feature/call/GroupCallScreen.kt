@@ -49,24 +49,24 @@ private val CallRed = Color(0xFFFA5151)
 fun GroupCallHost(viewModel: GroupCallViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val remoteTracks by viewModel.remoteTracks.collectAsStateWithLifecycle()
-    var invite by remember { mutableStateOf<GroupCallInviteEvent?>(null) }
-
-    LaunchedEffect(Unit) { viewModel.inviteEvents.collect { invite = it } }
-    // 已进入通话则清掉邀请横幅；结束态稍后自动归零
-    if (state.stage != GroupCallStage.IDLE && state.stage != GroupCallStage.ENDED) invite = null
+    val invite by viewModel.pendingInvite.collectAsStateWithLifecycle()
+    var joining by remember { mutableStateOf<GroupCallInviteEvent?>(null) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val joinPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
+        val pending = joining
+        joining = null
+        if (pending != null && granted.isNotEmpty() && granted.values.all { it }) {
+            viewModel.join(pending.callId, pending.conversationId, pending.type == "video")
+        } else {
+            android.widget.Toast.makeText(context, "请允许使用麦克风和摄像头后再加入通话", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
     LaunchedEffect(state.stage) {
         if (state.stage == GroupCallStage.ENDED) { kotlinx.coroutines.delay(800); viewModel.consumeEnded() }
     }
 
     // 通话进行中：全屏浮层
     if (state.stage != GroupCallStage.IDLE) {
-        val perms = remember(state.isVideo) {
-            if (state.isVideo) arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA)
-            else arrayOf(Manifest.permission.RECORD_AUDIO)
-        }
-        val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {}
-        LaunchedEffect(Unit) { permLauncher.launch(perms) }
-
         Box(Modifier.fillMaxSize().background(Color(0xFF121212))) {
             val durationText = groupCallDuration(state.connectedAt)
             Text(
@@ -125,9 +125,13 @@ fun GroupCallHost(viewModel: GroupCallViewModel = hiltViewModel()) {
                 Text("${inv.fromName.ifBlank { "群成员" }} 发起了群${if (inv.type == "video") "视频" else "语音"}通话",
                     color = Color.White, fontSize = com.vxin.app.ui.theme.VxinTextSize.base)
                 Box(Modifier.clip(RoundedCornerShape(com.vxin.app.ui.theme.VxinRadius.thumb)).background(CallGreen)
-                    .clickable { viewModel.join(inv.callId, inv.conversationId, inv.type == "video"); invite = null }
+                    .clickable {
+                        joining = inv
+                        joinPermission.launch(if (inv.type == "video") arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA)
+                            else arrayOf(Manifest.permission.RECORD_AUDIO))
+                    }
                     .padding(horizontal = 14.dp, vertical = 6.dp)) { Text("加入", color = Color.White, fontSize = com.vxin.app.ui.theme.VxinTextSize.sm2) }
-                Box(Modifier.clickable { invite = null }.padding(horizontal = 8.dp, vertical = 6.dp)) {
+                Box(Modifier.clickable { viewModel.dismissInvite() }.padding(horizontal = 8.dp, vertical = 6.dp)) {
                     Text("忽略", color = Color(0xFF999999), fontSize = com.vxin.app.ui.theme.VxinTextSize.sm2)
                 }
             }

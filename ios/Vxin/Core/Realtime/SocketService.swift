@@ -418,8 +418,8 @@ final class SocketService {
         if let sdpMid { cand["sdpMid"] = sdpMid }
         socket?.emit("call:ice", ["to": to, "candidate": cand])
     }
-    func emitCallEnd(to: String) {
-        socket?.emit("call:end", ["to": to])
+    func emitCallEnd(to: String, reason: String = "") {
+        socket?.emit("call:end", ["to": to, "reason": reason])
     }
 
     // ── 群通话信令发送 ──

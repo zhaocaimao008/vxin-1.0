@@ -69,7 +69,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didReceiveRemoteNotification userInfo: [AnyHashable: Any],
                      fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
-        guard userInfo["type"] as? String == "call" else {
+        guard ["call", "group_call"].contains(userInfo["type"] as? String ?? "") else {
             completionHandler(.noData)
             return
         }
@@ -77,7 +77,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         let callType = userInfo["callType"] as? String ?? "audio"
         let callerName = userInfo["callerName"] as? String ?? ""
         DispatchQueue.main.async {
-            CallManager.shared.incomingFromPush(from: from, callType: callType, callerName: callerName)
+            if userInfo["type"] as? String == "group_call" {
+                GroupCallManager.shared.incomingFromPush(callId: userInfo["callId"] as? String ?? "", conversationId: userInfo["conversationId"] as? String ?? "", type: callType, from: from, name: callerName)
+            } else {
+                CallManager.shared.incomingFromPush(from: from, callType: callType, callerName: callerName)
+            }
         }
         completionHandler(.newData)
     }
@@ -107,6 +111,23 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         // 来电通知动作：接听/拒绝。userInfo 由 CallManager.showIncomingCallNotification 携带
         // from/callType/callerName；先 incomingFromPush 置 incoming（幂等），再 accept/reject。
         let actionId = response.actionIdentifier
+        let callInfo = response.notification.request.content.userInfo
+        if callInfo["type"] as? String == "group_call" {
+            let callId = callInfo["callId"] as? String ?? ""
+            let conversationId = callInfo["conversationId"] as? String ?? ""
+            let type = callInfo["callType"] as? String ?? "audio"
+            DispatchQueue.main.async {
+                if actionId == "DECLINE" { GroupCallManager.shared.dismissInvite(callId: callId) }
+                else if actionId == "ANSWER" {
+                    GroupCallManager.shared.join(callId: callId, conversationId: conversationId, video: type == "video")
+                } else {
+                    GroupCallManager.shared.incomingFromPush(callId: callId, conversationId: conversationId, type: type,
+                        from: callInfo["from"] as? String ?? "", name: callInfo["callerName"] as? String ?? "", notify: false)
+                }
+            }
+            completionHandler()
+            return
+        }
         if actionId == "ANSWER" || actionId == "DECLINE" {
             let info = response.notification.request.content.userInfo
             let from = info["from"] as? String ?? ""
