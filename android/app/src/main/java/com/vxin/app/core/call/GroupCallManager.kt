@@ -241,8 +241,8 @@ class GroupCallManager @Inject constructor(
         scope.launch {
             socketManager.groupCallPeersEvents.collect { e ->
                 if (_state.value.stage != GroupCallStage.CONNECTING) return@collect
-                connectTimeout?.cancel()
                 if (_state.value.callId.isNotEmpty() && e.callId != _state.value.callId) return@collect
+                connectTimeout?.cancel()
                 _state.update { it.copy(stage = GroupCallStage.CONNECTED, callId = e.callId, connectedAt = if (it.connectedAt == 0L) android.os.SystemClock.elapsedRealtime() else it.connectedAt) }
                 // 作为 answerer：为既有成员预建 PC，等其 offer
                 e.peers.forEach { pid -> peerFor(pid) }

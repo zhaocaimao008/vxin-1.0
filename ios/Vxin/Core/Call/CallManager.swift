@@ -176,6 +176,7 @@ final class CallManager: NSObject, ObservableObject {
 
     func accept() {
         guard state.stage == .incoming else { return }
+        VoipCallManager.shared.markAnswered()
         state.stage = .connecting
         let generation = UUID()
         sessionGeneration = generation

@@ -175,6 +175,7 @@ final class GroupCallManager: NSObject, ObservableObject {
         guard state.stage == .idle || state.stage == .ended else { return }
         pendingInvite = nil
         UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ["group_call_\(callId)"])
+        VoipCallManager.shared.markAnswered(groupCallId: callId)
         state = GroupCallState(stage: .connecting, callId: callId, conversationId: conversationId, isVideo: video)
         let generation = UUID()
         sessionGeneration = generation

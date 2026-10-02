@@ -211,7 +211,13 @@ final class VoipCallManager: NSObject, PKPushRegistryDelegate, CXProviderDelegat
         }
     }
 
-    /// 供 CallManager 在 accept/reject/hangup/socket call:end 时同步收尾 CallKit 界面。
+    /// 应用内 UI 也可以接听；同步撤销系统响铃超时。
+    func markAnswered(groupCallId: String? = nil) {
+        guard groupInvite?.callId == groupCallId else { return }
+        pendingCallInfo = nil
+    }
+
+    /// 供通话管理器同步收尾 CallKit 界面。
     func endActiveCall(groupCallId: String? = nil) {
         guard groupInvite?.callId == groupCallId else { return }
         guard let uuid = pendingCallUUID else { return }
