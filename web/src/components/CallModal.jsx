@@ -562,7 +562,7 @@ export default function CallModal({ socket, call, onClose }) {
                 title="挂断"
                 style={{ width: 26, height: 26, bottom: -4, right: -4 }}
                 onPointerDown={e => e.stopPropagation()}
-              onPointerUp={e => e.stopPropagation()}
+                onPointerUp={e => e.stopPropagation()}
                 onClick={e => { e.stopPropagation(); endCall(true); }}
               >
                 <IcoHangup />
@@ -606,7 +606,7 @@ export default function CallModal({ socket, call, onClose }) {
       {isVideo && <>
         <video
           ref={onRemoteVideoMount}
-          autoPlay playsInline
+          autoPlay muted playsInline
           className="cm-remote-video"
         />
         <div className="cm-scrim-top" />

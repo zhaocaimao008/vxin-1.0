@@ -62,7 +62,7 @@ jobs:
           VC=$(sed -n 's/.*versionCode = \([0-9]*\).*/\1/p' app/build.gradle.kts | head -1)
           if [[ "$GITHUB_REF_TYPE" == tag ]]; then test "$GITHUB_REF_NAME" = "android-v$VN"; fi
           SHA=$(sha256sum "$APK" | cut -d' ' -f1)
-          jq -n --arg versionName "$VN" --argjson versionCode "$VC" --arg sha256 "$SHA" --arg url "https://vxinchat.com/downloads/vxin-android-$VN.apk" '{versionName:$versionName,versionCode:$versionCode,sha256:$sha256,url:$url,notes:"修复页面恢复、账号与服务器隔离、重发及缓存问题。"}' > app/build/outputs/apk/release/vxin-android-version.json
+          jq -n --arg versionName "$VN" --argjson versionCode "$VC" --arg sha256 "$SHA" --arg url "https://vxinchat.com/downloads/vxin-android-$VN.apk" '{versionName:$versionName,versionCode:$versionCode,sha256:$sha256,url:$url,notes:"修复单聊与群聊语音、多设备接听、连接超时及挂断后的媒体释放问题。"}' > app/build/outputs/apk/release/vxin-android-version.json
 
       - name: Upload signed APK
         if: always()

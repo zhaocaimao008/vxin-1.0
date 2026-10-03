@@ -280,8 +280,10 @@ export default function ChatWindow({ conversation: initialConv, features = {}, o
       if (groupCall) return;                                  // 已在通话中
       setGroupCallInvite(inv);
     };
+    const onEnded = ({ callId }) => setGroupCallInvite(current => current?.callId === callId ? null : current);
     socket.on('group_call:invite', onInvite);
-    return () => socket.off('group_call:invite', onInvite);
+    socket.on('group_call:ended', onEnded);
+    return () => { socket.off('group_call:invite', onInvite); socket.off('group_call:ended', onEnded); };
   }, [socket, conversation.id, groupCall]);
 
   const joinGroupCall = useCallback(() => {

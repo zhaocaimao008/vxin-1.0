@@ -70,10 +70,10 @@ final class VoipCallManager: NSObject, PKPushRegistryDelegate, CXProviderDelegat
     func pushRegistry(_ registry: PKPushRegistry, didReceiveIncomingPushWith payload: PKPushPayload,
                        for type: PKPushType, completion: @escaping () -> Void) {
         // iOS 13+ 必须调用 completion，否则系统会终止进程（多次不调会被永久停用 VoIP 推送）
-        defer { completion() }
-        guard type == .voIP else { return }
+        guard type == .voIP else { completion(); return }
+        if provider == nil { activate() }
         let d = payload.dictionaryPayload
-        guard ["call", "group_call"].contains(d["type"] as? String ?? "") else { return }
+        guard ["call", "group_call"].contains(d["type"] as? String ?? "") else { completion(); return }
         let callId = d["callId"] as? String ?? ""
         let from = d["from"] as? String ?? ""
         let callerName = d["callerName"] as? String ?? ""
@@ -89,17 +89,20 @@ final class VoipCallManager: NSObject, PKPushRegistryDelegate, CXProviderDelegat
             } else {
                 CallManager.shared.incomingFromPush(from: from, callType: callType, callerName: callerName, callId: callId)
             }
-            reportAndImmediatelyEnd(callId: callId, from: from, callerName: callerName, callType: callType)
+            reportAndImmediatelyEnd(callId: callId, from: from, callerName: callerName, callType: callType, completion: completion)
             return
         }
         // 同 callId 幂等忽略（对齐 incomingFromPush 的 peerId 去重）
-        if let p = pendingCallInfo, p.callId == callId { return }
-        reportIncomingCall(callId: callId, from: from, callerName: callerName, callType: callType, conversationId: conversationId)
+        if pendingCallUUID != nil {
+            reportAndImmediatelyEnd(callId: callId, from: from, callerName: callerName, callType: callType, completion: completion)
+            return
+        }
+        reportIncomingCall(callId: callId, from: from, callerName: callerName, callType: callType, conversationId: conversationId, completion: completion)
     }
 
     /// 前台场景：上报 CallKit 后立即结束，满足「每个 VoIP push 必须上报 CallKit」的系统要求（iOS 13+），
     /// 同时避免与应用内 CallHostView 双 UI 冲突。
-    private func reportAndImmediatelyEnd(callId: String, from: String, callerName: String, callType: String) {
+    private func reportAndImmediatelyEnd(callId: String, from: String, callerName: String, callType: String, completion: @escaping () -> Void) {
         let uuid = UUID()
         let update = CXCallUpdate()
         update.remoteHandle = CXHandle(type: .generic, value: from)
@@ -107,10 +110,11 @@ final class VoipCallManager: NSObject, PKPushRegistryDelegate, CXProviderDelegat
         update.hasVideo = callType == "video"
         provider?.reportNewIncomingCall(with: uuid, update: update) { [weak self] _ in
             self?.provider?.reportCall(with: uuid, endedAt: Date(), reason: .remoteEnded)
+            completion()
         }
     }
 
-    private func reportIncomingCall(callId: String, from: String, callerName: String, callType: String, conversationId: String) {
+    private func reportIncomingCall(callId: String, from: String, callerName: String, callType: String, conversationId: String, completion: @escaping () -> Void) {
         let uuid = UUID()
         pendingCallUUID = uuid
         pendingCallInfo = (callId: callId, from: from, callerName: callerName, callType: callType)
@@ -131,8 +135,10 @@ final class VoipCallManager: NSObject, PKPushRegistryDelegate, CXProviderDelegat
         update.supportsGrouping = false
         update.supportsUngrouping = false
         provider?.reportNewIncomingCall(with: uuid, update: update) { error in
+            defer { completion() }
             if let error {
                 print("[Voip] reportNewIncomingCall 失败: \(error.localizedDescription)")
+                DispatchQueue.main.async { self.endCallIfNeeded(uuid: uuid) }
             }
         }
 
@@ -184,6 +190,7 @@ final class VoipCallManager: NSObject, PKPushRegistryDelegate, CXProviderDelegat
         } else {
             CallManager.shared.hangup()
         }
+        endCallIfNeeded(uuid: action.callUUID)
         action.fulfill()
     }
 

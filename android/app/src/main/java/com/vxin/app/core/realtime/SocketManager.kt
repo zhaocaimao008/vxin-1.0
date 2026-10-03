@@ -39,12 +39,12 @@ data class CallEndEvent(val from: String)
 
 // ── 群通话(mesh) 信令事件 ──
 data class GroupCallInviteEvent(val callId: String, val conversationId: String, val type: String, val from: String, val fromName: String, val fromAvatar: String = "")
-data class GroupCallStartedEvent(val callId: String, val type: String)
+data class GroupCallStartedEvent(val callId: String, val type: String, val conversationId: String = "", val requestId: String = "")
 data class GroupCallPeersEvent(val callId: String, val type: String, val peers: List<String>)
 data class GroupCallPeerEvent(val callId: String, val userId: String)               // peer_joined / peer_left
 data class GroupCallSdpEvent(val callId: String, val from: String, val sdp: String) // offer / answer
 data class GroupCallIceEvent(val callId: String, val from: String, val candidate: String, val sdpMid: String?, val sdpMLineIndex: Int)
-data class GroupCallErrorEvent(val reason: String)
+data class GroupCallErrorEvent(val reason: String, val callId: String = "", val requestId: String = "")
 data class GroupCallEndedEvent(val callId: String, val reason: String)  // 服务端强制结束（如超时长上限）
 
 /**
@@ -398,7 +398,7 @@ class SocketManager @Inject constructor(
         }
         s.on("group_call:started") { args ->
             (args.firstOrNull() as? JSONObject)?.let { o ->
-                _gcStarted.tryEmit(GroupCallStartedEvent(o.optString("callId"), o.optString("type", "audio")))
+                _gcStarted.tryEmit(GroupCallStartedEvent(o.optString("callId"), o.optString("type", "audio"), o.optString("conversationId"), o.optString("requestId")))
             }
         }
         s.on("group_call:peers") { args ->
@@ -441,7 +441,7 @@ class SocketManager @Inject constructor(
             }
         }
         s.on("group_call:error") { args ->
-            (args.firstOrNull() as? JSONObject)?.let { o -> _gcError.tryEmit(GroupCallErrorEvent(o.optString("reason"))) }
+            (args.firstOrNull() as? JSONObject)?.let { o -> _gcError.tryEmit(GroupCallErrorEvent(o.optString("reason"), o.optString("callId"), o.optString("requestId"))) }
         }
         s.on("group_call:ended") { args ->
             (args.firstOrNull() as? JSONObject)?.let { o -> _gcEnded.tryEmit(GroupCallEndedEvent(o.optString("callId"), o.optString("reason"))) }
@@ -561,8 +561,8 @@ class SocketManager @Inject constructor(
     }
 
     // ── 群通话信令发送 ──
-    fun emitGroupCallStart(conversationId: String, type: String) {
-        socket?.emit("group_call:start", JSONObject().put("conversationId", conversationId).put("type", type))
+    fun emitGroupCallStart(conversationId: String, type: String, requestId: String = "") {
+        socket?.emit("group_call:start", JSONObject().put("conversationId", conversationId).put("type", type).apply { if (requestId.isNotEmpty()) put("requestId", requestId) })
     }
     fun emitGroupCallJoin(callId: String) {
         socket?.emit("group_call:join", JSONObject().put("callId", callId))
@@ -582,8 +582,8 @@ class SocketManager @Inject constructor(
                 .put("sdpMid", sdpMid ?: JSONObject.NULL)
                 .put("sdpMLineIndex", sdpMLineIndex)))
     }
-    fun emitGroupCallLeave(callId: String) {
-        socket?.emit("group_call:leave", JSONObject().put("callId", callId))
+    fun emitGroupCallLeave(callId: String, requestId: String = "") {
+        socket?.emit("group_call:leave", JSONObject().apply { if (callId.isNotEmpty()) put("callId", callId) else put("requestId", requestId) })
     }
 
     @Synchronized

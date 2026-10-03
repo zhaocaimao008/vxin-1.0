@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 const { privateSendGuard } = require('../../modules/messages/shared');
 const { db } = require('../../db/connection');
 const { pushCallInvite } = require('../../utils/push');
+const sessions = require('../callSessions');
 const CALL_TIMEOUT_MS = 120_000;
 const CALL_COOLDOWN_MS = 5_000;
 const activeCalls = new Map();
@@ -18,6 +19,8 @@ function finish(io, key, c, status, reason, from) {
   if (activeCalls.get(key) !== c) return;
   clearTimeout(c.timer);
   activeCalls.delete(key);
+  sessions.release(c.caller, c.id);
+  sessions.release(c.callee, c.id);
   const end = nowSec();
   try {
     db.prepare('UPDATE call_logs SET status=?, ended_at=?, duration=? WHERE id=?')
@@ -68,7 +71,7 @@ module.exports = function registerCallHandler(io, socket) {
       socket.emit('call:response', { from: to, accepted: false });
       return;
     }
-    if ([...activeCalls.values()].some(c => [c.caller, c.callee].some(uid => uid === userId || uid === to))) {
+    if (sessions.isBusy(userId) || sessions.isBusy(to)) {
       socket.emit('call:response', { from: to, accepted: false, busy: true });
       return;
     }
@@ -76,6 +79,8 @@ module.exports = function registerCallHandler(io, socket) {
     const c = { id: uuidv4(), caller: userId, callee: to, callerSocket: socket.id,
       calleeSocket: null, answeredAt: null, timer: null };
     activeCalls.set(key, c);
+    sessions.claim(userId, c.id);
+    sessions.claim(to, c.id);
     c.timer = setTimeout(() => finish(io, key, c, 'missed', 'timeout'), CALL_TIMEOUT_MS);
     c.timer.unref?.();
     const t = type === 'video' ? 'video' : 'audio';

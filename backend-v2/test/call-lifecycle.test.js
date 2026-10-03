@@ -26,7 +26,7 @@ beforeAll(async () => {
   for (let i = 0; i < 24; i += 2) { await befriend(users[i], users[i+1]); await privateConversation(users[i], users[i+1]); }
 });
 afterEach(() => {
-  for (const h of liveHarnesses.splice(0)) h.handlers['call:end']?.({ to: h.peer });
+  for (const h of liveHarnesses.splice(0)) { h.handlers['call:end']?.({ to: h.peer }); h.handlers['group_call:leave']?.({ callId: registerGroupCall._state.userCall.get(h.socket.user.id) }); }
   presence.onlineUsers.clear();
   for (const c of registerGroupCall._state.groupCalls.values()) clearTimeout(c.timer);
   registerGroupCall._state.groupCalls.clear(); registerGroupCall._state.userCall.clear();
