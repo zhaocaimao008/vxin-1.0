@@ -133,6 +133,10 @@
   "overrides": {
     "@capacitor/cli": {
       "tar": "^7.5.22"
-    }
+    },
+    "@electron/get": "^5.1.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }

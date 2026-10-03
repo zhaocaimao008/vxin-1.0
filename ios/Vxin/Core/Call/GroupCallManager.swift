@@ -217,6 +217,12 @@ final class GroupCallManager: NSObject, ObservableObject {
 
     // MARK: - 信令
     private func observeSignaling() {
+        socket.status.dropFirst().receive(on: DispatchQueue.main).sink { [weak self] status in
+            guard let self, status == .disconnected,
+                  self.state.stage == .connecting || self.state.stage == .connected else { return }
+            self.hangup()
+        }.store(in: &cancellables)
+
         socket.gcInvite.receive(on: DispatchQueue.main).sink { [weak self] inv in
             guard let self else { return }
             if self.state.stage == .connecting || self.state.stage == .connected { return }

@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import org.webrtc.AudioSource
 import org.webrtc.AudioTrack
@@ -230,6 +231,12 @@ class GroupCallManager @Inject constructor(
 
     // ── 信令处理 ───────────────────────────────────────────
     private fun observeSignaling() {
+        scope.launch {
+            socketManager.status.drop(1).collect { status ->
+                if (status == com.vxin.app.core.realtime.SocketStatus.DISCONNECTED &&
+                    _state.value.stage in listOf(GroupCallStage.CONNECTING, GroupCallStage.CONNECTED)) hangup()
+            }
+        }
         scope.launch {
             socketManager.groupCallStartedEvents.collect { e ->
                 if (e.requestId.isNotEmpty() && e.requestId != requestId) return@collect

@@ -85,5 +85,11 @@
   "devDependencies": {
     "electron": "^44.4.1",
     "electron-builder": "^26.15.3"
+  },
+  "overrides": {
+    "@electron/get": "^5.1.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }
