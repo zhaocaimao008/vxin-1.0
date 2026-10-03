@@ -93,16 +93,58 @@ function useGroupCallWebRTC({ socket, user: _user, session, nameOf: _nameOf, onC
   const callIdRef = useRef(session.callId || null);
   const closedRef = useRef(false);
 
-  const removePeer = useCallback((peerId) => {
+  const generationRef = useRef(0);
+  const requestIdRef = useRef(crypto.randomUUID());
+  const requestedRef = useRef(false);
+  const timeoutRef = useRef(null);
+  const peerTimersRef = useRef(new Map());
+
+  const cleanup = useCallback(() => {
+    if (closedRef.current) return;
+    closedRef.current = true;
+    generationRef.current += 1;
+    clearTimeout(timeoutRef.current);
+    for (const timer of peerTimersRef.current.values()) clearTimeout(timer);
+    peerTimersRef.current.clear();
+    if (requestedRef.current) socket?.emit('group_call:leave', {
+      ...(callIdRef.current ? { callId: callIdRef.current } : { requestId: requestIdRef.current }),
+    });
+    pcsRef.current.forEach(pc => {
+      pc.onicecandidate = pc.ontrack = pc.onconnectionstatechange = null;
+      pc.close();
+    });
+    pcsRef.current.clear();
+    localStreamRef.current?.getTracks().forEach(t => t.stop());
+    localStreamRef.current = null;
+    pendingIceRef.current.clear();
+    remoteSetRef.current.clear();
+  }, [socket]);
+
+  const hangup = useCallback(() => { cleanup(); }, [cleanup]);
+  const finish = useCallback((message) => {
+    if (closedRef.current) return;
+    if (message) showToast(message, 'error');
+    cleanup();
+    onClose?.();
+  }, [cleanup, onClose]);
+
+  const removePeer = useCallback((peerId, failed = false) => {
     const pc = pcsRef.current.get(peerId);
-    if (pc) { try { pc.close(); } catch { /* 连接已关闭 */ } pcsRef.current.delete(peerId); }
+    pcsRef.current.delete(peerId);
+    clearTimeout(peerTimersRef.current.get(peerId));
+    peerTimersRef.current.delete(peerId);
+    if (pc) {
+      pc.onicecandidate = pc.ontrack = pc.onconnectionstatechange = null;
+      pc.close();
+    }
     remoteSetRef.current.delete(peerId);
     pendingIceRef.current.delete(peerId);
     setRemoteStreams(prev => {
       if (!(peerId in prev)) return prev;
       const n = { ...prev }; delete n[peerId]; return n;
     });
-  }, []);
+    if (failed && pcsRef.current.size === 0) finish('群通话连接失败，请重新加入');
+  }, [finish]);
 
   const drainIce = useCallback((peerId) => {
     const pc = pcsRef.current.get(peerId);
@@ -114,33 +156,36 @@ function useGroupCallWebRTC({ socket, user: _user, session, nameOf: _nameOf, onC
   }, []);
 
   const createPC = useCallback((peerId) => {
+    if (closedRef.current) return null;
     if (pcsRef.current.has(peerId)) return pcsRef.current.get(peerId);
     const pc = new RTCPeerConnection(iceCfgRef.current);
     pcsRef.current.set(peerId, pc);
+    const alive = () => !closedRef.current && pcsRef.current.get(peerId) === pc;
     localStreamRef.current?.getTracks().forEach(t => pc.addTrack(t, localStreamRef.current));
+    peerTimersRef.current.set(peerId, setTimeout(() => {
+      if (alive() && pc.connectionState !== 'connected') removePeer(peerId, true);
+    }, 30000));
     pc.onicecandidate = ({ candidate }) => {
-      if (candidate) socket?.emit('group_call:ice', { callId: callIdRef.current, to: peerId, candidate });
+      if (alive() && candidate) socket?.emit('group_call:ice', { callId: callIdRef.current, to: peerId, candidate });
     };
     pc.ontrack = (e) => {
+      if (!alive()) return;
       const stream = e.streams[0];
       setRemoteStreams(prev => (prev[peerId] === stream ? prev : { ...prev, [peerId]: stream }));
     };
     pc.onconnectionstatechange = () => {
-      if (['failed', 'closed'].includes(pc.connectionState)) removePeer(peerId);
+      if (!alive()) return;
+      if (pc.connectionState === 'connected') {
+        clearTimeout(peerTimersRef.current.get(peerId));
+      } else if (pc.connectionState === 'disconnected') {
+        clearTimeout(peerTimersRef.current.get(peerId));
+        peerTimersRef.current.set(peerId, setTimeout(() => {
+          if (alive() && pc.connectionState === 'disconnected') removePeer(peerId, true);
+        }, 15000));
+      } else if (['failed', 'closed'].includes(pc.connectionState)) removePeer(peerId, true);
     };
     return pc;
   }, [socket, removePeer]);
-
-  const cleanup = useCallback(() => {
-    if (closedRef.current) return;
-    closedRef.current = true;
-    if (callIdRef.current) socket?.emit('group_call:leave', { callId: callIdRef.current });
-    pcsRef.current.forEach(pc => { try { pc.onicecandidate = null; pc.ontrack = null; pc.close(); } catch { /* 连接已关闭 */ } });
-    pcsRef.current.clear();
-    localStreamRef.current?.getTracks().forEach(t => t.stop());
-  }, [socket]);
-
-  const hangup = useCallback(() => { cleanup(); }, [cleanup]);
 
   const toggleMute = useCallback(() => {
     const on = !muted; setMuted(on);
@@ -157,96 +202,107 @@ function useGroupCallWebRTC({ socket, user: _user, session, nameOf: _nameOf, onC
   const peerIds = Object.keys(remoteStreams);
   const tileCount = peerIds.length + 1;
 
-  // ── 初始化媒体 ──────────────────────────────────────────
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      let stream;
-      try { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideo }); }
-      catch { /* 权限拒绝/设备占用，用空流保底 */ stream = new MediaStream(); }
-      if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
-      localStreamRef.current = stream;
-      setLocalStream(stream);
-      iceCfgRef.current = await fetchIceConfig();
-      if (cancelled) return;
-      if (mode === 'start') socket?.emit('group_call:start', { conversationId, type });
-      else socket?.emit('group_call:join', { callId: callIdRef.current });
-    })();
-    return () => { cancelled = true; cleanup(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // ── 信令事件 ──────────────────────────────────────────
+  // Register signals before requesting a group call. Each event belongs to a callId.
   useEffect(() => {
     if (!socket) return;
-    const onStarted = ({ callId: cid }) => { callIdRef.current = cid; setCallId(cid); setStatus('connected'); };
-    const onPeers = async ({ callId: cid, peers }) => {
+    const matches = data => data && !closedRef.current && data.callId === callIdRef.current;
+    const alive = (peerId, pc) => !closedRef.current && pcsRef.current.get(peerId) === pc;
+    const onStarted = ({ callId: cid, conversationId: conv, requestId } = {}) => {
+      if (closedRef.current || mode !== 'start' || conv !== conversationId ||
+          requestId && requestId !== requestIdRef.current) return;
+      clearTimeout(timeoutRef.current);
       callIdRef.current = cid; setCallId(cid); setStatus('connected');
-      peers.forEach(pid => createPC(pid));
     };
-    const onPeerJoined = async ({ userId: pid }) => {
-      const pc = createPC(pid);
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      socket.emit('group_call:offer', { callId: callIdRef.current, to: pid, offer });
+    const onPeers = data => {
+      if (!matches(data) || !Array.isArray(data.peers)) return;
+      clearTimeout(timeoutRef.current);
+      setStatus('connected');
+      data.peers.forEach(pid => createPC(pid));
     };
-    const onOffer = async ({ from, offer }) => {
-      const pc = createPC(from);
-      await pc.setRemoteDescription(new RTCSessionDescription(offer));
-      remoteSetRef.current.add(from); drainIce(from);
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      socket.emit('group_call:answer', { callId: callIdRef.current, to: from, answer });
-    };
-    const onAnswer = async ({ from, answer }) => {
-      const pc = pcsRef.current.get(from);
+    const onPeerJoined = async data => {
+      if (!matches(data)) return;
+      const pid = data.userId, pc = createPC(pid);
       if (!pc) return;
-      await pc.setRemoteDescription(new RTCSessionDescription(answer));
-      remoteSetRef.current.add(from); drainIce(from);
+      try {
+        const offer = await pc.createOffer();
+        if (!alive(pid, pc)) return;
+        await pc.setLocalDescription(offer);
+        if (alive(pid, pc)) socket.emit('group_call:offer', { callId: data.callId, to: pid, offer });
+      } catch { if (alive(pid, pc)) removePeer(pid, true); }
     };
-    const onIce = ({ from, candidate }) => {
-      const pc = pcsRef.current.get(from);
+    const onOffer = async data => {
+      if (!matches(data)) return;
+      const { from, offer } = data, pc = createPC(from);
+      if (!pc) return;
+      try {
+        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        if (!alive(from, pc)) return;
+        remoteSetRef.current.add(from); drainIce(from);
+        const answer = await pc.createAnswer();
+        if (!alive(from, pc)) return;
+        await pc.setLocalDescription(answer);
+        if (alive(from, pc)) socket.emit('group_call:answer', { callId: data.callId, to: from, answer });
+      } catch { if (alive(from, pc)) removePeer(from, true); }
+    };
+    const onAnswer = async data => {
+      if (!matches(data)) return;
+      const pc = pcsRef.current.get(data.from);
+      if (!pc) return;
+      try {
+        await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+        if (alive(data.from, pc)) { remoteSetRef.current.add(data.from); drainIce(data.from); }
+      } catch { if (alive(data.from, pc)) removePeer(data.from, true); }
+    };
+    const onIce = data => {
+      if (!matches(data) || !data.candidate) return;
+      const { from, candidate } = data, pc = pcsRef.current.get(from);
       if (pc && remoteSetRef.current.has(from)) {
         pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
-      } else {
+      } else if ((pendingIceRef.current.has(from) || pendingIceRef.current.size < 9)) {
         const arr = pendingIceRef.current.get(from) || [];
-        arr.push(candidate);
+        if (arr.length < 256) arr.push(candidate);
         pendingIceRef.current.set(from, arr);
       }
     };
-    const onPeerLeft = ({ userId: pid }) => removePeer(pid);
-    const onError = ({ reason }) => {
-      const msg = { busy: '你正在通话中', not_group: '仅群聊支持多人通话', not_found: '通话已结束', full: '通话人数已满', voice_disabled: '群语音通话已被管理员关闭', video_disabled: '群视频通话已被管理员关闭' }[reason] || '通话出错';
-      showToast(msg, 'error');
-      hangup();
+    const onPeerLeft = data => { if (matches(data)) removePeer(data.userId); };
+    const onError = ({ reason, callId: cid, conversationId: conv, requestId } = {}) => {
+      if (cid && cid !== callIdRef.current || conv && conv !== conversationId ||
+          requestId && requestId !== requestIdRef.current) return;
+      const messages = { active_call: '群里已有通话，请加入已有通话', busy: '你正在通话中', not_group: '仅群聊支持多人通话', not_found: '通话已结束', full: '通话人数已满', voice_disabled: '群语音通话已被管理员关闭', video_disabled: '群视频通话已被管理员关闭', rate_limited: '操作太快，请稍后重试' };
+      finish(messages[reason] || '通话出错');
     };
-    // 服务端强制结束（如超过时长上限）：提示并关闭界面
-    const onEnded = ({ reason }) => {
-      showToast(reason === 'timeout' ? '通话已达时长上限，已结束' : '通话已结束', 'info');
-      hangup();
-      onClose?.();
-    };
-    socket.on('group_call:started', onStarted);
-    socket.on('group_call:peers', onPeers);
-    socket.on('group_call:peer_joined', onPeerJoined);
-    socket.on('group_call:offer', onOffer);
-    socket.on('group_call:answer', onAnswer);
-    socket.on('group_call:ice', onIce);
-    socket.on('group_call:peer_left', onPeerLeft);
-    socket.on('group_call:error', onError);
-    socket.on('group_call:ended', onEnded);
-    return () => {
-      socket.off('group_call:started', onStarted);
-      socket.off('group_call:peers', onPeers);
-      socket.off('group_call:peer_joined', onPeerJoined);
-      socket.off('group_call:offer', onOffer);
-      socket.off('group_call:answer', onAnswer);
-      socket.off('group_call:ice', onIce);
-      socket.off('group_call:peer_left', onPeerLeft);
-      socket.off('group_call:error', onError);
-      socket.off('group_call:ended', onEnded);
-    };
-  }, [socket, createPC, drainIce, removePeer, hangup, onClose]);
+    const onEnded = data => { if (matches(data)) finish(data.reason === 'timeout' ? '通话已超时结束' : '通话已结束'); };
+    const onDisconnect = () => finish('网络已断开');
+    const events = { 'group_call:started': onStarted, 'group_call:peers': onPeers,
+      'group_call:peer_joined': onPeerJoined, 'group_call:offer': onOffer, 'group_call:answer': onAnswer,
+      'group_call:ice': onIce, 'group_call:peer_left': onPeerLeft, 'group_call:error': onError,
+      'group_call:ended': onEnded, disconnect: onDisconnect };
+    for (const [name, handler] of Object.entries(events)) socket.on(name, handler);
+    return () => { for (const [name, handler] of Object.entries(events)) socket.off(name, handler); };
+  }, [socket, mode, conversationId, createPC, drainIce, removePeer, finish]);
+
+  useEffect(() => {
+    closedRef.current = false;
+    const generation = generationRef.current;
+    const alive = () => !closedRef.current && generation === generationRef.current;
+    timeoutRef.current = setTimeout(() => finish('群通话连接超时'), 30000);
+    (async () => {
+      let stream;
+      try { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideo }); }
+      catch { if (alive()) finish('无法使用麦克风或摄像头'); return; }
+      if (!alive()) { stream.getTracks().forEach(t => t.stop()); return; }
+      localStreamRef.current = stream;
+      setLocalStream(stream);
+      const ice = await fetchIceConfig();
+      if (!alive()) return;
+      iceCfgRef.current = ice;
+      requestedRef.current = true;
+      if (mode === 'start') socket?.emit('group_call:start', { conversationId, type, requestId: requestIdRef.current });
+      else socket?.emit('group_call:join', { callId: callIdRef.current });
+    })();
+    return cleanup;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
     callId, muted, cameraOff, remoteStreams, localStream, status,

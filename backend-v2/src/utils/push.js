@@ -6,6 +6,7 @@
  * 推送优先级：FCM（GMS 设备）+ 个推（国产 ROM）并行，互不干扰。
  */
 const http2 = require('http2');
+const callPushPayload = require('./callPushPayload');
 const jwt = require('jsonwebtoken');
 const webpush = require('web-push');
 const config = require('../config');
@@ -310,7 +311,7 @@ function getApnsVoipToken() {
 
 // PushKit voip push：纯自定义 JSON payload（不允许带 aps.alert），app 收到后自行
 // reportNewIncomingCall 弹 CallKit 界面。凭据缺失时静默降级（不影响其他推送通路）。
-function sendVoipPush(deviceToken, { callId, from, callerName, callType }) {
+function sendVoipPush(deviceToken, invite) {
   return new Promise((resolve) => {
     const authToken = getApnsVoipToken();
     if (!authToken) {
@@ -318,14 +319,7 @@ function sendVoipPush(deviceToken, { callId, from, callerName, callType }) {
       resolve({ ok: false, skipped: true });
       return;
     }
-    const body = JSON.stringify({
-      type: 'call',
-      callId: String(callId || ''),
-      from: String(from || ''),
-      callerName: String(callerName || ''),
-      callType: callType === 'video' ? 'video' : 'audio',
-      ts: Date.now(),
-    });
+    const body = JSON.stringify({ ...callPushPayload(invite), ts: Date.now() });
 
     let client;
     try {
@@ -395,11 +389,13 @@ function sendVoipPush(deviceToken, { callId, from, callerName, callType }) {
 // App 被彻底杀死时 iOS 静默推送不会拉起进程，根治需 PushKit/CallKit(VoIP push)，
 // 属单独任务，此处不做。
 // 个推：覆盖无 GMS 的国产 ROM（华为/小米等），走透传，客户端 VxinGeTuiService 按 type=call 分支处理。
-async function pushCallInvite({ toUserId, fromUserId, callerName, callType, callId }) {
+async function pushCallInvite({ toUserId, fromUserId, callerName, callType, callId, conversationId }) {
   if (!firebaseAdmin && !getuiPush.isEnabled()) {
     console.warn('[call-push] 推送未配置（无 FIREBASE/GETUI 凭据），来电无兜底，断线/后台来电将无提醒');
   }
   const type = callType === 'video' ? 'video' : 'audio';
+  const invite = { callId, from: fromUserId, callerName, callType: type, conversationId };
+  const payload = callPushPayload(invite);
   const promises = [];
 
   // 同 pushToUser：android/ios 走 FCM，避免把个推 CID 丢给 FCM 触发误删；
@@ -409,19 +405,13 @@ async function pushCallInvite({ toUserId, fromUserId, callerName, callType, call
   ).all(toUserId);
   for (const row of deviceTokens) {
     if (row.platform === 'ios_voip') {
-      promises.push(sendVoipPush(row.token, { callId, from: fromUserId, callerName, callType: type }));
+      promises.push(sendVoipPush(row.token, invite));
       continue;
     }
     if (firebaseAdmin) {
       const message = {
         token: row.token,
-        data: {
-          type:       'call',
-          callType:   type,
-          from:       String(fromUserId || ''),
-          callerName: String(callerName || ''),
-          callId:     String(callId || ''),
-        },
+        data: payload,
         android: { priority: 'high' },
       };
       if (row.platform === 'ios') {
@@ -454,13 +444,7 @@ async function pushCallInvite({ toUserId, fromUserId, callerName, callType, call
         getuiPush.pushToCid(row.token, {
           title: callerName || '来电',
           body: type === 'video' ? '邀请你视频通话' : '邀请你语音通话',
-          payload: {
-            type: 'call',
-            callType: type,
-            from: String(fromUserId || ''),
-            callerName: String(callerName || ''),
-            callId: String(callId || ''),
-          },
+          payload,
         }).then(({ json }) => {
           if (json.code !== 0) {
             console.warn(`[call-push] 个推失败 user=${toUserId} code=${json.code} msg=${json.msg}`);

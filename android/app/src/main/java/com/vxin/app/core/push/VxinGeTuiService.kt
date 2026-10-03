@@ -47,12 +47,13 @@ class VxinGeTuiService : GTIntentService() {
         runCatching {
             val json = org.json.JSONObject(payload)
             // 来电透传（国产 ROM 无 GMS 时唯一通路，与 FCM type=call 分支对齐）→ 全屏来电通知
-            if (json.optString("type") == "call") {
+            if (json.optString("type") in listOf("call", "group_call")) {
                 entry(context).notificationHelper().showCallNotification(
                     callId = json.optString("callId"),
                     from = json.optString("from"),
                     callerName = json.optString("callerName"),
                     callType = json.optString("callType", "audio"),
+                    conversationId = json.optString("conversationId").takeIf { json.optString("type") == "group_call" },
                 )
                 return@runCatching
             }

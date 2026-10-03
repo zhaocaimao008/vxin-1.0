@@ -2,6 +2,8 @@ import Foundation
 import Combine
 import AVFoundation
 import WebRTC
+import UIKit
+import UserNotifications
 
 enum GroupCallStage { case idle, connecting, connected, ended }
 
@@ -35,6 +37,8 @@ final class GroupCallManager: NSObject, ObservableObject {
     @Published private(set) var remoteTracks: [String: RTCVideoTrack] = [:]
     @Published var pendingInvite: GroupCallInvite?
 
+    private var sessionGeneration = UUID()
+    private var peerTimeouts: [String: DispatchWorkItem] = [:]
     private let factory: RTCPeerConnectionFactory
     private var localAudioTrack: RTCAudioTrack?
     private(set) var localVideoTrack: RTCVideoTrack?
@@ -128,29 +132,61 @@ final class GroupCallManager: NSObject, ObservableObject {
         } catch { /* 兜底 STUN */ }
     }
 
+    func incomingFromPush(callId: String, conversationId: String, type: String, from: String, name: String, notify: Bool = true) {
+        guard !callId.isEmpty, !conversationId.isEmpty, state.stage == .idle || state.stage == .ended else { return }
+        pendingInvite = GroupCallInvite(callId: callId, conversationId: conversationId, type: type, from: from, fromName: name)
+        guard notify, UIApplication.shared.applicationState != .active else { return }
+        let content = UNMutableNotificationContent()
+        content.title = name.isEmpty ? "群通话邀请" : name
+        content.body = type == "video" ? "邀请你加入群视频通话" : "邀请你加入群语音通话"
+        content.sound = .default
+        content.categoryIdentifier = "INCOMING_CALL"
+        content.userInfo = ["type": "group_call", "callId": callId, "conversationId": conversationId,
+                            "callType": type, "from": from, "callerName": name]
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "group_call_\(callId)", content: content, trigger: nil))
+    }
+
+    func dismissInvite(callId: String) {
+        if pendingInvite?.callId == callId { pendingInvite = nil }
+        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ["group_call_\(callId)"])
+        VoipCallManager.shared.endActiveCall(groupCallId: callId)
+    }
+
     // MARK: - 对外动作
     func start(conversationId: String, video: Bool) {
         guard state.stage == .idle || state.stage == .ended else { return }
         pendingInvite = nil
         state = GroupCallState(stage: .connecting, conversationId: conversationId, isVideo: video)
+        let generation = UUID()
+        sessionGeneration = generation
         startConnectTimeout()                   // 连接超时自动结束
         Task { @MainActor in
             await refreshIceServers()
-            guard state.stage != .ended else { return }
+            guard sessionGeneration == generation else { return }
+            let permitted = await CallManager.requestMediaPermissions(video: video)
+            guard sessionGeneration == generation else { return }
+            guard permitted else { hangup(); return }
             configureAudioSession()             // 建流前配好通话音频会话
             createLocalMedia(video: video)
-            socket.emitGroupCallStart(conversationId: conversationId, type: video ? "video" : "audio")
+            socket.emitGroupCallStart(conversationId: conversationId, type: video ? "video" : "audio", requestId: generation.uuidString)
         }
     }
 
     func join(callId: String, conversationId: String, video: Bool) {
         guard state.stage == .idle || state.stage == .ended else { return }
         pendingInvite = nil
+        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ["group_call_\(callId)"])
+        VoipCallManager.shared.markAnswered(groupCallId: callId)
         state = GroupCallState(stage: .connecting, callId: callId, conversationId: conversationId, isVideo: video)
+        let generation = UUID()
+        sessionGeneration = generation
         startConnectTimeout()                   // 连接超时自动结束
         Task { @MainActor in
             await refreshIceServers()
-            guard state.stage != .ended else { return }
+            guard sessionGeneration == generation else { return }
+            let permitted = await CallManager.requestMediaPermissions(video: video)
+            guard sessionGeneration == generation else { return }
+            guard permitted else { hangup(); return }
             configureAudioSession()             // 建流前配好通话音频会话
             createLocalMedia(video: video)
             socket.emitGroupCallJoin(callId: callId)
@@ -158,7 +194,7 @@ final class GroupCallManager: NSObject, ObservableObject {
     }
 
     func hangup() {
-        if !state.callId.isEmpty { socket.emitGroupCallLeave(callId: state.callId) }
+        socket.emitGroupCallLeave(callId: state.callId, requestId: sessionGeneration.uuidString)
         cleanup()
     }
 
@@ -181,14 +217,26 @@ final class GroupCallManager: NSObject, ObservableObject {
 
     // MARK: - 信令
     private func observeSignaling() {
+        socket.status.dropFirst().receive(on: DispatchQueue.main).sink { [weak self] status in
+            guard let self, status == .disconnected,
+                  self.state.stage == .connecting || self.state.stage == .connected else { return }
+            self.hangup()
+        }.store(in: &cancellables)
+
         socket.gcInvite.receive(on: DispatchQueue.main).sink { [weak self] inv in
             guard let self else { return }
             if self.state.stage == .connecting || self.state.stage == .connected { return }
-            self.pendingInvite = GroupCallInvite(callId: inv.callId, conversationId: inv.conversationId, type: inv.type, from: inv.from, fromName: inv.fromName)
+            self.incomingFromPush(callId: inv.callId, conversationId: inv.conversationId, type: inv.type, from: inv.from, name: inv.fromName)
         }.store(in: &cancellables)
 
-        socket.gcStarted.receive(on: DispatchQueue.main).sink { [weak self] (callId, _) in
-            guard let self, self.state.stage != .ended else { return }
+        socket.gcStarted.receive(on: DispatchQueue.main).sink { [weak self] (callId, _, conversationId, requestId) in
+            guard let self else { return }
+            guard requestId.isEmpty || requestId == self.sessionGeneration.uuidString else { return }
+            guard conversationId.isEmpty || conversationId == self.state.conversationId else { return }
+            guard self.state.stage == .connecting else {
+                if self.state.stage != .connected { self.socket.emitGroupCallLeave(callId: callId) }
+                return
+            }
             self.cancelConnectTimeout()         // 服务端已确认，撤销连接超时
             if self.state.connectedAt == nil { self.state.connectedAt = Date() }
             self.state.stage = .connected; self.state.callId = callId
@@ -196,6 +244,7 @@ final class GroupCallManager: NSObject, ObservableObject {
 
         socket.gcPeers.receive(on: DispatchQueue.main).sink { [weak self] (callId, _, peers) in
             guard let self else { return }
+            guard self.state.stage == .connecting else { return }
             if !self.state.callId.isEmpty && callId != self.state.callId { return }
             self.cancelConnectTimeout()         // 服务端已确认，撤销连接超时
             if self.state.connectedAt == nil { self.state.connectedAt = Date() }
@@ -205,55 +254,66 @@ final class GroupCallManager: NSObject, ObservableObject {
         }.store(in: &cancellables)
 
         socket.gcPeerJoined.receive(on: DispatchQueue.main).sink { [weak self] (callId, userId) in
-            guard let self, callId == self.state.callId, let entry = self.peerFor(userId) else { return }
+            guard let self, self.state.stage == .connected, callId == self.state.callId, let entry = self.peerFor(userId) else { return }
             self.state.participants = Array(self.peers.keys)
             entry.pc.offer(for: self.mediaConstraints()) { [weak self] desc, err in
-                guard let self, let desc, err == nil else { return }
-                entry.pc.setLocalDescription(desc) { _ in }
-                self.socket.emitGroupCallOffer(callId: self.state.callId, to: userId, sdp: desc.sdp)
-            }
-        }.store(in: &cancellables)
-
-        socket.gcOffer.receive(on: DispatchQueue.main).sink { [weak self] (callId, from, sdp) in
-            guard let self, callId == self.state.callId, let entry = self.peerFor(from) else { return }
-            self.state.participants = Array(self.peers.keys)
-            entry.pc.setRemoteDescription(RTCSessionDescription(type: .offer, sdp: sdp)) { [weak self] err in
-                guard let self, err == nil else { return }
-                entry.remoteDescSet = true; self.drainIce(from)
-                entry.pc.answer(for: self.mediaConstraints()) { [weak self] desc, err in
-                    guard let self, let desc, err == nil else { return }
+                DispatchQueue.main.async {
+                    guard let self, self.peers[userId] === entry, let desc, err == nil else { return }
                     entry.pc.setLocalDescription(desc) { _ in }
-                    self.socket.emitGroupCallAnswer(callId: self.state.callId, to: from, sdp: desc.sdp)
+                    self.socket.emitGroupCallOffer(callId: callId, to: userId, sdp: desc.sdp)
                 }
             }
         }.store(in: &cancellables)
 
-        socket.gcAnswer.receive(on: DispatchQueue.main).sink { [weak self] (_, from, sdp) in
-            guard let self, let entry = self.peers[from] else { return }
-            entry.pc.setRemoteDescription(RTCSessionDescription(type: .answer, sdp: sdp)) { [weak self] err in
-                guard let self, err == nil else { return }
-                entry.remoteDescSet = true; self.drainIce(from)
+        socket.gcOffer.receive(on: DispatchQueue.main).sink { [weak self] (callId, from, sdp) in
+            guard let self, self.state.stage == .connected, callId == self.state.callId, let entry = self.peerFor(from) else { return }
+            self.state.participants = Array(self.peers.keys)
+            entry.pc.setRemoteDescription(RTCSessionDescription(type: .offer, sdp: sdp)) { [weak self] err in
+                DispatchQueue.main.async {
+                    guard let self, self.peers[from] === entry, err == nil else { return }
+                    entry.remoteDescSet = true; self.drainIce(from)
+                    entry.pc.answer(for: self.mediaConstraints()) { [weak self] desc, err in
+                        DispatchQueue.main.async {
+                            guard let self, self.peers[from] === entry, let desc, err == nil else { return }
+                            entry.pc.setLocalDescription(desc) { _ in }
+                            self.socket.emitGroupCallAnswer(callId: callId, to: from, sdp: desc.sdp)
+                        }
+                    }
+                }
             }
         }.store(in: &cancellables)
 
-        socket.gcIce.receive(on: DispatchQueue.main).sink { [weak self] (_, from, candidate, sdpMid, idx) in
-            guard let self, let entry = self.peers[from] else { return }
+        socket.gcAnswer.receive(on: DispatchQueue.main).sink { [weak self] (callId, from, sdp) in
+            guard let self, callId == self.state.callId, let entry = self.peers[from] else { return }
+            entry.pc.setRemoteDescription(RTCSessionDescription(type: .answer, sdp: sdp)) { [weak self] err in
+                DispatchQueue.main.async {
+                    guard let self, self.peers[from] === entry, err == nil else { return }
+                    entry.remoteDescSet = true; self.drainIce(from)
+                }
+            }
+        }.store(in: &cancellables)
+
+        socket.gcIce.receive(on: DispatchQueue.main).sink { [weak self] (callId, from, candidate, sdpMid, idx) in
+            guard let self, callId == self.state.callId, let entry = self.peers[from] else { return }
             let cand = RTCIceCandidate(sdp: candidate, sdpMLineIndex: idx, sdpMid: sdpMid)
-            if entry.remoteDescSet { entry.pc.add(cand) } else { entry.pendingIce.append(cand) }
+            if entry.remoteDescSet { entry.pc.add(cand) } else if entry.pendingIce.count < 256 { entry.pendingIce.append(cand) }
         }.store(in: &cancellables)
 
-        socket.gcPeerLeft.receive(on: DispatchQueue.main).sink { [weak self] (_, userId) in
-            self?.removePeer(userId)
+        socket.gcPeerLeft.receive(on: DispatchQueue.main).sink { [weak self] (callId, userId) in
+            guard let self, callId == self.state.callId else { return }
+            self.removePeer(userId)
         }.store(in: &cancellables)
 
-        socket.gcError.receive(on: DispatchQueue.main).sink { [weak self] _ in
-            guard let self else { return }
+        socket.gcError.receive(on: DispatchQueue.main).sink { [weak self] (_, callId, requestId) in
+            guard let self, callId.isEmpty || callId == self.state.callId,
+                  requestId.isEmpty || requestId == self.sessionGeneration.uuidString else { return }
             if self.state.stage != .connected { self.cleanup() }
         }.store(in: &cancellables)
 
         // 服务端强制结束（如超过时长上限）：无条件结束本地通话并回收资源
         socket.gcEnded.receive(on: DispatchQueue.main).sink { [weak self] (callId, _) in
             guard let self else { return }
+            if self.pendingInvite?.callId == callId { self.dismissInvite(callId: callId) }
             guard self.state.stage != .idle, callId.isEmpty || callId == self.state.callId else { return }
             self.cleanup()
         }.store(in: &cancellables)
@@ -266,16 +326,37 @@ final class GroupCallManager: NSObject, ObservableObject {
     }
 
     // MARK: - per-peer 回调（由 GCPeerDelegate 转发）
-    func onIce(_ peerId: String, _ candidate: RTCIceCandidate) {
-        socket.emitGroupCallIce(callId: state.callId, to: peerId, candidate: candidate.sdp, sdpMid: candidate.sdpMid, sdpMLineIndex: candidate.sdpMLineIndex)
-    }
-    func onRemoteVideo(_ peerId: String, _ track: RTCVideoTrack) {
-        DispatchQueue.main.async { self.remoteTracks[peerId] = track }
-    }
-    func onIceState(_ peerId: String, _ newState: RTCIceConnectionState) {
-        if newState == .failed || newState == .closed {
-            DispatchQueue.main.async { self.removePeer(peerId) }
+    func onIce(_ peerId: String, _ candidate: RTCIceCandidate, pc: RTCPeerConnection) {
+        DispatchQueue.main.async {
+            guard self.peers[peerId]?.pc === pc else { return }
+            self.socket.emitGroupCallIce(callId: self.state.callId, to: peerId, candidate: candidate.sdp, sdpMid: candidate.sdpMid, sdpMLineIndex: candidate.sdpMLineIndex)
         }
+    }
+    func onRemoteVideo(_ peerId: String, _ track: RTCVideoTrack, pc: RTCPeerConnection) {
+        DispatchQueue.main.async {
+            guard self.peers[peerId]?.pc === pc else { return }
+            self.remoteTracks[peerId] = track
+        }
+    }
+    func onIceState(_ peerId: String, _ newState: RTCIceConnectionState, pc: RTCPeerConnection) {
+        DispatchQueue.main.async {
+            guard self.peers[peerId]?.pc === pc else { return }
+            switch newState {
+            case .connected, .completed: self.peerTimeouts.removeValue(forKey: peerId)?.cancel()
+            case .disconnected: self.schedulePeerTimeout(peerId, pc: pc, seconds: 15)
+            case .failed, .closed: self.removePeer(peerId, failed: true)
+            default: break
+            }
+        }
+    }
+    private func schedulePeerTimeout(_ peerId: String, pc: RTCPeerConnection, seconds: Double) {
+        peerTimeouts.removeValue(forKey: peerId)?.cancel()
+        let task = DispatchWorkItem { [weak self, weak pc] in
+            guard let self, let pc, self.peers[peerId]?.pc === pc else { return }
+            self.removePeer(peerId, failed: true)
+        }
+        peerTimeouts[peerId] = task
+        DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: task)
     }
 
     // MARK: - WebRTC
@@ -317,14 +398,17 @@ final class GroupCallManager: NSObject, ObservableObject {
         if let v = localVideoTrack { pc.add(v, streamIds: ["g_stream"]) }
         let entry = PeerEntry(pc: pc, delegate: delegate)
         peers[peerId] = entry
+        schedulePeerTimeout(peerId, pc: pc, seconds: 30)
         return entry
     }
 
-    private func removePeer(_ peerId: String) {
-        peers[peerId]?.pc.close()
-        peers[peerId] = nil
+    private func removePeer(_ peerId: String, failed: Bool = false) {
+        peerTimeouts.removeValue(forKey: peerId)?.cancel()
+        let entry = peers.removeValue(forKey: peerId)
+        entry?.pc.close()
         remoteTracks[peerId] = nil
         state.participants = Array(peers.keys)
+        if failed && peers.isEmpty { hangup() }
     }
 
     private func mediaConstraints() -> RTCMediaConstraints {
@@ -335,9 +419,13 @@ final class GroupCallManager: NSObject, ObservableObject {
     }
 
     private func cleanup() {
+        sessionGeneration = UUID()
+        VoipCallManager.shared.endActiveCall(groupCallId: state.callId)
         cancelConnectTimeout()              // 取消连接超时，避免泄漏
-        peers.values.forEach { $0.pc.close() }
+        peerTimeouts.values.forEach { $0.cancel() }; peerTimeouts.removeAll()
+        let closing = Array(peers.values)
         peers.removeAll()
+        closing.forEach { $0.pc.close() }
         remoteTracks.removeAll()
         videoCapturer?.stopCapture()
         videoCapturer = nil
@@ -356,13 +444,13 @@ final class GCPeerDelegate: NSObject, RTCPeerConnectionDelegate {
     init(peerId: String, manager: GroupCallManager) { self.peerId = peerId; self.manager = manager }
 
     func peerConnection(_ pc: RTCPeerConnection, didGenerate candidate: RTCIceCandidate) {
-        manager?.onIce(peerId, candidate)
+        manager?.onIce(peerId, candidate, pc: pc)
     }
     func peerConnection(_ pc: RTCPeerConnection, didAdd rtpReceiver: RTCRtpReceiver, streams mediaStreams: [RTCMediaStream]) {
-        if let track = rtpReceiver.track as? RTCVideoTrack { manager?.onRemoteVideo(peerId, track) }
+        if let track = rtpReceiver.track as? RTCVideoTrack { manager?.onRemoteVideo(peerId, track, pc: pc) }
     }
     func peerConnection(_ pc: RTCPeerConnection, didChange newState: RTCIceConnectionState) {
-        manager?.onIceState(peerId, newState)
+        manager?.onIceState(peerId, newState, pc: pc)
     }
     func peerConnection(_ pc: RTCPeerConnection, didChange stateChanged: RTCSignalingState) {}
     func peerConnection(_ pc: RTCPeerConnection, didAdd stream: RTCMediaStream) {}

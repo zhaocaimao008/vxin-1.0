@@ -97,6 +97,19 @@ describe('pushCallInvite 来电推送', () => {
     expect(getuiPush.pushToCid).toHaveBeenCalledTimes(1);
   });
 
+  test('群邀请在 FCM 和个推中携带群路由及会话 ID', async () => {
+    for (const platform of ['android', 'ios', 'getui']) {
+      db.prepare('INSERT INTO device_tokens (id,user_id,token,platform) VALUES (?,?,?,?)')
+        .run(`group-${platform}`, u.userId, `group-token-${platform}`, platform);
+    }
+    await pushCallInvite({ toUserId: u.userId, fromUserId: 'starter', callerName: '群成员',
+      callType: 'audio', callId: 'group-call', conversationId: 'group-conversation' });
+    const expected = { type: 'group_call', callId: 'group-call', conversationId: 'group-conversation' };
+    expect(firebaseAdmin.__sendMock).toHaveBeenCalledTimes(2);
+    for (const [message] of firebaseAdmin.__sendMock.mock.calls) expect(message.data).toMatchObject(expected);
+    expect(getuiPush.pushToCid.mock.calls[0][1].payload).toMatchObject(expected);
+  });
+
   test('无任何 device_tokens 时不报错、不发任何推送', async () => {
     await expect(
       pushCallInvite({ toUserId: u.userId, fromUserId: 'caller1', callerName: '小明', callType: 'audio', callId: 'call-5' })

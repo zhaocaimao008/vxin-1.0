@@ -4,9 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.vxin.app.core.call.GroupCallManager
 import com.vxin.app.core.call.GroupCallState
 import com.vxin.app.core.realtime.GroupCallInviteEvent
-import com.vxin.app.core.realtime.SocketManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.webrtc.EglBase
 import org.webrtc.VideoTrack
@@ -15,11 +13,11 @@ import javax.inject.Inject
 @HiltViewModel
 class GroupCallViewModel @Inject constructor(
     private val groupCallManager: GroupCallManager,
-    socketManager: SocketManager,
 ) : ViewModel() {
     val state: StateFlow<GroupCallState> = groupCallManager.state
     val remoteTracks: StateFlow<Map<String, VideoTrack>> = groupCallManager.remoteTracks
-    val inviteEvents: SharedFlow<GroupCallInviteEvent> = socketManager.groupCallInviteEvents
+    val pendingInvite: StateFlow<GroupCallInviteEvent?> = groupCallManager.pendingInvite
+    fun dismissInvite() = groupCallManager.dismissInvite()
 
     val eglBaseContext: EglBase.Context get() = groupCallManager.eglBase.eglBaseContext
     fun localTrack(): VideoTrack? = groupCallManager.localVideoTrack

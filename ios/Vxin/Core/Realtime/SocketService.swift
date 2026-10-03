@@ -90,14 +90,14 @@ final class SocketService {
 
     // ── 群通话(mesh) 信令 ──
     let gcInvite = PassthroughSubject<(callId: String, conversationId: String, type: String, from: String, fromName: String), Never>()
-    let gcStarted = PassthroughSubject<(callId: String, type: String), Never>()
+    let gcStarted = PassthroughSubject<(callId: String, type: String, conversationId: String, requestId: String), Never>()
     let gcPeers = PassthroughSubject<(callId: String, type: String, peers: [String]), Never>()
     let gcPeerJoined = PassthroughSubject<(callId: String, userId: String), Never>()
     let gcPeerLeft = PassthroughSubject<(callId: String, userId: String), Never>()
     let gcOffer = PassthroughSubject<(callId: String, from: String, sdp: String), Never>()
     let gcAnswer = PassthroughSubject<(callId: String, from: String, sdp: String), Never>()
     let gcIce = PassthroughSubject<(callId: String, from: String, candidate: String, sdpMid: String?, sdpMLineIndex: Int32), Never>()
-    let gcError = PassthroughSubject<String, Never>()
+    let gcError = PassthroughSubject<(reason: String, callId: String, requestId: String), Never>()
     /// 服务端强制结束群通话（如超时长上限）→ (callId, reason)
     let gcEnded = PassthroughSubject<(callId: String, reason: String), Never>()
 
@@ -302,7 +302,7 @@ final class SocketService {
         }
         sock.on("group_call:started") { [weak self] data, _ in
             guard let d = data.first as? [String: Any] else { return }
-            self?.gcStarted.send((d["callId"] as? String ?? "", d["type"] as? String ?? "audio"))
+            self?.gcStarted.send((d["callId"] as? String ?? "", d["type"] as? String ?? "audio", d["conversationId"] as? String ?? "", d["requestId"] as? String ?? ""))
         }
         sock.on("group_call:peers") { [weak self] data, _ in
             guard let d = data.first as? [String: Any] else { return }
@@ -333,7 +333,7 @@ final class SocketService {
         }
         sock.on("group_call:error") { [weak self] data, _ in
             guard let d = data.first as? [String: Any] else { return }
-            self?.gcError.send(d["reason"] as? String ?? "")
+            self?.gcError.send((d["reason"] as? String ?? "", d["callId"] as? String ?? "", d["requestId"] as? String ?? ""))
         }
         sock.on("group_call:ended") { [weak self] data, _ in
             guard let d = data.first as? [String: Any] else { return }
@@ -418,13 +418,13 @@ final class SocketService {
         if let sdpMid { cand["sdpMid"] = sdpMid }
         socket?.emit("call:ice", ["to": to, "candidate": cand])
     }
-    func emitCallEnd(to: String) {
-        socket?.emit("call:end", ["to": to])
+    func emitCallEnd(to: String, reason: String = "") {
+        socket?.emit("call:end", ["to": to, "reason": reason])
     }
 
     // ── 群通话信令发送 ──
-    func emitGroupCallStart(conversationId: String, type: String) {
-        socket?.emit("group_call:start", ["conversationId": conversationId, "type": type])
+    func emitGroupCallStart(conversationId: String, type: String, requestId: String) {
+        socket?.emit("group_call:start", ["conversationId": conversationId, "type": type, "requestId": requestId])
     }
     func emitGroupCallJoin(callId: String) {
         socket?.emit("group_call:join", ["callId": callId])
@@ -440,8 +440,8 @@ final class SocketService {
         if let sdpMid { cand["sdpMid"] = sdpMid }
         socket?.emit("group_call:ice", ["callId": callId, "to": to, "candidate": cand])
     }
-    func emitGroupCallLeave(callId: String) {
-        socket?.emit("group_call:leave", ["callId": callId])
+    func emitGroupCallLeave(callId: String, requestId: String = "") {
+        socket?.emit("group_call:leave", callId.isEmpty ? ["requestId": requestId] : ["callId": callId])
     }
 
     func disconnect() {

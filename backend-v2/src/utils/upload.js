@@ -11,7 +11,7 @@
 const multer   = require('multer');
 const path     = require('path');
 const fs       = require('fs');
-const fileType = require('file-type');
+
 const { v4: uuidv4 } = require('uuid');
 
 // 单文件上限：环境变量覆盖，默认 200 MB。
@@ -127,7 +127,10 @@ async function readMagic(filePath) {
     fh = await fs.promises.open(filePath, 'r');
     await fh.read(buf, 0, len, 0);
     await fh.close(); fh = null;
-    try { return await fileType.fromBuffer(buf); } catch { return null; }
+    try {
+      const { fileTypeFromBuffer } = await import('file-type');
+      return await fileTypeFromBuffer(buf);
+    } catch { return null; }
   } catch {
     return null;
   } finally {

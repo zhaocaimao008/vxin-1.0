@@ -89,7 +89,7 @@ test.each(['kick', 'leave', 'dissolve'])('P0-05 group %s removes call membership
   const x = await connect(a.token);
   const y = await connect(b.token);
   const callId = crypto.randomUUID();
-  groupCall._state.groupCalls.set(callId, { conversationId: cid, members: new Set([a.userId, b.userId]), peak: 2 });
+  groupCall._state.groupCalls.set(callId, { conversationId: cid, owners: new Map([[a.userId, x.socket.id], [b.userId, y.socket.id]]), members: new Set([a.userId, b.userId]), peak: 2 });
   groupCall._state.userCall.set(a.userId, callId);
   groupCall._state.userCall.set(b.userId, callId);
   if (action === 'kick') groups.kick(io, cid, a.userId, b.userId);
@@ -99,11 +99,11 @@ test.each(['kick', 'leave', 'dissolve'])('P0-05 group %s removes call membership
   expect(groupCall._state.groupCalls.get(callId)?.members.has(b.userId) || false).toBe(false);
   expect(y.socket.rooms.has(cid)).toBe(false);
   // Even stale in-memory call membership cannot authorize signaling after DB membership removal.
-  groupCall._state.groupCalls.set(callId, { conversationId: cid, members: new Set([a.userId, b.userId]), peak: 2 });
+  groupCall._state.groupCalls.set(callId, { conversationId: cid, owners: new Map([[a.userId, x.socket.id], [b.userId, y.socket.id]]), members: new Set([a.userId, b.userId]), peak: 2 });
   const events = [];
   const emit = jest.spyOn(io, 'to').mockImplementation(room => ({ emit: (event, payload) => events.push({ room, event, payload }) }));
   try {
-    y.socket.listeners('group_call:offer')[0]({ callId, to: a.userId, offer: 'forbidden' });
+    y.socket.listeners('group_call:offer')[0]({ callId, to: a.userId, offer: { type: 'offer', sdp: 'forbidden' } });
     expect(groupCall._state.groupCalls.get(callId)?.members.has(b.userId) || false).toBe(false);
     // No offer is forwarded: only removal notifications may use user rooms.
     expect(events.some(e => e.event === 'group_call:offer')).toBe(false);

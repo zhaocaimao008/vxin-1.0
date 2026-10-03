@@ -6,11 +6,17 @@ import com.vxin.app.core.auth.SessionManager
 import com.vxin.app.core.di.AppScope
 import com.vxin.app.core.realtime.SocketManager
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import com.vxin.app.core.realtime.GroupCallInviteEvent
+import android.os.Looper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import org.webrtc.AudioSource
 import org.webrtc.AudioTrack
@@ -58,9 +64,37 @@ class GroupCallManager @Inject constructor(
     private val sessionManager: SessionManager,
     private val turnApi: com.vxin.app.data.api.TurnApi,
     private val notificationHelper: com.vxin.app.core.push.NotificationHelper,
-    @AppScope private val scope: CoroutineScope,
+    @AppScope appScope: CoroutineScope,
 ) {
+    private val scope = CoroutineScope(appScope.coroutineContext + Dispatchers.Main.immediate)
     val eglBase: EglBase = EglBase.create()
+
+    private var sessionGeneration = 0L
+    private var connectTimeout: Job? = null
+    private val peerTimeouts = mutableMapOf<String, Job>()
+    private var requestId = ""
+    private val _pendingInvite = MutableStateFlow<GroupCallInviteEvent?>(null)
+    val pendingInvite = _pendingInvite.asStateFlow()
+
+    fun incomingFromPush(callId: String, conversationId: String, type: String, from: String, name: String) {
+        if (Looper.myLooper() != Looper.getMainLooper()) { scope.launch { incomingFromPush(callId, conversationId, type, from, name) }; return }
+        if (callId.isBlank() || conversationId.isBlank()) return
+        if (_state.value.stage !in listOf(GroupCallStage.IDLE, GroupCallStage.ENDED)) return
+        _pendingInvite.value = GroupCallInviteEvent(callId, conversationId, type, from, name)
+    }
+
+    fun dismissInvite(callId: String? = null) {
+        if (Looper.myLooper() != Looper.getMainLooper()) { scope.launch { dismissInvite(callId) }; return }
+        if (callId == null || _pendingInvite.value?.callId == callId) _pendingInvite.value = null
+    }
+
+    private fun startConnectTimeout() {
+        connectTimeout?.cancel()
+        connectTimeout = scope.launch {
+            delay(45_000)
+            if (_state.value.stage == GroupCallStage.CONNECTING) hangup()
+        }
+    }
 
     private var factory: PeerConnectionFactory? = null
     private var audioSource: AudioSource? = null
@@ -79,6 +113,7 @@ class GroupCallManager @Inject constructor(
         var remoteDescSet: Boolean = false,
         val pendingIce: MutableList<IceCandidate> = mutableListOf(),
         val iceLock: Any = Any(),
+        val identity: Any,
     )
     private val peers = LinkedHashMap<String, Peer>()
 
@@ -129,58 +164,88 @@ class GroupCallManager @Inject constructor(
     // ── 对外动作 ───────────────────────────────────────────
     /** 发起群通话 */
     fun start(conversationId: String, video: Boolean) {
+        if (Looper.myLooper() != Looper.getMainLooper()) { scope.launch { start(conversationId, video) }; return }
         if (_state.value.stage != GroupCallStage.IDLE && _state.value.stage != GroupCallStage.ENDED) return
         _state.value = GroupCallState(GroupCallStage.CONNECTING, conversationId = conversationId, isVideo = video)
+        val generation = ++sessionGeneration
+        requestId = java.util.UUID.randomUUID().toString()
+        dismissInvite()
+        startConnectTimeout()
         scope.launch {
             refreshIceServers()
-            if (_state.value.stage == GroupCallStage.ENDED) return@launch
-            createLocalMedia(video)
-            socketManager.emitGroupCallStart(conversationId, if (video) "video" else "audio")
+            if (generation != sessionGeneration || _state.value.stage != GroupCallStage.CONNECTING) return@launch
+            try { createLocalMedia(video) } catch (e: Exception) { cleanup(); return@launch }
+            CallForegroundService.start(context, video, "group")
+            socketManager.emitGroupCallStart(conversationId, if (video) "video" else "audio", requestId)
         }
     }
 
     /** 加入已有群通话 */
     fun join(callId: String, conversationId: String, video: Boolean) {
+        if (Looper.myLooper() != Looper.getMainLooper()) { scope.launch { join(callId, conversationId, video) }; return }
         if (_state.value.stage != GroupCallStage.IDLE && _state.value.stage != GroupCallStage.ENDED) return
         _state.value = GroupCallState(GroupCallStage.CONNECTING, callId, conversationId, isVideo = video)
+        val generation = ++sessionGeneration
+        requestId = java.util.UUID.randomUUID().toString()
+        dismissInvite()
+        startConnectTimeout()
         scope.launch {
             refreshIceServers()
-            if (_state.value.stage == GroupCallStage.ENDED) return@launch
-            createLocalMedia(video)
+            if (generation != sessionGeneration || _state.value.stage != GroupCallStage.CONNECTING) return@launch
+            try { createLocalMedia(video) } catch (e: Exception) { cleanup(); return@launch }
+            CallForegroundService.start(context, video, "group")
             socketManager.emitGroupCallJoin(callId)
         }
     }
 
     /** 挂断/离开 */
     fun hangup() {
+        if (Looper.myLooper() != Looper.getMainLooper()) { scope.launch { hangup() }; return }
         val cid = _state.value.callId
-        if (cid.isNotEmpty()) socketManager.emitGroupCallLeave(cid)
+        if (cid.isNotEmpty() || requestId.isNotEmpty()) socketManager.emitGroupCallLeave(cid, requestId)
         cleanup()
     }
 
     fun toggleMic() {
+        if (Looper.myLooper() != Looper.getMainLooper()) { scope.launch { toggleMic() }; return }
         val enabled = !_state.value.micEnabled
         localAudioTrack?.setEnabled(enabled)
         _state.update { it.copy(micEnabled = enabled) }
     }
 
     fun toggleCamera() {
+        if (Looper.myLooper() != Looper.getMainLooper()) { scope.launch { toggleCamera() }; return }
         val enabled = !_state.value.cameraEnabled
         localVideoTrack?.setEnabled(enabled)
         _state.update { it.copy(cameraEnabled = enabled) }
     }
 
-    fun switchCamera() { (videoCapturer as? CameraVideoCapturer)?.switchCamera(null) }
+    fun switchCamera() {
+        if (Looper.myLooper() != Looper.getMainLooper()) { scope.launch { switchCamera() }; return }
+        (videoCapturer as? CameraVideoCapturer)?.switchCamera(null) }
 
     fun consumeEnded() {
+        if (Looper.myLooper() != Looper.getMainLooper()) { scope.launch { consumeEnded() }; return }
         if (_state.value.stage == GroupCallStage.ENDED) _state.value = GroupCallState()
     }
 
     // ── 信令处理 ───────────────────────────────────────────
     private fun observeSignaling() {
         scope.launch {
+            socketManager.status.drop(1).collect { status ->
+                if (status == com.vxin.app.core.realtime.SocketStatus.DISCONNECTED &&
+                    _state.value.stage in listOf(GroupCallStage.CONNECTING, GroupCallStage.CONNECTED)) hangup()
+            }
+        }
+        scope.launch {
             socketManager.groupCallStartedEvents.collect { e ->
-                if (_state.value.stage == GroupCallStage.ENDED) return@collect
+                if (e.requestId.isNotEmpty() && e.requestId != requestId) return@collect
+                if (e.conversationId.isNotEmpty() && e.conversationId != _state.value.conversationId) return@collect
+                if (_state.value.stage != GroupCallStage.CONNECTING) {
+                    if (_state.value.stage != GroupCallStage.CONNECTED) socketManager.emitGroupCallLeave(e.callId)
+                    return@collect
+                }
+                connectTimeout?.cancel()
                 _state.update { it.copy(stage = GroupCallStage.CONNECTED, callId = e.callId, connectedAt = if (it.connectedAt == 0L) android.os.SystemClock.elapsedRealtime() else it.connectedAt) }
             }
         }
@@ -188,19 +253,23 @@ class GroupCallManager @Inject constructor(
             // 后台/被杀时的群通话邀请提醒：前台由 Compose 横幅承接（不动），这里只补后台通知，
             // 复用 1对1 来电通知样式（接听/拒绝按钮语义不适用群通话，但好过完全无提醒）。
             socketManager.groupCallInviteEvents.collect { e ->
+                incomingFromPush(e.callId, e.conversationId, e.type, e.from, e.fromName)
                 if (!com.vxin.app.core.push.MessageNotificationBridge.appForeground) {
                     notificationHelper.showCallNotification(
                         callId = e.callId,
                         from = e.from,
                         callerName = e.fromName,
                         callType = e.type,
+                        conversationId = e.conversationId,
                     )
                 }
             }
         }
         scope.launch {
             socketManager.groupCallPeersEvents.collect { e ->
+                if (_state.value.stage != GroupCallStage.CONNECTING) return@collect
                 if (_state.value.callId.isNotEmpty() && e.callId != _state.value.callId) return@collect
+                connectTimeout?.cancel()
                 _state.update { it.copy(stage = GroupCallStage.CONNECTED, callId = e.callId, connectedAt = if (it.connectedAt == 0L) android.os.SystemClock.elapsedRealtime() else it.connectedAt) }
                 // 作为 answerer：为既有成员预建 PC，等其 offer
                 e.peers.forEach { pid -> peerFor(pid) }
@@ -209,59 +278,70 @@ class GroupCallManager @Inject constructor(
         }
         scope.launch {
             socketManager.groupCallPeerJoinedEvents.collect { e ->
-                if (e.callId != _state.value.callId) return@collect
+                if (e.callId != _state.value.callId || _state.value.stage != GroupCallStage.CONNECTED) return@collect
                 val peer = peerFor(e.userId)
                 _state.update { it.copy(participants = peers.keys.toList()) }
                 // 既有成员向新 peer 发 offer
                 peer.pc.createOffer(object : SimpleSdpObserver() {
                     override fun onCreateSuccess(desc: SessionDescription) {
-                        peer.pc.setLocalDescription(SimpleSdpObserver(), desc)
-                        socketManager.emitGroupCallOffer(_state.value.callId, e.userId, desc.description)
+                        scope.launch {
+                            if (peers[e.userId] !== peer || e.callId != _state.value.callId) return@launch
+                            peer.pc.setLocalDescription(SimpleSdpObserver(), desc)
+                            socketManager.emitGroupCallOffer(e.callId, e.userId, desc.description)
+                        }
                     }
                 }, mediaConstraints())
             }
         }
         scope.launch {
             socketManager.groupCallOfferEvents.collect { e ->
-                if (e.callId != _state.value.callId) return@collect
+                if (e.callId != _state.value.callId || _state.value.stage != GroupCallStage.CONNECTED) return@collect
                 val peer = peerFor(e.from)
                 _state.update { it.copy(participants = peers.keys.toList()) }
                 peer.pc.setRemoteDescription(object : SimpleSdpObserver() {
-                    override fun onSetSuccess() {
+                    override fun onSetSuccess() { scope.launch {
+                        if (peers[e.from] !== peer || e.callId != _state.value.callId) return@launch
                         drainIce(e.from)   // 锁内置位 remoteDescSet 并排空缓存候选
                         peer.pc.createAnswer(object : SimpleSdpObserver() {
                             override fun onCreateSuccess(desc: SessionDescription) {
-                                peer.pc.setLocalDescription(SimpleSdpObserver(), desc)
-                                socketManager.emitGroupCallAnswer(_state.value.callId, e.from, desc.description)
+                                scope.launch {
+                                    if (peers[e.from] !== peer || e.callId != _state.value.callId) return@launch
+                                    peer.pc.setLocalDescription(SimpleSdpObserver(), desc)
+                                    socketManager.emitGroupCallAnswer(e.callId, e.from, desc.description)
+                                }
                             }
                         }, mediaConstraints())
-                    }
+                    } }
                 }, SessionDescription(SessionDescription.Type.OFFER, e.sdp))
             }
         }
         scope.launch {
             socketManager.groupCallAnswerEvents.collect { e ->
+                if (e.callId != _state.value.callId || _state.value.stage != GroupCallStage.CONNECTED) return@collect
                 val peer = peers[e.from] ?: return@collect
                 peer.pc.setRemoteDescription(object : SimpleSdpObserver() {
-                    override fun onSetSuccess() { drainIce(e.from) }   // 锁内置位 remoteDescSet 并排空
+                    override fun onSetSuccess() { scope.launch { if (peers[e.from] === peer) drainIce(e.from) } }   // 锁内置位 remoteDescSet 并排空
                 }, SessionDescription(SessionDescription.Type.ANSWER, e.sdp))
             }
         }
         scope.launch {
             socketManager.groupCallIceEvents.collect { e ->
+                if (e.callId != _state.value.callId || _state.value.stage != GroupCallStage.CONNECTED) return@collect
                 val peer = peers[e.from] ?: return@collect
                 val cand = IceCandidate(e.sdpMid, e.sdpMLineIndex, e.candidate)
                 // 锁内「判断 + 加入/直排」原子化：与 drainIce 的「置位 + 排空」互斥，杜绝候选丢失竞态。
                 synchronized(peer.iceLock) {
-                    if (peer.remoteDescSet) peer.pc.addIceCandidate(cand) else peer.pendingIce.add(cand)
+                    if (peer.remoteDescSet) peer.pc.addIceCandidate(cand) else if (peer.pendingIce.size < 256) peer.pendingIce.add(cand)
                 }
             }
         }
         scope.launch {
-            socketManager.groupCallPeerLeftEvents.collect { e -> removePeer(e.userId) }
+            socketManager.groupCallPeerLeftEvents.collect { e -> if (e.callId == _state.value.callId) removePeer(e.userId) }
         }
         scope.launch {
             socketManager.groupCallErrorEvents.collect { e ->
+                if (e.callId.isNotEmpty() && e.callId != _state.value.callId) return@collect
+                if (e.requestId.isNotEmpty() && e.requestId != requestId) return@collect
                 Log.w(TAG, "group call error: ${e.reason}")
                 if (_state.value.stage != GroupCallStage.CONNECTED) cleanup()
             }
@@ -269,6 +349,7 @@ class GroupCallManager @Inject constructor(
         scope.launch {
             // 服务端强制结束（如超过时长上限）：无条件结束本地通话并回收资源
             socketManager.groupCallEndedEvents.collect { e ->
+                dismissInvite(e.callId)
                 if (_state.value.stage == GroupCallStage.IDLE) return@collect
                 if (e.callId.isNotEmpty() && e.callId != _state.value.callId) return@collect
                 Log.w(TAG, "group call ended by server: ${e.reason}")
@@ -318,18 +399,34 @@ class GroupCallManager @Inject constructor(
         val config = PeerConnection.RTCConfiguration(iceServers).apply {
             sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
         }
+        val generation = sessionGeneration
+        val identity = Any()
         val pc = f.createPeerConnection(config, object : PeerConnection.Observer {
-            override fun onIceCandidate(candidate: IceCandidate) {
+            override fun onIceCandidate(candidate: IceCandidate) { scope.launch {
+                if (generation != sessionGeneration || peers[peerId]?.identity !== identity) return@launch
                 socketManager.emitGroupCallIce(_state.value.callId, peerId, candidate.sdp, candidate.sdpMid, candidate.sdpMLineIndex)
-            }
+            } }
             override fun onAddTrack(receiver: RtpReceiver, streams: Array<out MediaStream>?) {
                 (receiver.track() as? VideoTrack)?.let { vt ->
-                    _remoteTracks.update { it + (peerId to vt) }
+                    scope.launch {
+                        if (generation == sessionGeneration && peers[peerId]?.identity === identity)
+                            _remoteTracks.update { it + (peerId to vt) }
+                    }
                 }
             }
             override fun onIceConnectionChange(state: PeerConnection.IceConnectionState) {
-                if (state == PeerConnection.IceConnectionState.FAILED ||
-                    state == PeerConnection.IceConnectionState.CLOSED) removePeer(peerId)
+                scope.launch {
+                    if (generation != sessionGeneration || peers[peerId]?.identity !== identity) return@launch
+                    when (state) {
+                        PeerConnection.IceConnectionState.CONNECTED, PeerConnection.IceConnectionState.COMPLETED -> peerTimeouts.remove(peerId)?.cancel()
+                        PeerConnection.IceConnectionState.DISCONNECTED -> {
+                            peerTimeouts.remove(peerId)?.cancel()
+                            peerTimeouts[peerId] = scope.launch { delay(15_000); if (peers[peerId]?.identity === identity) removePeer(peerId, true) }
+                        }
+                        PeerConnection.IceConnectionState.FAILED, PeerConnection.IceConnectionState.CLOSED -> removePeer(peerId, true)
+                        else -> {}
+                    }
+                }
             }
             override fun onSignalingChange(p0: PeerConnection.SignalingState?) {}
             override fun onIceConnectionReceivingChange(p0: Boolean) {}
@@ -342,15 +439,18 @@ class GroupCallManager @Inject constructor(
         })!!
         localAudioTrack?.let { pc.addTrack(it, listOf(STREAM_ID)) }
         localVideoTrack?.let { pc.addTrack(it, listOf(STREAM_ID)) }
-        val peer = Peer(pc)
+        val peer = Peer(pc, identity = identity)
         peers[peerId] = peer
+        peerTimeouts[peerId] = scope.launch { delay(30_000); if (peers[peerId] === peer) removePeer(peerId, true) }
         return peer
     }
 
-    private fun removePeer(peerId: String) {
+    private fun removePeer(peerId: String, failed: Boolean = false) {
+        peerTimeouts.remove(peerId)?.cancel()
         peers.remove(peerId)?.let { runCatching { it.pc.close(); it.pc.dispose() } }
         _remoteTracks.update { it - peerId }
         _state.update { it.copy(participants = peers.keys.toList()) }
+        if (failed && peers.isEmpty()) hangup()
     }
 
     private fun mediaConstraints() = MediaConstraints().apply {
@@ -359,16 +459,21 @@ class GroupCallManager @Inject constructor(
     }
 
     private fun cleanup() {
-        peers.values.forEach { runCatching { it.pc.close(); it.pc.dispose() } }
+        sessionGeneration += 1
+        connectTimeout?.cancel(); connectTimeout = null
+        peerTimeouts.values.forEach { it.cancel() }; peerTimeouts.clear()
+        CallForegroundService.stop(context, "group")
+        val closing = peers.values.toList()
         peers.clear()
+        closing.forEach { runCatching { it.pc.close(); it.pc.dispose() } }
         _remoteTracks.value = emptyMap()
         runCatching { videoCapturer?.stopCapture() }
         runCatching { videoCapturer?.dispose() }; videoCapturer = null
         surfaceHelper?.dispose(); surfaceHelper = null
-        localVideoTrack = null
+        runCatching { localVideoTrack?.dispose() }; localVideoTrack = null
         runCatching { videoSource?.dispose() }; videoSource = null
+        runCatching { localAudioTrack?.dispose() }; localAudioTrack = null
         runCatching { audioSource?.dispose() }; audioSource = null
-        localAudioTrack = null
         _state.value = _state.value.copy(stage = GroupCallStage.ENDED, participants = emptyList())
     }
 

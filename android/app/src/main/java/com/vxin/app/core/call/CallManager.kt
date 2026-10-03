@@ -9,6 +9,8 @@ import com.vxin.app.core.auth.SessionManager
 import com.vxin.app.core.di.AppScope
 import com.vxin.app.core.realtime.SocketManager
 import dagger.hilt.android.qualifiers.ApplicationContext
+import android.os.Looper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -64,12 +66,15 @@ class CallManager @Inject constructor(
     private val sessionManager: SessionManager,
     private val turnApi: com.vxin.app.data.api.TurnApi,
     private val notificationHelper: com.vxin.app.core.push.NotificationHelper,
-    @AppScope private val scope: CoroutineScope,
+    @AppScope appScope: CoroutineScope,
 ) {
+    private val scope = CoroutineScope(appScope.coroutineContext + Dispatchers.Main.immediate)
     val eglBase: EglBase = EglBase.create()
 
     private var factory: PeerConnectionFactory? = null
     private var peerConnection: PeerConnection? = null
+    @Volatile private var sessionGeneration = 0L
+    private var disconnectJob: Job? = null
     private var callTimeoutJob: Job? = null   // 主叫呼出超时:对方无应答/断线时自动收尾,防卡死"呼叫中"
     private var audioSource: org.webrtc.AudioSource? = null
     private var videoSource: VideoSource? = null
@@ -136,25 +141,17 @@ class CallManager @Inject constructor(
     // ── 对外动作 ───────────────────────────────────────────
     /** 主叫发起 */
     fun startCall(peerId: String, peerName: String, video: Boolean) {
+        if (Looper.myLooper() != Looper.getMainLooper()) { scope.launch { startCall(peerId, peerName, video) }; return }
         if (_state.value.stage != CallStage.IDLE && _state.value.stage != CallStage.ENDED) return
         _state.value = CallState(CallStage.OUTGOING, peerId, peerName, isVideo = video, isCaller = true)
         playRingbackTone()                  // 主叫拨出→接通前循环回铃音（接通/挂断时停）
-        // 本地呼出超时:60s 内未接通(对方不接/断线,后端 timeout 不向主叫发事件)则自动挂断收尾,
-        // 防止界面永远卡在"呼叫中"。接通(CONNECTED)或挂断时取消(见 cleanup / IceConnectionState)。
-        callTimeoutJob?.cancel()
-        callTimeoutJob = scope.launch {
-            delay(60_000)
-            val st = _state.value.stage
-            if (st == CallStage.OUTGOING || st == CallStage.CONNECTING) {
-                if (_state.value.peerId.isNotEmpty()) socketManager.emitCallEnd(_state.value.peerId)
-                cleanup(CallStage.ENDED)
-            }
-        }
+        val generation = ++sessionGeneration
+        startCallTimeout(60_000)
         scope.launch {
             refreshIceServers()                 // 先拿到含 TURN 的 ICE，再建连接
-            if (_state.value.stage == CallStage.ENDED) return@launch  // 期间被取消
-            createPeerConnection()
-            createLocalTracks(video)
+            if (generation != sessionGeneration || _state.value.stage != CallStage.OUTGOING) return@launch
+            try { createPeerConnection(); createLocalTracks(video) }
+            catch (e: Exception) { Log.w(TAG, "Cannot open call media", e); hangup(); return@launch }
             // 本地媒体已开始采集（麦克风/摄像头）→ 起前台服务保活（此刻 App 在前台、权限已授予，满足 FGS 合规）
             CallForegroundService.start(context, video)
             val name = sessionManager.currentUser?.username.orEmpty()
@@ -164,15 +161,18 @@ class CallManager @Inject constructor(
 
     /** 被叫接听 */
     fun accept() {
+        if (Looper.myLooper() != Looper.getMainLooper()) { scope.launch { accept() }; return }
         val s = _state.value
         if (s.stage != CallStage.INCOMING) return
         stopIncomingRing()                  // 已接通 → 停铃声
         _state.update { it.copy(stage = CallStage.CONNECTING) }
+        val generation = ++sessionGeneration
+        startCallTimeout(30_000)
         scope.launch {
             refreshIceServers()
-            if (_state.value.stage == CallStage.ENDED) return@launch
-            createPeerConnection()
-            createLocalTracks(s.isVideo)
+            if (generation != sessionGeneration || _state.value.stage != CallStage.CONNECTING) return@launch
+            try { createPeerConnection(); createLocalTracks(s.isVideo) }
+            catch (e: Exception) { Log.w(TAG, "Cannot open call media", e); hangup(); return@launch }
             // 本地媒体已开始采集 → 起前台服务保活（接听时 App 在前台、权限已授予）
             CallForegroundService.start(context, s.isVideo)
             socketManager.emitCallResponse(s.peerId, true)
@@ -180,8 +180,21 @@ class CallManager @Inject constructor(
         }
     }
 
+    private fun startCallTimeout(duration: Long) {
+        callTimeoutJob?.cancel()
+        callTimeoutJob = scope.launch {
+            delay(duration)
+            val state = _state.value
+            if (state.stage == CallStage.OUTGOING || state.stage == CallStage.CONNECTING) {
+                socketManager.emitCallEnd(state.peerId, if (state.stage == CallStage.OUTGOING) "timeout" else "connection_timeout")
+                cleanup(CallStage.ENDED)
+            }
+        }
+    }
+
     /** 被叫拒接 */
     fun reject() {
+        if (Looper.myLooper() != Looper.getMainLooper()) { scope.launch { reject() }; return }
         val s = _state.value
         if (s.peerId.isNotEmpty()) socketManager.emitCallResponse(s.peerId, false)
         cleanup(CallStage.ENDED)
@@ -189,28 +202,33 @@ class CallManager @Inject constructor(
 
     /** 挂断（任一方） */
     fun hangup() {
+        if (Looper.myLooper() != Looper.getMainLooper()) { scope.launch { hangup() }; return }
         val s = _state.value
         if (s.peerId.isNotEmpty()) socketManager.emitCallEnd(s.peerId)
         cleanup(CallStage.ENDED)
     }
 
     fun toggleMic() {
+        if (Looper.myLooper() != Looper.getMainLooper()) { scope.launch { toggleMic() }; return }
         val enabled = !_state.value.micEnabled
         localAudioTrack?.setEnabled(enabled)
         _state.update { it.copy(micEnabled = enabled) }
     }
 
     fun toggleCamera() {
+        if (Looper.myLooper() != Looper.getMainLooper()) { scope.launch { toggleCamera() }; return }
         val enabled = !_state.value.cameraEnabled
         localVideoTrack?.setEnabled(enabled)
         _state.update { it.copy(cameraEnabled = enabled) }
     }
 
     fun switchCamera() {
+        if (Looper.myLooper() != Looper.getMainLooper()) { scope.launch { switchCamera() }; return }
         (videoCapturer as? CameraVideoCapturer)?.switchCamera(null)
     }
 
     fun consumeEnded() {
+        if (Looper.myLooper() != Looper.getMainLooper()) { scope.launch { consumeEnded() }; return }
         if (_state.value.stage == CallStage.ENDED) _state.value = CallState()
     }
 
@@ -219,6 +237,7 @@ class CallManager @Inject constructor(
      * 幂等：若已在展示同一来电或正在通话则不覆盖；socket 后续补发 call:incoming 会因 peer 相同被去重。
      */
     fun incomingFromPush(from: String, callType: String, callerName: String) {
+        if (Looper.myLooper() != Looper.getMainLooper()) { scope.launch { incomingFromPush(from, callType, callerName) }; return }
         if (from.isEmpty()) return
         val st = _state.value
         // 空闲或结束态才进 incoming；已在处理同一 peer 的来电则忽略（避免覆盖 socket 已建立的状态）
@@ -286,9 +305,10 @@ class CallManager @Inject constructor(
         scope.launch {
             socketManager.callResponseEvents.collect { e ->
                 val s = _state.value
-                if (!s.isCaller || e.from != s.peerId) return@collect
+                if (!s.isCaller || e.from != s.peerId || s.stage != CallStage.OUTGOING) return@collect
                 if (e.accepted) {
                     _state.update { it.copy(stage = CallStage.CONNECTING) }
+                    startCallTimeout(30_000)
                     createOfferAndSend()
                 } else {
                     cleanup(CallStage.ENDED)
@@ -300,10 +320,11 @@ class CallManager @Inject constructor(
                 if (e.from != _state.value.peerId) return@collect
                 val pc = peerConnection ?: return@collect
                 pc.setRemoteDescription(object : SimpleSdpObserver() {
-                    override fun onSetSuccess() {
-                        drainIce()   // 锁内置位 remoteDescSet 并排空缓存的候选
+                    override fun onSetSuccess() { scope.launch {
+                        if (peerConnection !== pc) return@launch
+                        drainIce()
                         createAnswerAndSend()
-                    }
+                    } }
                 }, SessionDescription(SessionDescription.Type.OFFER, e.sdp))
             }
         }
@@ -312,7 +333,7 @@ class CallManager @Inject constructor(
                 if (e.from != _state.value.peerId) return@collect
                 val pc = peerConnection ?: return@collect
                 pc.setRemoteDescription(object : SimpleSdpObserver() {
-                    override fun onSetSuccess() { drainIce() }   // 锁内置位 remoteDescSet 并排空
+                    override fun onSetSuccess() { scope.launch { if (peerConnection === pc) drainIce() } }   // 锁内置位 remoteDescSet 并排空
                 }, SessionDescription(SessionDescription.Type.ANSWER, e.sdp))
             }
         }
@@ -347,20 +368,22 @@ class CallManager @Inject constructor(
     private fun createOfferAndSend() {
         val pc = peerConnection ?: return
         pc.createOffer(object : SimpleSdpObserver() {
-            override fun onCreateSuccess(desc: SessionDescription) {
+            override fun onCreateSuccess(desc: SessionDescription) { scope.launch {
+                if (peerConnection !== pc) return@launch
                 pc.setLocalDescription(SimpleSdpObserver(), desc)
                 socketManager.emitCallOffer(_state.value.peerId, desc.description)
-            }
+            } }
         }, mediaConstraints())
     }
 
     private fun createAnswerAndSend() {
         val pc = peerConnection ?: return
         pc.createAnswer(object : SimpleSdpObserver() {
-            override fun onCreateSuccess(desc: SessionDescription) {
+            override fun onCreateSuccess(desc: SessionDescription) { scope.launch {
+                if (peerConnection !== pc) return@launch
                 pc.setLocalDescription(SimpleSdpObserver(), desc)
                 socketManager.emitCallAnswer(_state.value.peerId, desc.description)
-            }
+            } }
         }, mediaConstraints())
     }
 
@@ -376,31 +399,44 @@ class CallManager @Inject constructor(
         val config = PeerConnection.RTCConfiguration(iceServers).apply {
             sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
         }
+        val generation = sessionGeneration
         peerConnection = f.createPeerConnection(config, object : PeerConnection.Observer {
-            override fun onIceCandidate(candidate: IceCandidate) {
+            override fun onIceCandidate(candidate: IceCandidate) { scope.launch {
+                if (generation != sessionGeneration) return@launch
                 socketManager.emitCallIce(_state.value.peerId, candidate.sdp, candidate.sdpMid, candidate.sdpMLineIndex)
-            }
+            } }
             override fun onAddTrack(receiver: RtpReceiver, streams: Array<out MediaStream>?) {
                 (receiver.track() as? VideoTrack)?.let { vt ->
-                    remoteVideoTrack = vt
-                    _state.update { it.copy(remoteVideoActive = true) }
+                    scope.launch {
+                        if (generation != sessionGeneration) return@launch
+                        remoteVideoTrack = vt
+                        _state.update { it.copy(remoteVideoActive = true) }
+                    }
                 }
             }
             override fun onIceConnectionChange(state: PeerConnection.IceConnectionState) {
-                when (state) {
-                    PeerConnection.IceConnectionState.CONNECTED,
-                    PeerConnection.IceConnectionState.COMPLETED -> {
-                        if (_state.value.connectedAt == 0L && _state.value.stage != CallStage.ENDED) playConnectedTone() // 首次接通→停回铃+接通音
-                        _state.update {
-                            if (it.stage != CallStage.ENDED)
-                                it.copy(stage = CallStage.CONNECTED, connectedAt = if (it.connectedAt == 0L) android.os.SystemClock.elapsedRealtime() else it.connectedAt)
-                            else it
+                scope.launch {
+                    if (generation != sessionGeneration) return@launch
+                    when (state) {
+                        PeerConnection.IceConnectionState.CONNECTED,
+                        PeerConnection.IceConnectionState.COMPLETED -> {
+                            callTimeoutJob?.cancel()
+                            disconnectJob?.cancel()
+                            if (_state.value.connectedAt == 0L) playConnectedTone()
+                            _state.update { it.copy(stage = CallStage.CONNECTED,
+                                connectedAt = if (it.connectedAt == 0L) android.os.SystemClock.elapsedRealtime() else it.connectedAt) }
                         }
+                        PeerConnection.IceConnectionState.DISCONNECTED -> {
+                            disconnectJob?.cancel()
+                            disconnectJob = scope.launch {
+                                delay(15_000)
+                                if (generation == sessionGeneration) hangup()
+                            }
+                        }
+                        PeerConnection.IceConnectionState.FAILED,
+                        PeerConnection.IceConnectionState.CLOSED -> hangup()
+                        else -> {}
                     }
-                    PeerConnection.IceConnectionState.DISCONNECTED,
-                    PeerConnection.IceConnectionState.FAILED,
-                    PeerConnection.IceConnectionState.CLOSED -> { /* 由 call:end 或用户挂断收尾 */ }
-                    else -> {}
                 }
             }
             override fun onSignalingChange(p0: PeerConnection.SignalingState?) {}
@@ -444,23 +480,25 @@ class CallManager @Inject constructor(
 
     // ── 清理 ──────────────────────────────────────────────
     private fun cleanup(finalStage: CallStage) {
+        sessionGeneration += 1
+        disconnectJob?.cancel(); disconnectJob = null
         stopIncomingRing()                                 // 停被叫来电铃声（幂等，未响铃时 no-op）
         releaseTone()                                     // 停回铃/接通音并释放 ToneGenerator
         callTimeoutJob?.cancel(); callTimeoutJob = null   // 接通/挂断/被拒 → 取消呼出超时
         CallForegroundService.stop(context)               // 停前台服务（未起过则 no-op）
         notificationHelper.cancelCallNotification()        // 通话终结统一收口：清掉残留来电通知（幂等）
+        val closing = peerConnection
+        peerConnection = null
+        runCatching { closing?.close(); closing?.dispose() }
         runCatching { videoCapturer?.stopCapture() }
         runCatching { videoCapturer?.dispose() }
         videoCapturer = null
         surfaceHelper?.dispose(); surfaceHelper = null
-        localVideoTrack = null
+        runCatching { localVideoTrack?.dispose() }; localVideoTrack = null
         remoteVideoTrack = null
         runCatching { videoSource?.dispose() }; videoSource = null
+        runCatching { localAudioTrack?.dispose() }; localAudioTrack = null
         runCatching { audioSource?.dispose() }; audioSource = null
-        localAudioTrack = null
-        runCatching { peerConnection?.close() }
-        runCatching { peerConnection?.dispose() }
-        peerConnection = null
         synchronized(iceLock) { remoteDescSet = false; pendingIce.clear() }
         val cur = _state.value
         val ended = if (cur.connectedAt > 0L && cur.endedAt == 0L) android.os.SystemClock.elapsedRealtime() else cur.endedAt
