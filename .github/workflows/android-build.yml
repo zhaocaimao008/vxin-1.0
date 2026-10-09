@@ -1,84 +1,27 @@
 name: Android Build
-
-# 在云端 Ubuntu runner 上编译 Android，产出可直接安装的 debug APK（免签名）。
-# 用于在没有本地开发环境时验证 Android 工程可编译，并下载 APK 装手机测试。
-# 跑完后到本次运行页面底部 "Artifacts" 下载 vxin-debug-apk。
 on:
-  push:
-    # 仅分支 push 时按 paths 触发；不限定 branches 会导致 tag push 也触发本工作流，
-    # 造成一个端前缀 tag 误触发本 debug 构建（详见 VERSIONING.md 的端隔离原则）。
-    branches: [main, master]
-    paths:
-      - 'android/**'
-      - '.github/workflows/android-build.yml'
-  # PR 合并前的编译门禁：改动 android/ 的 PR 必须先编过 debug 才能合并，
-  # 挡住「漏函数/语法错直接进主干再打 release tag」这类事故（发 tag 前就变红）。
-  pull_request:
-    paths:
-      - 'android/**'
-      - '.github/workflows/android-build.yml'
   workflow_dispatch:
-
+    inputs:
+      release_run_id:
+        description: Successful signed release workflow run to verify
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: gradle
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: 'platform-tools platforms;android-34 build-tools;33.0.1'
-
-      - name: Make gradlew executable
-        working-directory: android
-        run: chmod +x gradlew
-
-      # 单测门禁：含离线消息缓存 MsgCacheStore 语义基线（与 Web vitest / iOS XCTest 三端对齐）。
-      # 失败即中止，不产出 APK。
-      - name: Unit tests
-        working-directory: android
-        run: ./gradlew testDebugUnitTest --stacktrace --no-daemon
-
-      - name: Upload unit test report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-unit-test-report
-          path: android/app/build/reports/tests/testDebugUnitTest/
-          if-no-files-found: ignore
-
-      - name: Build debug APK
-        working-directory: android
-        run: ./gradlew assembleDebug --stacktrace --no-daemon
-
-      - name: Upload APK
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: vxin-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
-          if-no-files-found: warn
   emulator-smoke:
-    name: Install and launch on Android 34 emulator
-    needs: build
+    name: Verify signed release on Android 34
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: vxin-debug-apk
+          name: vxin-release-apk
           path: apk
+          run-id: ${{ inputs.release_run_id }}
+          github-token: ${{ github.token }}
       - name: Enable KVM access
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -96,4 +39,4 @@ jobs:
         with:
           name: android-emulator-smoke
           path: android-smoke/
-          if-no-files-found: ignore
+          if-no-files-found: error

@@ -7,10 +7,6 @@ name: Android Release APK (signed)
 #                       ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD（已配置）。
 on:
   workflow_dispatch:
-  push:
-    tags:
-      # 仅安卓端专属前缀触发；避免裸 v* 同时误触发桌面端/iOS 发布（详见 VERSIONING.md）。
-      - 'android-v*'
 
 jobs:
   build:
@@ -57,7 +53,7 @@ jobs:
         run: |
           ./gradlew testReleaseUnitTest assembleRelease --stacktrace --no-daemon
           APK=$(find app/build/outputs/apk/release -name '*.apk' -print -quit)
-          "$ANDROID_HOME/build-tools/33.0.1/apksigner" verify --verbose "$APK"
+          "$ANDROID_HOME/build-tools/33.0.1/apksigner" verify --verbose --print-certs "$APK"
           VN=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' app/build.gradle.kts | head -1)
           VC=$(sed -n 's/.*versionCode = \([0-9]*\).*/\1/p' app/build.gradle.kts | head -1)
           if [[ "$GITHUB_REF_TYPE" == tag ]]; then test "$GITHUB_REF_NAME" = "android-v$VN"; fi
@@ -73,50 +69,3 @@ jobs:
             android/app/build/outputs/apk/release/*.apk
             android/app/build/outputs/apk/release/vxin-android-version.json
           if-no-files-found: error
-
-
-  deploy:
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/android-v')
-    runs-on: [self-hosted, linux, x64, vxin-prod-deploy]
-    environment: production
-    timeout-minutes: 10
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: vxin-release-apk
-          path: ${{ runner.temp }}/vxin-android-${{ github.run_id }}/artifacts
-      - name: Publish verified signed APK and update manifest
-        shell: bash
-        working-directory: ${{ runner.temp }}/vxin-android-${{ github.run_id }}
-        run: |
-          set -euo pipefail
-          TARGET=/var/www/vxin-download
-          APK=$(find artifacts -name '*.apk' -print -quit)
-          MANIFEST=artifacts/vxin-android-version.json
-          VERSION=$(jq -r .versionName "$MANIFEST")
-          EXPECTED=$(jq -r .sha256 "$MANIFEST")
-          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
-          test "$(sha256sum "$APK" | cut -d' ' -f1)" = "$EXPECTED"
-          mkdir -p "$TARGET"
-          BACKUP=$(mktemp -d "$TARGET/.android-backup-XXXXXX")
-          for name in vxin-android-latest.apk vxin-android-version.json; do
-            if [[ -f "$TARGET/$name" ]]; then cp -a "$TARGET/$name" "$BACKUP/$name"; fi
-          done
-          rollback() {
-            for name in vxin-android-latest.apk vxin-android-version.json; do
-              if [[ -f "$BACKUP/$name" ]]; then cp -a "$BACKUP/$name" "$TARGET/$name"; else rm -f "$TARGET/$name"; fi
-            done
-          }
-          trap 'rollback' ERR
-          cp "$APK" "$TARGET/.android-new.apk"
-          mv "$TARGET/.android-new.apk" "$TARGET/vxin-android-$VERSION.apk"
-          cp "$TARGET/vxin-android-$VERSION.apk" "$TARGET/.android-latest.apk"
-          mv "$TARGET/.android-latest.apk" "$TARGET/vxin-android-latest.apk"
-          cp "$MANIFEST" "$TARGET/.android-version.json"
-          mv "$TARGET/.android-version.json" "$TARGET/vxin-android-version.json"
-          curl --fail --silent --show-error --max-time 30 "https://liaotian99.com/downloads/vxin-android-$VERSION.apk" -o "$BACKUP/live.apk"
-          test "$(sha256sum "$BACKUP/live.apk" | cut -d' ' -f1)" = "$EXPECTED"
-          curl --fail --silent --show-error --max-time 10 "https://liaotian99.com/downloads/vxin-android-version.json?release=$VERSION" | jq -e --arg v "$VERSION" '.versionName == $v'
-          trap - ERR
-          echo "Published signed Android $VERSION; previous files retained at $BACKUP"
