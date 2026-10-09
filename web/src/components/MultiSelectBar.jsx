@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { IcoForward, IcoTrash } from './Icons';
 
 /* ── 多选模式底部工具栏（从 ChatWindow 抽离）──────────────────────
    纯展示子组件：只读已选条数，转发/撤回/取消经回调上抛父级。memo 化后，
@@ -10,8 +11,8 @@ function MultiSelectBar({ selectedCount, onForward, onDelete, onCancel }) {
       <button className="wc-ms-cancel-btn" onClick={onCancel}>取消</button>
       <span className="wc-ms-count">已选 {selectedCount} 条</span>
       <div className="wc-ms-btn-group">
-        <button className="wc-ms-btn-primary wc-ms-btn-forward" onClick={onForward} disabled={selectedCount === 0}>转发</button>
-        <button className="wc-ms-btn-primary wc-ms-btn-delete" onClick={onDelete} disabled={selectedCount === 0}>撤回</button>
+        <button className="wc-ms-btn-primary wc-ms-btn-forward" onClick={onForward} disabled={selectedCount === 0}><IcoForward size={16} />转发</button>
+        <button className="wc-ms-btn-primary wc-ms-btn-delete" onClick={onDelete} disabled={selectedCount === 0}><IcoTrash size={16} />撤回</button>
       </div>
     </div>
   );

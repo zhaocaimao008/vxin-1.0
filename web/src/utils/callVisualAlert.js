@@ -6,29 +6,53 @@
  */
 let _titleTimer = null;
 let _origTitle = '';
-let _origFavicon = null;
+// index.html 同时声明了多枚 <link rel="icon">（svg / png / ico），浏览器可能取其中任意一枚；
+// 提醒期间全部替换，结束后逐个恢复原 href（提醒时新建的 link 则直接移除）。
+let _origFavicons = null; // Array<{ link: HTMLLinkElement, href: string|null, type: string|null, created: boolean }>
 
-function setFavicon(href) {
-  let link = document.querySelector('link[rel="icon"]');
-  if (!link) {
-    link = document.createElement('link');
-    link.rel = 'icon';
-    document.head.appendChild(link);
-  }
-  link.href = href;
+function iconLinks() {
+  return Array.from(document.querySelectorAll('link[rel~="icon"]'));
 }
 
-// 64x64 红底白电话：用与应用内一致的 Material 电话图标路径绘制（emoji 在各系统上外观不一）
-const PHONE_PATH = 'M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z';
+function setFavicon(href) {
+  let links = iconLinks();
+  if (!links.length) {
+    const link = document.createElement('link');
+    link.rel = 'icon';
+    document.head.appendChild(link);
+    if (_origFavicons) _origFavicons.push({ link, href: null, type: null, created: true });
+    links = [link];
+  }
+  links.forEach(link => {
+    link.type = 'image/png';
+    link.href = href;
+  });
+}
+
+function restoreFavicons() {
+  if (!_origFavicons) return;
+  _origFavicons.forEach(({ link, href, type, created }) => {
+    if (created) { link.remove(); return; }
+    if (type) link.type = type; else link.removeAttribute('type');
+    if (href !== null) link.setAttribute('href', href); else link.removeAttribute('href');
+  });
+  _origFavicons = null;
+}
+
+// 64x64 红底白电话：危险语义红 + 与 Icons.jsx IcoPhone 同一条线性电话路径（24 网格，圆头描边）
+const PHONE_PATH = 'M5 3.5h2.8a1.5 1.5 0 0 1 1.4 1l.9 2.8a1.5 1.5 0 0 1-.4 1.6L8.3 10.2a12 12 0 0 0 5.5 5.5l1.3-1.4a1.5 1.5 0 0 1 1.6-.4l2.8.9a1.5 1.5 0 0 1 1 1.4V19a1.5 1.5 0 0 1-1.6 1.5C10.7 20 4 13.3 3.5 5.1A1.5 1.5 0 0 1 5 3.5z';
 function makeCallFavicon() {
   const c = document.createElement('canvas');
   c.width = 64; c.height = 64;
   const g = c.getContext('2d');
-  g.fillStyle = '#E53935';
+  g.fillStyle = '#D93A30';
   g.beginPath(); g.arc(32, 32, 32, 0, Math.PI * 2); g.fill();
-  g.fillStyle = '#FFFFFF';
-  g.translate(14, 14); g.scale(1.5, 1.5);
-  g.fill(new Path2D(PHONE_PATH));
+  g.translate(14, 14); g.scale(1.5, 1.5); // 24 网格 → 36px，居中
+  g.strokeStyle = '#FFFFFF';
+  g.lineWidth = 2.2;
+  g.lineCap = 'round';
+  g.lineJoin = 'round';
+  g.stroke(new Path2D(PHONE_PATH));
   return c.toDataURL('image/png');
 }
 
@@ -39,8 +63,9 @@ function makeCallFavicon() {
 export function startCallVisualAlert(name) {
   if (_titleTimer) return;
   _origTitle = document.title;
-  const orig = document.querySelector('link[rel="icon"]');
-  _origFavicon = orig ? orig.href : null;
+  _origFavicons = iconLinks().map(link => ({
+    link, href: link.getAttribute('href'), type: link.getAttribute('type'), created: false,
+  }));
   setFavicon(makeCallFavicon());
   let showCall = true;
   _titleTimer = setInterval(() => {
@@ -53,6 +78,5 @@ export function startCallVisualAlert(name) {
 export function stopCallVisualAlert() {
   if (_titleTimer) { clearInterval(_titleTimer); _titleTimer = null; }
   document.title = _origTitle;
-  if (_origFavicon !== null) setFavicon(_origFavicon);
-  _origFavicon = null;
+  restoreFavicons();
 }

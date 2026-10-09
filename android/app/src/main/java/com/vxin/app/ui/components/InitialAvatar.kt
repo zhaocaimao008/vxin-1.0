@@ -18,10 +18,11 @@ import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import kotlin.math.abs
+import com.vxin.app.ui.theme.LocalVxinPalette
 
 // 字母头像配色：v信绿为主色系多彩（对齐 Web Avatar COLORS），按名字 hash 稳定取色
 private val palette = listOf(
-    Color(0xFF07C160), // v信绿(主)
+    Color(0xFF176B52), // v信绿(主)
     Color(0xFF17B8A6), // 青碧(辅)
     Color(0xFF5B7BF0), // 靛蓝
     Color(0xFF9B7BF5), // 薰衣草紫
@@ -40,7 +41,7 @@ private val palette = listOf(
  */
 @Composable
 fun InitialAvatar(name: String, size: Dp = 48.dp, avatarUrl: String? = null) {
-    val shape = RoundedCornerShape(size / 6)
+    val shape = RoundedCornerShape(maxOf(3.dp, (size.value * 0.13f).dp))
     if (!avatarUrl.isNullOrBlank()) {
         SubcomposeAsyncImage(
             model = avatarUrl,
@@ -59,7 +60,8 @@ fun InitialAvatar(name: String, size: Dp = 48.dp, avatarUrl: String? = null) {
 @Composable
 private fun InitialsBox(name: String, size: Dp, shape: androidx.compose.ui.graphics.Shape) {
     val letter = name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?"
-    val color = palette[abs(name.hashCode()) % palette.size]
+    val index = (abs(name.hashCode().toLong()) % palette.size).toInt()
+    val color = if (index == 0) LocalVxinPalette.current.primary else palette[index]
     Box(
         modifier = Modifier.size(size).clip(shape).background(color),
         contentAlignment = Alignment.Center,

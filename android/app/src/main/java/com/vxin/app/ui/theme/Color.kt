@@ -1,60 +1,55 @@
 package com.vxin.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 
-// v信 品牌色（对齐 34 图 UI 规范 / Web 端 --brand-500 #07C160）
-val VxinBrand = Color(0xFF07C160)          // 主品牌色 v信绿
-val VxinBrandLight = Color(0xFF1CCF71)     // 渐变浅端 / hover
-val VxinBrandDark = Color(0xFF06A852)      // 渐变深端 / 按下态
-val VxinBrandMuted = Color(0xFFE6F9EF)     // 主色浅底
-// 兼容旧引用名（各 Screen 无需改动）
-val VxinGreen = VxinBrand
-val VxinGreenDark = VxinBrandDark
-val VxinTeal = VxinBrand
-val VxinBg = Color(0xFFF7F8FA)             // 对齐 web --bg-app #F7F8FA
-val VxinTextPrimary = Color(0xFF1F2329)    // 对齐 web --text-primary #1F2329
-val VxinTextSecondary = Color(0xFF8A8F98)  // 对齐 web --text-secondary #8A8F98
-val VxinError = Color(0xFFFF4D4F)          // 对齐 web --vx-danger #FF4D4F
-
-// 语义色
-val VxinSuccess = VxinBrand
-val VxinSuccessDark = VxinBrandDark
-// 支付/转账
-val VxinPay = VxinBrand
-val VxinPayDark = VxinBrandDark
-val VxinPayGradStart = VxinBrandLight
-val VxinPayGradEnd = VxinBrand
-
-// 聊天气泡：我的=浅绿 #CFF3D9；对方=白 + 深字（对齐 web 新气泡色）
-val VxinBubbleMine = Color(0xFFCFF3D9)     // 我方气泡：浅绿（对齐 web #CFF3D9）
-val VxinBubbleMineText = Color(0xFF1F2329) // 深色文字（浅绿底色下深色字）
-val VxinBubbleText = Color(0xFF1F2329)
-val VxinBubbleOtherDark = Color(0xFF252830)   // 暗色下对方气泡
-val VxinBubbleTextDark = Color(0xFFD8DCE3)    // 暗色下对方气泡文字
-
-// 深色模式
-val VxinBgDark = Color(0xFF15171A)            // 对齐 web --vx-bg dark
-val VxinSurfaceDark = Color(0xFF202327)       // 对齐 web --vx-surface dark
-val VxinTextPrimaryDark = Color(0xFFF2F3F5)   // 对齐 web --vx-text-primary dark
-val VxinTextSecondaryDark = Color(0xFFA9AFB7) // 对齐 web --vx-text-secondary dark
-
-
-// 「我的」页面新增语义色（对齐改版设计 tokens）
-val VxinGreen34   = Color(0xFF34B759)   // spec #34B759
-val VxinGreenBg   = Color(0xFFEDF8F0)   // spec #EDF8F0
-val VxinPageBg    = Color(0xFFF5F5F7)   // spec #F5F5F7
-val VxinDivider   = Color(0xFFE9E9EC)   // spec #E9E9EC
-val VxinIconGray  = Color(0xFF2C2C2E)   // spec #2C2C2E
-val VxinRedLogout = Color(0xFFFF3B30)   // spec #FF3B30
-
-// ── 登录/注册/找回密码 黑金品牌主题专用色（2026-08-24 四端品牌统一）──────────
-// 仅供 feature/auth 三个屏幕 + AuthFields 组件使用，不影响 App 内其余页面
-// （聊天/设置等仍是 VxinBrand 绿，--color-primary 同款约束见 Web login.css）。
-val VxinAuthBg          = Color(0xFF000000)
-val VxinAuthSurface     = Color(0xFF141414)
-val VxinAuthGold        = Color(0xFFFFD700)
-val VxinAuthGoldHover   = Color(0xFFFFC72C)
-val VxinAuthBorder      = Color(0xFF2A2A2A)
-val VxinAuthTextSecondary = Color(0xFFCCCCCC)   // 品牌规范辅助文字色
-val VxinAuthTextMuted   = Color(0xFF8A8478)
-val VxinAuthPlaceholder = Color(0xFF6B6459)
+// Compatibility constants for non-composable code. UI uses LocalVxinPalette.
+val VxinBrand = VxinLightPalette.primary
+val VxinBrandLight = VxinLightPalette.primaryHover
+val VxinBrandDark = VxinLightPalette.primaryActive
+val VxinBrandMuted = VxinLightPalette.primaryTint
+val VxinGreen = VxinLightPalette.primary
+val VxinGreenDark = VxinLightPalette.primaryActive
+val VxinTeal = VxinLightPalette.primary
+val VxinBg = VxinLightPalette.bg
+val VxinTextPrimary = VxinLightPalette.text
+val VxinTextSecondary = VxinLightPalette.text2
+val VxinError = VxinLightPalette.danger
+val VxinSuccess = VxinLightPalette.online
+val VxinSuccessDark = VxinLightPalette.primaryActive
+val VxinPay = VxinLightPalette.primary
+val VxinPayDark = VxinLightPalette.primaryActive
+val VxinPayGradStart = VxinLightPalette.primary
+val VxinPayGradEnd = VxinLightPalette.primary
+val VxinBubbleMine = VxinLightPalette.bubbleMine
+val VxinBubbleMineText = VxinLightPalette.bubbleMineText
+val VxinBubbleText = VxinLightPalette.text
+val VxinGreen34 = VxinLightPalette.primary
+val VxinGreenBg = VxinLightPalette.primaryTint
+val VxinPageBg = VxinLightPalette.bg
+val VxinDivider = VxinLightPalette.border
+val VxinIconGray = VxinLightPalette.text2
+val VxinRedLogout = VxinLightPalette.danger
+val VxinBubbleOtherDark = VxinDarkPalette.bubbleOther
+val VxinBubbleTextDark = VxinDarkPalette.text
+val VxinBgDark = VxinDarkPalette.bg
+val VxinSurfaceDark = VxinDarkPalette.surface
+val VxinTextPrimaryDark = VxinDarkPalette.text
+val VxinTextSecondaryDark = VxinDarkPalette.text2
+val VxinAuthBg: Color
+    @Composable @ReadOnlyComposable get() = LocalVxinPalette.current.bg
+val VxinAuthSurface: Color
+    @Composable @ReadOnlyComposable get() = LocalVxinPalette.current.surface
+val VxinAuthGold: Color
+    @Composable @ReadOnlyComposable get() = LocalVxinPalette.current.link
+val VxinAuthGoldHover: Color
+    @Composable @ReadOnlyComposable get() = LocalVxinPalette.current.primaryHover
+val VxinAuthBorder: Color
+    @Composable @ReadOnlyComposable get() = LocalVxinPalette.current.border
+val VxinAuthTextSecondary: Color
+    @Composable @ReadOnlyComposable get() = LocalVxinPalette.current.text2
+val VxinAuthTextMuted: Color
+    @Composable @ReadOnlyComposable get() = LocalVxinPalette.current.text2
+val VxinAuthPlaceholder: Color
+    @Composable @ReadOnlyComposable get() = LocalVxinPalette.current.text3

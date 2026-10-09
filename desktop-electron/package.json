@@ -1,8 +1,8 @@
 {
   "name": "vxin-desktop",
-  "version": "8.0.19",
+  "version": "8.0.20",
   "description": "v信 桌面客户端",
-  "homepage": "https://vxinchat.com",
+  "homepage": "https://liaotian99.com",
   "author": {
     "name": "Vxin Team",
     "email": "support@vxinchat.com"
@@ -10,7 +10,7 @@
   "main": "src/main.js",
   "scripts": {
     "dev": "electron .",
-    "build:web": "cd ../web && npx vite build --mode desktop",
+    "build:web": "cd ../web && npx vite build --mode desktop --outDir dist-desktop",
     "build": "npm run build:web && electron-builder",
     "build:win": "npm run build:web && electron-builder --win --x64",
     "build:mac": "npm run build:web && electron-builder --mac --x64",
@@ -29,7 +29,7 @@
       "src/**/*",
       "assets/**/*",
       {
-        "from": "../web/dist",
+        "from": "../web/dist-desktop",
         "to": "web/dist",
         "filter": [
           "**/*"
@@ -73,7 +73,7 @@
     },
     "publish": {
       "provider": "generic",
-      "url": "https://vxinchat.com/downloads/updates",
+      "url": "https://liaotian99.com/downloads/updates",
       "channel": "latest"
     }
   },

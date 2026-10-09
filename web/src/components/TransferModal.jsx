@@ -46,7 +46,7 @@ export default function TransferModal({ conversation, onClose, onSent }) {
 
   return (
     <div className="rpm-overlay" ref={trapRef} onClick={() => { if (!sending) onClose(); }}>
-      <div className="rpm-card" role="dialog" aria-modal="true" aria-label="转账" onClick={e => e.stopPropagation()}>
+      <div className="rpm-card rpm-card--transfer" role="dialog" aria-modal="true" aria-label="转账" onClick={e => e.stopPropagation()}>
         <div className="rpm-title">转账</div>
         {otherUser?.username && (
           <div style={{ textAlign: 'center', fontSize: 'var(--text-sm2)', color: 'var(--text-secondary)', marginBottom: 8 }}>
@@ -91,7 +91,7 @@ export default function TransferModal({ conversation, onClose, onSent }) {
             disabled={!canSend || sending}
             className="rpm-btn-send"
             style={{
-              background: canSend && !sending ? 'var(--green)' : 'rgba(7,193,96,.4)',
+              background: canSend && !sending ? 'var(--nt-primary)' : 'rgba(var(--nt-primary-rgb), .4)',
               cursor:     canSend && !sending ? 'pointer'     : 'not-allowed',
             }}
           >

@@ -1,0 +1,498 @@
+/* v信 一体化控件层 · 通讯录、资料、群信息、设置/我的、动态、收藏、通话、搜索（2026-10-09，加载于 brand-icons.css 之后） */
+/* ================================================================
+   约定：与 native-theme.css 相同，规则一律 :root 前缀（+0,1,0）；
+   只有历史规则本身带 !important 或 JSX 内联样式时才跟进 !important。
+   图标一律由 color 驱动（svg.vx-ico 的 fill/stroke 由 brand-icons.css 统一锁定）。
+
+   §0  深色下重新解析图标底块令牌
+   §1  通用：图标按钮 / 主次按钮 / 输入框 / 弹窗
+   §2  我的 / 设置（inset grouped 卡片、30px 图标底块、品牌区）
+   §3  通讯录 / 添加好友 / 资料卡 / 全局搜索
+   §4  群信息 / 聊天信息
+   §5  动态 / 收藏
+   §6  通话（1v1 + 群通话控制按钮、通话记录）
+   ================================================================ */
+
+/* §0 深色令牌：--nt-icon-tile-* 已在 brand-icons.css 的 :root 与 body.dark-mode 上同时声明 */
+
+/* ── §1 通用 ─────────────────────────────────────────────────── */
+/* 图标按钮：36px、圆角 md、中性色，悬停浅底，键盘焦点墨绿环 */
+:root .afm-close-btn,
+:root .cop-action-btn,
+:root .wc-moment-settings-btn,
+:root .wc-moment-menu-btn,
+:root .wc-moments-refresh-btn,
+:root .wc-settings-close-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--nt-r-md);
+  background: transparent;
+  color: var(--nt-text-2);
+  line-height: 0;
+  cursor: pointer;
+  transition: background var(--dur-fast, 120ms), color var(--dur-fast, 120ms);
+}
+:root .afm-close-btn:hover,
+:root .cop-action-btn:hover,
+:root .wc-moment-settings-btn:hover,
+:root .wc-moment-menu-btn:hover,
+:root .wc-moments-refresh-btn:hover:not(:disabled),
+:root .wc-settings-close-btn:hover { background: var(--nt-hover); color: var(--nt-text); }
+:root .cop-action-btn:hover { color: var(--nt-primary); }
+:root .afm-close-btn:active,
+:root .cop-action-btn:active,
+:root .wc-moment-settings-btn:active,
+:root .wc-moment-menu-btn:active,
+:root .wc-moments-refresh-btn:active,
+:root .wc-settings-close-btn:active { background: var(--nt-pressed); }
+
+:root :is(.afm-close-btn, .cop-action-btn, .wc-moment-settings-btn, .wc-moment-menu-btn, .wc-moments-refresh-btn,
+  .wc-settings-close-btn, .up-close-btn, .wc-crow-btn, .up-action-btn, .up-btn-primary, .up-btn-ghost,
+  .lt-action-btn, .lt-delete-btn, .lt-create-btn, .lt-save-btn, .req-accept, .req-reject, .cl-add-btn,
+  .cl-section-back, .wc-settings-nav-item, .wc-btn-save, .wc-btn-test, .wc-btn-exit, .wc-btn-exit-all,
+  .wc-add-form-submit, .wc-moments-publish-btn, .wc-moment-action-btn, .cm-minimize-btn, .cm-mini-hangup,
+  .cm-circle-btn, .gcm-ctrl, .pf-vid-chip):focus-visible {
+  outline: 2px solid var(--nt-primary);
+  outline-offset: 2px;
+}
+
+/* 主按钮：墨绿实心 + on-primary 文字（深色下为深色字，保证对比度） */
+:root .up-btn-primary,
+:root .up-action-chat,
+:root .lt-save-btn,
+:root .lt-create-btn,
+:root .req-accept,
+:root .cl-add-btn,
+:root .wc-btn-save,
+:root .wc-add-form-submit,
+:root .wc-moments-publish-btn {
+  background: var(--nt-primary);
+  color: var(--nt-on-primary);
+  border: none;
+}
+:root .up-btn-primary:hover:not(:disabled),
+:root .up-action-chat:hover,
+:root .lt-save-btn:hover:not(:disabled),
+:root .lt-create-btn:hover,
+:root .req-accept:hover:not(:disabled),
+:root .cl-add-btn:hover,
+:root .wc-btn-save:hover:not(:disabled),
+:root .wc-add-form-submit:hover:not(:disabled),
+:root .wc-moments-publish-btn:hover { background: var(--nt-primary-hover); }
+:root .up-btn-primary:active:not(:disabled),
+:root .up-action-chat:active,
+:root .lt-save-btn:active:not(:disabled),
+:root .req-accept:active:not(:disabled),
+:root .wc-btn-save:active:not(:disabled),
+:root .wc-add-form-submit:active:not(:disabled),
+:root .wc-moments-publish-btn:active { background: var(--nt-primary-active); }
+:root .up-btn-primary:disabled,
+:root .lt-save-btn:disabled,
+:root .wc-btn-save:disabled,
+:root .wc-add-form-submit:disabled { background: var(--nt-disabled-fill); color: var(--nt-on-primary); opacity: 1; }
+:root .up-btn-primary,
+:root .lt-save-btn,
+:root .wc-btn-save,
+:root .wc-btn-test,
+:root .wc-add-form-submit,
+:root .up-btn-ghost { border-radius: var(--nt-r-md); }
+
+/* 次按钮：中性填充 */
+:root .up-btn-ghost,
+:root .up-action-grey,
+:root .req-reject,
+:root .wc-btn-test,
+:root .wc-crow-btn,
+:root .lt-action-btn {
+  background: var(--nt-fill);
+  color: var(--nt-text);
+  border: 1px solid transparent;
+}
+:root .up-btn-ghost:hover,
+:root .up-action-grey:hover,
+:root .req-reject:hover:not(:disabled),
+:root .wc-btn-test:hover,
+:root .wc-crow-btn:hover:not(:disabled),
+:root .lt-action-btn:hover { background: var(--nt-fill-strong); }
+:root .up-action-grey { color: var(--nt-text-2); }
+
+/* 危险：红字（浅红底），不做实心 */
+:root .up-action-danger,
+:root .lt-delete-btn,
+:root .wc-crow-btn-danger,
+:root .wc-btn-exit,
+:root .wc-btn-exit-all {
+  background: rgba(var(--nt-danger-rgb), .08);
+  color: var(--nt-danger);
+  border: 1px solid transparent;
+}
+:root .up-action-danger:hover,
+:root .lt-delete-btn:hover,
+:root .wc-crow-btn-danger:hover:not(:disabled),
+:root .wc-btn-exit:hover,
+:root .wc-btn-exit-all:hover { background: rgba(var(--nt-danger-rgb), .14); }
+/* 已拉黑：警示（与危险同系，较弱） */
+:root .up-action-warn {
+  background: rgba(var(--nt-danger-rgb), .06);
+  color: var(--nt-danger);
+  border: 1px solid rgba(var(--nt-danger-rgb), .22);
+}
+
+/* 输入框：圆角 md，浅填充，聚焦墨绿描边 */
+:root .lt-edit-input,
+:root .up-remark-input,
+:root .up-verify-input,
+:root .wc-server-input,
+:root .wc-add-form-input,
+:root .gi-ann-textarea,
+:root .gi-nick-input {
+  border-radius: var(--nt-r-md);
+  border: 1px solid var(--nt-border-strong);
+  background: var(--nt-surface);
+  color: var(--nt-text);
+}
+:root .lt-edit-input:focus,
+:root .up-remark-input:focus,
+:root .up-verify-input:focus,
+:root .wc-server-input:focus,
+:root .wc-add-form-input:focus,
+:root .gi-ann-textarea:focus,
+:root .gi-nick-input:focus {
+  outline: none;
+  border-color: var(--nt-primary);
+  box-shadow: 0 0 0 3px rgba(var(--nt-primary-rgb), .14);
+}
+
+/* 弹窗：大圆角 */
+:root .wc-modal,
+:root .up-card,
+:root .afm-card { border-radius: var(--nt-r-xl); }
+:root .up-card,
+:root .afm-card {
+  background: var(--nt-surface);
+  border: 1px solid var(--nt-border);
+  box-shadow: var(--nt-shadow-lg);
+}
+
+/* ── §2 我的 / 设置 ─────────────────────────────────────────── */
+/* 分组卡：inset grouped（历史「扁平通栏」规则带 !important，这里跟进） */
+:root .wc-section-pad { padding-left: 16px !important; padding-right: 16px !important; }
+:root .wc-card {
+  background: var(--nt-surface) !important;
+  border: 1px solid var(--nt-border) !important;
+  border-radius: var(--nt-r-lg) !important;
+  box-shadow: none !important;
+  overflow: hidden;
+}
+:root .wc-slabel { padding: 18px 20px 6px; font-size: 13px; color: var(--nt-text-3); font-weight: 500; }
+
+/* 设置行 */
+:root .wc-crow {
+  min-height: 52px;
+  padding: 10px 14px;
+  gap: 12px;
+  border-bottom: 1px solid var(--nt-separator);
+  box-sizing: border-box;
+}
+:root .wc-crow:last-child { border-bottom: none; }
+:root .wc-crow-clickable:hover { background: var(--nt-hover); }
+:root .wc-crow-clickable:active { background: var(--nt-pressed); }
+:root .wc-crow-clickable:focus-visible { outline: 2px solid var(--nt-primary); outline-offset: -2px; }
+:root .wc-crow-label { color: var(--nt-text); }
+:root .wc-crow-label-danger { color: var(--nt-danger); }
+:root .wc-crow-desc,
+:root .wc-crow-value { color: var(--nt-text-3); }
+
+/* 30px 图标底块：统一浅墨绿底 + 墨绿图标（原先白图标配多色底） */
+:root .wc-crow-icon,
+:root.electron-app .wc-crow-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--nt-r-sm);
+  background: var(--nt-icon-tile-bg);
+  color: var(--nt-icon-tile-fg);
+}
+:root .wc-crow-icon svg.vx-ico { width: 18px; height: 18px; }
+:root .wc-crow-icon.wc-crow-icon--danger { background: rgba(var(--nt-danger-rgb), .10); color: var(--nt-danger); }
+:root .wc-crow-icon.wc-crow-icon--plain { background: transparent; }
+:root .wc-chevron,
+:root.electron-app .wc-chevron { width: 16px; height: 16px; color: var(--nt-text-4); flex-shrink: 0; }
+:root .wc-crow-check { color: var(--nt-primary); }
+
+/* Web 两栏设置导航 */
+:root .wc-settings-nav-item {
+  min-height: 40px;
+  border-radius: var(--nt-r-md);
+  color: var(--nt-text);
+}
+:root .wc-settings-nav-item:hover { background: var(--nt-hover); }
+:root .wc-settings-nav-item.active { background: var(--nt-selected); color: var(--nt-primary); }
+:root .wc-settings-nav-icon { color: var(--nt-text-2); }
+:root .wc-settings-nav-item.active .wc-settings-nav-icon { color: var(--nt-primary); }
+:root .wc-settings-nav-icon svg.vx-ico { width: 18px; height: 18px; }
+
+/* 账号切换「添加账户」 */
+:root .wc-add-icon-wrap { border-color: var(--nt-border-strong); color: var(--nt-text-3); }
+:root .wc-add-icon-wrap.open { border-color: var(--nt-primary); color: var(--nt-primary); }
+:root .wc-add-icon-svg,
+:root.electron-app .wc-add-icon-svg { width: 18px; height: 18px; color: inherit; }
+:root .wc-add-chevron,
+:root.electron-app .wc-add-chevron { width: 14px; height: 14px; color: var(--nt-text-4); }
+:root .wc-add-switch { color: var(--nt-primary); }
+
+/* 设备列表 */
+:root .wc-device-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--nt-r-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--nt-icon-tile-bg);
+  color: var(--nt-icon-tile-fg);
+  flex-shrink: 0;
+}
+:root .wc-badge-current { color: var(--nt-primary); background: var(--nt-primary-soft); }
+
+/* 资料 Hero：相机 / 编辑角标 */
+:root .wc-profile-hero-cam,
+:root .pf-avatar-edit {
+  background: var(--nt-surface);
+  color: var(--nt-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+:root .pf-vid-chip svg.vx-ico { opacity: .85; }
+
+/* 关于 v信：品牌标志 */
+:root .wc-about-brand {
+  display: flex;
+  justify-content: center;
+  padding: 28px 16px 20px;
+}
+:root .wc-about-brand .vx-brand-name { font-size: 20px; color: var(--nt-text); }
+:root .wc-version-foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px 0 24px;
+  color: var(--nt-text-3);
+  font-size: var(--text-sm, 12px);
+}
+:root .wc-version-foot svg.vx-brand-mark { border-radius: 5px; }
+
+/* 外观页：选中描边 */
+:root .wc-shortcut-kbd--recording {
+  border-color: var(--nt-primary);
+  background: var(--nt-primary-soft);
+  color: var(--nt-primary);
+}
+:root .wc-btn-link { color: var(--nt-link); }
+
+/* ── §3 通讯录 / 添加好友 / 资料卡 / 搜索 ───────────────────── */
+/* 入口行图标底块：所有平台统一浅墨绿底 + 墨绿图标（JSX 已去掉内联多色底） */
+:root .cl-entry-icon-box,
+:root .wc-contact-item .cl-entry-icon-box,
+:root.electron-app .cl-entry-icon-box,
+:root .gs-filehelper-icon,
+:root.electron-app .gs-filehelper-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--nt-r-md);
+  background: var(--nt-icon-tile-bg);
+  color: var(--nt-icon-tile-fg);
+  box-shadow: none;
+}
+:root .cl-entry-icon-box svg.vx-ico,
+:root.electron-app .cl-entry-icon-box svg.vx-ico,
+:root .gs-filehelper-icon svg.vx-ico { width: 20px; height: 20px; }
+:root .cl-entry-arrow,
+:root .afm-result-chevron,
+:root .up-row-chevron { color: var(--nt-text-4); }
+:root .cl-entry-badge { background: var(--nt-badge); color: #FFFFFF; }
+:root .cl-section-back { color: var(--nt-primary); }
+:root .cl-section-header { background: var(--nt-surface); border-bottom-color: var(--nt-separator); }
+:root .cl-empty-icon { color: var(--nt-text-4); }
+:root .cl-online-tag { color: var(--nt-online); }
+:root .cl-divider { background: var(--nt-bg); }
+:root .cl-subtab.active { color: var(--nt-primary); border-bottom-color: var(--nt-primary); }
+:root .req-status-accepted { color: var(--nt-primary); background: var(--nt-primary-soft); }
+:root .lt-color-swatch.lt-color-selected { border-color: var(--nt-text); }
+
+/* 联系人行：悬停 / 选中 */
+:root .wc-contact-item:active { background: var(--nt-pressed) !important; }
+:root .wc-contact-item.active,
+:root .wc-contact-item.selected { background: var(--nt-selected) !important; }
+
+/* 桌面联系人总览面板 */
+:root .cop-panel { background: var(--nt-surface); border-radius: var(--nt-r-lg); box-shadow: none; border: 1px solid var(--nt-border); }
+:root .cop-row { border-bottom-color: var(--nt-separator); }
+:root .cop-row:hover { background: var(--nt-hover); }
+:root .cop-status.online { color: var(--nt-online); }
+:root .cop-status.online .cop-status-dot { background: var(--nt-online); }
+
+/* 添加好友 */
+:root .afm-search-wrap { border-radius: var(--nt-r-md); background: var(--nt-fill); }
+:root .afm-search-wrap-focused {
+  background: var(--nt-surface);
+  border-color: var(--nt-primary);
+  box-shadow: 0 0 0 3px rgba(var(--nt-primary-rgb), .14);
+}
+:root .afm-result-item:hover { background: var(--nt-hover); }
+
+/* 资料卡 */
+:root .up-close-btn { width: 32px; height: 32px; }
+:root .up-row:hover { background: var(--nt-hover); }
+:root .up-sent-tip { color: var(--nt-primary); }
+:root .up-action-btn { border-radius: var(--nt-r-md); }
+
+/* 全局搜索 */
+:root .gs-network-icon { color: var(--nt-primary); }
+
+/* ── §4 群信息 / 聊天信息 ───────────────────────────────────── */
+/* 群管理图标底块：原橙 / 绿 / 红 / 渐变橙，统一为图标底块 */
+:root .gi-ic28,
+:root .gi-ic30,
+:root .gi-ic-mg1,
+:root .gi-ic-mg2,
+:root .gi-ic-mg3,
+:root .gi-ic-mg-header {
+  background: var(--nt-icon-tile-bg);
+  color: var(--nt-icon-tile-fg);
+  border-radius: var(--nt-r-sm);
+}
+:root .gi-ic30 { width: 30px; height: 30px; }
+:root .gi-ann-icon { color: var(--nt-primary); }
+:root .gi-chevron,
+:root .gi-fill-tertiary,
+:root .gi-fill-grey { color: var(--nt-text-4); }
+:root .gi-search-icon { color: var(--nt-text-3); }
+:root .gi-warn-row { color: var(--nt-warning); }
+:root .gi-warn-icon { color: var(--nt-warning); }
+:root .gi-mg-active { color: var(--nt-warning); }
+:root .gi-av-icon,
+:root.electron-app .gi-av-icon { color: #FFFFFF; width: 18px; height: 18px; }
+:root .gi-inv-box { border-color: var(--nt-primary); color: var(--nt-primary); border-radius: var(--nt-r-md); }
+:root .gi-btn-save,
+:root .gi-btn-save-sm { background: var(--nt-primary); color: var(--nt-on-primary); }
+:root .wc-settings-contact-action:focus-visible { outline: 2px solid var(--nt-primary); outline-offset: 2px; }
+
+/* ── §5 动态 / 收藏 ─────────────────────────────────────────── */
+:root .wc-moment-action-btn svg.vx-ico,
+:root.electron-app .wc-moment-action-btn svg.vx-ico { width: 16px; height: 16px; }
+:root .wc-moment-action-btn { color: var(--nt-text-3); }
+:root .wc-moment-action-btn:hover { color: var(--nt-text); }
+:root .wc-moment-action-btn.liked,
+:root .wc-moment-heart { color: var(--nt-primary); }
+:root .wc-moment-notif-icon { color: var(--nt-primary); }
+:root .wc-moments-publish-btn { border-radius: var(--nt-r-md); }
+:root .wc-moment-menu-pop {
+  background: var(--nt-glass-strong);
+  -webkit-backdrop-filter: var(--nt-blur);
+  backdrop-filter: var(--nt-blur);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r-md);
+  box-shadow: var(--nt-shadow-md);
+}
+:root .wc-moment-menu-item:hover { background: var(--nt-hover); }
+
+/* ── §6 通话 ─────────────────────────────────────────────────── */
+/* 控制按钮：一套圆形——中性玻璃 / active 反白 / 挂断红 / 接听绿（尺寸由 JSX 给 56–64px） */
+:root .cm-circle-btn-disc,
+:root.electron-app .cm-circle-btn-disc {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, .16);
+  border: 1px solid rgba(255, 255, 255, .14);
+  color: #FFFFFF;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .22);
+  box-sizing: border-box;
+  transition: transform var(--dur-fast, 120ms), background var(--dur-fast, 120ms), color var(--dur-fast, 120ms);
+}
+:root .cm-circle-btn:hover .cm-circle-btn-disc,
+:root .gcm-ctrl:hover .cm-circle-btn-disc { background: rgba(255, 255, 255, .24); transform: none; opacity: 1; }
+:root .cm-circle-btn:active .cm-circle-btn-disc,
+:root .gcm-ctrl:active .cm-circle-btn-disc { transform: scale(.95); }
+:root .cm-circle-btn-disc:hover { transform: none; }
+/* 反白：静音中 / 摄像头已关 */
+:root .cm-circle-btn-disc.cm-circle-btn-disc--active,
+:root .cm-circle-btn:hover .cm-circle-btn-disc.cm-circle-btn-disc--active,
+:root .gcm-ctrl:hover .cm-circle-btn-disc.cm-circle-btn-disc--active {
+  background: #FFFFFF;
+  border-color: #FFFFFF;
+  color: #1C211E;
+}
+/* 挂断 / 拒绝：红 */
+:root .cm-circle-btn-disc.cm-circle-btn-disc--danger {
+  background: #E5484D;
+  border-color: transparent;
+  color: #FFFFFF;
+  box-shadow: 0 6px 20px rgba(229, 72, 77, .35);
+}
+:root .cm-circle-btn:hover .cm-circle-btn-disc.cm-circle-btn-disc--danger,
+:root .gcm-ctrl:hover .cm-circle-btn-disc.cm-circle-btn-disc--danger { background: #D63B40; }
+/* 接听：绿（语义在线色） */
+:root .cm-circle-btn-disc.cm-circle-btn-disc--accept {
+  background: var(--nt-online, #2FA36F);
+  border-color: transparent;
+  color: #FFFFFF;
+  box-shadow: 0 6px 20px rgba(47, 163, 111, .35);
+}
+:root .cm-circle-btn:hover .cm-circle-btn-disc.cm-circle-btn-disc--accept { background: #289463; }
+:root .cm-circle-btn-icon { color: inherit; }
+:root .cm-circle-btn-icon svg.vx-ico { width: 100%; height: 100%; }
+:root .cm-circle-btn-label { color: rgba(255, 255, 255, .78); }
+:root .cm-btn-row { gap: 40px; }
+:root .gcm-ctrl:focus-visible { outline: none; }
+:root .gcm-ctrl:focus-visible .cm-circle-btn-disc,
+:root .cm-circle-btn:focus-visible .cm-circle-btn-disc { box-shadow: 0 0 0 3px rgba(255, 255, 255, .55); }
+:root .cm-circle-btn:focus-visible { outline: none; }
+
+/* 缩小 / 悬浮挂断 */
+:root .cm-minimize-btn,
+:root.electron-app .cm-minimize-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .16);
+  color: #FFFFFF;
+}
+:root .cm-minimize-btn:hover,
+:root.electron-app .cm-minimize-btn:hover { background: rgba(255, 255, 255, .26); }
+:root .cm-mini-hangup,
+:root.electron-app .cm-mini-hangup { background: #E5484D !important; color: #FFFFFF; }
+:root .cm-mini-hangup:hover,
+:root.electron-app .cm-mini-hangup:hover { background: #D63B40 !important; }
+:root .cm-mini-hangup svg.vx-ico { width: 16px; height: 16px; }
+:root .cm-voice-timer { color: #7FD6B0; font-variant-numeric: tabular-nums; }
+:root .cm-media-error { background: rgba(217, 58, 48, .92); }
+
+/* 通话记录 */
+:root .ch-dir-ico { width: 14px; height: 14px; color: var(--nt-text-3); flex-shrink: 0; }
+:root .ch-dir-ico.missed { color: var(--nt-danger); }
+:root .ch-name.missed { color: var(--nt-danger); }
+:root .ch-call-ico { width: 18px; height: 18px; color: var(--nt-primary); }
+:root .ch-empty-ico {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--nt-icon-tile-bg);
+  color: var(--nt-icon-tile-fg);
+  opacity: 1;
+}
+:root .ch-retry { color: var(--nt-link); }

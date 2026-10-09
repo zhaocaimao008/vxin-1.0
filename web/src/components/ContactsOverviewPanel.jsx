@@ -6,16 +6,12 @@ import './ContactsOverviewPanel.css';
 import { useSocketCore } from '../contexts/SocketContext';
 import { showToast, showConfirm } from '../utils/toast';
 import { seedOnlineIds, filterContactsByStatus } from '../utils/contactsStatus';
+import { IcoChat, IcoVideo, IcoMoreVert } from './Icons';
 
-const IcoMessage = () => (
-  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2z" /></svg>
-);
-const IcoVideoCall = () => (
-  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" /></svg>
-);
-const IcoMore = () => (
-  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></svg>
-);
+// 行内操作按钮图标：统一走 Icons.jsx 线性图标（颜色由按钮 color 驱动）
+const IcoMessage = () => <IcoChat size={18} />;
+const IcoVideoCall = () => <IcoVideo size={18} />;
+const IcoMore = () => <IcoMoreVert size={18} />;
 
 const TABS = [
   { key: 'all', label: '全部' },

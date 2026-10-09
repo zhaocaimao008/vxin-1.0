@@ -40,11 +40,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.vxin.app.R
-import com.airbnb.lottie.compose.LottieAnimation
-import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.animateLottieCompositionAsState
-import com.airbnb.lottie.compose.rememberLottieComposition
+import com.vxin.app.ui.components.VxinLogoMark
+import com.vxin.app.ui.theme.LocalVxinPalette
 import com.vxin.app.core.auth.AuthState
 import com.vxin.app.core.auth.SessionManager
 import com.vxin.app.core.update.UpdateChecker
@@ -156,6 +153,7 @@ private object Routes {
     const val NOTIFICATIONS = "notificationSettings"
     const val APPEARANCE = "appearanceSettings"
     const val CALL_HISTORY = "callHistory"
+    const val DISCOVER = "discover"
     const val MOMENTS = "moments"
     const val MOMENT_COMPOSE = "momentCompose"
     const val REQUESTS = "requests"
@@ -177,12 +175,8 @@ private object Routes {
     fun inviteMembers(conversationId: String) = "inviteMembers/$conversationId"
 }
 
-// 品牌启动动画最短展示时长：即便 SessionManager 会话恢复很快（缓存 token + 快网），
-// 也保证 V信 品牌动画的核心内容（Logo 出现→标题→标语，0~1.4s 内完成，见
-// brand/vxin/README.md 动画时序）完整播放一遍，不因秒过而"一闪而过"。
-// 会话恢复更慢时，不受此值限制——SplashScreen 会随 authState 保持展示，
-// 动画本身在 1.4s~3.0s 区间设计为"保持最终状态"，正好覆盖这段等待。
-private const val MIN_SPLASH_DURATION_MS = 1800L
+// Short shared brand transition; session restoration runs independently.
+private const val MIN_SPLASH_DURATION_MS = 350L
 
 @Composable
 fun AppNavigation(appViewModel: AppViewModel = hiltViewModel()) {
@@ -227,8 +221,8 @@ private data class TabItem(val route: String, val label: String, val icon: Image
 // 底部导航：消息 / 联系人 / 动态 / 我的
 private val TAB_ITEMS = listOf(
     TabItem(Routes.CONVERSATIONS, "消息",   VxinIcons.Chat,    "chats"),
-    TabItem(Routes.CONTACTS,      "联系人", VxinIcons.Contacts,"contacts"),
-    TabItem(Routes.MOMENTS,       "动态",   VxinIcons.Moments, "moments"),
+    TabItem(Routes.CONTACTS,      "通讯录", VxinIcons.Contacts,"contacts"),
+    TabItem(Routes.DISCOVER,      "发现",   com.vxin.app.ui.SharedIcons.Compass, "discover"),
     TabItem(Routes.PROFILE,       "我的",   VxinIcons.Me,      "me"),
 )
 private val TAB_ROUTES = TAB_ITEMS.map { it.route }.toSet()
@@ -240,7 +234,7 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0, appViewModel: App
     val currentRoute = backStackEntry?.destination?.route
 
     // 底部 tab：动态 tab 按后台开关过滤（四端一致）。关闭后隐藏动态入口，仍可访问历史数据。
-    val visibleTabs = if (features.moments) TAB_ITEMS else TAB_ITEMS.filter { it.route != Routes.MOMENTS }
+    val visibleTabs = TAB_ITEMS
 
     // 动态开关被后台关闭时，若当前正停在动态页则跳回消息页，避免空白页
     androidx.compose.runtime.LaunchedEffect(features.moments, currentRoute) {
@@ -269,8 +263,8 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0, appViewModel: App
         bottomBar = {
             if (currentRoute in TAB_ROUTES) {
                 NavigationBar(
-                    containerColor = Color.White,
-                    contentColor = VxinGreen,
+                    containerColor = LocalVxinPalette.current.surface,
+                    contentColor = LocalVxinPalette.current.link,
                 ) {
                     visibleTabs.forEach { tab ->
                         NavigationBarItem(
@@ -284,11 +278,11 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0, appViewModel: App
                                 }
                             },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = VxinGreen,
-                                selectedTextColor = VxinGreen,
-                                unselectedIconColor = Color(0xFF999999),
-                                unselectedTextColor = Color(0xFF999999),
-                                indicatorColor = Color(0xFF16C55B).copy(alpha = 0.12f),
+                                selectedIconColor = LocalVxinPalette.current.link,
+                                selectedTextColor = LocalVxinPalette.current.link,
+                                unselectedIconColor = LocalVxinPalette.current.text2,
+                                unselectedTextColor = LocalVxinPalette.current.text2,
+                                indicatorColor = LocalVxinPalette.current.primaryTint,
                             ),
                             icon = {
                                 // 「消息」tab 显示未读总数红点角标
@@ -312,6 +306,12 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0, appViewModel: App
             startDestination = Routes.CONVERSATIONS,
             modifier = Modifier.padding(padding),
         ) {
+            composable(Routes.DISCOVER) {
+                com.vxin.app.feature.discover.DiscoverScreen(features,
+                    onMoments = { navController.navigate(Routes.MOMENTS) },
+                    onCalls = { navController.navigate(Routes.CALL_HISTORY) },
+                    onFavorites = { navController.navigate(Routes.FAVORITES) })
+            }
             composable(Routes.CONVERSATIONS) {
                 ConversationListScreen(
                     onOpenConversation = { conv -> navController.navigate(Routes.chat(conv.id, conv.name, conv.type, conv.otherUser?.id.orEmpty())) },
@@ -405,6 +405,7 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0, appViewModel: App
             composable(Routes.MOMENTS) {
                 com.vxin.app.feature.moments.MomentsScreen(
                     onCompose = { navController.navigate(Routes.MOMENT_COMPOSE) },
+                    onBack = { navController.popBackStack() },
                 )
             }
             composable(Routes.MOMENT_COMPOSE) {
@@ -508,66 +509,16 @@ private fun MainFlow(features: Features, unreadTotal: Int = 0, appViewModel: App
     }
 }
 
-/**
- * V信 品牌启动页：黑底 + 金色 Lottie 动画（brand/vxin/lottie/vxin_intro.json，180帧@60fps/3s，
- * res/raw/vxin_intro.json）。仅在 AuthState.Loading 期间展示，不改变、不延迟 Session 恢复
- * /Firebase/个推/Socket 的初始化顺序——这些均已在 VxinApp.onCreate / SessionManager.init
- * 中独立于 UI 运行，本屏幕只决定"这段等待期间画面上显示什么"。
- * 动画资源加载失败（compositionResult.isFailure，如 JSON 损坏）时兜底为原纯色+文字启动态，
- * 保证任何情况下都不会白屏/崩溃。
- */
 @Composable
 private fun SplashScreen() {
-    val brandBlack = androidx.compose.ui.graphics.Color(0xFF000000)
-    val white = androidx.compose.ui.graphics.Color.White
-    val compositionResult = rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.vxin_intro))
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(brandBlack),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (compositionResult.isFailure) {
-            // Lottie 加载失败兜底：保留原有纯色+文字启动态
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text(
-                    text = "v信",
-                    color = white,
-                    style = androidx.compose.material3.MaterialTheme.typography.displaySmall,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "安全 · 私密 · 畅聊",
-                    color = white.copy(alpha = 0.72f),
-                    style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                )
-                Spacer(modifier = Modifier.height(44.dp))
-                CircularProgressIndicator(
-                    color = white.copy(alpha = 0.65f),
-                    strokeWidth = 2.dp,
-                    modifier = Modifier.size(22.dp),
-                )
-            }
-        } else {
-            val composition = compositionResult.value
-            if (composition != null) {
-                val progress by animateLottieCompositionAsState(
-                    composition = composition,
-                    iterations = 1,
-                    speed = 1f,
-                )
-                LottieAnimation(
-                    composition = composition,
-                    progress = { progress },
-                    modifier = Modifier.size(240.dp),
-                )
-            }
-            // composition == null 且未失败：JSON 正在解析中（<1帧，5KB 体积极快），
-            // 此时保持纯黑背景即可，避免与最终动画帧之间出现内容闪烁。
-        }
+    val palette = LocalVxinPalette.current
+    Column(Modifier.fillMaxSize().background(palette.bg), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        VxinLogoMark(Modifier.size(80.dp))
+        Spacer(Modifier.height(16.dp))
+        Text("v信", color = palette.text, style = androidx.compose.material3.MaterialTheme.typography.headlineLarge)
+        Spacer(Modifier.height(16.dp))
+        Text("连接 · 沟通 · 未来", color = palette.text2)
+        Spacer(Modifier.height(40.dp))
+        CircularProgressIndicator(color = palette.primary, strokeWidth = 2.dp, modifier = Modifier.size(22.dp))
     }
 }

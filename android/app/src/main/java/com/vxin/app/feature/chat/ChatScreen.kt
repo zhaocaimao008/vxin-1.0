@@ -116,7 +116,7 @@ import com.vxin.app.ui.theme.VxinTeal
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.SolidColor
 import com.vxin.app.ui.theme.VxinSurfaceDark
-import androidx.compose.foundation.isSystemInDarkTheme
+import com.vxin.app.ui.theme.LocalVxinPalette
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 
@@ -646,7 +646,7 @@ fun ChatScreen(
             ) {
                 Surface(
                     shape = com.vxin.app.ui.theme.VxinRadius.full,
-                    color = if (isSystemInDarkTheme()) VxinSurfaceDark else Color.White,
+                    color = LocalVxinPalette.current.surface,
                     shadowElevation = 4.dp,
                     modifier = Modifier.clickable {
                         listHaptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)  // 点按回底轻震
@@ -1411,14 +1411,12 @@ private fun MediaCard(isMine: Boolean, onClick: () -> Unit, content: @Composable
 // 气泡背景：我的=品牌绿渐变；对方=浅灰 #F2F2F2（暗色下深灰）
 @Composable
 private fun bubbleBg(isMine: Boolean): Color =
-    if (isMine) VxinBubbleMine
-    else if (isSystemInDarkTheme()) VxinBubbleOtherDark else Color(0xFFF2F2F2)
+    if (isMine) LocalVxinPalette.current.bubbleMine else LocalVxinPalette.current.bubbleOther
 
 // 我方气泡渐变笔刷：品牌绿渐变（对齐 web --grad-brand），对方气泡回退纯色
 @Composable
 private fun bubbleBrush(isMine: Boolean): Brush =
-    if (isMine) Brush.linearGradient(listOf(VxinBrandLight, VxinBubbleMine))
-    else SolidColor(bubbleBg(false))
+    SolidColor(bubbleBg(isMine))
 
 /**
  * 消息状态勾形图标：
@@ -1458,8 +1456,7 @@ private fun MsgTickIcon(isRead: Boolean) {
 // 气泡文字：我方靛底=白字；对方白/深灰底=深/浅字
 @Composable
 private fun bubbleTextColor(isMine: Boolean): Color =
-    if (isMine) VxinBubbleMineText
-    else if (isSystemInDarkTheme()) VxinBubbleTextDark else VxinBubbleText
+    if (isMine) LocalVxinPalette.current.bubbleMineText else LocalVxinPalette.current.text
 
 private fun placeholderLabel(p: PendingUpload): String = when (p.type) {
     "image" -> "图片上传中…"

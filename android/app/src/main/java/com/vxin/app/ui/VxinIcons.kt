@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 
 /**
- * v信 自绘品牌图标集 — 统一线性风格，stroke 1.9，圆角端点。
+ * v信 自绘品牌图标集 — 统一线性风格，stroke 1.8，圆角端点。
  * tint 由调用方 Icon 决定（currentColor）。
  */
 object VxinIcons {
@@ -26,7 +26,7 @@ object VxinIcons {
         path(
             fill = null,
             stroke = SolidColor(Color.Black),
-            strokeLineWidth = 1.9f,
+            strokeLineWidth = 1.8f,
             strokeLineCap = StrokeCap.Round,
             strokeLineJoin = StrokeJoin.Round,
             pathBuilder = pathData,
@@ -34,43 +34,13 @@ object VxinIcons {
     }
 
     /** 消息：圆角对话气泡 */
-    val Chat: ImageVector by lazy {
-        stroke("Chat") {
-            line {
-                moveTo(4f, 6f); arcToRelative(2f, 2f, 0f, false, true, 2f, -2f)
-                lineTo(18f, 4f); arcToRelative(2f, 2f, 0f, false, true, 2f, 2f)
-                lineTo(20f, 15f); arcToRelative(2f, 2f, 0f, false, true, -2f, 2f)
-                lineTo(9f, 17f); lineToRelative(-4f, 3.5f); lineTo(5f, 17f)
-                arcToRelative(2f, 2f, 0f, false, true, -1f, -1.7f); close()
-            }
-            line { moveTo(8.5f, 9.5f); lineToRelative(0.01f, 0f) }
-            line { moveTo(12f, 9.5f); lineToRelative(0.01f, 0f) }
-            line { moveTo(15.5f, 9.5f); lineToRelative(0.01f, 0f) }
-        }
-    }
+    val Chat: ImageVector get() = SharedIcons.Chat
 
     /** 通讯录 */
-    val Contacts: ImageVector by lazy {
-        stroke("Contacts") {
-            line {
-                moveTo(5f, 4f); lineTo(17f, 4f); arcToRelative(2f, 2f, 0f, false, true, 2f, 2f)
-                lineTo(19f, 18f); arcToRelative(2f, 2f, 0f, false, true, -2f, 2f)
-                lineTo(5f, 20f); close()
-            }
-            line { moveTo(5f, 4f); lineToRelative(0f, 16f) }
-            line { moveTo(11f, 11f); moveToRelative(-2.2f, 0f); arcToRelative(2.2f, 2.2f, 0f, true, true, 4.4f, 0f); arcToRelative(2.2f, 2.2f, 0f, true, true, -4.4f, 0f) }
-            line { moveTo(8f, 16.5f); curveToRelative(0.5f, -1.6f, 1.7f, -2.3f, 3f, -2.3f); reflectiveCurveToRelative(2.5f, 0.7f, 3f, 2.3f) }
-        }
-    }
+    val Contacts: ImageVector get() = SharedIcons.Contacts
 
     /** 我：圆内人像 */
-    val Me: ImageVector by lazy {
-        stroke("Me") {
-            line { moveTo(12f, 12f); moveToRelative(-9f, 0f); arcToRelative(9f, 9f, 0f, true, true, 18f, 0f); arcToRelative(9f, 9f, 0f, true, true, -18f, 0f) }
-            line { moveTo(12f, 11f); moveToRelative(-2.6f, 0f); arcToRelative(2.6f, 2.6f, 0f, true, true, 5.2f, 0f); arcToRelative(2.6f, 2.6f, 0f, true, true, -5.2f, 0f) }
-            line { moveTo(6.5f, 18.5f); curveToRelative(0.8f, -2.2f, 2.9f, -3.3f, 5.5f, -3.3f); reflectiveCurveToRelative(4.7f, 1.1f, 5.5f, 3.3f) }
-        }
-    }
+    val Me: ImageVector get() = SharedIcons.Me
 
     /** 二维码 */
     val QrCode: ImageVector by lazy {
@@ -86,12 +56,7 @@ object VxinIcons {
     }
 
     /** 搜索 */
-    val Search: ImageVector by lazy {
-        stroke("Search") {
-            line { moveTo(11f, 11f); moveToRelative(-6.5f, 0f); arcToRelative(6.5f, 6.5f, 0f, true, true, 13f, 0f); arcToRelative(6.5f, 6.5f, 0f, true, true, -13f, 0f) }
-            line { moveTo(16f, 16f); lineTo(20.5f, 20.5f) }
-        }
-    }
+    val Search: ImageVector get() = SharedIcons.Search
 
     /** 加号 */
     val Add: ImageVector by lazy {
@@ -102,18 +67,7 @@ object VxinIcons {
     }
 
     /** 动态（相机） */
-    val Moments: ImageVector by lazy {
-        stroke("Moments") {
-            line {
-                moveTo(23f, 19f); arcToRelative(2f, 2f, 0f, false, true, -2f, 2f)
-                lineTo(3f, 21f); arcToRelative(2f, 2f, 0f, false, true, -2f, -2f)
-                lineTo(1f, 8f); arcToRelative(2f, 2f, 0f, false, true, 2f, -2f)
-                lineTo(5.5f, 6f); lineTo(7f, 3f); lineTo(17f, 3f); lineTo(18.5f, 6f)
-                lineTo(21f, 6f); arcToRelative(2f, 2f, 0f, false, true, 2f, 2f); close()
-            }
-            line { moveTo(12f, 12f); moveToRelative(-3.5f, 0f); arcToRelative(3.5f, 3.5f, 0f, true, true, 7f, 0f); arcToRelative(3.5f, 3.5f, 0f, true, true, -7f, 0f) }
-        }
-    }
+    val Moments: ImageVector get() = SharedIcons.Moments
 
     /** 右 chevron（用于设置行） */
     val ChevronRight: ImageVector by lazy {
@@ -160,28 +114,7 @@ object VxinIcons {
     }
 
     /** 通话记录（带箭头电话） */
-    val PhoneCall: ImageVector by lazy {
-        stroke("PhoneCall") {
-            line {
-                moveTo(6.6f, 10.8f)
-                curveToRelative(1.4f, 2.8f, 3.8f, 5.1f, 6.6f, 6.6f)
-                lineToRelative(2.2f, -2.2f)
-                curveToRelative(0.3f, -0.3f, 0.7f, -0.4f, 1f, -0.2f)
-                curveToRelative(1.1f, 0.4f, 2.3f, 0.6f, 3.6f, 0.6f)
-                curveToRelative(0.6f, 0f, 1f, 0.4f, 1f, 1f)
-                lineTo(21f, 19f)
-                curveToRelative(0f, 0.6f, -0.4f, 1f, -1f, 1f)
-                curveTo(11.2f, 20f, 4f, 12.8f, 4f, 5f)
-                curveToRelative(0f, -0.6f, 0.4f, -1f, 1f, -1f)
-                lineTo(8.6f, 4f)
-                curveToRelative(0.6f, 0f, 1f, 0.4f, 1f, 1f)
-                curveToRelative(0f, 1.3f, 0.2f, 2.5f, 0.6f, 3.6f)
-                curveToRelative(0.1f, 0.3f, 0f, 0.7f, -0.2f, 1f); close()
-            }
-            line { moveTo(16f, 4f); lineTo(20f, 4f); lineTo(20f, 8f) }
-            line { moveTo(15f, 9f); lineTo(20f, 4f) }
-        }
-    }
+    val PhoneCall: ImageVector get() = SharedIcons.PhoneCall
 
     /** 登录设备 */
     val Devices: ImageVector by lazy {
@@ -266,7 +199,7 @@ object VxinIcons {
         stroke("Users") {
             line { moveTo(9f, 11f); moveToRelative(-3.5f, 0f); arcToRelative(3.5f, 3.5f, 0f, true, true, 7f, 0f); arcToRelative(3.5f, 3.5f, 0f, true, true, -7f, 0f) }
             line { moveTo(2f, 20f); curveToRelative(0f, -2.8f, 3.1f, -5f, 7f, -5f); reflectiveCurveToRelative(7f, 2.2f, 7f, 5f) }
-            line { moveTo(16f, 7f); curveToRelative(1.9f, 0f, 3.5f, 1.6f, 3.5f, 3.5f); reflectiveCurveToRelative(-1.6f, 3.5f, -3.5f, 3.5f) }
+            line { moveTo(16f, 7f); curveToRelative(1.8f, 0f, 3.5f, 1.6f, 3.5f, 3.5f); reflectiveCurveToRelative(-1.6f, 3.5f, -3.5f, 3.5f) }
             line { moveTo(19f, 15f); curveToRelative(1.8f, 0.5f, 3f, 1.8f, 3f, 3.3f) }
         }
     }
@@ -368,8 +301,8 @@ object VxinIcons {
             line { moveTo(4f, 7f); lineTo(20f, 7f) }
             line { moveTo(9f, 7f); lineTo(9f, 4.5f); arcToRelative(1f, 1f, 0f, false, true, 1f, -1f); lineTo(14f, 3.5f); arcToRelative(1f, 1f, 0f, false, true, 1f, 1f); lineTo(15f, 7f) }
             line {
-                moveTo(6f, 7f); lineTo(6.8f, 19.5f); arcToRelative(2f, 2f, 0f, false, false, 2f, 1.9f)
-                lineTo(15.2f, 21.4f); arcToRelative(2f, 2f, 0f, false, false, 2f, -1.9f); lineTo(18f, 7f)
+                moveTo(6f, 7f); lineTo(6.8f, 19.5f); arcToRelative(2f, 2f, 0f, false, false, 2f, 1.8f)
+                lineTo(15.2f, 21.4f); arcToRelative(2f, 2f, 0f, false, false, 2f, -1.8f); lineTo(18f, 7f)
             }
             line { moveTo(10f, 11f); lineTo(10f, 17f) }
             line { moveTo(14f, 11f); lineTo(14f, 17f) }
@@ -386,18 +319,7 @@ object VxinIcons {
     }
 
     /** 收藏（五角星） */
-    val Star: ImageVector by lazy {
-        stroke("Star") {
-            line {
-                moveTo(12f, 3f)
-                lineTo(14.6f, 8.9f); lineTo(21f, 9.6f)
-                lineTo(16.2f, 13.9f); lineTo(17.6f, 20.2f)
-                lineTo(12f, 16.9f); lineTo(6.4f, 20.2f)
-                lineTo(7.8f, 13.9f); lineTo(3f, 9.6f)
-                lineTo(9.4f, 8.9f); close()
-            }
-        }
-    }
+    val Star: ImageVector get() = SharedIcons.Star
 
     /** 标签 */
     val Tag: ImageVector by lazy {

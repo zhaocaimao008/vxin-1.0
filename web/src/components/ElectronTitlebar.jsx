@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BrandMark } from './BrandMark';
 
 function WinBtn({ onClick, isClose, children, title }) {
   const [hov, setHov] = useState(false);
@@ -68,17 +69,9 @@ export default function ElectronTitlebar() {
         display: 'flex', alignItems: 'center', gap: 6,
         flex: 1, paddingLeft: 10, minWidth: 0,
       }}>
-        {/* v信 品牌图标 — 黑底 + 金色 V 形折线 + 尾点，与 brand/vxin/svg/icon-square.svg
-            同一套矢量图（2026-09-10 重绘，替换旧版科技轨道环+多边形拼接 V，见
-            docs/FIX_PROGRESS_20260909.md 批次6）。 */}
-        <div style={{ width: 18, height: 18, flexShrink: 0, borderRadius: 4, overflow: 'hidden' }}>
-          <svg viewBox="0 0 100 100" width="18" height="18">
-            <rect x="0" y="0" width="100" height="100" rx="22" fill="#0A0A0A"/>
-            <path d="M 31.5 29.3 L 50 64.9 L 68.6 29.3" fill="none" stroke="#FFD700"
-                  strokeWidth="12.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <circle cx="50" cy="69" r="5.9" fill="#FFD700"/>
-          </svg>
-        </div>
+        {/* v信 品牌标志 — 统一走 <BrandMark>（墨绿方块 + 白气泡 + 墨绿 V，几何来自
+            src/brand/vxinMark.json，与 favicon / 安装包图标同源；2026-10-09 替换旧黑底金 V）。 */}
+        <BrandMark size={18} className="vx-titlebar-mark" />
         <span style={{
           fontSize: 12, color: 'var(--titlebar-title)',
           letterSpacing: 0.5, whiteSpace: 'nowrap',
@@ -90,6 +83,7 @@ export default function ElectronTitlebar() {
         WebkitAppRegion: 'no-drag',
         position: 'relative', zIndex: "var(--z-native)",
       }}>
+        {/* 窗口控制按钮刻意保留 Windows 原生 caption 字形（12px、1px 细线），不使用 Icons.jsx 的 1.8 描边图标 */}
         <WinBtn onClick={handleMin} title="最小化">
           <svg width="12" height="12" viewBox="0 0 12 12">
             <rect x="1" y="5.5" width="10" height="1" fill="currentColor" rx="0.5"/>

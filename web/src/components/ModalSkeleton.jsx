@@ -14,8 +14,8 @@ export function ModalSkeleton({ height = 400 }) {
       background: 'rgba(0,0,0,0.45)',
     }}>
       <div style={{
-        width: 360, height, borderRadius: 12,
-        background: 'var(--color-surface, #1e2235)',
+        width: 360, height, borderRadius: 'var(--nt-r-lg, 16px)',
+        background: 'var(--nt-surface, var(--color-surface))',
         animation: 'skeleton-pulse 1.2s ease-in-out infinite',
       }} />
     </div>
@@ -27,9 +27,9 @@ export function PanelSkeleton({ width = 300 }) {
   return (
     <div style={{
       width, height: '100%',
-      background: 'var(--color-surface, #1e2235)',
+      background: 'var(--nt-surface, var(--color-surface))',
       animation: 'skeleton-pulse 1.2s ease-in-out infinite',
-      borderLeft: '1px solid var(--color-border, rgba(255,255,255,0.08))',
+      borderLeft: '1px solid var(--nt-border, var(--color-border))',
     }} />
   );
 }
@@ -38,8 +38,8 @@ export function PanelSkeleton({ width = 300 }) {
 export function InlineSkeleton({ height = 280, width = '100%' }) {
   return (
     <div style={{
-      width, height, borderRadius: 8,
-      background: 'var(--color-surface, #1e2235)',
+      width, height, borderRadius: 'var(--nt-r-sm, 8px)',
+      background: 'var(--nt-fill, var(--color-surface))',
       animation: 'skeleton-pulse 1.2s ease-in-out infinite',
     }} />
   );

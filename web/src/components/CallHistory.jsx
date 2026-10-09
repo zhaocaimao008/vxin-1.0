@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Avatar from './Avatar';
 import { Skeleton } from './StateViews';
+import { IcoArrowDownLeft, IcoArrowUpRight, IcoPhone } from './Icons';
 
 function ago(sec) {
   // 钳到 0：时钟偏差/服务器时间超前时避免出现「-3分钟前」
@@ -22,10 +23,10 @@ function fmtDuration(s) {
 // 状态 → 中文 + 颜色
 const STATUS = {
   completed: { label: '已接通', color: 'var(--text-tertiary)' },
-  missed:    { label: '未接听', color: 'var(--color-badge)' },
-  canceled:  { label: '已取消', color: 'var(--color-badge)' },
-  rejected:  { label: '已拒绝', color: 'var(--color-badge)' },
-  ongoing:   { label: '通话中', color: 'var(--green)' },
+  missed:    { label: '未接听', color: 'var(--nt-danger)' },
+  canceled:  { label: '已取消', color: 'var(--nt-danger)' },
+  rejected:  { label: '已拒绝', color: 'var(--nt-danger)' },
+  ongoing:   { label: '通话中', color: 'var(--nt-primary)' },
 };
 
 export default function CallHistory({ onOpenChat }) {
@@ -75,10 +76,7 @@ export default function CallHistory({ onOpenChat }) {
         </div>
       ) : list.length === 0 ? (
         <div className="ch-empty" role="status">
-          <svg viewBox="0 0 48 48" width="48" height="48" fill="none" className="ch-empty-ico">
-            <circle cx="24" cy="24" r="22" fill="rgba(7,193,96,.08)"/>
-            <path d="M16.6 20.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V30c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L16.6 20.8z" fill="rgba(7,193,96,.35)"/>
-          </svg>
+          <span className="ch-empty-ico" aria-hidden="true"><IcoPhone size={24} /></span>
           <span>暂无通话记录</span>
         </div>
       ) : (
@@ -101,12 +99,9 @@ export default function CallHistory({ onOpenChat }) {
                   </div>
                   <div className="ch-meta">
                     {/* 方向图标 */}
-                    <svg className={`ch-dir-ico${isMissed ? ' missed' : ''}`} viewBox="0 0 16 16" fill="currentColor">
-                      {c.direction === 'out'
-                        ? <path d="M13 3L3 13M13 3H7M13 3V9"/>
-                        : <path d="M3 3L13 13M3 3H9M3 3V9"/>
-                      }
-                    </svg>
+                    {c.direction === 'out'
+                      ? <IcoArrowUpRight size={14} className={`ch-dir-ico${isMissed ? ' missed' : ''}`} />
+                      : <IcoArrowDownLeft size={14} className={`ch-dir-ico${isMissed ? ' missed' : ''}`} />}
                     <span style={{ color: st.color }}>
                       {c.direction === 'out' ? '去电' : '来电'} · {c.type === 'video' ? '视频' : '语音'} · {st.label}
                     </span>
@@ -117,9 +112,7 @@ export default function CallHistory({ onOpenChat }) {
                   <span className="ch-time">{ago(c.created_at)}</span>
                   {/* 回拨按钮 */}
                   {onOpenChat && (
-                    <svg className="ch-call-ico" viewBox="0 0 24 24" fill="currentColor" title="发起通话">
-                      <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/>
-                    </svg>
+                    <IcoPhone size={18} className="ch-call-ico" title="发起通话" />
                   )}
                 </div>
               </div>

@@ -4,6 +4,7 @@ import Avatar from './Avatar';
 import { mediaUrl } from '../utils/url';
 import { stopIncomingRing } from '../utils/callSound';
 import './CallModal.css';
+import { IcoCamera, IcoMic, IcoMinimize as IcoShrink, IcoPhone, IcoPhoneOff, IcoVideo } from './Icons';
 
 const FALLBACK_ICE = {
   iceServers: [
@@ -88,26 +89,12 @@ function useDraggable(initial) {
   return { pos, setPos, onPointerDown, onPointerMove, onPointerUp, wasMoved };
 }
 
-/* ── SVG 图标 ── */
-const IcoMute = ({ on }) => on
-  ? <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 12A4.5 4.5 0 0012 7.5v2.19l4.45 4.45c.03-.2.05-.41.05-.64zM19 12c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.78 8.78 0 0021 12c0-4.28-3-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27l4.73 4.73V12a4.5 4.5 0 004.5 4.5c.55 0 1.08-.1 1.57-.27L15.34 18A8.9 8.9 0 0112 18.77c-4.28 0-7.86-3-8.77-7H1.18c.96 4.98 5.35 8.77 10.82 8.77 2.11 0 4.06-.62 5.71-1.68L21 22.73 22.27 21.46 4.27 3zM12 7.5c.28 0 .54.04.8.08L7.73 2.5A4.5 4.5 0 0012 7.5z"/></svg>
-  : <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15a.998.998 0 00-.98-.85c-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08a6.994 6.994 0 005.91-5.78c.1-.6-.39-1.14-1-1.14z"/></svg>;
-
-const IcoCam = ({ off }) => off
-  ? <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 6.5l-4-4-1.5 1.5 4 4L21 6.5zm1.99 10.5L18 12.5l-4-4L2 2 .99 3.01 3 5H1v14h16v-2.01l2.99 3 .99-.99-2-2.01L22.99 17zM4 17V7h1l13 13H4zm11.5-5.5L14 10 9 5H21v11l-5.5-4.5z"/></svg>
-  : <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 8v8H5V8h10m1-2H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4V7c0-.55-.45-1-1-1z"/></svg>;
-
-const IcoHangup = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor">
-    <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.12-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/>
-  </svg>
-);
-
-const IcoMinimize = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-    <path d="M19 11H7.83l4.88-4.88c.39-.39.39-1.03 0-1.42-.39-.39-1.02-.39-1.41 0l-6.59 6.59c-.39.39-.39 1.02 0 1.41l6.59 6.59c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L7.83 13H19c.55 0 1-.45 1-1s-.45-1-1-1z"/>
-  </svg>
-);
+/* ── 图标：统一取自 Icons.jsx（线性、currentColor） ── */
+// 本地名保留为别名，调用处不变；尺寸交给 .cm-circle-btn-icon 等容器（size={null}）
+const IcoMute = ({ on }) => <IcoMic off={on} size={null} />;
+const IcoCam = ({ off }) => <IcoCamera off={off} size={null} />;
+const IcoHangup = () => <IcoPhoneOff size={null} />;
+const IcoMinimize = () => <IcoShrink size={20} />;
 
 /* ── Focus Trap Hook ── */
 function useFocusTrap(open) {
@@ -545,7 +532,7 @@ export default function CallModal({ socket, call, onClose }) {
               className="cm-bubble-audio-avatar"
               style={{
                 boxShadow: isConnected
-                  ? '0 0 0 3px rgba(7,193,96,.8), 0 6px 20px rgba(0,0,0,.4)'
+                  ? '0 0 0 3px rgba(var(--color-primary-rgb), .8), 0 6px 20px rgba(0,0,0,.4)'
                   : '0 6px 20px rgba(0,0,0,.4)',
                 animation: isConnected ? 'callPulse 2s ease-in-out infinite' : 'none',
               }}
@@ -655,16 +642,16 @@ export default function CallModal({ socket, call, onClose }) {
         <div className="cm-controls-bottom">
           {status === 'incoming' ? (
             <div className="cm-btn-row">
-              <CircleBtn icon={<IcoHangup />} label="拒绝" color="var(--color-danger)" size={68} onClick={reject} testid="call-reject-btn" />
+              <CircleBtn icon={<IcoHangup />} label="拒绝" color="danger" size={64} onClick={reject} testid="call-reject-btn" />
               <CircleBtn
-                icon={<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>}
-                label="接听" color="var(--color-success)" size={68} onClick={accept} testid="call-accept-btn"
+                icon={<IcoVideo size={null} />}
+                label="接听" color="accept" size={64} onClick={accept} testid="call-accept-btn"
               />
             </div>
           ) : (
             <div className="cm-btn-row">
               <CircleBtn icon={<IcoMute on={muted} />} label={muted ? '取消静音' : '静音'} active={muted} onClick={toggleMute} />
-              <CircleBtn icon={<IcoHangup />} label="挂断" color="var(--color-danger)" size={68} onClick={() => endCall(true)} testid="call-hangup-btn" />
+              <CircleBtn icon={<IcoHangup />} label="挂断" color="danger" size={64} onClick={() => endCall(true)} testid="call-hangup-btn" />
               <CircleBtn icon={<IcoCam off={cameraOff} />} label={cameraOff ? '开摄像头' : '关摄像头'} active={cameraOff} onClick={toggleCamera} />
             </div>
           )}
@@ -710,7 +697,7 @@ export default function CallModal({ socket, call, onClose }) {
             height: status === 'incoming' ? 110 : 96,
             borderRadius: '50%',
             boxShadow: status === 'connected'
-              ? '0 0 0 4px rgba(7,193,96,.6), 0 8px 32px rgba(0,0,0,.5)'
+              ? '0 0 0 4px rgba(var(--color-primary-rgb), .6), 0 8px 32px rgba(0,0,0,.5)'
               : '0 8px 32px rgba(0,0,0,.5)',
             animation: status === 'connected' ? 'callPulse 2s ease-in-out infinite' : 'none',
             transition: 'box-shadow .4s',
@@ -727,7 +714,7 @@ export default function CallModal({ socket, call, onClose }) {
           </div>
 
           <div className="cm-voice-status">
-            {status === 'connected' ? <span style={{ color: 'var(--color-success)' }}>{timer}</span> :
+            {status === 'connected' ? <span className="cm-voice-timer">{timer}</span> :
              status === 'incoming'  ? '语音通话' :
              status === 'calling'   ? '等待对方接听…' :
              status === 'ended'     ? (END_TEXT[endReason] || '通话已结束') :
@@ -738,17 +725,17 @@ export default function CallModal({ socket, call, onClose }) {
         <div className="cm-voice-bottom">
           {status === 'incoming' && (
             <div className="cm-btn-row">
-              <CircleBtn icon={<IcoHangup />} label="拒绝" color="var(--color-danger)" size={68} onClick={reject} testid="call-reject-btn" />
+              <CircleBtn icon={<IcoHangup />} label="拒绝" color="danger" size={64} onClick={reject} testid="call-reject-btn" />
               <CircleBtn
-                icon={<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>}
-                label="接听" color="var(--color-success)" size={68} onClick={accept} testid="call-accept-btn"
+                icon={<IcoPhone size={null} />}
+                label="接听" color="accept" size={64} onClick={accept} testid="call-accept-btn"
               />
             </div>
           )}
           {inProgress && status !== 'incoming' && (
             <div className="cm-btn-row">
               <CircleBtn icon={<IcoMute on={muted} />} label={muted ? '取消静音' : '静音'} active={muted} onClick={toggleMute} />
-              <CircleBtn icon={<IcoHangup />} label="挂断" color="var(--color-danger)" size={68} onClick={() => endCall(true)} testid="call-hangup-btn" />
+              <CircleBtn icon={<IcoHangup />} label="挂断" color="danger" size={64} onClick={() => endCall(true)} testid="call-hangup-btn" />
             </div>
           )}
         </div>
@@ -765,9 +752,10 @@ export default function CallModal({ socket, call, onClose }) {
   );
 }
 
-/* ── 圆形控制按钮 ── */
-function CircleBtn({ icon, label, color, size = 54, active, onClick, testid }) {
-  const bg = color || (active ? 'rgba(255,255,255,.35)' : 'rgba(255,255,255,.15)');
+/* ── 圆形控制按钮 ──
+   color: 'danger'（挂断/拒绝，红）| 'accept'（接听，绿）| 省略 = 中性玻璃；active = 反白（静音中 / 摄像头已关） */
+function CircleBtn({ icon, label, color, size = 60, active, onClick, testid }) {
+  const tone = color ? ` cm-circle-btn-disc--${color}` : (active ? ' cm-circle-btn-disc--active' : '');
   return (
     <button
       type="button"
@@ -776,10 +764,10 @@ function CircleBtn({ icon, label, color, size = 54, active, onClick, testid }) {
       className="cm-circle-btn"
     >
       <span
-        className="cm-circle-btn-disc"
-        style={{ width: size, height: size, background: bg }}
+        className={`cm-circle-btn-disc${tone}`}
+        style={{ width: size, height: size }}
       >
-        <span className="cm-circle-btn-icon" style={{ width: size * 0.44, height: size * 0.44 }}>
+        <span className="cm-circle-btn-icon" style={{ width: Math.round(size * 0.42), height: Math.round(size * 0.42) }}>
           {icon}
         </span>
       </span>

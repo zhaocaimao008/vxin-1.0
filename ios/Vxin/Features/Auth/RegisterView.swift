@@ -11,13 +11,13 @@ struct RegisterView: View {
             VStack(spacing: 16) {
                 Spacer(minLength: 24)
 
-                // 品牌 Logo：黑金标记（与 Web/Android 登录页同一套扁平化简版标记，2026-08-24 四端品牌统一）
+                // 品牌 Logo：统一品牌标记（与 Web/Android 登录页同一套扁平化简版标记，2026-08-24 四端品牌统一）
                 VxinLogoMark()
                     .frame(width: 68, height: 68)
                     .padding(.bottom, 4)
                 Text("注册新账号")
                     .font(.title2.bold())
-                    .foregroundColor(.white)
+                    .foregroundColor(.vxinTextPrimary)
                     .padding(.bottom, 4)
                 Text("连接 · 沟通 · 未来")
                     .font(.footnote)
@@ -56,21 +56,7 @@ struct RegisterView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
-                Button(action: vm.register) {
-                    ZStack {
-                        if vm.loading { ProgressView().tint(.vxinAuthGold) }
-                        else { Text("注册").bold() }
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 50)
-                    .background(Color.vxinAuthSurface)
-                    .foregroundColor(vm.canRegister && agreed ? .vxinAuthGold : .vxinAuthPlaceholder)
-                    .clipShape(RoundedRectangle(cornerRadius: VxinRadius.pill, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: VxinRadius.pill, style: .continuous)
-                            .strokeBorder(vm.canRegister && agreed ? Color.vxinAuthGold : Color.vxinAuthBorder, lineWidth: 1.5)
-                    )
-                }
-                .disabled(!vm.canRegister || !agreed)
+                VxinGradientButton(title: "注册", loading: vm.loading, enabled: vm.canRegister && agreed, action: vm.register)
                 .padding(.top, 8)
                 .accessibilityIdentifier("register-submit-btn")
 
@@ -94,11 +80,12 @@ struct RegisterView: View {
                 Spacer(minLength: 24)
             }
             .padding(.horizontal, 32)
+            .frame(maxWidth: 480)
+            .frame(maxWidth: .infinity)
         }
         .background(Color.vxinAuthBg)
         .scrollContentBackground(.hidden)
         .toolbarBackground(Color.vxinAuthBg, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
         .navigationTitle("注册")
         .navigationBarTitleDisplayMode(.inline)
         .task { await vm.loadConfig() }

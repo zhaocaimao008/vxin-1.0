@@ -1,7 +1,7 @@
 'use strict';
 
 const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, dialog,
-        globalShortcut, screen, Notification, shell, session, clipboard } = require('electron');
+        globalShortcut, screen, Notification, shell, session, clipboard, nativeTheme } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -22,7 +22,7 @@ const { crashReporter } = require('electron');
 crashReporter.start({
   productName: 'vxin-desktop',
   companyName: 'Vxin',
-  submitURL: 'https://vxinchat.com/api/crash-report',
+  submitURL: 'https://liaotian99.com/api/crash-report',
   uploadToServer: process.env.NODE_ENV === 'production',
   compress: true,
   ignoreSystemCrashHandler: false,
@@ -47,7 +47,7 @@ app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
 // 更新源回退地址（须与 package.json build.publish.url 一致；运行时优先读
 // app-update.yml，读取失败才用此常量）。更新源在打包时固化，不随用户切换后端而变。
-const UPDATE_FEED_FALLBACK = 'https://vxinchat.com/downloads/updates';
+const UPDATE_FEED_FALLBACK = 'https://liaotian99.com/downloads/updates';
 
 // 任务栏红点角标（16x16 PNG，纯红实心圆）。Windows 无原生数字角标，
 // 用此 overlay 表示"有未读"。内联 base64 避免运行时绘图依赖（canvas 等）。
@@ -71,7 +71,7 @@ function buildBadgeOverlay() {
 const store = new Store({
   clearInvalidConfig: true,   // 安全：磁盘上配置被篡改/损坏时回退默认值
   defaults: {
-    serverUrl: 'https://vxinchat.com',
+    serverUrl: 'https://liaotian99.com',
     autoLaunch: false,
     windowBounds: { width: 1200, height: 800 },
     minimizeToTray: true,
@@ -139,8 +139,8 @@ let isQuitting = false;
 // 主进程在建窗口前据此拉 config.json，使 CSP connect-src 跟随远程配置，
 // 实现「改 vxin-config 即可换服务器、桌面端无需重编译」。互不依赖，单点故障不影响引导。
 const CONFIG_URLS = [
-  'https://cdn.jsdelivr.net/gh/zhaocaimao008/vxin-config@main/config.json',
-  'https://vxinchat.com/config.json',
+
+  'https://liaotian99.com/config.json',
 ];
 
 // 渲染进程(src/utils/config.js)也会拉这些 config 源做后端发现；其 origin 必须进 CSP
@@ -169,13 +169,13 @@ function isDeprecatedServerUrl(url) {
 
 // 安全：校验存储中的 serverUrl，防止被篡改的配置污染 CSP connect-src/origin 推导
 // 启动时自动清除已废弃的官方旧服务器地址（45.77.131.33 / 104.244.95.70），
-// 与 Android/iOS 的 DEPRECATED_SERVERS 清理行为保持一致；默认回退 https://vxinchat.com。
+// 与 Android/iOS 的 DEPRECATED_SERVERS 清理行为保持一致；默认回退 https://liaotian99.com。
 clearDeprecatedServerUrl();
 const _storedServerUrl = store.get('serverUrl');
 // SERVER_URL / API_ORIGIN / WS_ORIGIN 为 let：启动时 loadRemoteServerUrl() 可据远程配置更新。
 let SERVER_URL = isValidServerUrl(_storedServerUrl) && !isDeprecatedServerUrl(_storedServerUrl)
   ? _storedServerUrl
-  : 'https://vxinchat.com';
+  : 'https://liaotian99.com';
 
 // 后台功能开关缓存（/api/config 的 features）。托盘菜单等主进程 UI 据此隐藏被后台关闭的入口。
 let serverFeatures = null;
@@ -226,7 +226,7 @@ function clearDeprecatedServerUrl() {
 
 // ── 安全：后端来源（用于 CSP connect-src）──────────────────────
 let API_ORIGIN = (() => {
-  try { return new URL(SERVER_URL).origin; } catch { return 'https://vxinchat.com'; }
+  try { return new URL(SERVER_URL).origin; } catch { return 'https://liaotian99.com'; }
 })();
 let WS_ORIGIN = API_ORIGIN.replace(/^http/, 'ws');
 // 云存储/CDN 来源（用于 CSP connect-src，使图片/文件直传 xhr PUT 不被拦）。
@@ -521,7 +521,8 @@ function createSplashWindow() {
     movable: false,
     show: false,
     transparent: false,
-    backgroundColor: '#000000',
+    // 与 assets/splash.html 的暖白 / 深色底一致，避免首帧闪黑
+    backgroundColor: nativeTheme.shouldUseDarkColors ? require('../assets/theme.json').dark.bg : require('../assets/theme.json').light.bg,
     skipTaskbar: true,
     alwaysOnTop: true,
     icon: path.join(__dirname, process.platform === 'win32' ? '../assets/icon.ico' : '../assets/icon.png'),
@@ -622,7 +623,7 @@ function createWindow() {
       backgroundThrottling: false,
     },
     show: false,
-    backgroundColor: '#1A2033',
+    backgroundColor: nativeTheme.shouldUseDarkColors ? require('../assets/theme.json').dark.bg : require('../assets/theme.json').light.bg,
   });
 
   loadAppPage();

@@ -1,0 +1,15 @@
+.vx-welcome { width: min(440px, 100%); padding: 0 20px; box-sizing: border-box; color: var(--nt-text); text-align: center; }
+.vx-welcome h3 { font-size: 17px; margin: 0 0 8px; }
+.vx-welcome-desc { color: var(--nt-text-2); font-size: 14px; line-height: 1.6; margin: 0 0 18px; }
+.vx-welcome-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.vx-welcome button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; padding: 9px 16px; border: 0; border-radius: var(--nt-r-md); background: var(--nt-fill); color: var(--nt-text); font: inherit; font-size: 14px; cursor: pointer; }
+.vx-welcome button:hover { background: var(--nt-fill-strong); }
+.vx-welcome button:focus-visible { outline: 2px solid var(--nt-primary); outline-offset: 3px; }
+.vx-welcome .vx-welcome-primary { background: var(--nt-primary); color: var(--nt-on-primary); }
+.vx-welcome .vx-welcome-primary:hover { background: var(--nt-primary-hover); }
+.vx-welcome-identity { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 10px; margin-top: 20px; font-size: 13px; color: var(--nt-text-2); }
+.vx-welcome-identity strong { color: var(--nt-text); font-variant-numeric: tabular-nums; user-select: text; }
+.vx-welcome-identity button { min-height: 36px; padding: 6px 8px; background: transparent; color: var(--nt-primary); font-size: 13px; }
+.vx-welcome-feedback { min-height: 36px; margin: 8px 0 0; font-size: 12px; line-height: 1.5; color: var(--nt-text-2); }
+.vx-welcome--compact { width: auto; margin: 12px; padding: 20px 14px 4px; border: 1px solid var(--nt-separator, var(--border-default)); border-radius: var(--nt-r-lg); background: var(--bg-card); }
+.vx-welcome--compact .vx-welcome-identity { margin-top: 12px; }

@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// v信 找回密码页主按钮：黑底金字描边（对齐 Web .auth-submit / Android AuthGoldButton）。
-/// 仅供 ForgotPasswordView 使用（App 内其余按钮各自有独立样式，未共用本组件）。
+/// Shared filled primary action for authentication forms.
 struct VxinGradientButton: View {
     let title: String
     var loading: Bool = false
@@ -11,19 +10,15 @@ struct VxinGradientButton: View {
     var body: some View {
         Button(action: action) {
             ZStack {
-                if loading { ProgressView().tint(.vxinAuthGold) }
-                else { Text(title).bold() }
+                if loading { ProgressView().tint(.vxinOnPrimary) }
+                else { Text(title).fontWeight(.semibold) }
             }
             .frame(maxWidth: .infinity, minHeight: 50)
-            .background(Color.vxinAuthSurface)
-            .foregroundColor(enabled ? .vxinAuthGold : .vxinAuthPlaceholder)
-            .clipShape(RoundedRectangle(cornerRadius: VxinRadius.pill, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: VxinRadius.pill, style: .continuous)
-                    .strokeBorder(enabled ? Color.vxinAuthGold : Color.vxinAuthBorder, lineWidth: 1.5)
-            )
-            .shadow(color: enabled ? Color.vxinAuthGold.opacity(0.18) : .clear, radius: 8, y: 4)
+            .foregroundColor(enabled ? .vxinOnPrimary : .vxinTextSecondary)
+            .background(enabled ? Color.vxinBrand : Color.vxinDisabledFill)
+            .clipShape(RoundedRectangle(cornerRadius: VxinRadius.md, style: .continuous))
         }
+        .buttonStyle(.plain)
         .disabled(!enabled || loading)
     }
 }

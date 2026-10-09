@@ -127,11 +127,11 @@ export default function Collections() {
   return (
     <div style={{ height: '100%', overflowY: 'auto' }}>
       {/* 搜索栏 + 类型过滤（对齐后端 /collections/search 的 q + type） */}
-      <div style={{ padding: '10px 14px', position: 'sticky', top: 0, background: 'var(--bg-primary, #fff)', zIndex: 1, borderBottom: '1px solid var(--border-color)' }}>
+      <div style={{ padding: '10px 14px', position: 'sticky', top: 0, background: 'var(--nt-glass-strong, var(--bg-primary))', WebkitBackdropFilter: 'var(--nt-blur)', backdropFilter: 'var(--nt-blur)', zIndex: 1, borderBottom: '1px solid var(--border-color)' }}>
         <div style={{ position: 'relative' }}>
           <input data-testid="collection-search-input" value={query} onChange={e => setQuery(e.target.value)}
             placeholder="搜索收藏…" aria-label="搜索收藏"
-            style={{ width: '100%', padding: '7px 28px 7px 10px', borderRadius: 'var(--radius-input)', border: '1px solid var(--border-color)', fontSize: 'var(--text-base)', boxSizing: 'border-box' }} />
+            style={{ width: '100%', padding: '7px 28px 7px 10px', borderRadius: 'var(--nt-r-md, 12px)', border: '1px solid var(--nt-border, var(--border-color))', background: 'var(--nt-fill)', color: 'var(--nt-text)', fontSize: 'var(--text-base)', boxSizing: 'border-box' }} />
           {query && (
             <button type="button" aria-label="清除搜索" title="清除" onClick={() => setQuery('')}
               style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', width: 18, height: 18, border: 'none', borderRadius: 'var(--radius-full)', background: 'var(--border-color)', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IcoClose size={11} /></button>
@@ -141,9 +141,9 @@ export default function Collections() {
           {TYPES.map(([val, label]) => (
             <button key={val || 'all'} data-testid={`collection-type-${val || 'all'}`} onClick={() => setTypeFilter(val)}
               style={{ fontSize: 'var(--text-sm)', padding: '3px 10px', borderRadius: 'var(--radius-bubble-tip)', cursor: 'pointer',
-                border: '1px solid var(--border-color)',
-                background: typeFilter === val ? 'var(--green)' : 'transparent',
-                color: typeFilter === val ? '#fff' : 'var(--text-secondary)' }}>{label}</button>
+                border: `1px solid ${typeFilter === val ? 'var(--nt-primary)' : 'var(--border-color)'}`,
+                background: typeFilter === val ? 'var(--nt-primary)' : 'transparent',
+                color: typeFilter === val ? 'var(--nt-on-primary)' : 'var(--text-secondary)' }}>{label}</button>
           ))}
         </div>
       </div>
@@ -151,7 +151,7 @@ export default function Collections() {
         <Skeleton rows={6} avatar />
       ) : loadError && list.length === 0 ? (
         <div role="status" style={{ textAlign: 'center', padding: 60, color: 'var(--text-tertiary)', fontSize: 'var(--text-sm2)' }}>
-          加载失败，<button onClick={load} style={{ color: 'var(--green)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>点击重试</button>
+          加载失败，<button onClick={load} style={{ color: 'var(--nt-link)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>点击重试</button>
         </div>
       ) : (inSearch && searching) ? (
         <div role="status" style={{ textAlign: 'center', padding: 40, color: 'var(--text-tertiary)', fontSize: 'var(--text-sm2)' }}>搜索中…</div>
@@ -168,7 +168,7 @@ export default function Collections() {
               <div style={{ display: 'flex', gap: 4 }}>
                 {c.extra?.source_conv_id && (
                   <button onClick={() => jumpToSource(c)}
-                    style={{ fontSize: 'var(--text-sm)', color: 'var(--green)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}>跳转到原消息</button>
+                    style={{ fontSize: 'var(--text-sm)', color: 'var(--nt-link)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}>跳转到原消息</button>
                 )}
                 <button onClick={() => remove(c.id)}
                   style={{ fontSize: 'var(--text-sm)', color: 'var(--color-badge)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}>取消收藏</button>

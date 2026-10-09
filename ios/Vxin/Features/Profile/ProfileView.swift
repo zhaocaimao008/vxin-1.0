@@ -8,18 +8,18 @@ private enum Tok {
     static let xs: CGFloat = 4;  static let s: CGFloat = 8
     static let m: CGFloat = 12;  static let l: CGFloat = 16
     static let xl: CGFloat = 20; static let xxl: CGFloat = 24
-    static let cardRadius: CGFloat = 18
+    static let cardRadius: CGFloat = 16
     static let avatarSize: CGFloat = 66
     static let iconSize: CGFloat = 22
     static let rowHeight: CGFloat = 57
-    static let green    = Color.vxinBrand
+    static let green    = Color.vxinLink
     static let greenBg  = Color.vxinBrandMuted
-    static let primary  = Color(red: 0x11/255, green: 0x11/255, blue: 0x11/255)
-    static let secondary = Color(red: 0x8E/255, green: 0x8E/255, blue: 0x93/255)
-    static let bg       = Color(red: 0xF5/255, green: 0xF5/255, blue: 0xF7/255)
-    static let divider  = Color(red: 0xE9/255, green: 0xE9/255, blue: 0xEC/255)
-    static let red      = Color(red: 0xFF/255, green: 0x3B/255, blue: 0x30/255)
-    static let iconGray = Color(red: 0x2C/255, green: 0x2C/255, blue: 0x2E/255)
+    static let primary  = Color.vxinTextPrimary
+    static let secondary = Color.vxinTextSecondary
+    static let bg       = Color.vxinBg
+    static let divider  = Color.vxinBorder
+    static let red      = Color.vxinError
+    static let iconGray = Color.vxinTextSecondary
 }
 
 // MARK: - Reusable components
@@ -29,7 +29,7 @@ private struct VxCard<Content: View>: View {
     @ViewBuilder var content: Content
     var body: some View {
         VStack(spacing: 0) { content }
-            .background(Color.white)
+            .background(Color.vxinSurface)
             .clipShape(RoundedRectangle(cornerRadius: Tok.cardRadius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: Tok.cardRadius, style: .continuous)

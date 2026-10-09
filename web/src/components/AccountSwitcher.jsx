@@ -5,6 +5,7 @@ import { mediaUrl } from '../utils/url';
 import { showConfirm } from '../utils/toast';
 import { useAuth } from '../contexts/AuthContext';
 import { saveRememberedUsername, removeRememberedUsername } from '../utils/rememberedCreds';
+import { IcoCheck, IcoChevronRight, IcoClose, IcoPlus, IcoUser } from './Icons';
 
 function goLogin() { window.location.href = (import.meta.env.BASE_URL || '/'); }
 
@@ -135,7 +136,7 @@ function AccountSwitcher() {
                   <Avatar src={a.user?.avatar} name={a.user?.username} size={38} />
                   {active && (
                     <div className="as-active-badge">
-                      <svg className="as-check-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                      <IcoCheck size={null} strokeWidth={3} className="as-check-icon" />
                     </div>
                   )}
                 </div>
@@ -155,7 +156,7 @@ function AccountSwitcher() {
                   title={active ? '退出登录' : '从本设备删除'}
                   data-testid={active ? 'account-logout-btn' : undefined}
                   className="as-remove-btn">
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                  <IcoClose size={13} />
                 </button>
               </div>
             );
@@ -166,13 +167,9 @@ function AccountSwitcher() {
             className="as-profile-row"
             role="button" tabIndex={0}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowProfile(v => !v); } }}>
-            <svg className="as-profile-icon" viewBox="0 0 24 24">
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-            </svg>
+            <IcoUser size={null} className="as-profile-icon" />
             <span className="as-profile-label">个人资料</span>
-            <svg viewBox="0 0 24 24" className={`as-profile-arrow${showProfile ? ' open' : ''}`}>
-              <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-            </svg>
+            <IcoChevronRight size={null} className={`as-profile-arrow${showProfile ? ' open' : ''}`} />
           </div>
 
           {/* 资料详情（展开时显示） */}
@@ -202,14 +199,10 @@ function AccountSwitcher() {
             role="button" tabIndex={0}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleForm(e); } }}>
             <div className={`wc-add-icon-wrap${showForm ? ' open' : ''}`}>
-              <svg viewBox="0 0 24 24" className={`wc-add-icon-svg${showForm ? ' open' : ''}`}>
-                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-              </svg>
+              <IcoPlus size={null} className={`wc-add-icon-svg${showForm ? ' open' : ''}`} />
             </div>
             <span className={`wc-add-label${showForm ? ' open' : ''}`}>添加账户</span>
-            <svg viewBox="0 0 24 24" className={`wc-add-chevron${showForm ? ' open' : ''}`}>
-              <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-            </svg>
+            <IcoChevronRight size={null} className={`wc-add-chevron${showForm ? ' open' : ''}`} />
           </div>
 
           {/* 登录表单：切换已有账号 或 添加新账号 */}

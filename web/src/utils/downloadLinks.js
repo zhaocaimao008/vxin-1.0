@@ -1,6 +1,7 @@
 import { timeoutSignal } from './config';
 
-export const DOWNLOAD_FALLBACK = 'https://vxinchat.com/#download';
+// A missing release must not send users to a different deployment's download page.
+export const DOWNLOAD_FALLBACK = null;
 
 export function windowsDownloadUrl(feed, origin) {
   const version = /^version:\s*(\d+\.\d+\.\d+)\s*$/m.exec(feed)?.[1];

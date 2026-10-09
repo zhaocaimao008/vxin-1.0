@@ -1,0 +1,310 @@
+/* v信 一体化控件层 · 聊天主区、顶栏、消息、输入栏、聊天内弹窗（2026-10-09，加载于 brand-icons.css 之后） */
+/* ================================================================
+   §1  图标按钮：顶栏 / 工具栏 / 语音切换 / 小号关闭按钮
+       桌面 36px 命中区（紧凑 32px），圆角 --nt-r-md；hover / pressed /
+       focus-visible / disabled 一套状态；图标统一 20px，颜色走 color。
+   §2  「更多」面板图标底块
+   §3  菜单 / 浮层（消息右键菜单、会话右键菜单、@ 列表）
+   §4  消息内图标（已读勾、文件卡、语音播放、转账卡）
+   §5  弹窗：名片选择、定时发送、红包 / 转账
+   §6  会话列表 / 会话内搜索 / 表情面板
+   ================================================================ */
+
+/* ── §1 图标按钮 ─────────────────────────────────────────────── */
+:root .wc-chat-header-btn,
+:root .wc-tool-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--nt-r-md);
+  color: var(--nt-text-2);
+  background: transparent;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+:root .wc-chat-header-btn:hover,
+:root .wc-tool-btn:hover { background: var(--nt-hover) !important; color: var(--nt-text); transform: none; }
+:root .wc-chat-header-btn:active,
+:root .wc-tool-btn:active { background: var(--nt-pressed) !important; transform: none; opacity: 1; }
+:root .wc-chat-header-btn.active,
+:root .wc-chat-header-btn.active:hover,
+:root .wc-tool-btn.active,
+:root .wc-tool-btn.active:hover { background: var(--nt-primary-soft) !important; color: var(--nt-primary); }
+:root .wc-chat-header-btn svg.vx-ico,
+:root .wc-tool-btn svg.vx-ico { width: 20px; height: 20px; transform: none; }
+:root .wc-tool-btn:hover svg.vx-ico { transform: none; }
+:root .wc-input-toolbar { height: auto; min-height: 40px; gap: 2px; padding: 4px 8px 0; }
+
+/* 紧凑：移动端顶栏 / 工具栏 32px（触控热区由历史 min-width/min-height 44px 保证） */
+:root .wc-app.wc-mobile .wc-chat-header-btn,
+:root .m-chat-page .wc-chat-header-btn,
+:root .wc-app.wc-mobile .wc-tool-btn { width: 32px; height: 32px; padding: 0; }
+:root .wc-chat-header-back svg.vx-ico { width: 24px; height: 24px; }
+
+/* 语音 / 键盘切换圆钮 */
+:root .wc-voice-toggle-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  color: var(--nt-text-2);
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+:root .wc-voice-toggle-btn:hover { background: var(--nt-fill-strong) !important; color: var(--nt-text); }
+:root .wc-voice-toggle-btn:active { background: var(--nt-pressed) !important; }
+:root .wc-voice-toggle-btn.active { background: var(--nt-primary-soft) !important; color: var(--nt-primary); }
+:root .wc-voice-toggle-btn svg.vx-ico { width: 18px; height: 18px; }
+
+/* 发送按钮内下拉箭头 */
+:root .wc-send-btn { display: inline-flex; align-items: center; justify-content: center; gap: 2px; }
+:root .wc-send-arrow { width: 14px; height: 14px; margin-left: 2px; vertical-align: middle; }
+
+/* 小号关闭 / 取消按钮（回复条、编辑条、上传条、名片选择、会话内搜索） */
+:root .wc-reply-bar-close,
+:root .wc-edit-cancel-btn,
+:root .wc-cancel-upload-btn,
+:root .wc-card-picker-close,
+:root .wc-conv-search-close {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: var(--nt-r-md);
+  color: var(--nt-text-3);
+  background: transparent;
+  line-height: 0;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+:root .wc-reply-bar-close:hover,
+:root .wc-edit-cancel-btn:hover,
+:root .wc-cancel-upload-btn:hover,
+:root .wc-card-picker-close:hover,
+:root .wc-conv-search-close:hover { background: var(--nt-hover); color: var(--nt-text); }
+:root .wc-reply-bar-close:active,
+:root .wc-edit-cancel-btn:active,
+:root .wc-cancel-upload-btn:active,
+:root .wc-card-picker-close:active,
+:root .wc-conv-search-close:active { background: var(--nt-pressed); }
+
+/* 统一焦点环 / 禁用态 */
+:root .wc-chat-header-btn:focus-visible,
+:root .wc-tool-btn:focus-visible,
+:root .wc-tool-label:focus-within,
+:root .wc-voice-toggle-btn:focus-visible,
+:root .wc-send-btn:focus-visible,
+:root .wc-reply-bar-close:focus-visible,
+:root .wc-edit-cancel-btn:focus-visible,
+:root .wc-cancel-upload-btn:focus-visible,
+:root .wc-card-picker-close:focus-visible,
+:root .wc-conv-search-close:focus-visible,
+:root .wc-ms-btn-primary:focus-visible,
+:root .wc-ms-cancel-btn:focus-visible,
+:root .wc-more-item:focus-visible,
+:root .wc-ctx-item:focus-visible,
+:root .wc-voice-play-btn:focus-visible,
+:root .sticker-add-btn:focus-visible,
+:root .ssm-btn:focus-visible,
+:root .rpm-btn-send:focus-visible,
+:root .rpm-btn-cancel:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(var(--nt-primary-rgb), .35);
+}
+:root .wc-chat-header-btn:disabled,
+:root .wc-tool-btn:disabled,
+:root .wc-voice-toggle-btn:disabled,
+:root .wc-ms-btn-primary:disabled,
+:root .ssm-btn:disabled,
+:root .sticker-add-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* 拖拽上传遮罩 */
+:root .wc-drag-overlay {
+  background: rgba(var(--nt-primary-rgb), .08);
+  border-color: rgba(var(--nt-primary-rgb), .55);
+  border-radius: var(--nt-r-lg);
+}
+:root .wc-drag-overlay svg.vx-ico,
+:root .wc-drag-overlay span { color: var(--nt-primary); }
+
+/* ── §2 「更多」面板图标底块 ─────────────────────────────────── */
+:root .wc-more-panel { border-top: 1px solid var(--nt-separator); }
+:root .wc-more-icon {
+  background: var(--nt-surface);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r-lg);
+  box-shadow: none;
+  color: var(--nt-text-2);
+  transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
+}
+:root .wc-more-icon svg.vx-ico { width: 24px; height: 24px; }
+:root .wc-more-icon--primary { color: var(--nt-primary); }
+/* 红包入口保留喜庆红（语义色），只是图标着色不铺满底 */
+:root .wc-more-icon--red { color: var(--rp-orange, #F4511E); }
+:root .wc-more-item:hover .wc-more-icon { background: var(--nt-hover); border-color: var(--nt-border-strong); filter: none; }
+:root .wc-more-item:active .wc-more-icon { background: var(--nt-pressed); }
+:root .wc-more-item:focus-visible { border-radius: var(--nt-r-md); }
+:root .wc-more-label { color: var(--nt-text-2); }
+:root.electron-app .wc-more-icon,
+:root .electron-app .wc-more-icon { border-radius: var(--nt-r-md); }
+:root body.dark-mode .wc-more-panel { background: var(--nt-surface); }
+
+/* ── §3 菜单 / 浮层 ─────────────────────────────────────────── */
+:root .wc-ctx-menu {
+  border-radius: var(--nt-r-lg);
+  padding: 6px;
+  min-width: 168px;
+}
+:root .wc-ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: var(--nt-r-sm);
+  color: var(--nt-text);
+  font-size: 14px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+:root .wc-ctx-item:hover { background: var(--nt-hover); }
+:root .wc-ctx-item:active { background: var(--nt-pressed); }
+:root .wc-ctx-item.danger { color: var(--nt-danger); }
+:root .wc-ctx-ico { width: 16px; height: 16px; color: var(--nt-text-3); }
+:root .wc-ctx-item:hover .wc-ctx-ico { color: var(--nt-text-2); }
+:root .wc-ctx-item.danger .wc-ctx-ico { color: var(--nt-danger); }
+:root .wc-ctx-divider { height: 1px; margin: 4px 6px; background: var(--nt-separator); }
+:root .wc-ctx-emoji-row { padding: 2px 2px 4px; border-bottom: none; }
+:root .wc-ctx-emoji { border-radius: var(--nt-r-sm); }
+:root .wc-ctx-emoji:hover { background: var(--nt-hover); }
+:root.electron-app .wc-ctx-item,
+:root .electron-app .wc-ctx-item { color: var(--nt-text); border-radius: var(--nt-r-sm); }
+:root.electron-app .wc-ctx-item.danger,
+:root .electron-app .wc-ctx-item.danger { color: var(--nt-danger); }
+
+/* 群聊 @ 候选 */
+:root .wc-at-list {
+  background: var(--nt-surface);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r-lg);
+  box-shadow: var(--nt-shadow-md);
+  padding: 4px;
+}
+:root .wc-at-list-item { border-radius: var(--nt-r-sm); color: var(--nt-text); }
+:root .wc-at-list-item:hover { background: var(--nt-hover); }
+:root .wc-at-list-item.active { background: var(--nt-selected); }
+
+/* ── §4 消息内图标 ──────────────────────────────────────────── */
+:root .wc-msg-read svg.wc-tick-icon { width: 15px; height: 15px; }
+:root .wc-msg-status-error-icon { color: var(--nt-danger); }
+:root .wc-msg-status-error-icon svg.vx-ico { width: 18px; height: 18px; }
+
+/* 语音播放钮（墨绿底，图标取 on-primary，深色模式下自动变深字） */
+:root .wc-voice-play-icon,
+:root .wc-voice-play-icon-offset { color: var(--nt-on-primary); }
+
+/* 文件卡片 */
+:root .wc-msg-file-icon svg.vx-ico { width: 24px; height: 24px; }
+
+/* 转账卡：墨绿系（原 --pay-green #07C160 亮绿）；深色下略压暗避免发光 */
+:root .wc-transfer-card { background: linear-gradient(135deg, #2A8466, #176B52); color: #fff; }
+:root body.dark-mode .wc-transfer-card { background: linear-gradient(135deg, #24745A, #165442); }
+:root .wc-transfer-icon { display: flex; color: #fff; }
+
+/* 名片卡 */
+:root .wc-contact-card {
+  background: var(--nt-surface);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r-md);
+}
+:root .wc-contact-card-footer { border-top-color: var(--nt-separator); color: var(--nt-text-3); }
+
+/* 上传 / 编辑 / 多选 / 禁言条 */
+:root .wc-upload-icon { display: inline-flex; }
+:root .wc-upload-icon-ok { color: var(--nt-primary); }
+:root .wc-upload-icon-fail,
+:root .wc-upload-error-text { color: var(--nt-danger); }
+:root .wc-retry-btn { color: var(--nt-primary); border-color: rgba(var(--nt-primary-rgb), .45); border-radius: var(--nt-r-sm); }
+:root .wc-retry-btn:hover { background: var(--nt-primary-soft); }
+:root .wc-ms-btn-primary,
+:root .wc-ms-cancel-btn { border-radius: var(--nt-r-md); min-height: 34px; }
+:root .wc-ms-btn-forward { background: var(--nt-primary); color: var(--nt-on-primary); }
+:root .wc-ms-btn-forward:hover:not(:disabled) { background: var(--nt-primary-hover); }
+:root .wc-ms-btn-delete { background: var(--nt-danger); color: #fff; }
+:root body.dark-mode .wc-ms-btn-delete { color: #1A0B0A; }
+:root .wc-ms-cancel-btn { color: var(--nt-primary); border-color: rgba(var(--nt-primary-rgb), .45); }
+:root .wc-ms-cancel-btn:hover { background: var(--nt-primary-soft); }
+:root body.dark-mode .wc-multiselect-bar,
+:root .wc-multiselect-bar,
+:root .wc-mute-notice { background: var(--nt-surface); border-top-color: var(--nt-separator); }
+:root .wc-mute-notice span { color: var(--nt-text-3); display: inline-flex; align-items: center; gap: 4px; }
+
+/* ── §5 弹窗 ───────────────────────────────────────────────── */
+/* 名片选择 */
+:root .wc-card-picker {
+  background: var(--nt-surface);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r-xl);
+  box-shadow: var(--nt-shadow-lg);
+}
+:root .wc-card-picker-header { border-bottom-color: var(--nt-separator); }
+:root .wc-card-picker-item:hover { background: var(--nt-hover); }
+
+/* 定时发送 */
+:root .ssm-input { outline: none; transition: border-color var(--dur-fast), box-shadow var(--dur-fast); }
+:root .ssm-input:focus { border-color: rgba(var(--nt-primary-rgb), .55) !important; box-shadow: 0 0 0 3px rgba(var(--nt-primary-rgb), .18); }
+:root .ssm-btn-primary:hover:not(:disabled) { background: var(--nt-primary-hover) !important; }
+:root .ssm-btn-primary:active:not(:disabled) { background: var(--nt-primary-active) !important; }
+:root .ssm-btn-secondary:hover:not(:disabled) { background: var(--nt-fill-strong) !important; }
+
+/* 红包 / 转账（共用 rpm-*）：外形统一；红包保留喜庆橙红主按钮，转账为墨绿 */
+:root .rpm-card {
+  background: var(--nt-surface);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r-xl);
+  box-shadow: var(--nt-shadow-lg);
+}
+:root .rpm-title { color: var(--nt-text); }
+:root .rpm-input,
+:root .rpm-textarea {
+  background: var(--nt-surface);
+  border: 1px solid var(--nt-border-strong);
+  border-radius: var(--nt-r-md);
+  color: var(--nt-text);
+}
+:root .rpm-btn-cancel,
+:root .rpm-btn-send { border-radius: var(--nt-r-md); }
+:root .rpm-btn-cancel {
+  background: var(--nt-fill);
+  border-color: transparent;
+  color: var(--nt-text);
+}
+:root .rpm-btn-cancel:hover { background: var(--nt-fill-strong); border-color: transparent; }
+:root .rpm-btn-send:disabled { opacity: .4; }
+:root .rpm-card--transfer .rpm-input:focus {
+  border-color: rgba(var(--nt-primary-rgb), .55);
+  box-shadow: 0 0 0 3px rgba(var(--nt-primary-rgb), .18);
+}
+:root .rpm-card--transfer .rpm-btn-send { color: var(--nt-on-primary); }
+:root .rpm-card--transfer .rpm-btn-send:hover:not(:disabled) { box-shadow: none; transform: none; filter: brightness(1.06); }
+
+/* 红包详情卡 */
+:root .wc-rp-detail-card { border-radius: var(--nt-r-xl); }
+:root .wc-rp-detail-body,
+:root .wc-rp-close-btn { background: var(--nt-surface); }
+:root .wc-rp-close-btn { border-top-color: var(--nt-separator); color: var(--nt-text-2); }
+:root .wc-rp-close-btn:hover { background: var(--nt-hover); }
+
+/* ── §6 会话列表 / 会话内搜索 / 表情面板 ─────────────────────── */
+:root .wc-chat-item-mute-ico { flex-shrink: 0; }
+:root .wc-conv-search { background: var(--nt-surface) !important; border-bottom-color: var(--nt-separator) !important; }
+:root .wc-conv-search svg.vx-ico { flex-shrink: 0; }
+
+:root .wc-emoji-cat { display: inline-flex; align-items: center; justify-content: center; color: var(--nt-text-2); }
+:root .wc-emoji-cat.active { border-bottom-color: var(--nt-primary); color: var(--nt-primary); }
+:root .wc-emoji-cat svg.vx-ico { width: 18px; height: 18px; }
+:root .sticker-add-btn:hover:not(:disabled) { background: var(--nt-selected-hover) !important; }
+:root .sticker-item { border-radius: var(--nt-r-md); }
+:root .sticker-item:hover { border-color: rgba(var(--nt-primary-rgb), .55); box-shadow: var(--nt-shadow-sm); }
+:root .sticker-item:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(var(--nt-primary-rgb), .35); }

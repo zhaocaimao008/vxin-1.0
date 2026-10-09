@@ -18,11 +18,11 @@ android {
         applicationId = "com.vxin.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 61
-        versionName = "8.0.8"
+        versionCode = 62
+        versionName = "8.0.9"
 
         // 默认服务器地址（运行时可在 App 内切换并持久化覆盖）
-        buildConfigField("String", "DEFAULT_SERVER_URL", "\"https://vxinchat.com\"")
+        buildConfigField("String", "DEFAULT_SERVER_URL", "\"https://liaotian99.com\"")
 
         // 个推密钥从环境变量/CI Secrets 注入，不硬编码到代码里。
         // 占位符名与个推 SDK 内置 Manifest 要求一致（GETUI_APPID/GETUI_APPKEY/GETUI_APPSECRET）。

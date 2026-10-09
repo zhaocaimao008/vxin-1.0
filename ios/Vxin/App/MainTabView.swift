@@ -14,7 +14,7 @@ struct MainTabView: View {
             // ── Tab 1：消息 ─────────────────────────────────────
             ConversationListView(myId: myId)
                 .tabItem {
-                    Label("消息", systemImage: "bubble.left.and.bubble.right.fill")
+                    Label("消息", image: "VxinIconChat")
                 }
                 .accessibilityIdentifier("nav-tab-chats")
                 .tag(0)
@@ -22,38 +22,27 @@ struct MainTabView: View {
             // ── Tab 2：联系人 ───────────────────────────────────
             ContactsTab(myId: myId)
                 .tabItem {
-                    Label("联系人", systemImage: "person.2.fill")
+                    Label("通讯录", image: "VxinIconContacts")
                 }
                 .accessibilityIdentifier("nav-tab-contacts")
                 .tag(1)
 
-            // ── Tab 3：动态（后台开关关闭即隐藏，四端一致）──────
-            if featureStore.moments {
-                NavigationStack {
-                    MomentsView()
-                }
-                .tabItem {
-                    Label("动态", systemImage: "camera.fill")
-                }
-                .accessibilityIdentifier("nav-tab-moments")
+            NavigationStack { DiscoverView() }
+                .tabItem { Label("发现", image: "VxinIconCompass") }
+                .accessibilityIdentifier("nav-tab-discover")
                 .tag(2)
-            }
 
             // ── Tab 4：我的 ─────────────────────────────────────
             NavigationStack { ProfileView() }
                 .tabItem {
-                    Label("我的", systemImage: "person.crop.circle.fill")
+                    Label("我的", image: "VxinIconMe")
                 }
                 .accessibilityIdentifier("nav-tab-me")
                 .tag(3)
         }
-        .tint(.vxinBrand)
+        .tint(.vxinLink)
         // 登录后拉取后台功能开关（动态/收藏等），socket config:updated 实时热更新
         .task { await featureStore.refresh() }
-        // 动态 tab 被后台关闭时，若当前正停在动态页则跳回消息页，避免空白页
-        .onChange(of: featureStore.moments) { enabled in
-            if !enabled && selectedTab == 2 { selectedTab = 0 }
-        }
         // 点推送通知 → 跳回消息页
         .onReceive(NotificationCenter.default.publisher(for: .vxinOpenConversation)) { _ in
             selectedTab = 0

@@ -3,7 +3,14 @@ package com.vxin.app.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.*
+import com.vxin.app.ui.theme.LocalVxinPalette
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.material3.IconButton
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -38,7 +45,7 @@ import com.vxin.app.ui.theme.VxinAuthTextMuted
 import com.vxin.app.ui.theme.VxinTextSize
 
 /**
- * 认证页通用下划线输入行（图标 + 输入 + 可选尾部内容），对齐 34 图参考的 WeChat 风格表单。
+ * 认证页通用输入框：共享表面、圆角、聚焦边框。
  */
 @Composable
 fun VxinAuthField(
@@ -52,19 +59,17 @@ fun VxinAuthField(
     testTag: String = "",
     trailing: @Composable (() -> Unit)? = null,
 ) {
-    val dividerColor = VxinAuthBorder
+    val palette = LocalVxinPalette.current
+    var focused by remember { mutableStateOf(false) }
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .padding(bottom = 12.dp)
             .height(52.dp)
-            .drawBehind {
-                drawLine(
-                    color = dividerColor,
-                    start = Offset(0f, size.height),
-                    end = Offset(size.width, size.height),
-                    strokeWidth = 1.dp.toPx(),
-                )
-            },
+            .clip(RoundedCornerShape(12.dp))
+            .background(palette.surface)
+            .border(1.dp, if (focused) palette.primary else palette.border, RoundedCornerShape(12.dp))
+            .padding(start = 14.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(icon, contentDescription = null, tint = VxinAuthTextMuted, modifier = Modifier.size(20.dp))
@@ -76,11 +81,11 @@ fun VxinAuthField(
                 value = value,
                 onValueChange = onValueChange,
                 singleLine = true,
-                textStyle = LocalTextStyle.current.copy(fontSize = VxinTextSize.base, color = Color.White),
+                textStyle = LocalTextStyle.current.copy(fontSize = VxinTextSize.base, color = palette.text),
                 keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
                 visualTransformation = visualTransformation,
                 cursorBrush = androidx.compose.ui.graphics.SolidColor(VxinAuthGold),
-                modifier = Modifier.fillMaxWidth().testTag(testTag),
+                modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused }.testTag(testTag),
             )
         }
         if (trailing != null) trailing()
@@ -108,22 +113,16 @@ fun VxinPasswordField(
         visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
         testTag = testTag,
         trailing = {
-            Icon(
-                if (visible) VxinIcons.Eye else VxinIcons.EyeOff,
-                contentDescription = if (visible) "隐藏密码" else "显示密码",
-                tint = VxinAuthTextMuted,
-                modifier = Modifier
-                    .size(20.dp)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                    ) { onVisibleChange(!visible) },
-            )
+            IconButton(onClick = { onVisibleChange(!visible) }, modifier = Modifier.size(44.dp)) {
+                Icon(if (visible) VxinIcons.Eye else VxinIcons.EyeOff,
+                    contentDescription = if (visible) "隐藏密码" else "显示密码",
+                    tint = VxinAuthTextMuted, modifier = Modifier.size(20.dp))
+            }
         },
     )
 }
 
-/** 圆形勾选框：金色实心 + 黑色对勾（选中）/ 描边空心（未选中）。 */
+/** 圆形勾选框：共享主色，44dp 触摸区域。 */
 @Composable
 fun VxinRoundCheckbox(
     checked: Boolean,
@@ -131,23 +130,11 @@ fun VxinRoundCheckbox(
     modifier: Modifier = Modifier,
     testTag: String = "",
 ) {
-    Box(
-        modifier = modifier
-            .size(18.dp)
-            .clip(CircleShape)
-            .then(
-                if (checked) Modifier.background(VxinAuthGold)
-                else Modifier.border(width = 1.5.dp, color = VxinAuthBorder, shape = CircleShape)
-            )
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-            ) { onCheckedChange(!checked) }
-            .testTag(testTag),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (checked) {
-            Icon(VxinIcons.Check, contentDescription = null, tint = Color.Black, modifier = Modifier.size(11.dp))
+    val palette = LocalVxinPalette.current
+    Box(modifier = modifier.size(44.dp).toggleable(value = checked, role = Role.Checkbox, onValueChange = onCheckedChange).testTag(testTag), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(18.dp).clip(CircleShape).background(if (checked) palette.primary else Color.Transparent)
+            .border(1.5.dp, if (checked) palette.primary else palette.text3, CircleShape), contentAlignment = Alignment.Center) {
+            if (checked) Icon(VxinIcons.Check, contentDescription = null, tint = palette.onPrimary, modifier = Modifier.size(11.dp))
         }
     }
 }

@@ -31,12 +31,12 @@ struct LoginView: View {
                 }
                 Spacer(minLength: 32)
 
-                // 品牌 Logo：黑金标记（与 Web/Android 登录页同一套扁平化简版标记，2026-08-24 四端品牌统一）
+                // 品牌 Logo：统一品牌标记（与 Web/Android 登录页同一套扁平化简版标记，2026-08-24 四端品牌统一）
                 VxinLogoMark()
                     .frame(width: 76, height: 76)
                 Text("v信")
                     .font(.system(size: VxinFontSize.displayLg, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.vxinTextPrimary)
                 Text("连接 · 沟通 · 未来")
                     .font(.subheadline)
                     .foregroundColor(.vxinAuthTextSecondary)
@@ -82,7 +82,7 @@ struct LoginView: View {
                         icon: "at",
                         placeholder: "请输入v信号",
                         text: $vm.vxinId,
-                        keyboardType: .default,
+                        keyboardType: .numberPad,
                         accessibilityId: "login-vxin-input"
                     )
                 }
@@ -110,21 +110,7 @@ struct LoginView: View {
                         .accessibilityIdentifier("auth-error-text")
                 }
 
-                Button(action: vm.login) {
-                    ZStack {
-                        if vm.loading { ProgressView().tint(.vxinAuthGold) }
-                        else { Text("登录").bold() }
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 50)
-                    .background(Color.vxinAuthSurface)
-                    .foregroundColor(vm.canLogin && agreed ? .vxinAuthGold : .vxinAuthPlaceholder)
-                    .clipShape(RoundedRectangle(cornerRadius: VxinRadius.pill, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: VxinRadius.pill, style: .continuous)
-                            .strokeBorder(vm.canLogin && agreed ? Color.vxinAuthGold : Color.vxinAuthBorder, lineWidth: 1.5)
-                    )
-                }
-                .disabled(!vm.canLogin || !agreed)
+                VxinGradientButton(title: "登录", loading: vm.loading, enabled: vm.canLogin && agreed, action: vm.login)
                 .padding(.top, 8)
                 .accessibilityIdentifier("login-submit-btn")
 
@@ -153,7 +139,7 @@ struct LoginView: View {
 
                 if showServerConfig {
                     TextField("", text: $vm.serverURL, prompt: Text("服务器地址").foregroundColor(.vxinAuthPlaceholder))
-                        .foregroundColor(.white)
+                        .foregroundColor(.vxinTextPrimary)
                         .tint(.vxinAuthGold)
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
@@ -167,11 +153,12 @@ struct LoginView: View {
                 Spacer(minLength: 24)
             }
             .padding(.horizontal, 32)
+            .frame(maxWidth: 480)
+            .frame(maxWidth: .infinity)
         }
         .background(Color.vxinAuthBg)
         .scrollContentBackground(.hidden)
         .toolbarBackground(Color.vxinAuthBg, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
         .onChange(of: vm.authedUser) { user in
             if let user {
                 session.onAuthenticated(user)

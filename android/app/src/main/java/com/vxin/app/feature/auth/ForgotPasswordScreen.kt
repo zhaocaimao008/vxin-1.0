@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import com.vxin.app.ui.theme.LocalVxinPalette
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,6 +31,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -54,28 +59,33 @@ fun ForgotPasswordScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     val fieldColors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-        focusedTextColor = Color.White,
-        unfocusedTextColor = Color.White,
+        focusedTextColor = LocalVxinPalette.current.text,
+        unfocusedTextColor = LocalVxinPalette.current.text,
         focusedBorderColor = VxinAuthGold,
         unfocusedBorderColor = VxinAuthBorder,
         focusedLabelColor = VxinAuthGold,
         unfocusedLabelColor = VxinAuthTextSecondary,
         cursorColor = VxinAuthGold,
+        focusedContainerColor = LocalVxinPalette.current.surface,
+        unfocusedContainerColor = LocalVxinPalette.current.surface,
     )
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(VxinAuthBg)
+            .wrapContentWidth(Alignment.CenterHorizontally)
+            .widthIn(max = 480.dp)
             .imePadding()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        // 品牌 Logo：黑金标记（与登录/注册页一致，2026-08-24 四端品牌统一）
+        // 品牌 Logo：统一品牌标记（与登录/注册页一致，2026-08-24 四端品牌统一）
         VxinLogoMark(modifier = Modifier.size(64.dp))
         Spacer(Modifier.height(14.dp))
-        Text("忘记密码", fontSize = com.vxin.app.ui.theme.VxinTextSize.display, fontWeight = FontWeight.Bold, color = Color.White)
+        Text("忘记密码", fontSize = com.vxin.app.ui.theme.VxinTextSize.display, fontWeight = FontWeight.Bold, color = LocalVxinPalette.current.text)
         Spacer(Modifier.height(6.dp))
         Text(
             "使用注册时的手机号和邀请码重置密码",
@@ -87,7 +97,7 @@ fun ForgotPasswordScreen(
         if (state.success) {
             Text("密码已重置，请返回登录", color = VxinAuthGold, fontSize = com.vxin.app.ui.theme.VxinTextSize.md)
             Spacer(Modifier.height(20.dp))
-            AuthGoldButton(text = "返回登录", onClick = onBack)
+            AuthPrimaryButton(text = "返回登录", onClick = onBack)
             return@Column
         }
 
@@ -97,6 +107,7 @@ fun ForgotPasswordScreen(
             label = { Text("手机号") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            shape = RoundedCornerShape(12.dp),
             colors = fieldColors,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -107,6 +118,7 @@ fun ForgotPasswordScreen(
             label = { Text("邀请码（6位数字）") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            shape = RoundedCornerShape(12.dp),
             colors = fieldColors,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -124,6 +136,7 @@ fun ForgotPasswordScreen(
                     Text(if (pwdVisible) "隐藏" else "显示", color = VxinAuthTextSecondary, fontSize = com.vxin.app.ui.theme.VxinTextSize.sm)
                 }
             },
+            shape = RoundedCornerShape(12.dp),
             colors = fieldColors,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -135,6 +148,7 @@ fun ForgotPasswordScreen(
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            shape = RoundedCornerShape(12.dp),
             colors = fieldColors,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -145,7 +159,7 @@ fun ForgotPasswordScreen(
         }
 
         Spacer(Modifier.height(24.dp))
-        AuthGoldButton(
+        AuthPrimaryButton(
             text = "重置密码",
             onClick = viewModel::submit,
             enabled = state.canSubmit,
@@ -159,12 +173,12 @@ fun ForgotPasswordScreen(
 }
 
 /**
- * 黑底金字描边按钮：与 Login/Register 提交按钮同一套黑金主题（对齐 Web 端 .auth-submit）。
+ * 主按钮：与 Login/Register 和 Web 共用墨绿主色。
  * 仅供本文件内的"重置密码"/"返回登录"两处使用，不影响 [com.vxin.app.ui.VxinGradientButton]
  * 这个 App 内其它页面（如 AddFriendScreen）仍在用的绿色渐变按钮。
  */
 @Composable
-private fun AuthGoldButton(
+private fun AuthPrimaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -174,7 +188,8 @@ private fun AuthGoldButton(
     Button(
         onClick = onClick,
         enabled = enabled && !loading,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(),
+        shape = RoundedCornerShape(12.dp),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(),
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.Transparent,
             disabledContainerColor = Color.Transparent,
@@ -185,19 +200,19 @@ private fun AuthGoldButton(
             Modifier
                 .fillMaxWidth()
                 .height(50.dp)
-                .clip(RoundedCornerShape(com.vxin.app.ui.theme.VxinRadius.pill))
-                .background(VxinAuthSurface)
+                .clip(RoundedCornerShape(com.vxin.app.ui.theme.VxinRadius.md))
+                .background(if (enabled) LocalVxinPalette.current.primary else LocalVxinPalette.current.disabledFill)
                 .border(
                     width = 1.5.dp,
-                    color = if (enabled) VxinAuthGold else VxinAuthBorder,
-                    shape = RoundedCornerShape(com.vxin.app.ui.theme.VxinRadius.pill),
+                    color = Color.Transparent,
+                    shape = RoundedCornerShape(com.vxin.app.ui.theme.VxinRadius.md),
                 ),
             contentAlignment = Alignment.Center,
         ) {
             if (loading) {
-                CircularProgressIndicator(Modifier.size(20.dp), color = VxinAuthGold, strokeWidth = 2.dp)
+                CircularProgressIndicator(Modifier.size(20.dp), color = LocalVxinPalette.current.onPrimary, strokeWidth = 2.dp)
             } else {
-                Text(text, color = if (enabled) VxinAuthGold else VxinAuthPlaceholder, fontWeight = FontWeight.SemiBold)
+                Text(text, color = if (enabled) LocalVxinPalette.current.onPrimary else LocalVxinPalette.current.text2, fontWeight = FontWeight.SemiBold)
             }
         }
     }

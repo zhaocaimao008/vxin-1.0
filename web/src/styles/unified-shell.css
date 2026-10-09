@@ -1,0 +1,284 @@
+/* v信 一体化控件层 · 登录/注册/找回密码、桌面外壳、移动页头、空状态、发现页、全局横幅（2026-10-09，加载于 brand-icons.css 之后） */
+/* ================================================================
+   §0  范围：Login / Register / ForgotPassword、ElectronTitlebar、AccountSwitcher、
+       Home（移动页头、+号菜单、发起群聊弹窗、桌面空态、侧栏 Logo）、DiscoverHub、
+       StateViews、断线/更新横幅。
+   规则：功能图标（svg.vx-ico）只改 color；品牌标志一律 <BrandMark>；
+       主按钮 --nt-primary + --nt-on-primary，次按钮 --nt-fill；
+       图标按钮 36px（紧凑 32px）圆角 --nt-r-md；输入框圆角 --nt-r-md + 墨绿聚焦环。
+   ================================================================ */
+
+/* ── §1 登录 / 注册 / 找回密码：--auth-* 绑定到全局墨绿体系（深浅色同源） ── */
+:root body .auth-page,
+:root body.dark-mode .auth-page {
+  --auth-primary:       var(--nt-primary);
+  --auth-primary-hover: var(--nt-primary-hover);
+  --auth-primary-press: var(--nt-primary-active);
+  --auth-primary-soft:  var(--nt-primary-soft);
+  --auth-on-primary:    var(--nt-on-primary);
+  --auth-danger:        var(--nt-danger);
+  --auth-danger-soft:   rgba(var(--nt-danger-rgb), .08);
+}
+:root .auth-top-logo-icon svg.vx-brand-mark { width: 26px; height: 26px; }
+:root .auth-brand-logo svg.vx-brand-mark { width: 100px; height: 100px; }
+:root .auth-error svg.vx-ico { flex-shrink: 0; }
+:root .auth-field-cc svg.vx-ico { color: var(--auth-text-3); }
+:root .auth-lang-btn svg.vx-ico { color: var(--auth-text-3); transition: transform 120ms; }
+:root .auth-lang-btn:hover svg.vx-ico { color: var(--auth-text-2); }
+:root .auth-pwd-toggle {
+  width: 32px; height: 32px; margin-right: -6px; justify-content: center;
+  border-radius: var(--nt-r-md);
+}
+:root .auth-pwd-toggle:hover { background: var(--auth-primary-soft); color: var(--auth-primary); }
+:root .auth-pwd-toggle:focus-visible,
+:root .auth-lang-btn:focus-visible,
+:root .auth-account-remove:focus-visible,
+:root .auth-download-btn:focus-visible,
+:root .auth-server-toggle:focus-visible,
+:root .auth-submit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(var(--nt-primary-rgb), .18);
+}
+:root .auth-account-remove { border-radius: var(--nt-r-md); }
+:root .auth-download-btn { border-radius: var(--nt-r-md); }
+:root .auth-download-btn:disabled { opacity: .6; cursor: default; font-family: inherit; }
+:root .auth-download-status { margin: 10px 0 0; color: var(--auth-text-2); font-size: 12px; line-height: 1.6; }
+:root .auth-download-status button { border: 0; background: transparent; color: var(--nt-primary); padding: 4px 6px; cursor: pointer; font: inherit; }
+:root .auth-download-btn svg.vx-ico { color: currentColor; }
+:root .auth-server-btn.primary { background: var(--nt-primary); color: var(--nt-on-primary); }
+:root .auth-server-btn.primary:hover { background: var(--nt-primary-hover); }
+:root .auth-server-btn.ghost { background: var(--nt-fill); color: var(--nt-text); }
+:root .auth-server-btn.ghost:hover:not(:disabled) { background: var(--nt-fill-strong); }
+:root .auth-server-btn { border-radius: var(--nt-r-md); }
+:root .auth-server-input { border-radius: var(--nt-r-md); }
+:root .auth-document-heading button {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: var(--nt-r-md); font-size: 0;
+}
+:root .auth-document-heading button:hover { background: var(--nt-fill); color: var(--nt-text); }
+
+/* ── §2 Electron 标题栏 / 侧栏品牌标志 ─────────────────────────── */
+:root svg.vx-brand-mark.vx-titlebar-mark { width: 18px; height: 18px; }
+:root .wc-sidebar-logo svg.vx-brand-mark,
+:root.electron-app .wc-sidebar-logo svg.vx-brand-mark { width: 34px; height: 34px; }
+
+/* ── §3 通用按钮 / 图标按钮 / 输入框（本区域内） ──────────────── */
+:root .cgm-create,
+:root .wc-add-form-submit,
+:root .wc-state-retry,
+:root .wc-update-install-btn {
+  background: var(--nt-primary);
+  color: var(--nt-on-primary);
+  border: none;
+  border-radius: var(--nt-r-md);
+  transition: background 120ms, box-shadow 120ms, opacity 120ms;
+}
+:root .cgm-create:hover:not(:disabled),
+:root .wc-add-form-submit:hover:not(:disabled),
+:root .wc-state-retry:hover,
+:root .wc-update-install-btn:hover { background: var(--nt-primary-hover); }
+:root .cgm-create:active:not(:disabled),
+:root .wc-add-form-submit:active:not(:disabled),
+:root .wc-state-retry:active,
+:root .wc-update-install-btn:active { background: var(--nt-primary-active); }
+:root .cgm-create:disabled,
+:root .wc-add-form-submit:disabled {
+  background: var(--nt-fill-strong);
+  color: var(--nt-text-3);
+  cursor: not-allowed;
+}
+:root .cgm-cancel {
+  background: var(--nt-fill);
+  color: var(--nt-text);
+  border: none;
+  border-radius: var(--nt-r-md);
+}
+:root .cgm-cancel:hover { background: var(--nt-fill-strong); }
+
+:root .cgm-close,
+:root .m-topbar-add,
+:root .m-topbar-back {
+  width: 36px; height: 36px;
+  border-radius: var(--nt-r-md);
+  transition: background 120ms, color 120ms;
+}
+:root .cgm-close { width: 32px; height: 32px; color: var(--nt-text-2); }
+:root .cgm-close:hover { background: var(--nt-fill); color: var(--nt-text); }
+:root .m-topbar-add:active,
+:root .m-topbar-back:active { background: var(--nt-pressed); }
+:root .as-remove-btn { width: 28px; height: 28px; border-radius: var(--nt-r-sm); color: var(--nt-text-3); }
+:root .as-remove-btn:hover { background: rgba(var(--nt-danger-rgb), .10); color: var(--nt-danger); }
+
+:root :is(.cgm-close, .m-topbar-add, .m-topbar-back, .as-remove-btn, .cgm-create, .cgm-cancel,
+  .wc-add-form-submit, .wc-state-retry, .wc-update-install-btn, .wc-update-dismiss,
+  .wc-update-check-btn, .wc-discover-item, .adi-row):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(var(--nt-primary-rgb), .18);
+}
+
+:root .cgm-name-input,
+:root .wc-add-form-input {
+  border-radius: var(--nt-r-md);
+  border: 1px solid var(--nt-border);
+  background: var(--nt-fill);
+  color: var(--nt-text);
+  transition: border-color 120ms, box-shadow 120ms, background 120ms;
+}
+:root .cgm-name-input:focus,
+:root .wc-add-form-input:focus {
+  outline: none;
+  background: var(--nt-surface);
+  border-color: var(--nt-primary);
+  box-shadow: 0 0 0 3px rgba(var(--nt-primary-rgb), .18);
+}
+:root .cgm-name-input::placeholder,
+:root .wc-add-form-input::placeholder { color: var(--nt-text-3); }
+:root .cgm-search-bar {
+  border-radius: var(--nt-r-md);
+  border: 1px solid transparent;
+  background: var(--nt-fill);
+  transition: border-color 120ms, box-shadow 120ms, background 120ms;
+}
+:root .cgm-search-bar:focus-within {
+  background: var(--nt-surface);
+  border-color: var(--nt-primary);
+  box-shadow: 0 0 0 3px rgba(var(--nt-primary-rgb), .18);
+}
+:root .m-search { border-radius: var(--nt-r-md); }
+:root .m-search:focus-within { box-shadow: 0 0 0 3px rgba(var(--nt-primary-rgb), .18); }
+:root .m-search-icon svg.vx-ico { color: var(--nt-text-3); }
+
+/* ── §4 Home：+ 号菜单、发起群聊弹窗 ─────────────────────────── */
+:root .adi-icon { color: var(--nt-primary); }
+:root .adi-icon svg.vx-ico { width: 18px; height: 18px; }
+:root .cg-checkbox.checked { background: var(--nt-primary); border-color: var(--nt-primary); }
+:root svg.vx-ico.cg-check-icon { width: 13px; height: 13px; color: var(--nt-on-primary); }
+:root .cgm-chip { background: var(--nt-primary-soft); border-color: rgba(var(--nt-primary-rgb), .25); }
+:root .cgm-chip-text { color: var(--nt-primary); }
+:root svg.vx-ico.cgm-chip-x { color: var(--nt-primary); }
+:root svg.vx-ico.cgm-search-icon { width: 15px; height: 15px; color: var(--nt-text-3); }
+:root .cgm-error {
+  background: rgba(var(--nt-danger-rgb), .08);
+  border-color: rgba(var(--nt-danger-rgb), .22);
+  color: var(--nt-danger);
+  border-radius: var(--nt-r-sm);
+}
+
+/* ── §5 AccountSwitcher ──────────────────────────────────────── */
+:root .as-active-badge { width: 14px; height: 14px; background: var(--nt-primary); border-color: var(--nt-surface); }
+:root svg.vx-ico.as-check-icon { width: 9px; height: 9px; color: var(--nt-on-primary); }
+:root svg.vx-ico.as-profile-icon { width: 16px; height: 16px; color: var(--nt-text-2); }
+:root svg.vx-ico.as-profile-arrow { width: 14px; height: 14px; color: var(--nt-text-3); }
+:root svg.vx-ico.wc-add-icon-svg { width: 18px; height: 18px; color: var(--nt-text-3); transition: color 120ms; }
+:root svg.vx-ico.wc-add-icon-svg.open { color: var(--nt-primary); }
+:root .wc-add-label.open { color: var(--nt-primary); }
+:root svg.vx-ico.wc-add-chevron { width: 14px; height: 14px; color: var(--nt-text-3); }
+:root.electron-app svg.vx-ico.wc-add-icon-svg { width: 20px; height: 20px; }
+:root.electron-app svg.vx-ico.wc-add-chevron { width: 16px; height: 16px; }
+:root .wc-account-row.active,
+:root .wc-account-row.active:hover { background: rgba(var(--nt-primary-rgb), .06); }
+
+/* ── §6 移动端页头（消息页带品牌标志） ──────────────────────── */
+:root .m-title--brand { display: inline-flex; align-items: center; gap: 8px; }
+:root .m-title--brand svg.vx-brand-mark { width: 24px; height: 24px; }
+:root .m-topbar-add svg.vx-ico,
+:root .m-topbar-back svg.vx-ico { color: currentColor; }
+
+/* ── §7 桌面空态（WcEmpty）：BrandMark + 两圈淡光环 ───────────── */
+:root .we-empty { gap: 24px; }
+:root .we-empty-mark {
+  position: relative;
+  width: 168px; height: 168px;
+  display: flex; align-items: center; justify-content: center;
+}
+:root .we-empty-ring {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+:root .we-empty-ring--outer {
+  background: radial-gradient(circle, rgba(var(--nt-primary-rgb), .07) 0%, rgba(var(--nt-primary-rgb), .02) 60%, transparent 72%);
+  border: 1px solid rgba(var(--nt-primary-rgb), .07);
+}
+:root .we-empty-ring--inner {
+  inset: 34px;
+  background: var(--nt-surface);
+  border: 1px solid rgba(var(--nt-primary-rgb), .10);
+  box-shadow: var(--nt-shadow-sm);
+}
+:root .we-empty-mark svg.vx-brand-mark.we-empty-brand {
+  position: relative;
+  width: 64px; height: 64px;
+  filter: drop-shadow(0 6px 14px rgba(var(--nt-primary-rgb), .22));
+}
+:root body.dark-mode .we-empty-ring--inner { background: var(--nt-surface); border-color: rgba(var(--nt-primary-rgb), .18); }
+:root .we-empty-title { color: var(--nt-text); }
+:root .we-empty-hint { color: var(--nt-text-3); }
+
+/* ── §8 发现页入口：统一一种浅墨绿底块 ─────────────────────────── */
+:root .wc-discover-icon,
+:root .wc-discover-icon[class*="wc-discover-icon--"] {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: var(--nt-r-sm);
+  background: var(--nt-icon-tile-bg);
+  color: var(--nt-icon-tile-fg);
+  flex-shrink: 0;
+}
+:root .wc-discover-icon svg { width: 20px; height: 20px; }
+:root .wc-discover-icon svg:not(.vx-ico) { fill: currentColor; }
+:root .wc-discover-item { transition: background 120ms; }
+:root .wc-discover-item:hover { background: var(--nt-hover); }
+:root .wc-discover-arrow { color: var(--nt-text-4); }
+
+/* ── §9 空态 / 错误态（StateViews） ─────────────────────────────── */
+:root .wc-state { color: var(--nt-text-2); }
+:root .wc-state-icon { display: flex; align-items: center; justify-content: center; }
+:root .wc-state-icon--tile {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: var(--nt-icon-tile-bg);
+  color: var(--nt-icon-tile-fg);
+  opacity: 1;
+  margin-bottom: 4px;
+}
+:root .wc-state-icon--warn { color: var(--nt-warning); opacity: 1; }
+:root .wc-state-title { color: var(--nt-text); }
+:root .wc-state-desc { color: var(--nt-text-3); }
+:root .wc-state-retry { padding: 8px 20px; }
+
+/* ── §10 横幅：断线重连（警示）/ 已恢复（墨绿）/ 桌面更新（信息） ── */
+:root .wc-net-banner {
+  background: color-mix(in srgb, var(--nt-warning) 14%, var(--nt-surface));
+  color: var(--nt-text);
+  border-bottom: 1px solid color-mix(in srgb, var(--nt-warning) 28%, transparent);
+  box-shadow: none;
+}
+:root .wc-net-banner-dot { background: var(--nt-warning); }
+:root .wc-net-banner.restored {
+  background: color-mix(in srgb, var(--nt-primary) 12%, var(--nt-surface));
+  border-bottom-color: rgba(var(--nt-primary-rgb), .22);
+}
+:root .wc-net-banner.restored .wc-net-banner-dot { background: var(--nt-primary); }
+
+:root .wc-update-banner {
+  background: var(--nt-surface);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r-md);
+  box-shadow: var(--nt-shadow-md);
+  color: var(--nt-text);
+}
+:root .wc-update-icon { display: flex; align-items: center; color: var(--nt-primary); }
+:root .wc-update-icon--warn { color: var(--nt-warning); }
+:root .wc-update-progress-wrap { background: var(--nt-fill-strong); }
+:root .wc-update-progress-bar { background: var(--nt-primary); }
+:root .wc-update-install-btn { padding: 5px 12px; }
+:root .wc-update-dismiss {
+  display: flex; align-items: center; justify-content: center;
+  min-width: 32px; height: 32px;
+  border-radius: var(--nt-r-md);
+  color: var(--nt-text-2);
+}
+:root .wc-update-dismiss:hover { background: var(--nt-fill); color: var(--nt-text); }
+:root .wc-update-check-btn { color: var(--titlebar-fg, var(--nt-text-3)); border-radius: var(--nt-r-sm); }
+:root .wc-update-check-btn:hover { background: var(--nt-fill); color: var(--nt-text); }

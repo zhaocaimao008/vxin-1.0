@@ -10,21 +10,16 @@ struct VxinEmptyState: View {
     var body: some View {
         VStack(spacing: 14) {
             ZStack {
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [Color.vxinBrand.opacity(0.16), Color.vxinBrand.opacity(0.06)],
-                            center: .center, startRadius: 2, endRadius: 44
-                        )
-                    )
-                    .frame(width: 80, height: 80)
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.vxinBrandMuted)
+                    .frame(width: 64, height: 64)
                 Image(systemName: systemImage)
-                    .font(.system(size: 32))
-                    .foregroundColor(.vxinBrand)
+                    .font(.system(size: 28))
+                    .foregroundColor(.vxinLink)
             }
             Text(title)
                 .font(.system(size: VxinFontSize.md, weight: .medium))
-                .foregroundColor(.primary)
+                .foregroundColor(.vxinTextPrimary)
             if let subtitle {
                 Text(subtitle)
                     .font(.footnote)

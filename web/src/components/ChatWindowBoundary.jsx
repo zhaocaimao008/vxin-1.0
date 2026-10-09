@@ -85,7 +85,7 @@ const styles = {
     boxShadow: '0 2px 16px rgba(0,0,0,.08)',
     maxWidth: 320,
   },
-  icon: { fontSize: 36, marginBottom: 12 },
+  icon: { display: 'flex', justifyContent: 'center', marginBottom: 12, color: 'var(--nt-warning, var(--color-warning))' },
   msg: {
     fontSize: 'var(--text-base)',
     color: 'var(--text-secondary, #555)',
@@ -107,12 +107,12 @@ const styles = {
   },
   btn: {
     padding: '8px 20px',
-    borderRadius: 'var(--radius-input)',
+    borderRadius: 'var(--nt-r-md, var(--radius-input))',
     fontSize: 'var(--text-sm2)',
     fontWeight: 500,
     cursor: 'pointer',
     border: 'none',
-    background: 'var(--green)',
-    color: 'var(--text-inverse)',
+    background: 'var(--nt-primary, var(--green))',
+    color: 'var(--nt-on-primary, var(--text-inverse))',
   },
 };

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { IcoClock } from './Icons';
 
 const CATEGORIES = [
   { label: '😊', name: '常用', emojis: ['😊','😂','🤣','❤️','😍','🙏','😭','😘','👍','😅','👏','🔥','🥰','😁','💕','🎉','💪','🤔','😉','👌','🥺','😢','😎','💯','🙌','🤗','😋','😝','🤩','😆','💖','🤞','😤','😡','😱','🥳','😴','🤭','🤫','🥴'] },
@@ -26,7 +27,7 @@ export default function EmojiPicker({ onSelect }) {
   const [recent, setRecent] = useState(loadRecent);
   // 有历史时把「最近」分类置顶，个性化高频表情，比静态「常用」更贴合本人使用
   const cats = recent.length
-    ? [{ label: '🕐', name: '最近', emojis: recent }, ...CATEGORIES]
+    ? [{ label: <IcoClock size={18} />, name: '最近', emojis: recent }, ...CATEGORIES]
     : CATEGORIES;
   // 按分类名选中（而非索引）：新增「最近」置顶时不会错位当前分类
   const [catName, setCatName] = useState(() => getLastCat() || (recent.length ? '最近' : '常用'));

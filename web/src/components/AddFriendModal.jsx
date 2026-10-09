@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { IcoSearchSm } from './Icons';
+import { IcoSearchSm, IcoClose, IcoErrorX, IcoChevronRight } from './Icons';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import Avatar from './Avatar';
@@ -7,7 +7,7 @@ import UserProfile from './UserProfile';
 import useFocusTrap from '../hooks/useFocusTrap';
 import './AddFriendModal.css';
 
-const GREEN = 'var(--green)';
+const GREEN = 'var(--nt-primary)';
 
 function AfResultItem({ user: u, onClick }) {
   return (
@@ -22,9 +22,7 @@ function AfResultItem({ user: u, onClick }) {
           </div>
         )}
       </div>
-      <svg className="afm-result-chevron" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-        <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-      </svg>
+      <IcoChevronRight size={14} className="afm-result-chevron" />
     </div>
   );
 }
@@ -105,9 +103,7 @@ export default function AddFriendModal({ onClose, initialQuery = '' }) {
             <span className="afm-header-title">添加好友</span>
             <button onClick={onClose} aria-label="关闭"
               className="afm-close-btn">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-              </svg>
+              <IcoClose size={18} />
             </button>
           </div>
 
@@ -129,9 +125,7 @@ export default function AddFriendModal({ onClose, initialQuery = '' }) {
               {query && (
                 <button onClick={clearSearch} aria-label="清空"
                   className="afm-clear-btn">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                    <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/>
-                  </svg>
+                  <IcoErrorX size={16} />
                 </button>
               )}
             </div>

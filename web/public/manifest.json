@@ -4,23 +4,42 @@
   "description": "安全、高效的企业级即时通讯",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#F7F7F7",
-  "theme_color": "#07C160",
+  "background_color": "#F5F6F2",
+  "theme_color": "#F5F6F2",
   "orientation": "portrait-primary",
   "lang": "zh-CN",
   "scope": "./",
   "id": "com.vxin.app",
   "icons": [
     {
-      "src": "./icons/icon-192.png",
+      "src": "./icons/icon-192.png?v=20261009b",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "./icons/icon-512.png",
+      "src": "./icons/icon-512.png?v=20261009b",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/maskable-192.png?v=20261009b",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./icons/maskable-512.png?v=20261009b",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./favicon.svg?v=20261009b",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
   "shortcuts": [
@@ -31,8 +50,9 @@
       "url": "./?tab=chat",
       "icons": [
         {
-          "src": "./icons/icon-192.png",
-          "sizes": "192x192"
+          "src": "./icons/icon-192.png?v=20261009b",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     },
@@ -43,8 +63,9 @@
       "url": "./?tab=contacts",
       "icons": [
         {
-          "src": "./icons/icon-192.png",
-          "sizes": "192x192"
+          "src": "./icons/icon-192.png?v=20261009b",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     },
@@ -55,8 +76,9 @@
       "url": "./?tab=moments",
       "icons": [
         {
-          "src": "./icons/icon-192.png",
-          "sizes": "192x192"
+          "src": "./icons/icon-192.png?v=20261009b",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     }

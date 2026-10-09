@@ -22,9 +22,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="v信" />
-    <meta name="theme-color" content="#07C160" />
-    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
-    <link rel="icon" type="image/png" href="./favicon.png" />
+    <meta name="theme-color" content="#F5F6F2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111412" media="(prefers-color-scheme: dark)" />
+    <!-- 品牌图标：由 web/scripts/generate-brand-assets.py 生成；?v= 与 sw.js 的 SW_VERSION 同步，换图标时一起改 -->
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261009b" />
+    <link rel="icon" type="image/png" sizes="64x64" href="./favicon.png?v=20261009b" />
+    <link rel="alternate icon" href="./favicon.ico?v=20261009b" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png?v=20261009b" />
 
     <!-- Critical CSS 内联：首屏必须样式，消除渲染阻塞，FCP ↓ ~200ms -->
     <style>
@@ -37,7 +41,7 @@
                      'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        background: #F7F7F7;
+        background: #F5F6F2;
         color: #111111;
       }
       #root { height: 100%; }
@@ -47,28 +51,26 @@
         position: fixed; inset: 0; z-index: 9999;
         display: flex; flex-direction: column;
         align-items: center; justify-content: center;
-        background: #F7F7F7; gap: 16px;
+        background: #F5F6F2; gap: 16px;
       }
       #app-splash .logo {
-        width: 64px; height: 64px; border-radius: 16px;
-        background: #07C160;
-        display: flex; align-items: center; justify-content: center;
-        box-shadow: 0 8px 24px rgba(7,193,96,.25);
+        width: 72px; height: 72px;
+        filter: drop-shadow(0 10px 24px rgba(23,107,82,.22));
       }
-      #app-splash .logo svg { width: 62%; height: 62%; }
+      #app-splash .logo svg { width: 100%; height: 100%; display: block; }
       #app-splash .spin {
         width: 28px; height: 28px; border-radius: 50%;
-        border: 3px solid rgba(7,193,96,.14);
-        border-top-color: #07C160;
+        border: 3px solid rgba(23,107,82,.14);
+        border-top-color: #176B52;
         animation: appspin .75s linear infinite;
       }
       @keyframes appspin { to { transform: rotate(360deg); } }
 
       /* ── 首屏布局骨架（防止 CLS）── */
       :root {
-        --color-bg: #F7F7F7;
+        --color-bg: #F5F6F2;
         --color-sidebar: #fff;
-        --color-primary: #07C160;
+        --color-primary: #176B52;
         color-scheme: light;
       }
       /* 已知主题偏好（用户在设置里选过 深色/浅色，或跟随系统且系统当前为深色）
@@ -76,13 +78,13 @@
          没有该属性时才回退到 prefers-color-scheme（例如首次访问、清过 localStorage）。 */
       html[data-theme="dark"] { color-scheme: dark; }
       html[data-theme="dark"] body,
-      html[data-theme="dark"] #app-splash { background: #15171A; color: #F2F3F5; }
-      html[data-theme="dark"] #app-splash .spin { border-color: rgba(7,193,96,.18); border-top-color: #2BB86E; }
+      html[data-theme="dark"] #app-splash { background: #111412; color: #ECEFEC; }
+      html[data-theme="dark"] #app-splash .spin { border-color: rgba(46,149,115,.22); border-top-color: #2E9573; }
       @media (prefers-color-scheme: dark) {
         html:not([data-theme="light"]) { color-scheme: dark; }
         html:not([data-theme="light"]) body,
-        html:not([data-theme="light"]) #app-splash { background: #15171A; color: #F2F3F5; }
-        html:not([data-theme="light"]) #app-splash .spin { border-color: rgba(7,193,96,.18); border-top-color: #2BB86E; }
+        html:not([data-theme="light"]) #app-splash { background: #111412; color: #ECEFEC; }
+        html:not([data-theme="light"]) #app-splash .spin { border-color: rgba(46,149,115,.22); border-top-color: #2E9573; }
       }
     </style>
     <script>
@@ -102,19 +104,7 @@
   <body>
     <div id="root">
       <div id="app-splash">
-        <div class="logo" aria-hidden="true">
-          <svg viewBox="0 0 100 100" fill="none">
-            <rect x="47.54" y="48.53" width="43.20" height="33.30" rx="11.30" fill="#07C160"/>
-            <polygon points="85.56,79.69 77.41,78.40 86.41,88.69" fill="#07C160"/>
-            <circle cx="86.41" cy="88.69" r="1.37" fill="#07C160"/>
-            <rect x="7.10" y="17.66" width="66.00" height="50.16" rx="15.05" fill="#fff"/>
-            <polygon points="15.02,64.85 26.31,63.07 13.83,77.32" fill="#fff"/>
-            <circle cx="13.83" cy="77.32" r="1.90" fill="#fff"/>
-            <rect x="49.34" y="50.33" width="39.60" height="29.70" rx="9.50" fill="#fff"/>
-            <polygon points="84.19,78.05 76.66,76.86 84.98,86.37" fill="#fff"/>
-            <circle cx="84.98" cy="86.37" r="1.27" fill="#fff"/>
-          </svg>
-        </div>
+        <div class="logo"><!-- brand:splash:start --><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="23" fill="#176B52"/><rect x="19" y="21" width="62" height="50" rx="19" fill="#FFFFFF"/><path d="M27 59.5 L22.6 79.4 Q22 82.6 24.9 81.1 L45 70 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="1.2" stroke-linejoin="round"/><polyline points="36 36.5 50 56.5 64 36.5" fill="none" stroke="#176B52" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg><!-- brand:splash:end --></div>
         <div class="spin"></div>
       </div>
     </div>

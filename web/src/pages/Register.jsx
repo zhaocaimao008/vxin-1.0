@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { IcoBadge, IcoLock, IcoPhoneIphone, IcoTicket, IcoVisibility, IcoVisibilityOff } from '../components/Icons';
+import { IcoAlert, IcoBadge, IcoLock, IcoPhoneIphone, IcoTicket, IcoVisibility, IcoVisibilityOff } from '../components/Icons';
+import { BrandMark } from '../components/BrandMark';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -105,15 +106,18 @@ export default function Register() {
 
   return (
     <div className="auth-page">
+      {/* 顶部品牌角标（纯视觉，与登录页一致；窄屏左侧品牌栏隐藏时仍可见品牌） */}
+      <div className="auth-top-logo">
+        <span className="auth-top-logo-icon" aria-hidden="true">
+          <BrandMark size={26} />
+        </span>
+        <span className="auth-top-logo-text">v信</span>
+      </div>
       <div className="auth-split">
         <div className="auth-split-left">
           <div className="auth-brand">
             <div className="auth-brand-logo">
-              <svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
-                <rect x="0" y="0" width="100" height="100" rx="22" fill="#0A0A0A"/>
-                <path d="M 31.5 29.3 L 50 64.9 L 68.6 29.3" fill="none" stroke="#FFD700" strokeWidth="12.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx="50" cy="69" r="5.9" fill="#FFD700"/>
-              </svg>
+              <BrandMark size={100} />
             </div>
             <h1 className="auth-brand-name auth-brand-name--brand">v信</h1>
             <p className="auth-brand-desc">连接 · 沟通 · 未来</p>
@@ -181,9 +185,7 @@ export default function Register() {
 
           {error && (
             <div className="auth-error" role="alert">
-              <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
-                <path d="M8 1a7 7 0 100 14A7 7 0 008 1zM7 5h2v4H7V5zm0 5h2v2H7v-2z"/>
-              </svg>
+              <IcoAlert size={16} />
               {error}
             </div>
           )}

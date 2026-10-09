@@ -46,10 +46,12 @@ export default function CallSoundGuide() {
         gap: 8,
         padding: '6px 10px',
         paddingTop: 'calc(6px + env(safe-area-inset-top))', // 移动端避开刘海
-        background: 'rgba(23,29,48,0.95)',
-        color: '#fff',
+        background: 'var(--nt-glass-strong, rgba(255,255,255,.9))',
+        WebkitBackdropFilter: 'var(--nt-blur)',
+        backdropFilter: 'var(--nt-blur)',
+        color: 'var(--text-primary)',
         fontSize: 12,
-        boxShadow: '0 1px 6px rgba(0,0,0,.25)',
+        borderBottom: '1px solid var(--border-default)',
       }}
     >
       <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}><IcoBell size={15} style={{ verticalAlign: '-3px' }} /> 开启来电铃声提醒</span>
@@ -57,7 +59,7 @@ export default function CallSoundGuide() {
         onClick={enable}
         style={{
           border: 'none', borderRadius: 999, padding: '3px 10px', flexShrink: 0,
-          background: '#4C8DFF', color: '#fff', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap',
+          background: 'var(--color-primary)', color: 'var(--text-on-brand)', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap',
         }}
       >
         开启
@@ -66,7 +68,7 @@ export default function CallSoundGuide() {
         onClick={later}
         style={{
           border: 'none', borderRadius: 999, padding: '3px 8px', flexShrink: 0,
-          background: 'transparent', color: 'rgba(255,255,255,0.6)', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap',
+          background: 'transparent', color: 'var(--text-secondary)', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap',
         }}
       >
         暂不

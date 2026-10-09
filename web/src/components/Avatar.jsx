@@ -17,7 +17,7 @@ const COLORS = [
 
 export function getColor(name) {
   let hash = 0;
-  for (let i = 0; i < (name || '').length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  for (let i = 0; i < (name || '').length; i++) hash = (name.charCodeAt(i) + ((hash << 5) - hash)) | 0;
   return COLORS[Math.abs(hash) % COLORS.length];
 }
 

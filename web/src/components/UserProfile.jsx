@@ -7,6 +7,7 @@ import { showToast, showConfirm } from '../utils/toast';
 import { copyToClipboard } from '../utils/clipboard';
 import useFocusTrap from '../hooks/useFocusTrap';
 import { formatLastOnline } from '../utils/time';
+import { IcoClose, IcoChevronRight, IcoUserPlus, IcoCheck, IcoChat, IcoNudge, IcoBlock, IcoTrash } from './Icons';
 
 export default function UserProfile({ userId, onClose, onStartChat, onFriendAdded, onFriendDeleted, onNudge }) {
   const { user: currentUser } = useAuth();
@@ -153,9 +154,7 @@ export default function UserProfile({ userId, onClose, onStartChat, onFriendAdde
             : <div className="up-cover-default" />
           }
           <button className="up-close-btn" onClick={onClose} aria-label="关闭">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-            </svg>
+            <IcoClose size={18} />
           </button>
           <div className="up-avatar-wrap">
             <Avatar src={user.avatar} name={displayName} size={64} style={{ borderRadius: 'var(--radius-bubble-tip)', boxShadow: '0 2px 12px rgba(0,0,0,.3)' }} />
@@ -198,7 +197,7 @@ export default function UserProfile({ userId, onClose, onStartChat, onFriendAdde
             <button type="button" className="up-row" onClick={() => { setRemark(user.remark || ''); setShowRemarkEdit(true); }}>
               <span className="up-row-label">备注名</span>
               <span className="up-row-value">{user.remark || <span style={{ color: 'var(--text-tertiary)' }}>未设置</span>}</span>
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="var(--text-tertiary)"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+              <IcoChevronRight size={14} className="up-row-chevron" />
             </button>
             {user.phone && (
               <div className="up-row">
@@ -235,9 +234,7 @@ export default function UserProfile({ userId, onClose, onStartChat, onFriendAdde
           <div className="up-add-area">
             {addStep === 'idle' && (
               <button className="up-btn-primary up-btn-full" onClick={() => setAddStep('composing')}>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style={{ marginRight: 6 }}>
-                  <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                </svg>
+                <IcoUserPlus size={16} style={{ marginRight: 6 }} />
                 申请添加好友
               </button>
             )}
@@ -264,9 +261,7 @@ export default function UserProfile({ userId, onClose, onStartChat, onFriendAdde
             )}
             {addStep === 'sent' && (
               <div className="up-sent-tip">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--green)" style={{ flexShrink: 0 }}>
-                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                </svg>
+                <IcoCheck size={16} style={{ color: 'var(--nt-primary)' }} />
                 申请已发送，等待对方确认
               </div>
             )}
@@ -277,29 +272,21 @@ export default function UserProfile({ userId, onClose, onStartChat, onFriendAdde
         {user.isFriend && (
           <div className="up-actions">
             <button className="up-action-btn up-action-chat" onClick={startChat}>
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/>
-              </svg>
+              <IcoChat size={20} />
               <span>发消息</span>
             </button>
             {onNudge && userId !== currentUser?.id && (
               <button className="up-action-btn up-action-grey" onClick={() => { onNudge(userId); showToast('已发送拍一拍'); onClose?.(); }}>
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                  <path d="M9 11.24V7.5a2.5 2.5 0 0 1 5 0v3.74c1.21-.81 2-2.18 2-3.74a4 4 0 1 0-8 0c0 1.56.79 2.93 2 3.74zM18.84 15.87l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6a1.5 1.5 0 0 0-3 0v10.74l-3.43-.72a1 1 0 0 0-.99 1.65l3.6 3.44c.28.28.66.44 1.06.44h6.4a2 2 0 0 0 1.98-1.72l.63-4.46c.13-.9-.34-1.79-1.14-2.15z"/>
-                </svg>
+                <IcoNudge size={20} />
                 <span>拍一拍</span>
               </button>
             )}
             <button className={`up-action-btn ${blocked ? 'up-action-warn' : 'up-action-grey'}`} onClick={toggleBlock}>
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9A7.902 7.902 0 014 12zm8 8c-1.85 0-3.55-.63-4.9-1.69l11.21-11.21C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z"/>
-              </svg>
+              <IcoBlock size={20} />
               <span>{blocked ? '已拉黑' : '拉黑'}</span>
             </button>
             <button className="up-action-btn up-action-danger" onClick={deleteFriend}>
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-              </svg>
+              <IcoTrash size={20} />
               <span>删除</span>
             </button>
           </div>

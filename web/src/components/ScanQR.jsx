@@ -127,7 +127,7 @@ export default function ScanQR({ onClose }) {
   return (
     <div className="wc-modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div role="dialog" aria-modal="true" aria-label="扫一扫"
-        style={{ width: 'min(400px, 92vw)', background: 'var(--bg-panel, #fff)', borderRadius: 'var(--radius-lg, 16px)', overflow: 'hidden' }}
+        style={{ width: 'min(400px, 92vw)', background: 'var(--nt-surface, #fff)', border: '1px solid var(--nt-border)', borderRadius: 'var(--nt-r-xl, 20px)', boxShadow: 'var(--nt-shadow-lg)', overflow: 'hidden' }}
         onClick={e => e.stopPropagation()}>
         <div className="wc-modal-header">
           <span className="wc-modal-title">扫一扫</span>
@@ -142,7 +142,7 @@ export default function ScanQR({ onClose }) {
               position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
               pointerEvents: 'none',
             }}>
-              <div style={{ width: '62%', aspectRatio: '1', border: '2px solid rgba(255,255,255,.85)', borderRadius: 12 }} />
+              <div style={{ width: '62%', aspectRatio: '1', border: '2px solid rgba(255,255,255,.85)', borderRadius: 'var(--nt-r-lg, 16px)', boxShadow: '0 0 0 9999px rgba(0,0,0,.35)' }} />
             </div>
             <div style={{ position: 'absolute', bottom: 12, left: 0, right: 0, textAlign: 'center', color: 'rgba(255,255,255,.9)', fontSize: 'var(--text-sm2, 14px)', pointerEvents: 'none' }}>
               将群二维码放入框内
@@ -153,16 +153,16 @@ export default function ScanQR({ onClose }) {
         {(phase === 'preview' || phase === 'joining') && info && (
           <div style={{ padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
             <Avatar src={info.avatar ? mediaUrl(info.avatar) : ''} name={info.name} size={64} style={{ borderRadius: 'var(--radius-lg, 16px)' }} />
-            <div style={{ fontSize: 'var(--text-lg, 18px)', fontWeight: 600, color: 'var(--text-primary, #191919)' }}>{info.name || '群聊'}</div>
-            <div style={{ fontSize: 'var(--text-sm2, 14px)', color: 'var(--text-tertiary, #999)' }}>
+            <div style={{ fontSize: 'var(--text-lg, 18px)', fontWeight: 600, color: 'var(--nt-text, #1C211E)' }}>{info.name || '群聊'}</div>
+            <div style={{ fontSize: 'var(--text-sm2, 14px)', color: 'var(--nt-text-3, #8C938E)' }}>
               {info.memberCount ? `${info.memberCount} 位成员` : '群聊邀请'}
             </div>
             <button
               onClick={confirmJoin}
               disabled={phase === 'joining'}
               style={{
-                marginTop: 6, padding: '10px 40px', border: 'none', borderRadius: 'var(--radius-2xl, 20px)',
-                background: 'var(--green, #07C160)', color: '#fff', fontSize: 'var(--text-base, 15px)',
+                marginTop: 6, padding: '10px 40px', border: 'none', borderRadius: 'var(--nt-r-md, 12px)',
+                background: 'var(--nt-primary, #176B52)', color: 'var(--nt-on-primary, #fff)', fontSize: 'var(--text-base, 15px)',
                 cursor: phase === 'joining' ? 'default' : 'pointer', opacity: phase === 'joining' ? 0.7 : 1,
               }}
             >{phase === 'joining' ? '加入中…' : (info.alreadyMember ? '进入群聊' : '加入群聊')}</button>
@@ -171,12 +171,12 @@ export default function ScanQR({ onClose }) {
 
         {phase === 'error' && (
           <div style={{ padding: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-            <div style={{ fontSize: 'var(--text-md, 16px)', color: 'var(--text-primary, #191919)', textAlign: 'center' }}>{error}</div>
+            <div style={{ fontSize: 'var(--text-md, 16px)', color: 'var(--nt-text, #1C211E)', textAlign: 'center' }}>{error}</div>
             <button
               onClick={() => onClose()}
               style={{
-                padding: '8px 24px', border: 'none', borderRadius: 'var(--radius-2xl, 20px)',
-                background: 'var(--green, #07C160)', color: '#fff', fontSize: 'var(--text-base, 15px)', cursor: 'pointer',
+                padding: '8px 24px', border: 'none', borderRadius: 'var(--nt-r-md, 12px)',
+                background: 'var(--nt-primary, #176B52)', color: 'var(--nt-on-primary, #fff)', fontSize: 'var(--text-base, 15px)', cursor: 'pointer',
               }}
             >关闭</button>
           </div>

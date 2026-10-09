@@ -1,0 +1,21 @@
+{
+  "$comment": "v信 品牌标志唯一几何源（100×100 网格）。BrandMark.jsx 与 web/scripts/generate-brand-assets.py 都只读本文件；改标志只改这里，然后重跑脚本。",
+  "viewBox": 100,
+  "colors": {
+    "ink": "#176B52",
+    "inkDeep": "#0F4F3C",
+    "paper": "#FFFFFF",
+    "canvas": "#F5F6F2"
+  },
+  "tile": { "radius": 23 },
+  "bubble": {
+    "x": 19, "y": 21, "width": 62, "height": 50, "radius": 19,
+    "tail": "M27 59.5 L22.6 79.4 Q22 82.6 24.9 81.1 L45 70 Z"
+  },
+  "v": {
+    "points": "36 36.5 50 56.5 64 36.5",
+    "strokeWidth": 9
+  },
+  "maskableScale": 0.84,
+  "foregroundScale": 0.72
+}

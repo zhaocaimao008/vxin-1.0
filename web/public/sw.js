@@ -6,7 +6,9 @@
  *   - 推送通知 → 本地展示
  * 版本号变更自动触发旧缓存清理
  */
-const SW_VERSION = 'vxin-sw-v6';
+const SW_VERSION = 'vxin-sw-cross-platform-20261010a';
+// 品牌图标版本：与 index.html / manifest.json 里图标 URL 的 ?v= 保持一致（换图标时三处一起改）
+const BRAND_ASSET_VERSION = '20261009b';
 const STATIC_CACHE = `${SW_VERSION}-static`;
 const DYNAMIC_CACHE = `${SW_VERSION}-dynamic`;
 const MAX_DYNAMIC_ENTRIES = 60;
@@ -161,8 +163,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: data.body || '',
-    icon: SW_BASE + 'icon-192.png',
-    badge: SW_BASE + 'icon-192.png',
+    icon: SW_BASE + 'icons/icon-192.png?v=' + BRAND_ASSET_VERSION,
+    badge: SW_BASE + 'icons/icon-192.png?v=' + BRAND_ASSET_VERSION,
     tag: data.conversationId || 'vxin-msg',    // 同会话消息折叠为一条
     renotify: true,
     data: { conversationId: data.conversationId, url: data.url || SW_BASE },

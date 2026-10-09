@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { IcoClose } from './Icons';
+import { IcoClose, IcoPlus } from './Icons';
 import axios from 'axios';
 import { mediaUrl } from '../utils/url';
 import { showToast, showConfirm } from '../utils/toast';
@@ -95,15 +95,16 @@ export default function StickerPanel({ onSend }) {
         <button
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          style={{ fontSize: 'var(--text-sm)', color: 'var(--color-primary)', background: 'rgba(var(--color-primary-rgb),.1)', border: 'none', borderRadius: 'var(--radius-sm)', padding: '3px 10px', cursor: 'pointer' }}>
-          {uploading ? '上传中…' : '＋ 添加'}
+          className="sticker-add-btn"
+          style={{ fontSize: 'var(--text-sm)', color: 'var(--nt-primary)', background: 'var(--nt-primary-soft)', border: 'none', borderRadius: 'var(--nt-r-sm)', padding: '3px 10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+          {uploading ? '上传中…' : <><IcoPlus size={14} strokeWidth={2} /> 添加</>}
         </button>
         <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" style={{ display: 'none' }} onChange={onPick} />
       </div>
       <div className="sticker-grid">
         {loaded && stickers.length === 0 && (
           <div className="sticker-grid-empty">
-            还没有表情<br />点「＋ 添加」上传图片，或长按聊天里的图片「收藏到表情」
+            还没有表情<br />点「添加」上传图片，或长按聊天里的图片「收藏到表情」
           </div>
         )}
         {stickers.map(s => (

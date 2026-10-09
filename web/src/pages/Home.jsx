@@ -5,8 +5,12 @@ import { playIncomingRing, stopIncomingRing } from '../utils/callSound';
 import { startCallVisualAlert, stopCallVisualAlert } from '../utils/callVisualAlert';
 import CallSoundGuide from '../components/CallSoundGuide';
 import './Home.css';
+// 登录后才需要的功能样式随 Home 加载，避免增加登录首屏传输。
+import '../styles/unified-chat.css';
+import '../styles/unified-people.css';
 import axios from 'axios';
 import ChatList from '../components/ChatList';
+import WelcomeActions from '../components/WelcomeActions';
 import ChatWindowBoundary from '../components/ChatWindowBoundary';
 // 非首屏组件懒加载（首屏仅需 ChatList，其余按需加载节省 ~80KB 初始包）
 const ContactList  = lazy(() => import('../components/ContactList'));
@@ -34,43 +38,30 @@ import useFocusTrap from '../hooks/useFocusTrap';
 import { } from '../utils/url';
 import { } from '../utils/rememberedCreds';
 
-function WcEmpty() {
+function WcEmpty({ user, onAddFriend, onCreateGroup }) {
   return (
     <div className="we-empty">
-      {/* v信品牌插画：对话气泡 + 品牌绿圆 */}
-      <svg className="we-empty-svg" viewBox="0 0 120 120" aria-hidden="true" fill="none">
-        {/* 背景大圆 */}
-        <circle cx="60" cy="60" r="56" fill="rgba(7,193,96,.07)" />
-        {/* 主气泡（他人） */}
-        <rect x="16" y="32" width="58" height="34" rx="14" fill="rgba(7,193,96,.14)" />
-        {/* 气泡尾 */}
-        <path d="M30 66l-8 10 18-10z" fill="rgba(7,193,96,.14)" />
-        {/* 气泡内文字线条 */}
-        <rect x="26" y="43" width="32" height="4" rx="2" fill="rgba(7,193,96,.40)" />
-        <rect x="26" y="52" width="22" height="4" rx="2" fill="rgba(7,193,96,.28)" />
-        {/* 我的气泡（右侧） */}
-        <rect x="46" y="66" width="56" height="30" rx="12" fill="#07C160" />
-        {/* 气泡尾 */}
-        <path d="M92 96l8 9-16-9z" fill="#07C160" />
-        {/* 气泡内文字线条 */}
-        <rect x="56" y="75" width="28" height="4" rx="2" fill="rgba(255,255,255,.55)" />
-        <rect x="56" y="84" width="18" height="4" rx="2" fill="rgba(255,255,255,.38)" />
-        {/* 品牌绿圆点装饰 */}
-        <circle cx="96" cy="34" r="6" fill="rgba(7,193,96,.30)" />
-        <circle cx="24" cy="92" r="4" fill="rgba(7,193,96,.20)" />
-      </svg>
+      {/* 品牌空态：BrandMark 居中，外围两圈极淡的墨绿光环（纯 CSS），不加额外插画 */}
+      <div className="we-empty-mark" aria-hidden="true">
+        <span className="we-empty-ring we-empty-ring--outer" />
+        <span className="we-empty-ring we-empty-ring--inner" />
+        <BrandMark size={72} className="we-empty-brand" />
+      </div>
       <div className="we-empty-text">
         <h3 className="we-empty-title">欢迎使用 v信</h3>
-        <p className="we-empty-hint">安全连接每一刻，畅享沟通新体验</p>
+        <p className="we-empty-hint">从一段对话，开启今天的连接</p>
       </div>
+      <WelcomeActions key={user?.id} user={user} onAddFriend={onAddFriend} onCreateGroup={onCreateGroup} />
     </div>
   );
 }
 
 /* ── SVG Icons ── */
-import { IcoAdd, IcoSearch, IcoMoon, IcoSun, visibleTabs, TABS, desktopVisibleTabs } from '../components/TabIcons';
+import { IcoAdd, IcoSearch, IcoMoon, IcoSun, visibleTabs, TABS, desktopVisibleTabs, isDiscoverChild } from '../components/TabIcons';
+import DiscoverHub from '../components/DiscoverHub';
 import { ModalSkeleton } from '../components/ModalSkeleton';
-import { IcoClose } from '../components/Icons';
+import { IcoCheck, IcoClose, IcoChevronLeft, IcoScan, IcoSearchSm, IcoUserPlus, IcoUsers } from '../components/Icons';
+import { BrandMark } from '../components/BrandMark';
 
 const isElectron = !!window.__ELECTRON_CONFIG__;
 
@@ -97,7 +88,7 @@ function CgMemberRow({ contact: c, checked, onToggle }) {
       role="checkbox" tabIndex={0} aria-checked={checked}
       onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onToggle()}>
       <div className={`cg-checkbox${checked ? ' checked' : ''}`}>
-        {checked && <svg className="cg-check-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
+        {checked && <IcoCheck size={null} strokeWidth={2.6} className="cg-check-icon" />}
       </div>
       <Avatar src={c.avatar} name={c.remark || c.username} size={40} className="as-avatar-img" />
       <div className="cg-info">
@@ -173,9 +164,7 @@ function CreateGroupModal({ onClose, onCreated }) {
         <div className="cgm-header">
           <span className="cgm-title">发起群聊</span>
           <button onClick={onClose} className="cgm-close" aria-label="关闭">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-            </svg>
+            <IcoClose size={18} />
           </button>
         </div>
 
@@ -202,7 +191,7 @@ function CreateGroupModal({ onClose, onCreated }) {
                 className="cgm-chip">
                 <Avatar src={c.avatar} name={c.remark || c.username} size={20} className="as-avatar-img" />
                 <span className="cgm-chip-text">{c.remark || c.username}</span>
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="var(--green)"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                <IcoClose size={12} className="cgm-chip-x" />
               </div>
             ))}
           </div>
@@ -210,9 +199,7 @@ function CreateGroupModal({ onClose, onCreated }) {
 
         {/* 联系人搜索 */}
         <div className="cgm-search-bar">
-          <svg className="cgm-search-icon" viewBox="0 0 24 24">
-            <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-          </svg>
+          <IcoSearchSm size={null} className="cgm-search-icon" />
           <input
             value={contactSearch}
             onChange={e => setContactSearch(e.target.value)}
@@ -372,8 +359,9 @@ export default function Home() {
     try {
       new Notification(title, {
         body,
-        icon: icon || '/favicon.ico',
-        badge: '/favicon.ico',
+        // 品牌图标随部署 base（生产 /app/、桌面 ./）解析；?v= 与 index.html / sw.js 同步
+        icon: icon || `${import.meta.env.BASE_URL}icons/icon-192.png?v=20261009b`,
+        badge: `${import.meta.env.BASE_URL}icons/icon-192.png?v=20261009b`,
         tag: title,
         renotify: true,
       });
@@ -565,6 +553,8 @@ export default function Home() {
         return <Suspense fallback={<div className="wc-lazy-pane" />}><CallHistory onOpenChat={isMobile ? handleMobileSelectConv : handleSelectConv} /></Suspense>;
       case 'favorites':
         return <Suspense fallback={<div className="wc-lazy-pane" />}><Collections /></Suspense>;
+      case 'discover':
+        return <DiscoverHub features={features} onOpen={handleTabChange} />;
       case 'profile':
       case 'me':
         return <Profile isMobile={isMobile} />;
@@ -628,13 +618,13 @@ export default function Home() {
         <>
           <div className="home-add-overlay" onClick={closeAddMenu} />
           <div className="home-add-dropdown" style={{ top: addMenuPos.top, right: addMenuPos.right }}>
-            <AddDropItem testid="create-group-entry" icon={<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>}
+            <AddDropItem testid="create-group-entry" icon={<IcoUsers size={18} />}
               label="发起群聊" onClick={handleCreateGroup} />
             <div className="home-add-divider" />
-            <AddDropItem icon={<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>}
+            <AddDropItem icon={<IcoUserPlus size={18} />}
               label="添加朋友" onClick={handleAddFriend} />
             <div className="home-add-divider" />
-            <AddDropItem testid="scan-qr-entry" icon={<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm13-2h3v2h-3v-2zm-5 0h3v3h-2v-1h-1v-2zm5 5h3v3h-3v-3zm-5 0h3v3h-3v-3z"/></svg>}
+            <AddDropItem testid="scan-qr-entry" icon={<IcoScan size={18} />}
               label="扫一扫" onClick={handleScan} />
           </div>
         </>
@@ -667,10 +657,11 @@ export default function Home() {
 
   // ── 移动端布局（宽度 < 768 或原生 App）：底部 TabBar + 全屏页 + 全屏聊天 ──
   if (isMobile) {
-    // 底部栏与桌面侧边栏同源（visibleTabs）：tab 集合与文案保持一致，
-    // 含「收藏」，moments 统一显示「朋友圈」（不再用 M_LABEL 覆盖成「发现」）。
+    // 底部栏：消息 / 通讯录 / 发现 / 我的。动态、通话记录、收藏从「发现」进入，
+    // 进入后底部仍高亮「发现」，顶栏提供返回「发现」的按钮。文案统一取自 TABS。
     const mobileTabs = visibleTabs(features);
     const mLabel = (k) => TABS.find(t => t.key === k)?.label || '';
+    const activeMobileTab = isDiscoverChild(tab) ? 'discover' : tab;
 
     return (
       <HomeFrame>
@@ -689,7 +680,14 @@ export default function Home() {
               {(tab === 'chats' || tab === 'contacts') ? (
                 <>
                   <div className="m-topbar">
-                    <span className="m-title">{mLabel(tab)}</span>
+                    {tab === 'chats' ? (
+                      <span className="m-title m-title--brand">
+                        <BrandMark size={24} className="m-title-mark" />
+                        {mLabel(tab)}
+                      </span>
+                    ) : (
+                      <span className="m-title">{mLabel(tab)}</span>
+                    )}
                     {tab === 'chats' && (
                       <button ref={addBtnRef} className="m-topbar-add" data-testid="add-menu-btn" onClick={toggleAddMenu} aria-label="发起">
                         <IcoAdd />
@@ -705,6 +703,12 @@ export default function Home() {
                 </>
               ) : (
                 <div className="m-topbar">
+                  {isDiscoverChild(tab) && (
+                    <button className="m-topbar-back" data-testid="discover-back" aria-label="返回发现"
+                      onClick={() => handleTabChange('discover')}>
+                      <IcoChevronLeft size={26} />
+                    </button>
+                  )}
                   <span className="m-title">{mLabel(tab)}</span>
                 </div>
               )}
@@ -716,6 +720,7 @@ export default function Home() {
                 ) : tab === 'chats' ? (
                   <ChatList onSelectConv={handleMobileSelectConv} activeConvId={activeConv?.id}
                     unread={unread} searchQuery={search}
+                    welcome={<WelcomeActions key={user?.id} compact user={user} onAddFriend={handleAddFriend} onCreateGroup={handleCreateGroup} />}
                     convRefreshKey={convRefreshKey} onOpenMentions={() => setShowMentions(true)} />
                 ) : renderMain()}
               </div>
@@ -725,8 +730,8 @@ export default function Home() {
               {mobileTabs.map(({ key, Icon, label }) => {
                 const count = badges[key] || 0;
                 return (
-                  <button key={key} data-testid={`nav-tab-${key}`} className={`m-tab${tab === key ? ' active' : ''}`}
-                    role="tab" aria-selected={tab === key} aria-label={label}
+                  <button key={key} data-testid={`nav-tab-${key}`} className={`m-tab${activeMobileTab === key ? ' active' : ''}`}
+                    role="tab" aria-selected={activeMobileTab === key} aria-label={label}
                     onClick={() => handleTabChange(key)}>
                     <span className="m-tab-ico"><Icon /></span>
                     <span className="m-tab-label">{label}</span>
@@ -752,11 +757,7 @@ export default function Home() {
       <div className="wc-sidebar">
         {isElectron ? (
           <div className="wc-sidebar-logo" aria-hidden="true">
-            <svg viewBox="0 0 100 100" fill="none">
-              <rect x="0" y="0" width="100" height="100" rx="22" fill="#0A0A0A"/>
-              <path d="M 31.5 29.3 L 50 64.9 L 68.6 29.3" fill="none" stroke="#FFD700" strokeWidth="12.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <circle cx="50" cy="69" r="5.9" fill="#FFD700"/>
-            </svg>
+            <BrandMark size={34} />
           </div>
         ) : (
           <AccountSwitcher />
@@ -876,7 +877,7 @@ export default function Home() {
                   </Suspense>
                 </ChatWindowBoundary>
               )
-              : <WcEmpty />
+              : <WcEmpty user={user} onAddFriend={handleAddFriend} onCreateGroup={handleCreateGroup} />
             }
           </div>
         )

@@ -1,80 +1,56 @@
-# V信品牌系统
+# v信 品牌系统（2026-10-09 起）
 
-## 目录结构
+标志：墨绿圆角方块 + 白色对话气泡，气泡中是一个墨绿 V（V 与对话气泡合为一体）。
+旧版「黑底金色 V」已全部停用。
+
+## 唯一几何源
+
+`web/src/brand/vxinMark.json`（100×100 网格）。只改这一个文件，然后重新生成：
+
+```bash
+python3 web/scripts/generate-brand-assets.py   # 在仓库根目录执行；用系统 librsvg + cairo + Pillow
+```
+
+- Web / Electron 界面内：`web/src/components/BrandMark.jsx`（`BrandMark` / `BrandLogo`）直接读取同一个 JSON。
+- 位图、ICO、启动画面：由上面的脚本生成，不要手改。
+
+## 颜色
+
+| 用途 | 值 |
+|---|---|
+| 墨绿（标志底 / 主色） | `#176B52` |
+| 白（气泡） | `#FFFFFF` |
+| 暖白（界面背景 / 启动页） | `#F5F6F2` |
+| 深色背景 | `#111412` |
+| 深色主色 | `#2E9573` |
+
+## 目录
 
 ```
 brand/vxin/
-├── svg/                      # 矢量Logo资源
-│   ├── logo.svg             # 深色版Logo (512x512)
-│   ├── logo-256.svg         # 深色版Logo (256x256)
-│   └── logo-light.svg       # 浅色版Logo (512x512)
-│
-├── icons/                    # App Icon资源 (PNG格式)
-│   ├── icon-16.png          # 16x16
-│   ├── icon-32.png          # 32x32
-│   ├── icon-48.png          # 48x48
-│   ├── icon-64.png          # 64x64
-│   ├── icon-72.png          # 72x72
-│   ├── icon-96.png          # 96x96
-│   ├── icon-128.png         # 128x128
-│   ├── icon-144.png         # 144x144
-│   ├── icon-152.png         # 152x152
-│   ├── icon-192.png         # 192x192
-│   ├── icon-256.png         # 256x256
-│   ├── icon-384.png         # 384x384
-│   ├── icon-512.png         # 512x512
-│   ├── icon-1024.png        # 1024x1024 (App Store标准)
-│   ├── icon-*-light.png     # 浅色版 (同上尺寸)
-│
-├── lottie/                   # Lottie动画资源
-│   ├── vxin_intro.json      # 3秒启动动画 (60FPS, <1MB)
-│   └── splash-animation.json # Splash动画
-│
-├── ios/                      # iOS资源
-│   ├── LaunchScreen.storyboard # 启动页
-│   └── icon-1024.png        # App Store图标
-│
-├── android/                  # Android资源
-│   ├── launch_background.xml # 启动背景
-│   └── mipmap-* */ic_launcher.png # 各分辨率图标
-│
-└── windows/                  # Windows/Electron资源
-    ├── splash.html          # 启动动画页面
-    └── icon-1024.png        # 应用图标
+├── svg/
+│   ├── logo.svg / logo-256.svg   圆角方块（默认标志）
+│   ├── logo-light.svg            白底版本（墨绿气泡 + 白 V）
+│   ├── icon-square.svg           满版方形（iOS / apple-touch，系统自行切圆角）
+│   ├── icon-maskable.svg         PWA maskable（图形缩进到 80% 安全圆内）
+│   └── icon-mark.svg             透明底前景（Android 自适应图标前景，背景层用 #176B52）
+├── icons/
+│   ├── icon-{16…1024}.png        圆角方块
+│   ├── legacy-{m…xxxh}dpi.png    Android 旧式图标（48dp）
+│   ├── mark-fg-{m…xxxh}dpi.png   Android 自适应前景（108dp）
+│   ├── icon-square-1024.png      App Store / iOS
+│   ├── maskable-512.png          PWA maskable
+│   └── apple-touch-icon.png      180×180
+├── preview/brand-preview.png     浅色 / 深色背景下各尺寸预览
+├── windows/splash.html           Electron 启动窗口（与 desktop-electron/assets/splash.html 相同）
+├── android/  ios/  lottie/       原生启动资源（本轮未改，仍是旧视觉，见下）
+```
 
-## 品牌规范
+脚本同时写入：`web/public/`（favicon.svg/png/ico、icon*.png、icons/、apple-touch）、
+`web/build/icons/`（web/ 的 electron-builder 图标）、`desktop-electron/assets/`（icon.png / icon-1024.png / icon.ico / splash.html）、
+`web/index.html` 首屏启动标志（`<!-- brand:splash:start/end -->` 之间）。
 
-### 主色调
-- 金色: `#FFD700` (主色), `#FFA500` (辅色), `#FF8C00` (深金)
-- 黑色: `#000000` (背景)
-- 灰色: `#1a1a1a` (聊天气泡), `#CCCCCC` (文字)
+## 注意
 
-### 字体
-- iOS: PingFang SC
-- Android: Noto Sans SC
-- Windows: Microsoft YaHei
-
-### 动画时长
-- 启动动画: 3秒 (180帧, 60FPS)
-- Logo出现: 0.3-0.8秒
-- 文字淡入: 1.0-1.2秒
-
-## 使用说明
-
-### iOS接入
-1. 将 `ios/` 目录下的资源复制到 Xcode 项目
-2. 配置 Lottie-iOS 库播放 `vxin_intro.json`
-3. 设置 `LaunchScreen.storyboard` 为启动页
-
-### Android接入
-1. 将 `android/` 目录下的资源复制到 Android 项目
-2. 配置 Lottie-Android 库播放 `vxin_intro.json`
-3. 使用 `launch_background.xml` 作为启动背景
-
-### Windows接入
-1. 将 `windows/` 目录下的资源复制到 Electron 项目
-2. 使用 `splash.html` 创建启动窗口
-3. 3秒后关闭启动窗口，显示主窗口
-
-## 版本历史
-- v1.0.0 (2026-08-24): 初始品牌系统
+- 更换图标后同步修改 `web/index.html`、`web/public/manifest.json` 里图标 URL 的 `?v=`，以及 `web/public/sw.js` 的 `SW_VERSION` / `BRAND_ASSET_VERSION`。
+- 原生客户端（Windows 安装包、Android APK、iOS）只有重新打包后才会显示新图标。`android/`、`ios/` 原生工程里的 mipmap / AppIcon、`brand/vxin/android`、`brand/vxin/ios`、`brand/vxin/lottie` 本轮没有替换。

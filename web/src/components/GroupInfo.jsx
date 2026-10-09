@@ -6,7 +6,7 @@ import { mediaUrl } from '../utils/url';
 import { showToast, showConfirm } from '../utils/toast';
 import { useConvSettings } from '../hooks/useConvSettings';
 import { GroupAvatar } from './GroupAvatar';
-import { IcoCheck, IcoChevronRight, IcoClose, IcoEdit, IcoPlus } from './Icons';
+import { IcoAlert, IcoCampaign, IcoChatOff, IcoCheck, IcoChevronRight, IcoClose, IcoEdit, IcoPhotoCamera, IcoPlus, IcoSearchSm, IcoShield, IcoUserPlus, IcoUsers, IcoVolumeOff } from './Icons';
 export { GroupAvatar } from './GroupAvatar'; // re-export 向后兼容
 
 /* ── 群头像上传（管理员 hover 显示相机图标） ── */
@@ -37,9 +37,7 @@ function GroupAvatarUpload({ info, isAdmin, uploading, inputRef, onAvatarClick, 
           {uploading
             ? <span className="gi-av-uploading">上传中…</span>
             : <>
-                <svg viewBox="0 0 24 24" className="gi-av-icon">
-                  <path d="M12 15.2A3.2 3.2 0 0 1 8.8 12 3.2 3.2 0 0 1 12 8.8a3.2 3.2 0 0 1 3.2 3.2 3.2 3.2 0 0 1-3.2 3.2M20 4h-3.17L15 2H9L7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/>
-                </svg>
+                <IcoPhotoCamera size={18} className="gi-av-icon" />
                 <span className="gi-av-hint">更换头像</span>
               </>
           }
@@ -494,9 +492,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
         <div className="gi-section gi-section-pad">
           <div className="gi-fcsb" style={{ marginBottom: editAnn ? 8 : 6 }}>
             <div className="gi-fca gi-gap5">
-              <svg viewBox="0 0 24 24" className="gi-s14 gi-fill-warn">
-                <path d="M18 11v2H6v-2h12zm-6-7L6.35 7H4v10h2.35L12 20l5.65-3H20V7h-2.35L12 4zm4 13.02l-4 2.26-4-2.26V9h8v8.02z"/>
-              </svg>
+              <IcoCampaign size={14} className="gi-s14 gi-ann-icon" />
               <span className="gi-sec-tit">群公告</span>
             </div>
             {isAdmin && !editAnn && (
@@ -534,9 +530,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowManage(v => !v); } }}
             >
               <div className="gi-ic30 gi-ic-mg-header">
-                <svg viewBox="0 0 24 24" className="gi-s16 gi-fill-white">
-                  <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l5 2.18V11c0 3.5-2.33 6.79-5 7.93-2.67-1.14-5-4.43-5-7.93V7.18L12 5z"/>
-                </svg>
+                <IcoShield size={16} className="gi-s16" />
               </div>
               <div className="gi-f1">
                 <span className="gi-text14 gi-fw5">群管理</span>
@@ -546,9 +540,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
                   </div>
                 )}
               </div>
-              <svg viewBox="0 0 24 24" className="gi-s14 gi-fill-grey" style={{ transform: showManage ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>
-                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-              </svg>
+              <IcoChevronRight size={14} className="gi-s14 gi-chevron" style={{ transform: showManage ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }} />
             </div>
 
             {showManage && (
@@ -556,7 +548,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
                 {/* 全员禁言 */}
                 <div className="gi-mg-row">
                   <div className="gi-ic28 gi-ic-mg1">
-                    <svg viewBox="0 0 24 24" className="gi-s14 gi-fill-warn"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                    <IcoVolumeOff size={14} className="gi-s14" />
                   </div>
                   <div className="gi-f1">
                     <div className="gi-mg-label">全员禁言</div>
@@ -568,7 +560,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
                 {/* 禁止私聊 */}
                 <div className="gi-mg-row">
                   <div className="gi-ic28 gi-ic-mg2">
-                    <svg viewBox="0 0 24 24" className="gi-s14 gi-fill-green"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                    <IcoChatOff size={14} className="gi-s14" />
                   </div>
                   <div className="gi-f1">
                     <div className="gi-mg-label">禁止私聊</div>
@@ -580,7 +572,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
                 {/* 禁止群成员互相添加好友 */}
                 <div className="gi-mg-row-last">
                   <div className="gi-ic28 gi-ic-mg3">
-                    <svg viewBox="0 0 24 24" className="gi-s14 gi-fill-red"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    <IcoUserPlus size={14} className="gi-s14" />
                   </div>
                   <div className="gi-f1">
                     <div className="gi-mg-label">禁止群成员互相添加好友</div>
@@ -592,7 +584,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
                 {/* 允许普通成员邀请 */}
                 <div className="gi-mg-row-last">
                   <div className="gi-ic28 gi-ic-mg3">
-                    <svg viewBox="0 0 24 24" className="gi-s14 gi-fill-blue"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                    <IcoUsers size={14} className="gi-s14" />
                   </div>
                   <div className="gi-f1">
                     <div className="gi-mg-label">允许普通成员邀请</div>
@@ -610,19 +602,19 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
           <div className="gi-warn">
             {!!info.mute_all && (
               <div className="gi-warn-row">
-                <svg viewBox="0 0 24 24" className="gi-s12 gi-warn-icon"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                <IcoVolumeOff size={12} className="gi-s12 gi-warn-icon" />
                 全员禁言已开启，您当前无法发送消息
               </div>
             )}
             {!!info.no_private_chat && (
               <div className="gi-warn-row">
-                <svg viewBox="0 0 24 24" className="gi-s12 gi-warn-icon"><path d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zm-1 5h2v6h-2zm0 8h2v2h-2z"/></svg>
+                <IcoAlert size={12} className="gi-s12 gi-warn-icon" />
                 禁止私聊已开启，您无法与群成员私信
               </div>
             )}
             {!!info.no_add_friend && (
               <div className="gi-warn-row">
-                <svg viewBox="0 0 24 24" className="gi-s12 gi-warn-icon"><path d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zm-1 5h2v6h-2zm0 8h2v2h-2z"/></svg>
+                <IcoAlert size={12} className="gi-s12 gi-warn-icon" />
                 禁止互加好友已开启，不可通过本群添加群成员为好友
               </div>
             )}
@@ -641,9 +633,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
             {/* 仅管理员显示搜索框（用于快速找人踢出） */}
             {isAdmin && (
               <div className="gi-ml-search">
-                <svg viewBox="0 0 24 24" className="gi-s13 gi-search-icon">
-                  <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-                </svg>
+                <IcoSearchSm size={13} className="gi-s13 gi-search-icon" />
                 <input
                   value={kickSearch}
                   onChange={e => setKickSearch(e.target.value)}
@@ -701,7 +691,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
         <div className="gi-section">
           <div className="gi-row" style={{ cursor: 'pointer' }} role="button" tabIndex={0} onClick={() => onOpenChatFiles?.()} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenChatFiles?.(); } }}>
             <span className="gi-label">聊天文件</span>
-            <svg viewBox="0 0 24 24" className="gi-s14 gi-fill-tertiary"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+            <IcoChevronRight size={14} className="gi-s14 gi-chevron" />
           </div>
           <div className="gi-row">
             <span className="gi-label">消息免打扰</span>
@@ -754,7 +744,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
             ) : (
               <div className="gi-f1 gi-fcsb gi-nk-cp" role="button" tabIndex={0} onClick={() => { setNicknameVal(myNickname || ''); setEditNickname(true); }} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setNicknameVal(myNickname || ''); setEditNickname(true); } }}>
                 <span style={{ fontSize: 'var(--text-base)', color: myNickname ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>{myNickname || '未设置'}</span>
-                <svg viewBox="0 0 24 24" className="gi-s14 gi-fill-tertiary"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                <IcoChevronRight size={14} className="gi-s14 gi-chevron" />
               </div>
             )}
           </div>
@@ -764,7 +754,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
         <div className="gi-qr">
           <div className="gi-qr-row" role="button" tabIndex={0} onClick={loadQR} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); loadQR(); } }}>
             <span className="gi-text14">群二维码</span>
-            <svg viewBox="0 0 24 24" className="gi-s14 gi-chevron"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+            <IcoChevronRight size={14} className="gi-s14 gi-chevron" />
           </div>
         </div>
 
@@ -772,7 +762,7 @@ export default function GroupInfo({ conversation, currentUserId, onClose, onLeav
         <div className="gi-qr">
           <div className="gi-qr-row" role="button" tabIndex={0} onClick={exportChat} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); exportChat(); } }}>
             <span className="gi-text14">导出聊天记录</span>
-            <svg viewBox="0 0 24 24" className="gi-s14 gi-chevron"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+            <IcoChevronRight size={14} className="gi-s14 gi-chevron" />
           </div>
         </div>
 

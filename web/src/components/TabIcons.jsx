@@ -3,71 +3,66 @@
  * 模块级定义 = 引用稳定 = Tab 栏图标不随 Home 重渲染闪烁
  */
 import React from 'react';
+import {
+  IcoChat as ChatGlyph, IcoUsers, IcoSearchSm, IcoPlus, IcoUser, IcoAperture, IcoPhone,
+  IcoStar as StarGlyph, IcoSettings as GearGlyph, IcoMoon as MoonGlyph, IcoSun as SunGlyph, IcoCompass,
+} from './Icons';
 
-export const IcoChat = () => (
-  <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/></svg>
-);
-export const IcoContacts = () => (
-  <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-);
-export const IcoSearch = () => (
-  <svg className="ico-sm" viewBox="0 0 24 24">
-    <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-  </svg>
-);
-export const IcoAdd = () => (
-  <svg className="ico-md" viewBox="0 0 24 24">
-    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-  </svg>
-);
-export const IcoMe = () => (
-  <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-);
-export const IcoMoments = () => (
-  <svg viewBox="0 0 24 24"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
-);
-export const IcoCall = () => (
-  <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-);
-export const IcoStar = () => (
-  <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-);
-/** ⚙ 设置图标（桌面端"设置"tab 专用） */
-export const IcoSettings = () => (
-  <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 00-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-);
+/* 与 Icons.jsx 同一套 24 网格描边图标；size={null} → 尺寸完全由导航/TabBar 的 CSS 决定。
+   导出名与无参调用方式保持不变（<Icon /> 被 Home / ChatList 直接渲染）。 */
+export const IcoChat = () => <ChatGlyph size={null} />;
+export const IcoContacts = () => <IcoUsers size={null} />;
+export const IcoSearch = () => <IcoSearchSm size={null} className="ico-sm" />;
+export const IcoAdd = () => <IcoPlus size={null} className="ico-md" />;
+export const IcoMe = () => <IcoUser size={null} />;
+export const IcoMoments = () => <IcoAperture size={null} />;
+export const IcoCall = () => <IcoPhone size={null} />;
+export const IcoStar = () => <StarGlyph size={null} />;
+/** 设置（桌面端"设置"tab 专用） */
+export const IcoSettings = () => <GearGlyph size={null} />;
+/** 月亮（浅色皮肤时显示，点击切深色） */
+export const IcoMoon = () => <MoonGlyph size={null} />;
+/** 太阳（深色皮肤时显示，点击切浅色） */
+export const IcoSun = () => <SunGlyph size={null} />;
+/** 指南针（移动端「发现」tab） */
+export const IcoDiscover = () => <IcoCompass size={null} />;
 
-/** 🌓 月亮图标（浅色皮肤时显示，点击切深空） */
-export const IcoMoon = () => (
-  <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-);
-/** ☀️ 太阳图标（深空皮肤时显示，点击切浅色） */
-export const IcoSun = () => (
-  <svg viewBox="0 0 24 24"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
-);
-
-/* ── 移动端 Tab（消息/联系人/动态/我的） ── */
+/* ── 全部页面 Tab 定义（标题文案的单一来源）── */
 export const TABS = [
   { key: 'chats',     Icon: IcoChat,     label: '消息' },
-  { key: 'contacts',  Icon: IcoContacts, label: '联系人' },
+  { key: 'contacts',  Icon: IcoContacts, label: '通讯录' },
+  { key: 'discover',  Icon: IcoDiscover, label: '发现' },
   { key: 'moments',   Icon: IcoMoments,  label: '动态',   feature: 'moments' },
-  { key: 'calls',     Icon: IcoCall,     label: '通话' },
+  { key: 'calls',     Icon: IcoCall,     label: '通话记录' },
   { key: 'favorites', Icon: IcoStar,     label: '收藏',   feature: 'collect' },
   { key: 'me',        Icon: IcoMe,       label: '我的' },
 ];
 
-/* ── 桌面端侧边栏导航（消息/联系人/动态/收藏/设置）── */
+/* ── 桌面端侧边栏导航（消息/通讯录/动态/收藏/设置）── */
 export const DESKTOP_TABS = [
   { key: 'chats',     Icon: IcoChat,     label: '消息' },
-  { key: 'contacts',  Icon: IcoContacts, label: '联系人' },
+  { key: 'contacts',  Icon: IcoContacts, label: '通讯录' },
   { key: 'moments',   Icon: IcoMoments,  label: '动态',   feature: 'moments' },
   { key: 'favorites', Icon: IcoStar,     label: '收藏',   feature: 'collect' },
   { key: 'me',        Icon: IcoSettings, label: '设置' },
 ];
 
-const HIDDEN_TABS = new Set();
+/* ── 移动端底部 TabBar（消息/通讯录/发现/我的）──
+   「发现」本身不是新功能，只是动态 / 通话记录 / 收藏这三个已有页面的入口页。 */
+const MOBILE_TAB_KEYS = ['chats', 'contacts', 'discover', 'me'];
+const DISCOVER_KEYS = ['moments', 'calls', 'favorites'];
+const DISCOVER_TONES = { moments: 'moments', calls: 'calls', favorites: 'favorites' };
+
+const enabled = (features) => (t) => !t.feature || features[t.feature] !== false;
+
+export const discoverEntries = (features) =>
+  TABS.filter(t => DISCOVER_KEYS.includes(t.key)).filter(enabled(features))
+    .map(t => ({ ...t, tone: DISCOVER_TONES[t.key] }));
+
+export const isDiscoverChild = (key) => DISCOVER_KEYS.includes(key);
+
 export const visibleTabs = (features) =>
-  TABS.filter(t => !HIDDEN_TABS.has(t.key) && (!t.feature || features[t.feature] !== false));
+  MOBILE_TAB_KEYS.map(k => TABS.find(t => t.key === k)).filter(enabled(features));
 
 export const desktopVisibleTabs = (features) =>
   DESKTOP_TABS.filter(t => !t.feature || features[t.feature] !== false);

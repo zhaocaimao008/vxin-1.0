@@ -1,4 +1,4 @@
-// rememberedCreds.js — 仅保存用户主动选择记住的用户名（手机号）。
+// rememberedCreds.js — 仅保存用户主动选择记住的手机号或 v信号。
 // 密码及其他认证凭证绝不写入 localStorage。
 
 const KEY = 'vxin_remembered_usernames_v1';

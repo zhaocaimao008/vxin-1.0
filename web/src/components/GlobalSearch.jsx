@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
 import Avatar from './Avatar';
 import { GroupAvatar } from './GroupAvatar';
+import { IcoFolder, IcoSearchSm } from './Icons';
 
 const gsHlCls = 'gs-highlight';
 
@@ -156,7 +157,7 @@ export default function GlobalSearch({ query, onSelectConv, onNetworkSearch }) {
     <div className="gs-scroll">
       {/* 会话加载失败提示（此前静默吞掉，导致会话搜索结果为空却无任何反馈） */}
       {convError && (
-        <div role="alert" className="gs-searching" style={{ color: 'var(--color-badge)' }}>
+        <div role="alert" className="gs-searching" style={{ color: 'var(--nt-danger)' }}>
           {convError}
         </div>
       )}
@@ -197,7 +198,7 @@ export default function GlobalSearch({ query, onSelectConv, onNetworkSearch }) {
               onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), openConversation(g))}>
               {g.type === 'filehelper' ? (
                 <div className="gs-filehelper-icon">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="var(--text-inverse)"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                  <IcoFolder size={20} />
                 </div>
               ) : (
                 <GroupAvatar members={g.members || []} avatar={g.avatar} size={42} />
@@ -244,7 +245,7 @@ export default function GlobalSearch({ query, onSelectConv, onNetworkSearch }) {
           className="gs-network-row"
           role="button" tabIndex={0}
           onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onNetworkSearch(query))}>
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--green)" className="gs-network-icon"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <IcoSearchSm size={16} className="gs-network-icon" />
           <span>未找到相关本地结果，去网络搜索添加<span className="gs-highlight">「{query}」</span></span>
         </div>
       )}

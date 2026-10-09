@@ -3,6 +3,7 @@ import { messagePreview } from '../utils/messagePreview';
 import axios from 'axios';
 import Avatar from './Avatar';
 import { GroupAvatar } from './GroupAvatar';
+import { IcoAt, IcoBellOff } from './Icons';
 import { useSocket } from '../contexts/SocketContext';
 import { useAuth } from '../contexts/AuthContext';
 import { format } from '../utils/time';
@@ -12,6 +13,7 @@ import AutoSizer from 'react-virtualized-auto-sizer';
 import { createMessageScope } from '../utils/messageScope';
 import { loadCache, saveCache, removeFromCache, clearCache } from '../utils/msgCache';
 import { readAllDrafts } from '../utils/drafts';
+import { EmptyState, ErrorState } from './StateViews';
 
 const ITEM_HEIGHT = 64;
 
@@ -63,9 +65,7 @@ const ConvRow = memo(function ConvRow({ index, style, data }) {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
             {!!conv.muted && (
-              <svg viewBox="0 0 24 24" style={{ width: 11, height: 11, fill: 'var(--text-tertiary)', flexShrink: 0 }}>
-                <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
-              </svg>
+              <IcoBellOff size={13} className="wc-chat-item-mute-ico" style={{ color: 'var(--text-tertiary)' }} />
             )}
             <span className="wc-chat-item-preview">
               {draft
@@ -110,11 +110,13 @@ function ChatListSkeleton() {
   );
 }
 
-export default function ChatList({ onSelectConv, activeConvId, unread = {}, searchQuery = '', convRefreshKey = 0, onOpenMentions }) {
+export default function ChatList({ onSelectConv, activeConvId, unread = {}, searchQuery = '', convRefreshKey = 0, onOpenMentions, welcome }) {
   const { user } = useAuth();
   const messageScope = useMemo(() => createMessageScope(user?.id, axios.defaults.baseURL || window.location.origin), [user?.id]);
   const [conversations, setConversations] = useState([]);
   const [loaded, setLoaded] = useState(false);   // 首屏是否已拉过一次：未拉完显示骨架，避免闪「暂无聊天」
+  const [loadError, setLoadError] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [ctxMenu, setCtxMenu] = useState(null);
   const [drafts, setDrafts] = useState(() => readAllDrafts(messageScope));
   const [draftScope, setDraftScope] = useState(messageScope);
@@ -156,14 +158,19 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
     return () => window.removeEventListener('draft-changed', onDraftChanged);
   }, [messageScope]);
 
-  const fetchConvs = useCallback(async () => {
-    try {
-      const { data } = await axios.get('/api/messages/conversations');
+  const fetchConvs = useCallback(() => {
+    return axios.get('/api/messages/conversations', { timeout: 15000 }).then(({ data }) => {
       setConversations(data);
-    } finally {
+      setLoadError(false);
+    }).catch(() => {
+      setLoadError(true);
+    }).finally(() => {
       setLoaded(true);   // 无论成功失败都结束骨架态，不卡在加载
-    }
+      setRefreshing(false);
+    });
   }, []);
+
+  const retryConvs = () => { setRefreshing(true); setLoadError(false); fetchConvs(); };
 
   const handleSelectConv = useCallback((conv) => {
     if (conv.manually_unread) {
@@ -331,11 +338,12 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
     setCtxMenu(null);
     if (conv.type === 'group') {
       if (!(await showConfirm(`确认退出群聊「${conv.name}」？`))) return;
-      await axios.post(`/api/messages/conversation/${conv.id}/leave`).catch(() => {});
-    } else {
-      await axios.delete(`/api/messages/conversation/${conv.id}/messages`).catch(() => {});
     }
-    setConversations(prev => prev.filter(c => c.id !== conv.id));
+    try {
+      if (conv.type === 'group') await axios.post(`/api/messages/conversation/${conv.id}/leave`);
+      else await axios.delete(`/api/messages/conversation/${conv.id}/messages`);
+      setConversations(prev => prev.filter(c => c.id !== conv.id));
+    } catch { showToast('操作失败，会话已保留，请重试', 'error'); }
   };
 
   const toggleMarkUnread = async (conv) => {
@@ -348,7 +356,7 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
         await axios.post(`/api/messages/conversation/${conv.id}/mark-unread`);
         setConversations(prev => prev.map(c => c.id === conv.id ? { ...c, manually_unread: 1 } : c));
       }
-    } catch { /* optimistic UI already applied; ignore mark-unread failure */ }
+    } catch { showToast('未能更新未读状态，请重试', 'error'); }
   };
 
   // 会话筛选：全部/未读/联系人/群聊——基于已加载的真实会话数据（type/unread）本地过滤，不发起新请求。
@@ -400,9 +408,7 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
           onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-hover)'; }}
           onMouseLeave={e => { e.currentTarget.style.background = ''; }}
         >
-          <svg viewBox="0 0 24 24" style={{ width: 18, height: 18, fill: 'currentColor', flexShrink: 0 }}>
-            <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
-          </svg>
+          <IcoAt size={18} />
           @我的消息
         </button>
       )}
@@ -423,10 +429,12 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
         </div>
       )}
       <div className="wc-list" style={{ flex: 1 }}>
-        {!loaded && conversations.length === 0 ? (
+        {(!loaded || refreshing) && conversations.length === 0 ? (
           <ChatListSkeleton />
+        ) : loadError && conversations.length === 0 ? (
+          <ErrorState title="聊天列表加载失败" onRetry={retryConvs} />
         ) : filtered.length === 0 ? (
-          <div role="status" style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: 'var(--text-sm2)' }}>暂无聊天</div>
+          (!searchQuery && convFilter === 'all' && welcome) || <EmptyState title={searchQuery ? '没有找到相关聊天' : convFilter === 'unread' ? '暂无未读消息' : convFilter === 'group' ? '暂无群聊' : '暂无聊天'} />
         ) : (
           <AutoSizer>
             {({ height, width }) => (
@@ -447,6 +455,8 @@ export default function ChatList({ onSelectConv, activeConvId, unread = {}, sear
           </AutoSizer>
         )}
       </div>
+      {loaded && !loadError && !searchQuery && convFilter === 'all' && conversations.length > 0 && conversations.every(c => c.type === 'filehelper') && welcome}
+      {loadError && conversations.length > 0 && <ErrorState title="聊天列表暂未更新" desc="已保留当前列表，请检查网络后重试" onRetry={retryConvs} />}
 
       {ctxMenu && (
         <>

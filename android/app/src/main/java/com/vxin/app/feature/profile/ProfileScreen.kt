@@ -41,15 +41,15 @@ private object Tok {
     val XS = 4.dp;  val S = 8.dp;  val M = 12.dp
     val L = 16.dp;  val XL = 20.dp; val XXL = 24.dp
     // colours（对齐全局品牌色 VxinBrand #07C160，不再各屏自定义一套绿）
-    val Green     = VxinBrand
-    val GreenBg   = VxinBrandMuted
-    val Bg        = Color(0xFFF5F5F7)
-    val Primary   = Color(0xFF111111)
-    val Secondary = Color(0xFF8E8E93)
-    val Divider   = Color(0xFFE9E9EC)
-    val CardBg    = Color.White
-    val IconGray  = Color(0xFF2C2C2E)
-    val Red       = Color(0xFFFF3B30)
+    val Green: Color @Composable get() = LocalVxinPalette.current.link
+    val GreenBg: Color @Composable get() = LocalVxinPalette.current.primaryTint
+    val Bg: Color @Composable get() = LocalVxinPalette.current.bg
+    val Primary: Color @Composable get() = LocalVxinPalette.current.text
+    val Secondary: Color @Composable get() = LocalVxinPalette.current.text2
+    val Divider: Color @Composable get() = LocalVxinPalette.current.border
+    val CardBg: Color @Composable get() = LocalVxinPalette.current.surface
+    val IconGray: Color @Composable get() = LocalVxinPalette.current.text2
+    val Red: Color @Composable get() = LocalVxinPalette.current.danger
     // shape
     val cardRadius = 16.dp
     val avatarRadius = 14.dp

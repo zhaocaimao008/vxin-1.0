@@ -1,5 +1,7 @@
 package com.vxin.app.feature.auth
 
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -28,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import com.vxin.app.ui.theme.LocalVxinPalette
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -80,6 +83,8 @@ fun LoginScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(VxinAuthBg)
+            .wrapContentWidth(Alignment.CenterHorizontally)
+            .widthIn(max = 480.dp)
             .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 32.dp, vertical = 24.dp),
@@ -91,15 +96,15 @@ fun LoginScreen(
                 horizontalArrangement = Arrangement.Start,
             ) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = Color.White)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = LocalVxinPalette.current.text)
                 }
             }
         }
         Spacer(Modifier.height(32.dp))
-        // 品牌 Logo：黑金标记（与 Web/iOS 登录页同一套扁平化简版标记，2026-08-24 四端品牌统一）
+        // 品牌 Logo：统一品牌标记（与 Web/iOS 登录页同一套扁平化简版标记，2026-08-24 四端品牌统一）
         VxinLogoMark(modifier = Modifier.size(76.dp))
         Spacer(Modifier.height(16.dp))
-        Text("v信", fontSize = VxinTextSize.displayLg, fontWeight = FontWeight.Bold, color = Color.White)
+        Text("v信", fontSize = VxinTextSize.displayLg, fontWeight = FontWeight.Bold, color = LocalVxinPalette.current.text)
         Spacer(Modifier.height(6.dp))
         Text("连接 · 沟通 · 未来", fontSize = VxinTextSize.base, color = VxinAuthTextSecondary)
         Spacer(Modifier.height(36.dp))
@@ -144,7 +149,7 @@ fun LoginScreen(
                     value = state.vxinId,
                     onValueChange = viewModel::onVxinIdChange,
                     placeholder = "请输入v信号",
-                    keyboardType = KeyboardType.Text,
+                    keyboardType = KeyboardType.Number,
                     testTag = "login-vxin-input",
                 )
             }
@@ -167,7 +172,7 @@ fun LoginScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 VxinRoundCheckbox(checked = rememberPhone, onCheckedChange = { rememberPhone = it }, testTag = "login-remember-checkbox")
                 Spacer(Modifier.width(8.dp))
-                Text("记住手机号", fontSize = VxinTextSize.sm2, color = VxinAuthTextSecondary)
+                Text(if (state.loginMode == LoginMode.PHONE) "记住手机号" else "记住v信号", fontSize = VxinTextSize.sm2, color = VxinAuthTextSecondary)
             }
             TextButton(onClick = onNavigateForgotPassword, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
                 Text("忘记密码?", color = VxinAuthTextSecondary, fontSize = VxinTextSize.sm2)
@@ -188,6 +193,7 @@ fun LoginScreen(
         Button(
             onClick = viewModel::submit,
             enabled = state.canSubmit && agreed,
+            shape = RoundedCornerShape(12.dp),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Transparent,
@@ -203,23 +209,23 @@ fun LoginScreen(
                 Modifier
                     .fillMaxWidth()
                     .height(50.dp)
-                    .clip(RoundedCornerShape(VxinRadius.pill))
-                    .background(VxinAuthSurface)
+                    .clip(RoundedCornerShape(VxinRadius.md))
+                    .background(if (submitEnabled) LocalVxinPalette.current.primary else LocalVxinPalette.current.disabledFill)
                     .border(
                         width = 1.5.dp,
-                        color = if (submitEnabled) VxinAuthGold else VxinAuthBorder,
-                        shape = RoundedCornerShape(VxinRadius.pill),
+                        color = Color.Transparent,
+                        shape = RoundedCornerShape(VxinRadius.md),
                     ),
                 contentAlignment = Alignment.Center,
             ) {
                 if (state.loading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
-                        color = VxinAuthGold,
+                        color = LocalVxinPalette.current.onPrimary,
                         strokeWidth = 2.dp,
                     )
                 } else {
-                    Text("登录", color = if (submitEnabled) VxinAuthGold else VxinAuthPlaceholder, fontWeight = FontWeight.SemiBold)
+                    Text("登录", color = if (submitEnabled) LocalVxinPalette.current.onPrimary else LocalVxinPalette.current.text2, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -251,8 +257,8 @@ fun LoginScreen(
                 label = { Text("服务器地址") },
                 singleLine = true,
                 colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
+                    focusedTextColor = LocalVxinPalette.current.text,
+                    unfocusedTextColor = LocalVxinPalette.current.text,
                     focusedBorderColor = VxinAuthGold,
                     unfocusedBorderColor = VxinAuthBorder,
                     focusedLabelColor = VxinAuthGold,

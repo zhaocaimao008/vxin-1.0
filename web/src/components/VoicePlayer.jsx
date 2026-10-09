@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { isVoicePlayed, markVoicePlayed } from '../utils/playedVoice';
 import { transcribeVoice } from '../utils/transcribe';
 import { showToast } from '../utils/toast';
+import { IcoPause, IcoPlay } from './Icons';
 
 // 模块级单例：同一时间只允许一条语音消息在播放。每个 VoicePlayer 是各自独立的
 // <audio> 实例（无全局播放态协调），此前点开第二条语音时第一条仍在播，两段声音会
@@ -124,14 +125,9 @@ const VoicePlayer = memo(function VoicePlayer({ url, msgId = null, isMine = fals
     <div className="wc-msg-voice-player wc-voice-player">
       <button onClick={togglePlay} className="wc-voice-play-btn" aria-label={playing ? '暂停' : '播放'}>
         {playing ? (
-          <svg viewBox="0 0 24 24" className="wc-voice-play-icon">
-            <rect x="6" y="4" width="4" height="16" rx="1"/>
-            <rect x="14" y="4" width="4" height="16" rx="1"/>
-          </svg>
+          <IcoPause size={15} strokeWidth={2.4} className="wc-voice-play-icon" />
         ) : (
-          <svg viewBox="0 0 24 24" className="wc-voice-play-icon-offset">
-            <path d="M8 5v14l11-7z"/>
-          </svg>
+          <IcoPlay size={15} strokeWidth={2.2} className="wc-voice-play-icon-offset" />
         )}
       </button>
       <div

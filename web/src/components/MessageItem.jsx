@@ -8,7 +8,7 @@ import { showToast } from '../utils/toast';
 import { downloadFile } from '../utils/download';
 import { getAspect, rememberAspect } from '../utils/imgDimCache';
 import { linkify } from '../utils/linkify';
-import { IcoAlert, IcoCheck, IcoFile, IcoRedPacket, IcoTransfer } from './Icons';
+import { IcoAlert, IcoCheck, IcoCheckDouble, IcoFile, IcoPlay, IcoRedPacket, IcoTransfer } from './Icons';
 
 // chat-window 改版：气泡内右下角时间戳只需要 HH:MM，不带日期——formatFull() 对非
 // 当天消息会返回"昨天 HH:MM"/"M月D日 HH:MM"这种带日期的长字符串，塞进气泡角落的小
@@ -25,8 +25,8 @@ function formatBubbleTime(ts) {
 // 图片加载失败占位图（过期/被删的云文件）：灰底 + 可见文字，保证不显示浏览器裂图
 const IMG_BROKEN = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
   "<svg xmlns='http://www.w3.org/2000/svg' width='120' height='90'>" +
-  "<rect width='120' height='90' fill='#f0f0f0'/>" +
-  "<text x='60' y='49' font-size='12' fill='#999' text-anchor='middle'>图片加载失败</text></svg>"
+  "<rect width='120' height='90' fill='#ECEEE9'/>" +
+  "<text x='60' y='49' font-size='12' fill='#8A918C' text-anchor='middle'>图片加载失败</text></svg>"
 );
 
 // Time divider rendered as a list item
@@ -80,27 +80,17 @@ const MessageItem = memo(function MessageItem({ item, cbRef, measure }) {
       showRead ? (
         /* 双勾-已读：绿色 */
         <div className="wc-msg-read wc-msg-status-read" data-testid="msg-read-status" title="已读">
-          <svg className="wc-tick-icon wc-tick-read" viewBox="0 0 18 12" aria-hidden="true">
-            <path d="M1 6l4 4L12 1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            <path d="M6 10l4-9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            <path d="M10 1l6 9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-          </svg>
+          <IcoCheckDouble size={16} className="wc-tick-icon wc-tick-read" />
         </div>
       ) : showDelivered ? (
         /* 双勾-已送达：灰色 */
         <div className="wc-msg-read wc-msg-status-delivered" title="已送达">
-          <svg className="wc-tick-icon wc-tick-delivered" viewBox="0 0 18 12" aria-hidden="true">
-            <path d="M1 6l4 4L12 1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            <path d="M6 10l4-9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            <path d="M10 1l6 9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-          </svg>
+          <IcoCheckDouble size={16} className="wc-tick-icon wc-tick-delivered" />
         </div>
       ) : (
         /* 单勾-已发送 */
         <div className="wc-msg-read wc-msg-status-sent" title="已发送">
-          <svg className="wc-tick-icon wc-tick-sent" viewBox="0 0 12 10" aria-hidden="true">
-            <path d="M1 5l3.5 3.5L11 1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-          </svg>
+          <IcoCheck size={16} className="wc-tick-icon wc-tick-sent" />
         </div>
       )
     ) : null
@@ -148,8 +138,8 @@ const MessageItem = memo(function MessageItem({ item, cbRef, measure }) {
     >
       {multiSelect && (
         <div style={{ display: 'flex', alignItems: 'center', marginRight: 8, flexShrink: 0, alignSelf: 'center' }}>
-          <div style={{ width: 20, height: 20, borderRadius: 'var(--radius-full)', border: `2px solid ${isSelected ? 'var(--green)' : 'var(--border-default)'}`, background: isSelected ? 'var(--green)' : 'var(--text-inverse)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background var(--dur-fast), border-color var(--dur-fast)' }}>
-            {isSelected && <IcoCheck size={14} style={{ color: 'var(--text-inverse)' }} />}
+          <div style={{ width: 20, height: 20, borderRadius: 'var(--radius-full)', border: `2px solid ${isSelected ? 'var(--green)' : 'var(--border-default)'}`, background: isSelected ? 'var(--green)' : 'var(--nt-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background var(--dur-fast), border-color var(--dur-fast)' }}>
+            {isSelected && <IcoCheck size={14} strokeWidth={2.4} style={{ color: 'var(--nt-on-primary)' }} />}
           </div>
         </div>
       )}
@@ -316,9 +306,7 @@ const MessageItem = memo(function MessageItem({ item, cbRef, measure }) {
                     width: 48, height: 48, borderRadius: '50%', background: 'rgba(0,0,0,.5)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <svg viewBox="0 0 24 24" style={{ width: 24, height: 24, fill: '#fff', marginLeft: 3 }}>
-                      <path d="M8 5v14l11-7z"/>
-                    </svg>
+                    <IcoPlay size={24} strokeWidth={2} style={{ color: '#fff', marginLeft: 2 }} />
                   </span>
                 </div>
               );

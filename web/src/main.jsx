@@ -9,6 +9,10 @@ import './design-tokens.css';
 import './index.css';
 import './mobile-adapt.css';
 import './ui-refresh.css';
+// 苹果原生风格主题层：集中定义调色板并映射旧变量，必须最后加载
+import './styles/native-theme.css';
+import './styles/brand-icons.css';
+import './styles/unified-shell.css';
 import { loadRemoteConfig, getConfig } from './utils/config';
 import { isDeprecatedServerUrl } from './utils/url';
 import { initWebVitals } from './utils/webVitals';

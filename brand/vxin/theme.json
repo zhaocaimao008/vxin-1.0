@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "colors": {
+    "light": {
+      "bg": "#F5F6F2",
+      "surface": "#FFFFFF",
+      "surface2": "#FAFAF7",
+      "canvas": "#F7F8F4",
+      "text": "#1C211E",
+      "text2": "#5F6762",
+      "text3": "#8C938E",
+      "border": "#E6E8E2",
+      "primary": "#176B52",
+      "primaryHover": "#125A45",
+      "primaryActive": "#0E4A39",
+      "primaryTint": "#E7F2EC",
+      "onPrimary": "#FFFFFF",
+      "link": "#176B52",
+      "danger": "#D93A30",
+      "badge": "#E5484D",
+      "warning": "#C27A12",
+      "online": "#2FA36F",
+      "bubbleMine": "#DDF0E5",
+      "bubbleMineText": "#15241D",
+      "bubbleOther": "#FFFFFF",
+      "disabledFill": "#C9CDC8"
+    },
+    "dark": {
+      "bg": "#111412",
+      "surface": "#1A1E1C",
+      "surface2": "#161917",
+      "canvas": "#141715",
+      "text": "#ECEFEC",
+      "text2": "#B3BAB5",
+      "text3": "#858D88",
+      "border": "#2A2F2C",
+      "primary": "#2E9573",
+      "primaryHover": "#37A581",
+      "primaryActive": "#2A906D",
+      "primaryTint": "#1D3229",
+      "onPrimary": "#07130D",
+      "link": "#6CC9A6",
+      "danger": "#FF7B72",
+      "badge": "#F2555A",
+      "warning": "#E8A23B",
+      "online": "#3CC08A",
+      "bubbleMine": "#1F4A3B",
+      "bubbleMineText": "#E6F2EC",
+      "bubbleOther": "#232826",
+      "disabledFill": "#3A403C"
+    }
+  },
+  "cssProperties": {
+    "bg": "bg",
+    "surface": "surface",
+    "surface2": "surface-2",
+    "canvas": "canvas",
+    "text": "text",
+    "text2": "text-2",
+    "text3": "text-3",
+    "border": "border-solid",
+    "primary": "primary",
+    "primaryHover": "primary-hover",
+    "primaryActive": "primary-active",
+    "primaryTint": "primary-tint",
+    "onPrimary": "on-primary",
+    "link": "link",
+    "danger": "danger",
+    "badge": "badge",
+    "warning": "warning",
+    "online": "online",
+    "bubbleMine": "bubble-mine",
+    "bubbleMineText": "bubble-mine-text",
+    "bubbleOther": "bubble-other",
+    "disabledFill": "disabled-fill"
+  },
+  "radii": {
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 20
+  },
+  "icon": {
+    "size": 24,
+    "stroke": 1.8
+  },
+  "control": {
+    "height": 52,
+    "touchTarget": 44
+  }
+}

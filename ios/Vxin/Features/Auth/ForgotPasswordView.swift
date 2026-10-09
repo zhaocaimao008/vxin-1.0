@@ -6,30 +6,21 @@ struct ForgotPasswordView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
+        ScrollView {
         VStack(spacing: 16) {
-            Spacer()
+            Spacer(minLength: 24)
 
-            // 品牌 Logo：黑金标记（与登录/注册页一致，2026-08-24 四端品牌统一）
+            // 品牌 Logo：统一品牌标记（与登录/注册页一致，2026-08-24 四端品牌统一）
             VxinLogoMark()
                 .frame(width: 64, height: 64)
                 .padding(.bottom, 4)
             Text("找回密码")
                 .font(.title.bold())
-                .foregroundColor(.white)
+                .foregroundColor(.vxinTextPrimary)
                 .padding(.bottom, 16)
 
-            TextField("", text: $vm.phone, prompt: Text("手机号").foregroundColor(.vxinAuthPlaceholder))
-                .foregroundColor(.white)
-                .tint(.vxinAuthGold)
-                .keyboardType(.phonePad)
-                .padding(8)
-                .overlay(RoundedRectangle(cornerRadius: VxinRadius.sm).stroke(Color.vxinAuthBorder, lineWidth: 1))
-            TextField("", text: $vm.inviteCode, prompt: Text("邀请码（6位数字）").foregroundColor(.vxinAuthPlaceholder))
-                .foregroundColor(.white)
-                .tint(.vxinAuthGold)
-                .keyboardType(.numberPad)
-                .padding(8)
-                .overlay(RoundedRectangle(cornerRadius: VxinRadius.sm).stroke(Color.vxinAuthBorder, lineWidth: 1))
+            VxinAuthField(icon: "iphone", placeholder: "手机号", text: $vm.phone, keyboardType: .phonePad)
+            VxinAuthField(icon: "ticket", placeholder: "邀请码（6位数字）", text: $vm.inviteCode, keyboardType: .numberPad)
             PasswordField(placeholder: "新密码（≥8位，含字母和数字）", text: $vm.resetNewPassword,
                           textContentType: .newPassword)
 
@@ -50,12 +41,15 @@ struct ForgotPasswordView: View {
                                action: vm.resetPassword)
                 .padding(.top, 8)
 
-            Spacer()
+            Spacer(minLength: 24)
         }
         .padding(.horizontal, 32)
+        .frame(maxWidth: 480)
+        .frame(maxWidth: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.vxinAuthBg)
         .toolbarBackground(Color.vxinAuthBg, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
         .navigationTitle("找回密码")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: vm.resetDone) { done in

@@ -33,8 +33,7 @@ const CONFIG_URLS = [...new Set([
   // 网页版自带 <base>/config.json(见 web/public)：同源、随页面一起部署，启动不再等境外 CDN。
   // 站点根目录的 /config.json 保留给自托管部署覆盖。
   ...(SAME_ORIGIN_WEB ? [window.location.origin + BASE_PATH + 'config.json', window.location.origin + '/config.json'] : []),
-  'https://cdn.jsdelivr.net/gh/zhaocaimao008/vxin-config@main/config.json', // 主：GitHub+jsDelivr CDN
-  'https://vxinchat.com/config.json',                                             // 兜底：当前应用服务器
+  'https://liaotian99.com/config.json',                                             // 兜底：当前应用服务器
 ])];
 const CACHE_KEY   = 'vxin_remote_config';
 const CACHE_TS    = 'vxin_remote_config_ts';
@@ -58,7 +57,7 @@ const DEFAULTS = {
 };
 
 // Electron 下远程配置和缓存均失败时的硬编码兜底
-const ELECTRON_FALLBACK = window?.__ELECTRON_CONFIG__ ? 'https://vxinchat.com' : '';
+const ELECTRON_FALLBACK = window?.__ELECTRON_CONFIG__ ? 'https://liaotian99.com' : '';
 
 let _config   = null;
 let _loaded   = false;

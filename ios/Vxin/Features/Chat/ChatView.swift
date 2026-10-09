@@ -527,7 +527,7 @@ struct ChatView: View {
                 }
             }
             .padding(8)
-            .background(Color(.systemBackground).ignoresSafeArea(edges: .bottom))   // 输入栏背景：深色模式自动适配；背景向下延伸到 Home Indicator 区域（内容仍留在 safe area 内）
+            .background(Color.vxinSurface.ignoresSafeArea(edges: .bottom))   // 输入栏背景：深色模式自动适配；背景向下延伸到 Home Indicator 区域（内容仍留在 safe area 内）
 
             if showStickerPanel {
                 stickerEmojiPanel
@@ -620,7 +620,7 @@ struct ChatView: View {
             }
         }
         .frame(height: 150)
-        .background(Color(.secondarySystemBackground))
+        .background(Color.vxinCanvas)
     }
 
     // MARK: - 交互
@@ -1051,21 +1051,17 @@ private struct MessageBubble: View {
     private func card<V: View>(@ViewBuilder _ inner: () -> V) -> some View {
         inner()
             // v信规范：我的=品牌绿渐变+白字；对方=#F2F2F2浅灰+主色字
-            .foregroundColor(isMine ? Color.vxinBubbleText : .primary)
+            .foregroundColor(isMine ? Color.vxinBubbleMineText : .vxinTextPrimary)
             .padding(.horizontal, 14).padding(.vertical, 9)
             .background {
                 if isMine {
                     LinearGradient.vxinBubble
                 } else {
-                    // 对方气泡：规范色 #F2F2F2（暗色模式自动反色）
-                    Color(UIColor { t in t.userInterfaceStyle == .dark
-                        ? UIColor(red: 0.15, green: 0.15, blue: 0.15, alpha: 1)
-                        : UIColor(red: 0.949, green: 0.949, blue: 0.949, alpha: 1) // #F2F2F2
-                    })
+                    Color.vxinBubbleOther
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: VxinRadius.lg))   // 18px
-            .shadow(color: (isMine ? Color.vxinBrand : .black).opacity(isMine ? 0.20 : 0.05),
+            .shadow(color: (isMine ? Color.vxinBrand : .black).opacity(0.04),
                     radius: isMine ? 4 : 2, y: 1)
     }
 

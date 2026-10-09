@@ -5,13 +5,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { useI18n, SUPPORTED_LANGS } from '../contexts/I18nContext';
 import { normalizeServerUrl, testServerConnection } from '../utils/config';
 import {
-  saveRememberedUsername,
   isUsernameRemembered,
   removeRememberedUsername,
-  lastRememberedUsername,
 } from '../utils/rememberedCreds';
+import { initialLoginIdentity, recentAccountIdentity, rememberSuccessfulLogin } from '../utils/loginIdentity';
 import { isDeprecatedServerUrl } from '../utils/url';
-import { IcoBadge, IcoClose, IcoLock, IcoPhoneIphone, IcoVisibility, IcoVisibilityOff } from '../components/Icons';
+import { IcoAlert, IcoBadge, IcoClose, IcoDesktop, IcoExpandMore, IcoLock, IcoMobile, IcoPhoneIphone, IcoServer, IcoVisibility, IcoVisibilityOff } from '../components/Icons';
+import { BrandMark } from '../components/BrandMark';
 import AuthDocuments from '../components/AuthDocuments';
 import { DOWNLOAD_FALLBACK, loadDownloadLinks } from '../utils/downloadLinks';
 import '../styles/login.css';
@@ -19,13 +19,12 @@ import '../styles/login.css';
 const isElectron = !!window.__ELECTRON_CONFIG__;
 
 export default function Login() {
-  // 「记住用户名」：登录页首帧只回填上次勾选记住的手机号，绝不保存或回填密码。
-  const initialPhone = lastRememberedUsername();
-  const [loginMode, setLoginMode] = useState('phone'); // 'phone' or 'vxin'
-  const [phone, setPhone] = useState(initialPhone);
-  const [vxinId, setVxinId] = useState('');
+  const [initialIdentity] = useState(initialLoginIdentity);
+  const [loginMode, setLoginMode] = useState(initialIdentity.mode);
+  const [phone, setPhone] = useState(initialIdentity.mode === 'phone' ? initialIdentity.identifier : '');
+  const [vxinId, setVxinId] = useState(initialIdentity.mode === 'vxin' ? initialIdentity.identifier : '');
   const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(!!initialPhone);
+  const [remember, setRemember] = useState(initialIdentity.remember);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
@@ -33,25 +32,35 @@ export default function Login() {
   const [agreed, setAgreed] = useState(false);
   const [agreeHint, setAgreeHint] = useState(false);
   const [downloads, setDownloads] = useState({ windows: DOWNLOAD_FALLBACK, android: DOWNLOAD_FALLBACK });
+  const [downloadsLoading, setDownloadsLoading] = useState(true);
+  const [downloadAttempt, setDownloadAttempt] = useState(0);
   useEffect(() => {
     if (isElectron) return;
     let active = true;
-    loadDownloadLinks(window.location.origin).then(links => { if (active) setDownloads(links); });
+    loadDownloadLinks(window.location.origin).then(links => {
+      if (active) { setDownloads(links); setDownloadsLoading(false); }
+    });
     return () => { active = false; };
-  }, []);
+  }, [downloadAttempt]);
   const identifierOk = loginMode === 'phone' ? phone : vxinId;
   const { login, accounts, removeAccount, maxAccounts } = useAuth();
   const { lang, setLang } = useI18n();
   const [showLangMenu, setShowLangMenu] = useState(false);
   const navigate = useNavigate();
 
-  // 点击「最近登录」某账户：只回填手机号，密码始终由用户输入。
+  // 历史账户采用展示的 v信号；兼容只有真实手机号的旧记录。
   const fillAccount = (acct) => {
-    const p = acct?.user?.phone || '';
-    setPhone(p);
+    const { mode, identifier } = recentAccountIdentity(acct);
+    setLoginMode(mode);
+    setPhone(mode === 'phone' ? identifier : '');
+    setVxinId(mode === 'vxin' ? identifier : '');
     setPassword('');
-    setRemember(isUsernameRemembered(p));
+    setShowPwd(false);
+    setError('');
+    setRemember(isUsernameRemembered(identifier));
   };
+
+  const changeMode = (mode) => { setLoginMode(mode); setError(''); };
 
   // ── 服务器切换（仅桌面端，登录前即可切换，无需重装） ──
   // 地址来自 localStorage（手动切换）或远程配置（CONFIG_URLS：jsDelivr + vxinchat.com）
@@ -113,10 +122,7 @@ export default function Login() {
         : { loginType: 'vxin', identifier: vxinId, password };
       const { data } = await axios.post('/api/auth/login', payload);
       // 登录成功后按勾选只保存/清除用户名，绝不持久化密码。
-      if (loginMode === 'phone') {
-        if (remember) saveRememberedUsername(phone);
-        else removeRememberedUsername(phone);
-      }
+      rememberSuccessfulLogin(loginMode, loginMode === 'phone' ? phone : vxinId, remember);
       login(data.user, data.token);
       navigate('/');
     } catch (err) {
@@ -129,11 +135,7 @@ export default function Login() {
       {/* 顶部品牌角标（纯视觉，与右上角语言切换同排） */}
       <div className="auth-top-logo">
         <span className="auth-top-logo-icon" aria-hidden="true">
-          <svg viewBox="0 0 100 100" fill="none">
-            <rect x="0" y="0" width="100" height="100" rx="22" fill="#0A0A0A"/>
-            <path d="M 31.5 29.3 L 50 64.9 L 68.6 29.3" fill="none" stroke="#FFD700" strokeWidth="12.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <circle cx="50" cy="69" r="5.9" fill="#FFD700"/>
-          </svg>
+          <BrandMark size={26} />
         </span>
         <span className="auth-top-logo-text">v信</span>
       </div>
@@ -141,7 +143,7 @@ export default function Login() {
       <div className="auth-lang-switch">
         <button type="button" className="auth-lang-btn" onClick={() => setShowLangMenu(v => !v)}>
           {SUPPORTED_LANGS.find(l => l.code === lang)?.name || '简体中文'}
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+          <IcoExpandMore size={14} />
         </button>
         {showLangMenu && (
           <div className="auth-lang-menu" role="menu">
@@ -160,11 +162,7 @@ export default function Login() {
           <div className="auth-split-left-dots" aria-hidden="true" />
           <div className="auth-brand">
             <div className="auth-brand-logo">
-              <svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
-                <rect x="0" y="0" width="100" height="100" rx="22" fill="#0A0A0A"/>
-                <path d="M 31.5 29.3 L 50 64.9 L 68.6 29.3" fill="none" stroke="#FFD700" strokeWidth="12.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx="50" cy="69" r="5.9" fill="#FFD700"/>
-              </svg>
+              <BrandMark size={100} />
             </div>
             <h1 className="auth-brand-name auth-brand-name--brand">v信</h1>
             <p className="auth-brand-desc">连接 · 沟通 · 未来</p>
@@ -172,7 +170,7 @@ export default function Login() {
         </div>
         <div className="auth-split-right">
       <div className="auth-container">
-        <h1 className="auth-brand-name" style={{ fontSize: 24, textAlign: 'center', marginBottom: 6 }}>欢迎登录 <span style={{ color: '#FFD700' }}>v信</span></h1>
+        <h1 className="auth-brand-name" style={{ fontSize: 24, textAlign: 'center', marginBottom: 6 }}>欢迎登录 <span className="auth-brand-accent">v信</span></h1>
         <p className="auth-brand-desc" style={{ textAlign: 'center', marginBottom: 24 }}>安全连接每一刻，畅享沟通新体验</p>
 
         {/* 登录方式切换：手机登录 | v信登录 */}
@@ -180,20 +178,22 @@ export default function Login() {
           <button
             type="button"
             className={`auth-tab ${loginMode === 'phone' ? 'active' : ''}`}
-            onClick={() => setLoginMode('phone')}
+            onClick={() => changeMode('phone')}
+            aria-pressed={loginMode === 'phone'}
           >
             手机登录
           </button>
           <button
             type="button"
             className={`auth-tab ${loginMode === 'vxin' ? 'active' : ''}`}
-            onClick={() => setLoginMode('vxin')}
+            onClick={() => changeMode('vxin')}
+            aria-pressed={loginMode === 'vxin'}
           >
             v信登录
           </button>
         </div>
 
-        {/* 最近登录：点击只回填手机号，密码始终由用户输入。 */}
+        {/* 最近登录只回填账号；密码始终由用户输入。 */}
         {accounts.length > 0 && (
           <div className="auth-accounts">
             <div className="auth-accounts-header">
@@ -206,20 +206,28 @@ export default function Login() {
                   type="button"
                   className="auth-account-btn"
                   onClick={() => fillAccount(account)}
-                  title="填入手机号"
+                  title="使用此账号登录"
                 >
                   <div className="auth-account-avatar">
                     {(account.user?.username || '?')[0].toUpperCase()}
                   </div>
                   <div className="auth-account-info">
                     <span className="auth-account-name">{account.user?.username || '未命名'}</span>
-                    <span className="auth-account-id">v信ID {account.user?.wechat_id || account.user?.phone}</span>
+                    <span className="auth-account-id">{recentAccountIdentity(account).mode === 'vxin' ? 'v信号' : '手机号'} {recentAccountIdentity(account).identifier}</span>
                   </div>
                 </button>
                 <button
                   type="button"
                   className="auth-account-remove"
-                  onClick={() => { removeRememberedUsername(account.user?.phone || ''); removeAccount(account.id); }}
+                  onClick={() => {
+                    removeRememberedUsername(account.user?.phone || '');
+                    removeRememberedUsername(account.user?.wechat_id || '');
+                    const removed = recentAccountIdentity(account);
+                    if (removed.identifier === (loginMode === 'phone' ? phone : vxinId)) {
+                      setPhone(''); setVxinId(''); setPassword(''); setRemember(false);
+                    }
+                    removeAccount(account.id);
+                  }}
                   title="移除记录"
                   aria-label="移除记录"
                 ><IcoClose size={14} /></button>
@@ -244,14 +252,14 @@ export default function Login() {
                   autoComplete="username"
                   placeholder="请输入手机号"
                   value={phone}
-                  onChange={e => setPhone(e.target.value)}
+                  onChange={e => setPhone(e.target.value.trim())}
                   onFocus={() => setFocusedField('phone')}
                   onBlur={() => setFocusedField(null)}
                   required
                 />
                 <span className="auth-field-cc">
                   +86
-                  <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M7 10l5 5 5-5z"/></svg>
+                  <IcoExpandMore size={12} />
                 </span>
               </div>
             </div>
@@ -265,10 +273,11 @@ export default function Login() {
                   data-testid="login-vxin-input"
                   className="auth-field-input"
                   type="text"
+                  inputMode="numeric"
                   autoComplete="username"
                   placeholder="请输入v信号"
                   value={vxinId}
-                  onChange={e => setVxinId(e.target.value)}
+                  onChange={e => setVxinId(e.target.value.trim())}
                   onFocus={() => setFocusedField('vxin')}
                   onBlur={() => setFocusedField(null)}
                   required
@@ -306,9 +315,7 @@ export default function Login() {
 
           {error && (
             <div className="auth-error" role="alert" data-testid="auth-error-text">
-              <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
-                <path d="M8 1a7 7 0 100 14A7 7 0 008 1zM7 5h2v4H7V5zm0 5h2v2H7v-2z"/>
-              </svg>
+              <IcoAlert size={16} />
               {error}
             </div>
           )}
@@ -358,19 +365,19 @@ export default function Login() {
           <div className="auth-download">
             <p className="auth-download-label">下载客户端</p>
             <div className="auth-download-row">
-              <a href={downloads.windows} download={downloads.windows !== DOWNLOAD_FALLBACK} className="auth-download-btn">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
-                  <path d="M3 5.48l7.2-.98v6.96H3V5.48zm0 13.04l7.2.98v-6.86H3v5.88zm8.04 1.09L21 21V12.6h-9.96v6.0zM11.04 3L21 3.6V11.4h-9.96V3z"/>
-                </svg>
+              {downloads.windows ? <a href={downloads.windows} download className="auth-download-btn">
+                <IcoDesktop size={16} />
                 Windows 版
-              </a>
-              <a href={downloads.android} download={downloads.android !== DOWNLOAD_FALLBACK} className="auth-download-btn">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
-                  <path d="M17.6 9.48l1.84-3.18a.39.39 0 00-.14-.53.39.39 0 00-.53.14l-1.86 3.22a11.46 11.46 0 00-9.82 0L5.23 5.91a.39.39 0 00-.53-.14.39.39 0 00-.14.53L6.4 9.48A10.78 10.78 0 001 18h22a10.78 10.78 0 00-5.4-8.52zM7 15.25a1.25 1.25 0 110-2.5 1.25 1.25 0 010 2.5zm10 0a1.25 1.25 0 110-2.5 1.25 1.25 0 010 2.5z"/>
-                </svg>
+              </a> : <button type="button" disabled className="auth-download-btn"><IcoDesktop size={16} />Windows 版{downloadsLoading ? ' · 检查中' : ' · 暂不可用'}</button>}
+              {downloads.android ? <a href={downloads.android} download className="auth-download-btn">
+                <IcoMobile size={16} />
                 Android 版
-              </a>
+              </a> : <button type="button" disabled className="auth-download-btn"><IcoMobile size={16} />Android 版{downloadsLoading ? ' · 检查中' : ' · 暂不可用'}</button>}
             </div>
+            {!downloadsLoading && (!downloads.windows || !downloads.android) && <p className="auth-download-status" role="status">
+              暂未获取到可用安装包，可继续使用网页版。
+              <button type="button" onClick={() => { setDownloadsLoading(true); setDownloadAttempt(n => n + 1); }}>重新检查</button>
+            </p>}
           </div>
         )}
 
@@ -379,9 +386,7 @@ export default function Login() {
           <div className="auth-server">
             {!showServer ? (
               <button type="button" className="auth-server-toggle" onClick={() => setShowServer(true)}>
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style={{ marginRight: 5, verticalAlign: '-2px' }}>
-                  <path d="M4 1h16a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1zm0 8h16a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1v-4a1 1 0 011-1zm2-5a1 1 0 100 2 1 1 0 000-2zm0 8a1 1 0 100 2 1 1 0 000-2z"/>
-                </svg>
+                <IcoServer size={14} style={{ marginRight: 5, verticalAlign: '-2px' }} />
                 当前服务器：{currentServer.replace(/^https?:\/\//, '')} · 切换
               </button>
             ) : (
@@ -397,7 +402,7 @@ export default function Login() {
                   spellCheck={false}
                 />
                 {serverTest && (
-                  <div className="auth-server-result" role="alert" style={{ color: serverTest.ok ? 'var(--green)' : 'var(--color-danger)' }}>
+                  <div className="auth-server-result" role="alert" style={{ color: serverTest.ok ? 'var(--nt-primary)' : 'var(--color-danger)' }}>
                     {serverTest.msg}
                   </div>
                 )}

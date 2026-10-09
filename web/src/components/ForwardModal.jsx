@@ -6,7 +6,7 @@ import { GroupAvatar } from './GroupAvatar';
 import { showToast } from '../utils/toast';
 import useFocusTrap from '../hooks/useFocusTrap';
 import './ForwardModal.css';
-import { IcoClose } from './Icons';
+import { IcoCheck, IcoClose, IcoSearchSm } from './Icons';
 
 export default function ForwardModal({ message, messages, onClose }) {
   // 支持单条(message)与多条(messages)转发；统一成数组处理
@@ -165,9 +165,7 @@ export default function ForwardModal({ message, messages, onClose }) {
         {done ? (
           <div className="fwd-done">
             <div className="fwd-done-ring">
-              <svg viewBox="0 0 24 24" style={{ width: 28, height: 28, fill: 'none', stroke: 'var(--text-inverse)', strokeWidth: 2.5, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
+              <IcoCheck size={28} strokeWidth={2.4} />
             </div>
             <div className="fwd-done-title">转发成功</div>
             <div className="fwd-done-sub">已发送给 <strong>{sentCount}</strong> 个会话</div>
@@ -188,9 +186,7 @@ export default function ForwardModal({ message, messages, onClose }) {
             <div className="fwd-search-wrap">
               <div className="fwd-search">
                 <span className="fwd-search-ico">
-                  <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, fill: 'var(--text-tertiary)' }}>
-                    <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-                  </svg>
+                  <IcoSearchSm size={14} />
                 </span>
                 <input className="fwd-search-inp" placeholder="搜索" value={search} autoFocus onChange={e => setSearch(e.target.value)}
                   aria-label="搜索联系人" />
@@ -218,9 +214,7 @@ export default function ForwardModal({ message, messages, onClose }) {
                 <button type="button" className="fwd-sel-all" onClick={selectAllFriends}>
                   <div className={`fwd-check${allFriendsSelected ? ' checked' : ''}`}>
                     <span className="fwd-check-icon">
-                      <svg viewBox="0 0 24 24" style={{ width: 12, height: 12, fill: 'none', stroke: 'currentColor', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round', color: 'var(--text-inverse)' }}>
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
+                      <IcoCheck size={12} strokeWidth={3} />
                     </span>
                   </div>
                   <span className="fwd-sel-all-txt">全选好友（<em>{filteredFriends.length}</em>人）</span>
@@ -230,9 +224,7 @@ export default function ForwardModal({ message, messages, onClose }) {
                 <button type="button" className="fwd-sel-all" onClick={selectAllGroups}>
                   <div className={`fwd-check${allGroupsSelected ? ' checked' : ''}`}>
                     <span className="fwd-check-icon">
-                      <svg viewBox="0 0 24 24" style={{ width: 12, height: 12, fill: 'none', stroke: 'currentColor', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round', color: 'var(--text-inverse)' }}>
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
+                      <IcoCheck size={12} strokeWidth={3} />
                     </span>
                   </div>
                   <span className="fwd-sel-all-txt">全选群聊（<em>{filteredGroups.length}</em>个）</span>
@@ -244,9 +236,7 @@ export default function ForwardModal({ message, messages, onClose }) {
                 <button type="button" key={f.id} className="fwd-item" onClick={() => toggleFriend(f)}>
                   <div className={`fwd-check${isFriendSelected(f) ? ' checked' : ''}`}>
                     <span className="fwd-check-icon">
-                      <svg viewBox="0 0 24 24" style={{ width: 12, height: 12, fill: 'none', stroke: 'currentColor', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round', color: 'var(--text-inverse)' }}>
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
+                      <IcoCheck size={12} strokeWidth={3} />
                     </span>
                   </div>
                   <Avatar src={f.avatar} name={f.remark || f.username} size={36} />
@@ -264,9 +254,7 @@ export default function ForwardModal({ message, messages, onClose }) {
                 <button type="button" key={g.id} className="fwd-item" onClick={() => toggleGroup(g)}>
                   <div className={`fwd-check${selected.has(g.id) ? ' checked' : ''}`}>
                     <span className="fwd-check-icon">
-                      <svg viewBox="0 0 24 24" style={{ width: 12, height: 12, fill: 'none', stroke: 'currentColor', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round', color: 'var(--text-inverse)' }}>
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
+                      <IcoCheck size={12} strokeWidth={3} />
                     </span>
                   </div>
                   <GroupAvatar members={g.members || []} avatar={g.avatar || g.groupAvatar} size={36} />

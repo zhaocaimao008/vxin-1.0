@@ -11,6 +11,7 @@ import { showToast, showConfirm } from '../utils/toast';
 import { firstLetter, comparePinyin } from '../utils/pinyin';
 import { formatLastOnline } from '../utils/time';
 import { seedOnlineIds } from '../utils/contactsStatus';
+import { IcoUserPlus, IcoUserRequest, IcoUsers, IcoBlock, IcoTag, IcoFolder, IcoChevronRight, IcoChevronLeft, IcoCheck, IcoUser, IcoInfo } from './Icons';
 
 /* ── 主组件 ── */
 export default function ContactList({ onStartChat, searchQuery = '', addFriendRequest = 0, onAddFriendConsumed }) {
@@ -170,33 +171,33 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
           <>
             {/* 功能入口 */}
             <EntryRow
-              icon={<svg viewBox="0 0 24 24" width="18" height="18" fill="var(--text-inverse)"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>}
-              color="var(--icon-bg-newfriend)" label="新的朋友" badge={requests.length}
+              icon={<IcoUserRequest size={18} />}
+              label="新的朋友" badge={requests.length}
               onClick={() => setTab('requests')}
             />
             <EntryRow
-              icon={<svg viewBox="0 0 24 24" width="18" height="18" fill="var(--text-inverse)"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>}
-              color="var(--icon-bg-group)" label="群聊" badge={0}
+              icon={<IcoUsers size={18} />}
+              label="群聊" badge={0}
               onClick={() => setTab('groups')}
             />
             <EntryRow
-              icon={<svg viewBox="0 0 24 24" width="18" height="18" fill="var(--text-inverse)"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>}
-              color="var(--brand-500)" label="添加好友" badge={0}
+              icon={<IcoUserPlus size={18} />}
+              label="添加好友" badge={0}
               onClick={() => setShowAddFriend(true)}
             />
             <EntryRow
-              icon={<svg viewBox="0 0 24 24" width="18" height="18" fill="var(--text-inverse)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>}
-              color="var(--icon-bg-neutral)" label="黑名单" badge={0}
+              icon={<IcoBlock size={18} />}
+              label="黑名单" badge={0}
               onClick={() => { fetchBlocked(); setTab('blocked'); }}
             />
             <EntryRow
-              icon={<svg viewBox="0 0 24 24" width="18" height="18" fill="var(--text-inverse)"><path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16z"/></svg>}
-              color="var(--icon-bg-label)" label="好友标签" badge={0}
+              icon={<IcoTag size={18} />}
+              label="好友标签" badge={0}
               onClick={() => { fetchLabels(); setTab('labels'); }}
             />
             <EntryRow
-              icon={<svg viewBox="0 0 24 24" width="18" height="18" fill="var(--text-inverse)"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>}
-              color="var(--icon-bg-filehelper)" label="文件传输助手" badge={0}
+              icon={<IcoFolder size={18} />}
+              label="文件传输助手" badge={0}
               onClick={async () => {
                 try {
                   const { data } = await axios.get('/api/messages/file-helper');
@@ -229,10 +230,7 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
             )}
             {contactsLoaded && contacts.length === 0 && !searchQuery && (
               <div className="cl-empty" role="status">
-                <svg viewBox="0 0 48 48" width="48" height="48" fill="none" className="cl-empty-icon">
-                  <circle cx="24" cy="20" r="10" fill="var(--gray-150)"/>
-                  <path d="M8 40c0-8.84 7.16-16 16-16s16 7.16 16 16" stroke="var(--gray-300)" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
+                <IcoUser size={48} strokeWidth={1.4} className="cl-empty-icon" />
                 <div className="cl-empty-text">暂无联系人</div>
                 <div className="cl-empty-sub">通过搜索添加好友</div>
                 <button className="cl-add-btn" onClick={() => setShowAddFriend(true)}>+ 添加好友</button>
@@ -265,9 +263,7 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
               <>
                 {requests.length === 0 && (
                   <div className="cl-empty" role="status">
-                    <svg viewBox="0 0 24 24" width="40" height="40" fill="var(--gray-300)" className="cl-empty-icon">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
-                    </svg>
+                    <IcoInfo size={40} strokeWidth={1.4} className="cl-empty-icon" />
                     <div className="cl-empty-text">暂无新申请</div>
                   </div>
                 )}
@@ -356,9 +352,7 @@ export default function ContactList({ onStartChat, searchQuery = '', addFriendRe
                   <div className="wc-contact-item-name">{g.name}</div>
                   <div className="wc-contact-item-sub">{g.memberCount} 人</div>
                 </div>
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="var(--text-tertiary)">
-                  <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-                </svg>
+                <IcoChevronRight size={14} className="cl-entry-arrow" />
               </div>
             ))}
             {groups.length === 0 && (
@@ -514,8 +508,8 @@ function LabelsTab({ labels, contacts, onBack, onUpdate }) {
                 <div className="cl-contact-info">
                   <div className="wc-contact-item-name">{c.remark || c.username}</div>
                 </div>
-                <div className="lt-member-checkbox" style={{ border: `2px solid ${inLabel ? 'var(--green)' : 'var(--divider)'}`, background: inLabel ? 'var(--green)' : 'transparent' }}>
-                  {inLabel && <svg viewBox="0 0 24 24" width="12" height="12" fill="var(--gray-0)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
+                <div className="lt-member-checkbox" style={{ border: `2px solid ${inLabel ? 'var(--nt-primary)' : 'var(--nt-border-strong)'}`, background: inLabel ? 'var(--nt-primary)' : 'transparent', color: 'var(--nt-on-primary)' }}>
+                  {inLabel && <IcoCheck size={12} strokeWidth={2.4} />}
                 </div>
               </div>
             );
@@ -540,8 +534,8 @@ function LabelsTab({ labels, contacts, onBack, onUpdate }) {
       )}
       {labels.map(label => (
         <div key={label.id} className="wc-contact-item">
-          <div className="lt-label-icon-box" style={{ background: label.color || '#07C160' }}>
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="var(--gray-0)"><path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16z"/></svg>
+          <div className="lt-label-icon-box" style={{ background: label.color || '#07C160', color: '#FFFFFF' }}>
+            <IcoTag size={20} />
           </div>
           <div className="cl-contact-info">
             <div className="wc-contact-item-name">{label.name}</div>
@@ -585,12 +579,12 @@ const ContactRow = memo(function ContactRow({ contact: c, online, onOpen }) {
   );
 });
 
-const EntryRow = memo(function EntryRow({ icon, color, label, badge, onClick }) {
+const EntryRow = memo(function EntryRow({ icon, label, badge, onClick }) {
   return (
     <div className="wc-contact-item gi-cp" onClick={onClick}
       role="button" tabIndex={0}
       onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onClick?.(e))}>
-      <div className="cl-entry-icon-box" style={{ background: color }}>
+      <div className="cl-entry-icon-box">
         {icon}
       </div>
       <div className="cl-entry-name">
@@ -601,9 +595,7 @@ const EntryRow = memo(function EntryRow({ icon, color, label, badge, onClick }) 
           {badge}
         </span>
       )}
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="var(--text-tertiary)" className="cl-entry-arrow">
-        <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-      </svg>
+      <IcoChevronRight size={14} className="cl-entry-arrow" />
     </div>
   );
 });
@@ -612,7 +604,7 @@ const SectionHeader = memo(function SectionHeader({ title, onBack }) {
   return (
     <div className="cl-section-header">
       <button onClick={onBack} className="cl-section-back">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg>
+        <IcoChevronLeft size={16} />
         返回
       </button>
       <span className="cl-section-title">{title}</span>

@@ -22,7 +22,7 @@ struct PasswordField: View {
                         .textContentType(textContentType)
                 }
             }
-            .foregroundColor(.white)
+            .foregroundColor(.vxinTextPrimary)
             .tint(.vxinAuthGold)
             .focused($focused)
             .autocorrectionDisabled()
@@ -34,17 +34,21 @@ struct PasswordField: View {
                 // 切换后保持焦点，避免键盘收起
                 focused = true
             } label: {
-                Image(systemName: visible ? "eye.slash" : "eye")
+                Image(systemName: visible ? "eye" : "eye.slash")
                     .foregroundColor(.vxinAuthTextMuted)
+                    .frame(width: 44, height: 44)
             }
             .buttonStyle(.borderless)
             .accessibilityLabel(visible ? "隐藏密码" : "显示密码")
         }
         .padding(.horizontal, 8)
-        .frame(minHeight: 36)
+        .frame(minHeight: 52)
         .background(
-            RoundedRectangle(cornerRadius: VxinRadius.sm)
-                .stroke(Color.vxinAuthBorder, lineWidth: 1)
+            RoundedRectangle(cornerRadius: VxinRadius.md)
+                .fill(Color.vxinSurface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: VxinRadius.md).stroke(focused ? Color.vxinBrand : Color.vxinBorder, lineWidth: 1)
         )
     }
 }

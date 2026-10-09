@@ -1,0 +1,1215 @@
+/* ================================================================
+   v信 · 苹果原生风格主题层（2026-10 UI 改造）
+   ================================================================
+   加载顺序：design-tokens → index → mobile-adapt → ui-refresh → 本文件（最后）
+
+   §0  设计变量 --nt-*（浅色 / 深色两套取值，全站唯一调色板来源）
+   §1  旧变量映射：design-tokens.css 的 --color-* / --bg-* / --text-* …
+       和 Electron 的 --vx-* 全部改为引用 --nt-*，历史组件样式自动跟随
+   §2+ 组件层：只做"写死颜色 / 结构外观"无法靠变量表达的部分
+
+   视觉要点：暖白背景 #F5F6F2、白色面板、墨绿主色 #176B52、炭黑文字、
+   淡绿发送气泡、细边框、轻阴影、柔和圆角、导航与顶栏适量玻璃质感。
+
+   特异度约定：组件规则统一以 :root 前缀（+0,1,0），稳定压过同名的
+   单类历史规则与按需加载的组件 CSS（如 ChatWindow.css），不依赖文件
+   先后顺序，也尽量不用 !important；只在历史规则本身带 !important 时跟进。
+   ================================================================ */
+
+/* ================================================================
+   §0  设计变量
+   ================================================================ */
+:root {
+  /* 背景与表面 */
+  --nt-bg:             #F5F6F2;   /* 暖白应用底 */
+  --nt-surface:        #FFFFFF;   /* 白色面板 */
+  --nt-surface-2:      #FAFAF7;   /* 分组列表 / 侧栏底 */
+  --nt-canvas:         #F7F8F4;   /* 消息画布 */
+  --nt-fill:           rgba(28, 33, 30, .055);  /* 搜索框、输入框底 */
+  --nt-fill-strong:    rgba(28, 33, 30, .09);
+  --nt-hover:          rgba(28, 33, 30, .045);
+  --nt-pressed:        rgba(28, 33, 30, .08);
+  --nt-selected:       rgba(23, 107, 82, .10);
+  --nt-selected-hover: rgba(23, 107, 82, .14);
+
+  /* 线条 */
+  --nt-border:         rgba(28, 33, 30, .08);
+  --nt-border-strong:  rgba(28, 33, 30, .14);
+  --nt-separator:      rgba(28, 33, 30, .07);
+  --nt-border-solid:   #E6E8E2;   /* 需要不透明边框的场合（头像描边等） */
+
+  /* 文字（炭黑层级） */
+  --nt-text:           #1C211E;
+  --nt-text-2:         #5F6762;
+  --nt-text-3:         #8C938E;
+  --nt-text-4:         #B4B9B5;
+  --nt-disabled-fill:  #C9CDC8;   /* 禁用按钮底（其上为白字） */
+
+  /* 主色：墨绿 */
+  --nt-primary:        #176B52;
+  --nt-primary-rgb:    23, 107, 82;
+  --nt-primary-hover:  #125A45;
+  --nt-primary-active: #0E4A39;
+  --nt-primary-soft:   rgba(23, 107, 82, .10);
+  --nt-primary-tint:   #E7F2EC;   /* 不透明浅绿底（角标描边、徽章底等） */
+  --nt-on-primary:     #FFFFFF;
+  --nt-link:           #176B52;
+  --nt-link-hover:     #0E4A39;
+
+  /* 语义色 */
+  --nt-danger:         #D93A30;
+  --nt-danger-rgb:     217, 58, 48;
+  --nt-badge:          #E5484D;
+  --nt-badge-rgb:      229, 72, 77;
+  --nt-warning:        #C27A12;
+  --nt-online:         #2FA36F;
+
+  /* 消息气泡 */
+  --nt-bubble-mine:        #DDF0E5;   /* 淡绿发送气泡 */
+  --nt-bubble-mine-rgb:    221, 240, 229;
+  --nt-bubble-mine-border: rgba(23, 107, 82, .10);
+  --nt-bubble-mine-text:   #15241D;
+  --nt-bubble-mine-meta:   #557A6A;
+  --nt-bubble-mine-link:   #0F5A43;
+  --nt-bubble-other:       #FFFFFF;
+  --nt-bubble-other-border: rgba(28, 33, 30, .07);
+
+  /* 玻璃 */
+  --nt-glass:          rgba(255, 255, 255, .72);
+  --nt-glass-strong:   rgba(255, 255, 255, .86);
+  --nt-glass-bar:      rgba(247, 248, 244, .82);
+  --nt-blur:           saturate(180%) blur(20px);
+
+  /* 阴影（轻） */
+  --nt-shadow-xs: 0 1px 2px rgba(28, 33, 30, .05);
+  --nt-shadow-sm: 0 1px 2px rgba(28, 33, 30, .04), 0 4px 14px rgba(28, 33, 30, .05);
+  --nt-shadow-md: 0 2px 6px rgba(28, 33, 30, .05), 0 12px 32px rgba(28, 33, 30, .08);
+  --nt-shadow-lg: 0 4px 12px rgba(28, 33, 30, .06), 0 24px 56px rgba(28, 33, 30, .14);
+
+  /* 圆角（柔和） */
+  --nt-r-sm: 8px;
+  --nt-r-md: 12px;
+  --nt-r-lg: 16px;
+  --nt-r-xl: 20px;
+
+  /* 导航栏（窄） */
+  --nt-nav-w:          64px;
+  --nt-nav-bg:         rgba(255, 255, 255, .62);
+  --nt-nav-fg:         #7C847F;
+  --nt-nav-fg-hover:   #1C211E;
+
+  color-scheme: light;
+}
+
+:root body.dark-mode {
+  --nt-bg:             #111412;
+  --nt-surface:        #1A1E1C;
+  --nt-surface-2:      #161917;
+  --nt-canvas:         #141715;
+  --nt-fill:           rgba(255, 255, 255, .07);
+  --nt-fill-strong:    rgba(255, 255, 255, .11);
+  --nt-hover:          rgba(255, 255, 255, .05);
+  --nt-pressed:        rgba(255, 255, 255, .09);
+  --nt-selected:       rgba(63, 170, 132, .16);
+  --nt-selected-hover: rgba(63, 170, 132, .22);
+
+  --nt-border:         rgba(255, 255, 255, .08);
+  --nt-border-strong:  rgba(255, 255, 255, .14);
+  --nt-separator:      rgba(255, 255, 255, .06);
+  --nt-border-solid:   #2A2F2C;
+
+  --nt-text:           #ECEFEC;
+  --nt-text-2:         #B3BAB5;
+  --nt-text-3:         #858D88;
+  --nt-text-4:         #5E6661;
+  --nt-disabled-fill:  #3A403C;
+
+  /* 深色主色配深色按钮文字；默认 / 悬停 / 按下状态对比度均 ≥4.5:1。 */
+  --nt-primary:        #2E9573;
+  --nt-primary-rgb:    46, 149, 115;
+  --nt-primary-hover:  #37A581;
+  --nt-primary-active: #2A906D;
+  --nt-primary-soft:   rgba(63, 170, 132, .16);
+  --nt-primary-tint:   #1D3229;
+  --nt-on-primary:     #07130D;
+  --nt-link:           #6CC9A6;
+  --nt-link-hover:     #8FDABD;
+
+  --nt-danger:         #FF7B72;
+  --nt-danger-rgb:     255, 123, 114;
+  --nt-badge:          #F2555A;
+  --nt-badge-rgb:      242, 85, 90;
+  --nt-warning:        #E8A23B;
+  --nt-online:         #3CC08A;
+
+  --nt-bubble-mine:        #1F4A3B;
+  --nt-bubble-mine-rgb:    31, 74, 59;
+  --nt-bubble-mine-border: rgba(108, 201, 166, .12);
+  --nt-bubble-mine-text:   #E6F2EC;
+  --nt-bubble-mine-meta:   #9CC7B5;
+  --nt-bubble-mine-link:   #8FE0BF;
+  --nt-bubble-other:       #232826;
+  --nt-bubble-other-border: rgba(255, 255, 255, .06);
+
+  --nt-glass:          rgba(26, 30, 28, .72);
+  --nt-glass-strong:   rgba(26, 30, 28, .88);
+  --nt-glass-bar:      rgba(20, 23, 21, .84);
+
+  --nt-shadow-xs: 0 1px 2px rgba(0, 0, 0, .30);
+  --nt-shadow-sm: 0 1px 2px rgba(0, 0, 0, .30), 0 4px 14px rgba(0, 0, 0, .24);
+  --nt-shadow-md: 0 2px 6px rgba(0, 0, 0, .30), 0 12px 32px rgba(0, 0, 0, .34);
+  --nt-shadow-lg: 0 4px 12px rgba(0, 0, 0, .34), 0 24px 56px rgba(0, 0, 0, .48);
+
+  --nt-nav-bg:         rgba(26, 30, 28, .70);
+  --nt-nav-fg:         #8E9691;
+  --nt-nav-fg-hover:   #ECEFEC;
+
+  color-scheme: dark;
+}
+
+/* ================================================================
+   §1  旧变量 → 新变量映射
+   选择器列表同时命中 <html>（浅色）与 <body.dark-mode>（深色）：
+   别名在各自元素上重新解析，避免"别名在 :root 已按浅色算死"的继承坑
+   （design-tokens.css §13 注释里记录的同一问题）。
+   ================================================================ */
+:root,
+:root body.dark-mode {
+  /* 品牌色阶（以墨绿为 500） */
+  --brand-50:  #EAF4F0;
+  --brand-100: #D3E9E0;
+  --brand-200: #A7D3C1;
+  --brand-300: #6FB59A;
+  --brand-400: #3A8F72;
+  --brand-500: var(--nt-primary);
+  --brand-600: var(--nt-primary-hover);
+  --brand-700: var(--nt-primary-active);
+  --brand-800: #0A3A2D;
+  --brand-900: #062A20;
+
+  --color-primary:        var(--nt-primary);
+  --color-primary-hover:  var(--nt-primary-hover);
+  --color-primary-active: var(--nt-primary-active);
+  --color-primary-muted:  var(--nt-primary-soft);
+  --color-primary-rgb:    var(--nt-primary-rgb);
+  --color-info:           var(--nt-primary);
+  --color-info-light:     var(--nt-primary-soft);
+  --color-danger:         var(--nt-danger);
+  --color-danger-rgb:     var(--nt-danger-rgb);
+  --color-badge:          var(--nt-badge);
+  --color-badge-rgb:      var(--nt-badge-rgb);
+  --status-online:        var(--nt-online);
+
+  --grad-brand:      linear-gradient(135deg, var(--nt-primary-hover) 0%, var(--nt-primary) 100%);
+  --grad-brand-soft: linear-gradient(135deg, rgba(var(--nt-primary-rgb), .12), rgba(var(--nt-primary-rgb), .06));
+
+  /* 气泡 */
+  --bubble-mine:       var(--nt-bubble-mine);
+  --bubble-mine-rgb:   var(--nt-bubble-mine-rgb);
+  --bubble-mine-text:  var(--nt-bubble-mine-text);
+  --bubble-mine-link:  var(--nt-bubble-mine-link);
+  --bubble-mine-meta:  var(--nt-bubble-mine-meta);
+  --bubble-other:      var(--nt-bubble-other);
+  --bg-msg-mine:       var(--nt-bubble-mine);
+  --bg-msg-other:      var(--nt-bubble-other);
+  --shadow-bubble-mine:  none;
+  --shadow-bubble-other: var(--nt-shadow-xs);
+  --shadow-bubble-other-soft: var(--nt-shadow-xs);
+
+  /* 背景体系 */
+  --bg-app:               var(--nt-bg);
+  --bg-shell:             var(--nt-bg);
+  --bg-page:              var(--nt-bg);
+  --bg-panel:             var(--nt-surface);
+  --bg-panel-header:      var(--nt-surface);
+  --bg-panel-item-hover:  var(--nt-hover);
+  --bg-panel-item-active: var(--nt-selected);
+  --bg-panel-item-active-hover: var(--nt-selected-hover);
+  --bg-chat:              var(--nt-surface);
+  --bg-chat-header:       var(--nt-surface);
+  --bg-messages:          var(--nt-canvas);
+  --bg-messages-canvas:   var(--nt-canvas);
+  --bg-input:             var(--nt-surface);
+  --bg-input-search:      var(--nt-fill);
+  --bg-search:            var(--nt-fill);
+  --bg-card:              var(--nt-surface);
+  --bg-card-hover:        var(--nt-hover);
+  --bg-modal:             var(--nt-surface);
+  --bg-success-tint:      var(--nt-primary-soft);
+  --bg-hover:             var(--nt-hover);
+  --bg-active:            var(--nt-selected);
+  --bg-active-hover:      var(--nt-selected-hover);
+  --bg-pinned:            var(--nt-hover);
+  --bg-primary:           var(--nt-surface);
+  --bg-secondary:         var(--nt-hover);
+
+  /* 横幅 */
+  --info-banner-bg:       var(--nt-primary-soft);
+  --info-banner-bg-soft:  rgba(var(--nt-primary-rgb), .06);
+  --info-banner-fg:       var(--nt-primary);
+  --info-banner-fg-hover: var(--nt-primary-hover);
+  --info-banner-border:   rgba(var(--nt-primary-rgb), .22);
+
+  /* 边框 */
+  --border-subtle:  var(--nt-separator);
+  --border-default: var(--nt-border);
+  --border-medium:  var(--nt-border-strong);
+  --border-strong:  var(--nt-border-strong);
+  --border-focus:   var(--nt-primary);
+  --border-color:   var(--nt-border);
+  --border-light:   var(--nt-separator);
+  --border:         var(--nt-border);
+  --divider:        var(--nt-separator);
+
+  /* 文字 */
+  --text-title:       var(--nt-text);
+  --text-primary:     var(--nt-text);
+  --text-secondary:   var(--nt-text-2);
+  --text-tertiary:    var(--nt-text-3);
+  --text-muted:       var(--nt-text-3);
+  --text-placeholder: var(--nt-text-3);
+  --text-disabled:    var(--nt-text-4);
+  --text-link:        var(--nt-link);
+  --text-link-hover:  var(--nt-link-hover);
+  --text-on-brand:    var(--nt-on-primary);
+
+  /* 兼容别名 */
+  --green:       var(--nt-primary);
+  --green-rgb:   var(--nt-primary-rgb);
+  --green-hover: var(--nt-primary-hover);
+  --link-color:  var(--nt-link);
+  --link:        var(--nt-link);
+
+  /* 圆角：柔和 */
+  --radius-md:     var(--nt-r-md);
+  --radius-lg:     var(--nt-r-lg);
+  --radius-xl:     var(--nt-r-xl);
+  --radius-input:  10px;
+  --radius-button: 10px;
+  --radius-card:   var(--nt-r-lg);
+  --radius-modal:  var(--nt-r-lg);
+  --radius-bubble: 18px;
+
+  /* 阴影 */
+  --shadow-xs: var(--nt-shadow-xs);
+  --shadow-sm: var(--nt-shadow-sm);
+  --shadow-md: var(--nt-shadow-md);
+  --shadow-lg: var(--nt-shadow-lg);
+  --shadow-xl: var(--nt-shadow-lg);
+  --shadow-nav: none;
+  --shadow-btn-primary:       0 1px 2px rgba(var(--nt-primary-rgb), .20), 0 4px 12px rgba(var(--nt-primary-rgb), .16);
+  --shadow-btn-primary-hover: 0 2px 4px rgba(var(--nt-primary-rgb), .22), 0 8px 18px rgba(var(--nt-primary-rgb), .20);
+  --shadow-btn-bubble:        var(--shadow-btn-primary);
+  --ring-primary: 0 0 0 3px rgba(var(--nt-primary-rgb), .18);
+  --ring-danger:  0 0 0 3px rgba(var(--nt-danger-rgb), .18);
+  --elev-modal:   var(--nt-shadow-lg);
+  --elev-dialog:  var(--nt-shadow-lg);
+  --elev-popover: var(--nt-shadow-md);
+  --elev-dropdown: var(--nt-shadow-xs);
+
+  /* 玻璃（index.css「Glass Theme Overrides」把它们压成了不透明白色） */
+  --glass-bg:              var(--nt-glass-strong);
+  --glass-bg-strong:       var(--nt-glass-strong);
+  --glass-bg-input:        var(--nt-glass-strong);
+  --glass-panel-bg:        var(--nt-glass);
+  --glass-panel-bg-strong: var(--nt-surface);
+  --glass-border:          var(--nt-border);
+  --glass-line:            var(--nt-separator);
+  --glass-shadow:          var(--nt-shadow-md);
+  --glass-shadow-soft:     var(--nt-shadow-sm);
+
+  /* 遮罩：轻一些，配合模糊 */
+  --scrim:        rgba(17, 20, 18, .36);
+  --scrim-light:  rgba(17, 20, 18, .26);
+  --bg-overlay:   rgba(17, 20, 18, .32);
+
+  /* 布局：窄导航栏 */
+  --size-nav: var(--nt-nav-w);
+  --nav-w:    var(--nt-nav-w);
+
+  /* 字体：优先苹果系统字体 */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC",
+               "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei",
+               "Segoe UI", sans-serif;
+  --font: var(--font-sans);
+
+  /* Electron 自绘标题栏：与暖白壳层融为一体 */
+  --titlebar-bg:           var(--nt-bg);
+  --titlebar-fg:           var(--nt-text-2);
+  --titlebar-fg-hover:     var(--nt-text);
+  --titlebar-title:        var(--nt-text-3);
+  --titlebar-btn-hover-bg: var(--nt-pressed);
+}
+
+/* Electron 桌面端的 --vx-* 令牌（windows/*.css 与 ui-refresh.css 全部消费它们）。
+   深色写在 body 上：body.dark-mode 处的 --nt-* 已是深色值，var() 就地解析即可，
+   不需要再像 tokens.css 那样借 :has() 在 <html> 上复制一份。 */
+html.electron-app,
+html.electron-app body.dark-mode {
+  --vx-primary:        var(--nt-primary);
+  --vx-primary-hover:  var(--nt-primary-hover);
+  --vx-primary-active: var(--nt-primary-active);
+  --vx-primary-soft:   var(--nt-primary-soft);
+  --vx-primary-rgb:    var(--nt-primary-rgb);
+  --vx-primary-deep:   var(--nt-primary-hover);
+  --vx-primary-deep-2: var(--nt-primary-active);
+
+  --vx-bg:             var(--nt-bg);
+  --vx-bg-secondary:   var(--nt-surface);
+  --vx-surface:        var(--nt-surface);
+  --vx-surface-hover:  var(--nt-hover);
+  --vx-surface-active: var(--nt-selected);
+  --vx-surface-raised: var(--nt-surface);
+  --vx-surface-muted:  var(--nt-fill);
+  --vx-surface-sunken: var(--nt-canvas);
+  --vx-surface-pressed: var(--nt-pressed);
+
+  --vx-text-primary:   var(--nt-text);
+  --vx-text-secondary: var(--nt-text-2);
+  --vx-text-muted:     var(--nt-text-3);
+  --vx-text-disabled:  var(--nt-text-3);
+  --vx-text-inverse:   var(--nt-on-primary);
+  --vx-text-soft:      var(--nt-text);      /* 仅在 Electron 深色规则里作正文色使用 */
+
+  --vx-border:         var(--nt-border);
+  --vx-border-light:   var(--nt-separator);
+  --vx-border-strong:  var(--nt-border-strong);
+  --vx-border-muted:   var(--nt-border);
+  --vx-border-success: var(--nt-selected-hover);
+
+  --vx-danger:         var(--nt-danger);
+  --vx-danger-soft:    rgba(var(--nt-danger-rgb), .08);
+  --vx-danger-border:  rgba(var(--nt-danger-rgb), .22);
+  --vx-success:        var(--nt-primary);
+  --vx-info:           var(--nt-primary);
+  --vx-disabled:       var(--nt-disabled-fill);   /* 禁用态底色（按钮/开关关），与禁用文字色区分 */
+  --vx-badge-success:  var(--nt-online);
+
+  --vx-bubble-mine:         var(--nt-bubble-mine);
+  --vx-bubble-mine-text:    var(--nt-bubble-mine-text);
+  --vx-bubble-other-border: var(--nt-bubble-other-border);
+
+  --vx-hover-overlay:        var(--nt-hover);
+  --vx-hover-overlay-strong: var(--nt-pressed);
+  --vx-focus-ring:           rgba(var(--nt-primary-rgb), .22);
+  --vx-focus-ring-soft:      rgba(var(--nt-primary-rgb), .14);
+  --vx-toast-success-bg:     rgba(var(--nt-primary-rgb), .92);
+
+  --vx-r-md: 10px;
+  --vx-r-lg: 14px;
+  --vx-shadow-sm:     var(--nt-shadow-sm);
+  --vx-shadow-md:     var(--nt-shadow-md);
+  --vx-shadow-dialog: var(--nt-shadow-lg);
+
+  --vx-nav-width:      var(--nt-nav-w);
+  --vx-nav-bg:         var(--nt-nav-bg);
+  --vx-nav-fg:         var(--nt-nav-fg);
+  --vx-nav-fg-hover:   var(--nt-nav-fg-hover);
+  --vx-nav-active:     var(--nt-primary);
+  --vx-nav-active-bg:  var(--nt-primary-soft);
+  --vx-nav-active-bg-hover: var(--nt-selected-hover);
+}
+
+/* ================================================================
+   §2  全局基底
+   ================================================================ */
+:root body {
+  background: var(--nt-bg);
+  color: var(--nt-text);
+}
+:root.electron-app,
+:root.electron-app input,
+:root.electron-app textarea,
+:root.electron-app button,
+:root.electron-app select {
+  font-family: var(--font-sans);
+}
+:root ::selection { background: rgba(var(--nt-primary-rgb), .18); }
+
+/* 滚动条：细、浅，深色下自动跟随 */
+:root ::-webkit-scrollbar-thumb { background: var(--nt-fill-strong); background-clip: padding-box; }
+:root ::-webkit-scrollbar-thumb:hover { background: var(--nt-border-strong); background-clip: padding-box; }
+:root * { scrollbar-color: var(--nt-fill-strong) transparent; }
+
+/* 键盘焦点：统一墨绿描边 */
+:root button:focus-visible,
+:root a:focus-visible,
+:root [role="button"]:focus-visible,
+:root [role="tab"]:focus-visible,
+:root [role="switch"]:focus-visible {
+  outline: 2px solid rgba(var(--nt-primary-rgb), .55);
+  outline-offset: 2px;
+}
+
+/* ================================================================
+   §3  桌面外壳：窄导航栏 + 会话列表 + 聊天主区
+   ================================================================ */
+:root .wc-app,
+:root body.dark-mode .wc-app {
+  background: var(--nt-bg);
+}
+
+/* ── 窄导航栏（玻璃） ── */
+:root .wc-sidebar {
+  width: var(--nt-nav-w);
+  min-width: var(--nt-nav-w);
+  background: var(--nt-nav-bg);
+  -webkit-backdrop-filter: var(--nt-blur);
+  backdrop-filter: var(--nt-blur);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r-xl);
+  box-shadow: var(--nt-shadow-xs);
+}
+:root.electron-app .wc-sidebar {
+  /* Electron 外壳贴边：只保留右侧细线 */
+  border-width: 0 1px 0 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+:root .wc-sidebar-btns { padding: 0 6px; gap: 4px; }
+:root .wc-sidebar-btn {
+  height: 54px;
+  gap: 4px;
+  border-radius: var(--nt-r-md);
+}
+:root .wc-sidebar-btn .icon svg {
+  width: 22px;
+  height: 22px;
+  fill: var(--nt-nav-fg);
+}
+:root .wc-sidebar-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--nt-nav-fg);
+  letter-spacing: 0;
+}
+:root .wc-sidebar-btn:hover { background: var(--nt-hover); }
+:root .wc-sidebar-btn:hover .icon svg { fill: var(--nt-nav-fg-hover); }
+:root .wc-sidebar-btn:hover .wc-sidebar-label { color: var(--nt-nav-fg-hover); }
+:root .wc-sidebar-btn.active,
+:root .wc-sidebar-btn.active:hover { background: var(--nt-primary-soft); }
+:root .wc-sidebar-btn.active .icon svg { fill: var(--nt-primary); }
+:root .wc-sidebar-btn.active .wc-sidebar-label { color: var(--nt-primary); font-weight: 600; }
+/* 苹果风格不用侧边指示条：选中态由浅绿底 + 墨绿图标表达 */
+:root .wc-sidebar-btn.active::before { display: none; }
+:root .wc-sidebar-badge {
+  top: 3px;
+  right: 6px;
+  background: var(--nt-badge);
+  border: 1.5px solid var(--nt-surface);
+  box-shadow: none;
+}
+:root .wc-skin-toggle { color: var(--nt-nav-fg); }
+:root .wc-sidebar-avatar-inner { background: var(--grad-brand); }
+/* 品牌标志（BrandMark）尺寸与浮起感见 brand-icons.css §5 */
+
+/* ── 会话列表面板 ── */
+:root .wc-panel {
+  background: var(--nt-surface);
+  border: 1px solid var(--nt-border) !important;
+  border-radius: var(--nt-r-xl);
+  box-shadow: var(--nt-shadow-sm);
+}
+:root body.dark-mode .wc-panel { background: var(--nt-surface) !important; border-color: var(--nt-border) !important; }
+:root.electron-app .wc-panel {
+  border-width: 0 1px 0 0 !important;
+  border-radius: 0;
+  box-shadow: none;
+}
+:root .wc-panel-topbar {
+  height: 56px;
+  padding: 0 10px 0 12px;
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  box-shadow: none;
+}
+:root body.dark-mode .wc-panel-topbar { background: transparent !important; border-color: transparent !important; }
+
+/* 搜索框：苹果式浅灰填充圆角 */
+:root .wc-search {
+  height: 34px;
+  padding: 0 10px;
+  gap: 6px;
+  background: var(--nt-fill);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  box-shadow: none;
+}
+:root .wc-search:focus-within {
+  background: var(--nt-surface);
+  border-color: rgba(var(--nt-primary-rgb), .35);
+  box-shadow: var(--ring-primary);
+}
+:root .wc-search-icon { color: var(--nt-text-3); }
+:root .wc-search input { color: var(--nt-text); font-size: 13px; }
+:root .wc-search input::placeholder { color: var(--nt-text-3); }
+
+:root .wc-icon-btn {
+  min-width: 34px;
+  min-height: 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--nt-text-2);
+}
+:root .wc-icon-btn:hover:not(:disabled) {
+  background: var(--nt-primary-soft);
+  color: var(--nt-primary);
+  transform: none;
+}
+
+/* 会话筛选标签 */
+:root .wc-conv-filter-tab.active { background: var(--nt-primary-soft); color: var(--nt-primary); }
+
+/* ── 会话条目：圆角选中块，无硬分隔线 ── */
+:root .wc-chat-item {
+  margin: 1px 8px;
+  padding: 0 10px;
+  border-radius: var(--nt-r-md);
+  border: none;
+}
+:root .wc-chat-item:not(.active) + .wc-chat-item:not(.active) { border-top: none; }
+:root.electron-app .wc-chat-item { border-bottom: none; }
+:root.electron-app .wc-chat-item.active::after { display: none; }
+:root .wc-chat-item.pinned:not(.active) { background: rgba(var(--nt-primary-rgb), .035) !important; }
+:root .wc-chat-item.pinned:not(.active):hover { background: var(--nt-hover) !important; }
+:root .wc-chat-item.pinned:not(.active)::before { display: none; }
+:root .wc-chat-item-name { color: var(--nt-text); font-weight: 500; }
+:root .wc-chat-item.active .wc-chat-item-name { color: var(--nt-text); font-weight: 600; }
+:root .wc-chat-item-time { color: var(--nt-text-3); }
+:root .wc-chat-item-preview,
+:root .wc-chat-item.active .wc-chat-item-preview,
+:root .wc-chat-item.active .wc-chat-item-time { color: var(--nt-text-2); }
+:root .wc-chat-item-badge {
+  background: var(--nt-badge);
+  border: 2px solid var(--nt-surface);
+  box-shadow: none;
+}
+:root .wc-chat-item.active .wc-chat-item-badge { background: var(--nt-primary); border-color: var(--nt-primary-tint); }
+:root .wc-chat-item-badge.muted { background: var(--nt-text-4); }
+:root .wc-chat-item-mention { color: var(--nt-primary); }
+:root .wc-chat-item-draft { color: var(--nt-badge); }
+:root .wc-online-dot { background: var(--nt-online); border-color: var(--nt-surface); box-shadow: none; }
+
+/* ── 聊天主区：白色浮卡（设置 / 动态两栏整页同样处理） ── */
+:root .home-chat-area,
+:root .cop-panel,
+:root .wc-settings-full,
+:root .wc-moments-full {
+  background: var(--nt-surface);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r-xl);
+  box-shadow: var(--nt-shadow-sm);
+}
+:root .wc-settings-full,
+:root .wc-moments-full { overflow: hidden; }
+:root.electron-app .home-chat-area {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* 空态 */
+:root .we-empty { background: var(--nt-canvas); }
+:root .we-empty-svg,
+:root .ch-empty-ico { color: var(--nt-primary); }
+:root .we-empty-title { color: var(--nt-text); }
+:root .we-empty-hint { color: var(--nt-text-3); }
+
+/* ================================================================
+   §4  聊天窗口
+   ================================================================ */
+/* 顶栏：玻璃质感 */
+:root .wc-chat-header {
+  background: var(--nt-glass-strong);
+  -webkit-backdrop-filter: var(--nt-blur);
+  backdrop-filter: var(--nt-blur);
+  border-bottom: 1px solid var(--nt-separator);
+  box-shadow: none;
+}
+:root body.dark-mode .wc-chat-header {
+  background: var(--nt-glass-strong) !important;
+  border-color: var(--nt-separator) !important;
+}
+:root .wc-chat-header-name { color: var(--nt-text); font-size: 15px; font-weight: 600; }
+:root .wc-chat-header-sub { color: var(--nt-primary); font-size: 11px; }
+:root .wc-header-member-count { color: var(--nt-text-3); }
+:root .wc-chat-header-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--nt-text-2);
+}
+:root .wc-chat-header-btn:hover { background: var(--nt-hover) !important; color: var(--nt-text); }
+:root .wc-chat-header-btn.active,
+:root .wc-chat-header-btn.active:hover { background: var(--nt-primary-soft) !important; color: var(--nt-primary); }
+
+/* 消息画布 */
+:root .wc-messages,
+:root .wc-messages-virt { background: var(--nt-canvas); }
+:root body.dark-mode .wc-messages[class],
+:root body.dark-mode .wc-chat[class] { background: var(--nt-canvas) !important; }
+:root .wc-chat { background: var(--nt-surface); }
+
+/* 时间分隔：轻胶囊 */
+:root .wc-msg-time span {
+  background: var(--nt-fill);
+  color: var(--nt-text-3);
+  backdrop-filter: none;
+}
+:root .wc-msg-sender { color: var(--nt-text-3); }
+
+/* ── 气泡 ── */
+:root .wc-msg-bubble { border-radius: 18px; }
+:root .wc-msg-bubble.mine {
+  background: var(--nt-bubble-mine) !important;
+  color: var(--nt-bubble-mine-text);
+  border: 1px solid var(--nt-bubble-mine-border);
+  border-radius: 18px 18px 6px 18px;
+  box-shadow: none;
+}
+:root .wc-msg-bubble.other {
+  background: var(--nt-bubble-other);
+  color: var(--nt-text);
+  border: 1px solid var(--nt-bubble-other-border);
+  border-radius: 18px 18px 18px 6px;
+  box-shadow: var(--nt-shadow-xs);
+}
+:root body.dark-mode .wc-msg-bubble.other { background: var(--nt-bubble-other); color: var(--nt-text); border: 1px solid var(--nt-bubble-other-border); }
+:root body.dark-mode .wc-msg-bubble.mine { color: var(--nt-bubble-mine-text); border: 1px solid var(--nt-bubble-mine-border); box-shadow: none; }
+/* Electron 层按 .wc-msg-row 写的气泡规则（ui-refresh §12）同步 */
+:root.electron-app .wc-msg-row.mine .wc-msg-bubble { border: 1px solid var(--nt-bubble-mine-border); border-radius: 18px 18px 6px 18px; }
+:root.electron-app .wc-msg-row:not(.mine) .wc-msg-bubble { border-radius: 18px 18px 18px 6px; }
+:root .wc-msg-row.consecutive .wc-msg-bubble.mine { border-radius: 18px 6px 6px 18px; }
+:root .wc-msg-row.consecutive .wc-msg-bubble.other { border-radius: 6px 18px 18px 6px; }
+/* 媒体 / 卡片类消息自带外观：保持透明无边框（与历史规则意图一致） */
+:root .wc-msg-bubble:has(.wc-msg-img),
+:root .wc-msg-bubble:has(.wc-msg-video),
+:root .wc-msg-bubble:has(.wc-msg-sticker),
+:root .wc-msg-bubble:has(.wc-redpacket-card),
+:root .wc-msg-bubble:has(.wc-transfer-card),
+:root .wc-msg-bubble:has(.wc-contact-card) {
+  background: transparent !important;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* 气泡内链接 / 元信息 */
+:root .wc-msg-bubble.mine a,
+:root .wc-msg-bubble.mine .wc-msg-link { color: var(--nt-bubble-mine-link); }
+:root .wc-msg-bubble.other a,
+:root .wc-msg-bubble.other .wc-msg-link { color: var(--nt-link); }
+:root .wc-msg-bubble.mine .wc-msg-time-small,
+:root .wc-msg-bubble.mine .wc-msg-meta { color: var(--nt-bubble-mine-meta); }
+:root .wc-msg-bubble.mine .wc-msg-time-small .wc-msg-status-read { color: var(--nt-primary); }
+:root .wc-msg-bubble.mine .wc-msg-time-small .wc-msg-status-delivered,
+:root .wc-msg-bubble.mine .wc-msg-time-small .wc-msg-status-sent { color: var(--nt-bubble-mine-meta); }
+:root .wc-msg-bubble.mine .wc-msg-time-small .wc-msg-spinner {
+  border-color: rgba(var(--nt-primary-rgb), .25);
+  border-top-color: var(--nt-primary);
+}
+:root body.dark-mode .wc-msg-bubble.mine .wc-msg-time-small .wc-msg-status-read { color: var(--nt-link); }
+
+/* 引用块 */
+:root .wc-msg-reply {
+  background: var(--nt-fill);
+  border-left: 2.5px solid rgba(var(--nt-primary-rgb), .45);
+  border-radius: 4px 8px 8px 4px;
+}
+:root .wc-msg-bubble.mine .wc-msg-reply,
+:root .wc-msg-bubble.mine .wc-msg-reply--on-media {
+  background: rgba(var(--nt-primary-rgb), .08);
+  border-left-color: rgba(var(--nt-primary-rgb), .45);
+}
+
+/* 图片 / 视频 */
+:root .wc-msg-img,
+:root .wc-msg-video {
+  border-radius: 14px;
+  border: 1px solid var(--nt-border);
+}
+
+/* 文件消息：气泡内的文件卡片 */
+:root .wc-msg-file-link {
+  min-width: 200px;
+  max-width: 280px;
+  gap: 12px;
+}
+:root .wc-msg-file-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--nt-primary-soft);
+  color: var(--nt-primary);
+}
+:root .wc-msg-bubble.mine .wc-msg-file-icon { background: rgba(var(--nt-primary-rgb), .14); }
+:root .wc-msg-file-name { color: inherit; font-weight: 500; }
+:root .wc-msg-file-size { color: var(--nt-text-3); }
+:root .wc-msg-bubble.mine .wc-msg-file-size { color: var(--nt-bubble-mine-meta); }
+
+/* 语音消息：在淡绿气泡上改用墨绿控件（原为绿底白字配色） */
+:root .wc-voice-play-btn {
+  background: var(--nt-primary);
+  box-shadow: none;
+}
+:root .wc-voice-play-btn:hover { box-shadow: 0 2px 8px rgba(var(--nt-primary-rgb), .28); }
+:root .wc-msg-bubble.mine .wc-voice-play-btn { background: var(--nt-primary); }
+:root .wc-voice-play-icon,
+:root .wc-voice-play-icon-offset { fill: var(--nt-on-primary); }
+:root .wc-voice-progress-track { background: var(--nt-fill-strong); }
+:root .wc-msg-bubble.mine .wc-voice-progress-track { background: rgba(var(--nt-primary-rgb), .18); }
+:root .wc-voice-progress-fill,
+:root .wc-msg-bubble.mine .wc-voice-progress-fill { background: var(--nt-primary); }
+:root .wc-voice-duration { color: var(--nt-text-3); }
+:root .wc-msg-bubble.mine .wc-voice-duration { color: var(--nt-bubble-mine-meta); }
+:root .wc-voice-transcribe-btn { background: var(--nt-fill); color: var(--nt-text-2); }
+:root .wc-voice-transcribe-btn:hover:not(:disabled) { background: var(--nt-fill-strong); }
+:root .wc-msg-bubble.mine .wc-voice-transcribe-btn { background: rgba(var(--nt-primary-rgb), .10); color: var(--nt-bubble-mine-text); }
+:root .wc-voice-transcript { color: var(--nt-text); border-top-color: var(--nt-separator); }
+:root .wc-msg-bubble.mine .wc-voice-transcript { color: var(--nt-bubble-mine-text); border-top-color: rgba(var(--nt-primary-rgb), .14); }
+
+/* 名片 */
+:root .wc-contact-card {
+  background: var(--nt-surface);
+  border: 1px solid var(--nt-border);
+  border-radius: 14px;
+  box-shadow: var(--nt-shadow-xs);
+}
+
+/* 表情回应 */
+:root .wc-reaction-pill { background: var(--nt-fill); }
+:root .wc-reaction-pill:hover { background: var(--nt-fill-strong); }
+:root .wc-reaction-pill.mine { background: var(--nt-primary-soft); border-color: rgba(var(--nt-primary-rgb), .35); }
+
+/* 回到底部 / 正在输入 */
+:root .cw-scroll-bottom {
+  background: var(--nt-glass-strong);
+  -webkit-backdrop-filter: var(--nt-blur);
+  backdrop-filter: var(--nt-blur);
+  border: 1px solid var(--nt-border);
+  box-shadow: var(--nt-shadow-sm);
+}
+
+/* 群公告 / 置顶条 */
+:root .wc-announce-banner,
+:root .wc-pinned-banner { border-bottom: 1px solid var(--nt-separator); }
+
+/* ── 输入区 ── */
+:root .wc-input-area {
+  background: var(--nt-surface);
+  border-top: 1px solid var(--nt-separator);
+}
+:root .wc-app:not(.wc-mobile) .wc-input-area {
+  margin: 0 14px 14px;
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r-lg);
+  box-shadow: var(--nt-shadow-sm);
+}
+:root .wc-app:not(.wc-mobile) .wc-input-area:focus-within {
+  border-color: rgba(var(--nt-primary-rgb), .35);
+  box-shadow: var(--nt-shadow-sm), var(--ring-primary);
+}
+:root body.dark-mode .wc-input-area { background: var(--nt-surface) !important; border-top-color: var(--nt-separator) !important; }
+:root .wc-input-box {
+  background: transparent;
+  border-color: transparent;
+}
+:root .wc-input-box:focus-within {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+:root .m-chat-page .wc-input-box {
+  background: var(--nt-fill);
+  border-radius: 18px;
+}
+:root .m-chat-page .wc-input-box:focus-within {
+  background: var(--nt-surface);
+  border-color: rgba(var(--nt-primary-rgb), .35);
+}
+:root .wc-textarea { color: var(--nt-text); caret-color: var(--nt-primary); }
+:root .wc-textarea::placeholder { color: var(--nt-text-3); }
+:root .wc-tool-btn {
+  border-radius: var(--nt-r-sm);
+  color: var(--nt-text-2);
+}
+:root .wc-tool-btn:hover { background: var(--nt-hover) !important; color: var(--nt-text); transform: none; }
+:root .wc-tool-btn.active { background: var(--nt-primary-soft); color: var(--nt-primary); }
+:root .wc-input-hint { color: var(--nt-text-3); }
+
+/* 发送按钮：墨绿实心（原黑底金字描边） */
+:root .wc-send-btn {
+  height: 34px;
+  padding: 0 18px;
+  background: var(--nt-fill);
+  color: var(--nt-text-3);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-weight: 600;
+  box-shadow: none;
+}
+:root .wc-send-btn.active {
+  background: var(--nt-primary);
+  color: var(--nt-on-primary);
+  border-color: transparent;
+  box-shadow: var(--shadow-btn-primary);
+}
+:root .wc-send-btn.active:hover {
+  background: var(--nt-primary-hover);
+  border-color: transparent;
+  box-shadow: var(--shadow-btn-primary-hover);
+  transform: none;
+}
+:root .wc-send-btn.active:active { background: var(--nt-primary-active); transform: scale(.97); }
+:root .wc-voice-toggle-btn { background: var(--nt-fill) !important; }
+
+/* 回复 / 编辑 / 上传条 */
+:root .wc-reply-bar { background: var(--nt-surface-2); border-top-color: var(--nt-separator); }
+
+/* ================================================================
+   §5  联系人信息区（聊天顶栏「聊天信息 / 群聊信息」按钮开关）
+   ================================================================ */
+:root .wc-settings-panel,
+:root .gi-panel {
+  background: var(--nt-surface-2);
+  border-left: 1px solid var(--nt-separator);
+}
+/* 宽屏才加宽信息区；中等宽度沿用原宽度，避免挤压聊天主区 */
+@media (min-width: 1280px) {
+  :root .wc-settings-panel,
+  :root .gi-panel { width: 300px; }
+}
+:root .wc-settings-header {
+  height: 56px;
+  background: transparent;
+  border-bottom: 1px solid var(--nt-separator);
+}
+:root .wc-settings-header-title { color: var(--nt-text); font-weight: 600; }
+:root .wc-settings-body { padding-bottom: 16px; }
+/* 设置项：分组白卡（inset grouped） */
+:root .wc-settings-section-mt {
+  margin: 12px 12px 0;
+  background: var(--nt-surface);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r-md);
+  overflow: hidden;
+}
+:root .wc-settings-row { border-bottom: 1px solid var(--nt-separator); }
+:root .wc-settings-row:last-child { border-bottom: none; }
+:root .wc-settings-row-clickable:hover { background: var(--nt-hover); }
+:root .wc-settings-row-label { color: var(--nt-text); }
+:root .wc-settings-row-action { color: var(--nt-text-3); }
+:root .wc-settings-toggle.on { background: var(--nt-primary); }
+:root .wc-settings-clear-btn {
+  display: block;
+  width: calc(100% - 24px);
+  margin: 12px 12px 0;
+  padding: 11px;
+  background: var(--nt-surface);
+  color: var(--nt-danger);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r-md);
+}
+:root .wc-settings-clear-btn:hover:not(:disabled) { background: rgba(var(--nt-danger-rgb), .06); }
+
+/* 联系人摘要卡 */
+:root .wc-settings-contact {
+  margin: 12px 12px 0;
+  padding: 20px 12px 14px;
+  background: var(--nt-surface);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+}
+:root .wc-settings-contact-name {
+  margin-top: 8px;
+  max-width: 100%;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--nt-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:root .wc-settings-contact-sub { font-size: 12px; color: var(--nt-text-3); }
+:root .wc-settings-contact-status { font-size: 12px; color: var(--nt-primary); font-weight: 500; }
+:root .wc-settings-contact-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+}
+:root .wc-settings-contact-action {
+  flex: 1;
+  max-width: 76px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0 6px;
+  border-radius: 10px;
+  background: var(--nt-primary-soft);
+  color: var(--nt-primary);
+  font-size: 11px;
+  font-weight: 500;
+  transition: background var(--dur-fast);
+}
+:root .wc-settings-contact-action:hover { background: var(--nt-selected-hover); }
+:root .wc-settings-contact-action-ico { display: flex; }
+
+/* 群聊信息侧栏 */
+:root .gi-avinfo { background: var(--nt-surface); border-bottom: 1px solid var(--nt-separator); }
+:root .gi-danger-btn {
+  background: var(--nt-surface);
+  color: var(--nt-danger);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r-md);
+}
+:root .gi-danger-btn:hover { background: rgba(var(--nt-danger-rgb), .06); box-shadow: none; }
+
+/* ================================================================
+   §6  浮层：弹窗 / 菜单 / 下拉（玻璃 + 细边框 + 轻阴影）
+   ================================================================ */
+:root .wc-modal-overlay,
+:root .cgm-overlay {
+  background: var(--scrim-light);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+:root .wc-modal,
+:root .wc-forward-modal,
+:root .wc-user-profile-card {
+  background: var(--nt-surface) !important;
+  border: 1px solid var(--nt-border) !important;
+  border-radius: var(--nt-r-lg);
+  box-shadow: var(--nt-shadow-lg) !important;
+}
+:root .home-add-dropdown,
+:root .wc-ctx-menu {
+  background: var(--nt-glass-strong);
+  -webkit-backdrop-filter: var(--nt-blur);
+  backdrop-filter: var(--nt-blur);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r-md);
+  box-shadow: var(--nt-shadow-md);
+}
+:root .adi-row { color: var(--nt-text); border-radius: var(--nt-r-sm); }
+:root .adi-row:hover { background: var(--nt-hover); }
+:root .adi-icon { color: var(--nt-primary); }
+:root .home-add-divider { background: var(--nt-separator); }
+
+/* 主按钮通用（弹窗内） */
+:root .cgm-create,
+:root .wc-state-retry { background: var(--nt-primary); color: var(--nt-on-primary); }
+:root .cgm-create:hover,
+:root .wc-state-retry:hover { background: var(--nt-primary-hover); }
+
+/* 开关 */
+:root .wc-switch.on,
+:root .gi-toggle[data-on="true"] { background: var(--nt-primary); }
+
+/* ================================================================
+   §7  通话入口
+   ================================================================ */
+/* 语音通话背景：墨绿炭黑渐变（原冷蓝灰） */
+:root .cm-voice-bg {
+  background: linear-gradient(160deg, #1F3B32 0%, #121715 100%);
+}
+/* 通话记录列表 */
+:root .ch-page { background: var(--nt-canvas); }
+:root .ch-header {
+  background: var(--nt-glass-strong);
+  -webkit-backdrop-filter: var(--nt-blur);
+  backdrop-filter: var(--nt-blur);
+  border-bottom: 1px solid var(--nt-separator);
+}
+:root .ch-item { background: var(--nt-surface); border-bottom: 1px solid var(--nt-separator); }
+:root .ch-item:hover { background: var(--nt-hover); }
+:root .ch-call-ico { fill: var(--nt-primary); }
+
+/* ================================================================
+   §8  通讯录 / 发现 / 我的 / 设置
+   ================================================================ */
+:root .wc-contacts-alpha {
+  background: transparent;
+  border-left: none;
+  color: var(--nt-text-3);
+  font-weight: 600;
+}
+:root body.dark-mode .wc-contacts-alpha { background: transparent; }
+:root .wc-contact-item:hover { background: var(--nt-hover) !important; }
+:root .wc-contact-item .cl-entry-icon-box { box-shadow: none; border-radius: 10px; }
+/* Electron 通讯录入口图标：底色由 JSX 内联给出（含主色），图标统一白色，避免同色不可见 */
+:root.electron-app .cl-entry-icon-box svg { fill: #FFFFFF; }
+:root .cl-search { background: var(--nt-fill); border-radius: 10px; }
+:root .cop-tab.active { color: var(--nt-primary); border-bottom-color: var(--nt-primary); }
+
+/* 页面整体底色：暖白（历史规则用 !important 铺了冷灰渐变） */
+:root body:not(.dark-mode) .wc-profile,
+:root body:not(.dark-mode) .wc-settings,
+:root body:not(.dark-mode) .wc-discover { background: var(--nt-bg) !important; }
+:root body.dark-mode .wc-discover { background: var(--nt-bg) !important; }
+
+/* 「发现」入口页：inset grouped 列表 */
+:root .wc-discover { padding-top: 12px; }
+:root .wc-discover-section {
+  margin: 0 16px 16px !important;
+  border: 1px solid var(--nt-border) !important;
+  border-radius: var(--nt-r-md) !important;
+  overflow: hidden;
+}
+:root .wc-discover-item {
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 14px;
+  gap: 12px;
+  border-bottom: 1px solid var(--nt-separator);
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+:root .wc-discover-item:last-child { border-bottom: none; }
+:root .wc-discover-item:active { background: var(--nt-pressed); }
+:root .wc-discover-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: #FFFFFF;
+}
+:root .wc-discover-icon svg { width: 18px; height: 18px; fill: currentColor; }
+:root .wc-discover-icon--moments   { background: var(--nt-primary); }
+:root .wc-discover-icon--calls     { background: #2F8F6B; }
+:root .wc-discover-icon--favorites { background: #C9902A; }
+:root .wc-discover-label { font-size: 16px; color: var(--nt-text); }
+:root .wc-discover-arrow { color: var(--nt-text-4); display: flex; }
+
+/* 我的 / 设置：主色元素 */
+:root .wc-page-header {
+  background: var(--nt-glass-strong);
+  -webkit-backdrop-filter: var(--nt-blur);
+  backdrop-filter: var(--nt-blur);
+  border-bottom: 1px solid var(--nt-separator);
+}
+:root .wc-page-header-back,
+:root .wc-page-header-right .wc-save-btn { color: var(--nt-primary); }
+:root .wc-menu-item:hover { background: var(--nt-hover); }
+:root .wc-menu-icon-privacy { background: var(--nt-primary); }
+:root .wc-profile-vid-label { color: var(--nt-primary); background: var(--nt-primary-soft); }
+:root .pf-avatar-edit { color: var(--nt-primary); }
+:root .wc-logout-btn {
+  background: var(--nt-surface);
+  color: var(--nt-danger);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-r-md);
+}
+:root .wc-logout-btn:hover { background: rgba(var(--nt-danger-rgb), .06); }
+:root .wc-font-btn.active,
+:root .wc-font-btn.active .wc-font-preview { color: var(--nt-primary); }
+:root .wc-font-btn.active { background: var(--nt-primary-soft); }
+
+/* 动态 */
+:root .wc-moment-comment-user,
+:root .wc-moment-comment-submit { color: var(--nt-link); }
+
+/* ================================================================
+   §9  移动端（<768px / 原生 App）：手机聊天布局 + 底部导航
+   ================================================================ */
+:root .m-shell { background: var(--nt-bg); }
+:root .m-topbar {
+  min-height: 48px;
+  background: var(--nt-glass-bar);
+  -webkit-backdrop-filter: var(--nt-blur);
+  backdrop-filter: var(--nt-blur);
+  border-bottom: .5px solid var(--nt-border);
+  box-shadow: none;
+}
+:root .m-title { font-size: 17px; font-weight: 600; color: var(--nt-text); }
+:root .m-topbar-add { color: var(--nt-primary); }
+/* 「发现」子页返回按钮 */
+:root .m-topbar-back {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--nt-primary);
+  cursor: pointer;
+}
+:root .m-topbar-back svg { fill: currentColor; }
+:root .m-search {
+  height: 36px;
+  margin: 8px 16px;
+  background: var(--nt-fill);
+  border-radius: 10px;
+}
+:root .m-search:focus-within { background: var(--nt-fill-strong); box-shadow: none; }
+:root .m-search-icon svg { fill: var(--nt-text-3); }
+:root .m-search input { color: var(--nt-text); }
+:root .m-search input::placeholder { color: var(--nt-text-3); }
+:root .m-search-clear { background: var(--nt-text-4); color: var(--nt-surface); }
+:root .m-content { background: var(--nt-surface); }
+
+/* 底部导航：玻璃 TabBar */
+:root .m-tabbar {
+  height: auto;
+  min-height: 52px;
+  padding-top: 4px;
+  padding-bottom: max(4px, env(safe-area-inset-bottom));
+  background: var(--nt-glass-bar);
+  -webkit-backdrop-filter: var(--nt-blur);
+  backdrop-filter: var(--nt-blur);
+  border-top: .5px solid var(--nt-border);
+  box-shadow: none;
+}
+:root .m-tab { color: var(--nt-text-3); gap: 2px; }
+:root .m-tab.active { color: var(--nt-primary); }
+:root .m-tab-ico svg { width: 25px; height: 25px; }
+:root .m-tab-label { font-size: 10px; font-weight: 500; }
+:root .m-tab.active .m-tab-label { font-weight: 600; }
+:root .m-tab-badge { background: var(--nt-badge); border-color: var(--nt-surface); box-shadow: none; }
+
+/* 手机聊天页 */
+:root .m-chat-page { background: var(--nt-canvas); }
+:root .m-chat-page .wc-chat-header-back { color: var(--nt-primary); }
+:root .m-chat-page .wc-input-area {
+  background: var(--nt-glass-bar);
+  -webkit-backdrop-filter: var(--nt-blur);
+  backdrop-filter: var(--nt-blur);
+}
+
+/* ================================================================
+   §10  降级：不支持 backdrop-filter 的环境用不透明表面，保证可读
+   ================================================================ */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root .wc-sidebar,
+  :root .wc-chat-header,
+  :root .m-topbar,
+  :root .m-tabbar,
+  :root .home-add-dropdown,
+  :root .wc-ctx-menu,
+  :root .ch-header,
+  :root .wc-page-header,
+  :root .cw-scroll-bottom { background: var(--nt-surface); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root .wc-sidebar,
+  :root .wc-chat-header,
+  :root .m-topbar,
+  :root .m-tabbar,
+  :root .home-add-dropdown,
+  :root .wc-ctx-menu { background: var(--nt-surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}

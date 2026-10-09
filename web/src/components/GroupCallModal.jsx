@@ -335,7 +335,7 @@ export default function GroupCallModal({ socket, user, session, nameOf, onClose 
       aria-modal="true"
       style={{
         position: 'fixed', inset: 0, zIndex: "var(--z-call)",
-        background: 'rgba(18,18,18,0.97)',
+        background: 'linear-gradient(160deg, #1F3B32 0%, #121715 100%)',
         display: 'flex', flexDirection: 'column',
         color: 'var(--text-inverse)',
       }}
@@ -388,25 +388,25 @@ export default function GroupCallModal({ socket, user, session, nameOf, onClose 
       }}>
         {isVideo && (
           <CtrlBtn
-            icon={<IcoCamera off={cameraOff} size={isMobileWidth() ? 20 : 22} />}
+            icon={<IcoCamera off={cameraOff} size={isMobileWidth() ? 22 : 24} />}
             label={cameraOff ? '开摄像头' : '关摄像头'}
-            bg={cameraOff ? '#555' : 'rgba(255,255,255,.18)'}
-            size={isMobileWidth() ? 44 : 52}
+            active={cameraOff}
+            size={isMobileWidth() ? 52 : 60}
             onClick={webrtc.toggleCamera}
           />
         )}
         <CtrlBtn
-          icon={<IcoMic off={muted} size={isMobileWidth() ? 20 : 22} />}
+          icon={<IcoMic off={muted} size={isMobileWidth() ? 22 : 24} />}
           label={muted ? '取消静音' : '静音'}
-          bg="rgba(255,255,255,.18)"
-          size={isMobileWidth() ? 44 : 52}
+          active={muted}
+          size={isMobileWidth() ? 52 : 60}
           onClick={webrtc.toggleMute}
         />
         <CtrlBtn
-          icon={<IcoPhoneOff size={isMobileWidth() ? 24 : 28} />}
+          icon={<IcoPhoneOff size={isMobileWidth() ? 24 : 26} />}
           label="挂断"
-          bg="var(--color-badge)"
-          size={isMobileWidth() ? 54 : 64}
+          tone="danger"
+          size={isMobileWidth() ? 56 : 64}
           onClick={handleHangup}
         />
       </nav>
@@ -430,10 +430,10 @@ function Tile({ stream, streamForRef, muted, isVideo, info, self }) {
     <div
       aria-label={`${info?.name || '成员'} 的画面`}
       style={{
-        position: 'relative', background: '#000', borderRadius: 'var(--radius-md)',
+        position: 'relative', background: isVideo ? '#000' : 'rgba(255,255,255,.06)', borderRadius: 'var(--nt-r-md, 12px)',
         overflow: 'hidden', minHeight: isMobileWidth() ? 100 : 140,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        border: self ? '2px solid var(--color-primary,#07C160)' : '1px solid rgba(255,255,255,.08)',
+        border: self ? '2px solid var(--nt-primary, #176B52)' : '1px solid rgba(255,255,255,.08)',
       }}
     >
       <video
@@ -460,7 +460,9 @@ function Tile({ stream, streamForRef, muted, isVideo, info, self }) {
 }
 
 // ── 控制按钮 ─────────────────────────────────────────────────
-function CtrlBtn({ icon, label, bg, size = 52, onClick }) {
+// 与 1v1 通话（CallModal 的 CircleBtn）共用 .cm-circle-btn-disc 视觉：中性玻璃 / active 反白 / danger 红
+function CtrlBtn({ icon, label, active, tone, size = 60, onClick }) {
+  const discTone = tone ? ` cm-circle-btn-disc--${tone}` : (active ? ' cm-circle-btn-disc--active' : '');
   return (
     <div
       role="button"
@@ -470,19 +472,17 @@ function CtrlBtn({ icon, label, bg, size = 52, onClick }) {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(e); }
       }}
       onClick={onClick}
+      aria-pressed={tone ? undefined : !!active}
+      className="gcm-ctrl"
       style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         gap: isMobileWidth() ? 6 : 8, cursor: 'pointer',
       }}
     >
-      <div style={{
-        width: size, height: size, borderRadius: size / 2,
-        background: bg, display: 'flex', alignItems: 'center',
-        justifyContent: 'center', fontSize: size * 0.42,
-      }}>
+      <div className={`cm-circle-btn-disc${discTone}`} style={{ width: size, height: size }}>
         {icon}
       </div>
-      <span style={{ fontSize: isMobileWidth() ? 10 : 11, color: 'rgba(255,255,255,.6)' }}>
+      <span style={{ fontSize: isMobileWidth() ? 11 : 12, color: 'rgba(255,255,255,.72)' }}>
         {label}
       </span>
     </div>

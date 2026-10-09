@@ -1,0 +1,80 @@
+/* ================================================================
+   v信 · 品牌与图标一体化层（2026-10-09）
+   ================================================================
+   加载顺序：… → native-theme.css → 本文件 → unified-*.css（main.jsx）
+
+   §1  功能图标（svg.vx-ico）：屏蔽历史 `xxx svg { fill: … }` 的填充污染，
+       颜色一律由 color 驱动（hover / active / 危险态只改 color）
+   §2  品牌标志（svg.vx-brand-mark）：锁定品牌色，不受任何 fill/stroke 规则影响
+   §3  BrandLogo 排版
+   §4  功能图标底块统一（原多色 --icon-bg-* → 一套浅墨绿 / 中性底）
+   §5  导航 / TabBar 图标改为 color 驱动
+   ================================================================ */
+
+/* ── §1 功能图标 ─────────────────────────────────────────────── */
+:root svg.vx-ico {
+  fill: none !important;
+  stroke: currentColor !important;
+  flex-shrink: 0;
+  overflow: visible;
+}
+:root svg.vx-ico :is(path, circle, rect, line, polyline, polygon, ellipse, g):not(.vx-f) {
+  fill: none !important;
+  stroke: currentColor !important;
+}
+:root svg.vx-ico .vx-f {
+  fill: currentColor !important;
+  stroke: none !important;
+}
+
+/* ── §2 品牌标志 ─────────────────────────────────────────────── */
+:root svg.vx-brand-mark {
+  display: block;
+  flex-shrink: 0;
+  fill: initial !important;
+  stroke: none !important;
+}
+:root svg.vx-brand-mark .vxb-tile,
+:root svg.vx-brand-mark .vxb-bubble { stroke-opacity: 1; }
+:root svg.vx-brand-mark polyline.vxb-v { fill: none !important; }
+
+/* ── §3 BrandLogo ────────────────────────────────────────────── */
+.vx-brand-logo { display: inline-flex; align-items: center; gap: 10px; color: var(--nt-text); }
+.vx-brand-logo--stack { flex-direction: column; gap: 12px; text-align: center; }
+.vx-brand-text { display: inline-flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.vx-brand-name { font-weight: 600; letter-spacing: .02em; }
+.vx-brand-tagline { font-size: 12px; color: var(--nt-text-3); margin-top: 2px; letter-spacing: .08em; }
+
+/* ── §4 功能图标底块 ─────────────────────────────────────────── */
+:root, :root body.dark-mode {
+  --nt-icon-tile-bg:   var(--nt-primary-soft);
+  --nt-icon-tile-fg:   var(--nt-primary);
+  --nt-icon-tile-neutral-bg: var(--nt-fill);
+  --nt-icon-tile-neutral-fg: var(--nt-text-2);
+}
+/* 原来每个入口一种颜色（橙、紫、天蓝、金…），与墨绿体系冲突；统一为同一浅墨绿底。
+   放在 :root 与 body.dark-mode 两处，保证深色下按深色主色重新解析。 */
+:root, :root body.dark-mode {
+  --icon-bg-wallet:     var(--nt-icon-tile-bg);
+  --icon-bg-invite:     var(--nt-icon-tile-bg);
+  --icon-bg-neutral:    var(--nt-icon-tile-bg);
+  --icon-bg-filehelper: var(--nt-icon-tile-bg);
+  --icon-bg-newfriend:  var(--nt-icon-tile-bg);
+  --icon-bg-group:      var(--nt-icon-tile-bg);
+  --icon-bg-label:      var(--nt-icon-tile-bg);
+  --icon-bg-schedule:   var(--nt-icon-tile-bg);
+  --icon-bg-phone:      var(--nt-icon-tile-bg);
+  --icon-bg-device:     var(--nt-icon-tile-bg);
+}
+
+/* ── §5 导航 / TabBar ────────────────────────────────────────── */
+:root .wc-sidebar-btn .icon { color: var(--nt-nav-fg); display: flex; }
+:root .wc-sidebar-btn:hover .icon { color: var(--nt-nav-fg-hover); }
+:root .wc-sidebar-btn.active .icon,
+:root.electron-app .wc-sidebar-btn.active .icon,
+:root .electron-app .wc-sidebar-btn.active .icon { color: var(--nt-primary); }
+:root .wc-sidebar-btn .icon svg.vx-ico { width: 22px; height: 22px; }
+:root .wc-sidebar-logo { display: flex; align-items: center; justify-content: center; }
+:root .wc-sidebar-logo svg.vx-brand-mark { width: 34px; height: 34px; filter: drop-shadow(0 2px 6px rgba(23, 107, 82, .22)); }
+:root .m-tab-ico svg.vx-ico { width: 24px; height: 24px; }
+:root .m-tab .m-tab-ico { color: inherit; }

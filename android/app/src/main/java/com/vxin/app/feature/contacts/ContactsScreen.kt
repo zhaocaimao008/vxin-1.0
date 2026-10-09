@@ -53,7 +53,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vxin.app.data.model.Contact
 import com.vxin.app.ui.components.InitialAvatar
-import androidx.compose.foundation.isSystemInDarkTheme
+import com.vxin.app.ui.theme.LocalVxinPalette
 import com.vxin.app.ui.theme.VxinGreen
 import com.vxin.app.ui.theme.VxinSurfaceDark
 import com.vxin.app.ui.theme.VxinTextSecondary
@@ -372,7 +372,7 @@ private fun ContactRow(
                 Box(
                     Modifier.align(Alignment.BottomEnd).size(12.dp)
                         // 描边圈随主题：浅色=白、深色=卡面色，深色下不再突兀
-                        .clip(CircleShape).background(if (isSystemInDarkTheme()) VxinSurfaceDark else Color.White).padding(2.dp)
+                        .clip(CircleShape).background(LocalVxinPalette.current.surface).padding(2.dp)
                         .clip(CircleShape).background(VxinGreen),
                 )
             }

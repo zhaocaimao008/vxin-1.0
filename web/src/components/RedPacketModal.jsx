@@ -48,7 +48,7 @@ export default function RedPacketModal({ conversation, onClose, onSent }) {
 
   return (
     <div className="rpm-overlay" ref={trapRef} onClick={() => { if (!sending) onClose(); }}>
-      <div className="rpm-card" role="dialog" aria-modal="true" aria-label="发红包" onClick={e => e.stopPropagation()}>
+      <div className="rpm-card rpm-card--redpacket" role="dialog" aria-modal="true" aria-label="发红包" onClick={e => e.stopPropagation()}>
         <div className="rpm-title">发红包</div>
 
         {error && <div className="rpm-error" role="alert">{error}</div>}

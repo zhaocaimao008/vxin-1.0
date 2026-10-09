@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import { IcoClock } from './Icons';
 
 /**
  * 定时发送弹窗：选择发送时间后创建定时消息，到点由后端调度器自动发出。
@@ -74,22 +75,24 @@ export default function ScheduleSendModal({ convId, defaultContent = '', onClose
       <div
         aria-hidden="true"
         onClick={onClose}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)' }}
+        style={{ position: 'fixed', inset: 0, background: 'var(--scrim, rgba(0,0,0,.4))' }}
       />
       {/* 弹窗 */}
       <form
         onSubmit={handleSubmit}
         onClick={e => e.stopPropagation()}
+        className="ssm-card"
         style={{
           position: 'relative', zIndex: 1,
-          background: 'var(--bg-card)',
-          borderRadius: 'var(--radius-lg)',
-          boxShadow: '0 8px 32px rgba(0,0,0,.2)',
+          background: 'var(--nt-surface)',
+          border: '1px solid var(--nt-border)',
+          borderRadius: 'var(--nt-r-xl)',
+          boxShadow: 'var(--nt-shadow-lg)',
           width: Math.min(420, window.innerWidth - 32),
           padding: 24,
         }}
       >
-        <h3 style={{ margin: '0 0 16px', fontSize: 'var(--text-lg)', fontWeight: 600 }}>定时发送</h3>
+        <h3 style={{ margin: '0 0 16px', fontSize: 'var(--text-lg)', fontWeight: 600, color: 'var(--nt-text)', display: 'flex', alignItems: 'center', gap: 8 }}><IcoClock size={20} style={{ color: 'var(--nt-primary)' }} />定时发送</h3>
 
         {/* 内容 */}
         <label style={{ display: 'block', marginBottom: 12 }}>
@@ -97,6 +100,7 @@ export default function ScheduleSendModal({ convId, defaultContent = '', onClose
             消息内容
           </span>
           <textarea
+            className="ssm-input"
             ref={inputRef}
             value={content}
             onChange={e => setContent(e.target.value)}
@@ -104,9 +108,9 @@ export default function ScheduleSendModal({ convId, defaultContent = '', onClose
             placeholder="输入要定时发送的消息…"
             style={{
               width: '100%', boxSizing: 'border-box',
-              padding: '8px 10px', borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--border-default)',
-              background: 'var(--bg-input)',
+              padding: '8px 10px', borderRadius: 'var(--nt-r-md)',
+              border: '1px solid var(--nt-border-strong)',
+              background: 'var(--nt-surface)',
               color: 'var(--text-primary)', fontSize: 'var(--text-base)', resize: 'vertical',
             }}
           />
@@ -118,15 +122,16 @@ export default function ScheduleSendModal({ convId, defaultContent = '', onClose
             发送时间（15 分钟~30 天后）
           </span>
           <input
+            className="ssm-input"
             type="datetime-local"
             value={sendAtLocal}
             min={minDateTime}
             onChange={e => setSendAtLocal(e.target.value)}
             style={{
               width: '100%', boxSizing: 'border-box',
-              padding: '8px 10px', borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--border-default)',
-              background: 'var(--bg-input)',
+              padding: '8px 10px', borderRadius: 'var(--nt-r-md)',
+              border: '1px solid var(--nt-border-strong)',
+              background: 'var(--nt-surface)',
               color: 'var(--text-primary)', fontSize: 'var(--text-base)',
             }}
           />
@@ -135,7 +140,7 @@ export default function ScheduleSendModal({ convId, defaultContent = '', onClose
         {error && (
           <div style={{ fontSize: 'var(--text-sm2)', color: 'var(--color-danger)',
             marginBottom: 12, padding: '6px 10px',
-            background: 'rgba(255,59,48,.08)', borderRadius: 'var(--radius-sm)' }}>
+            background: 'rgba(var(--nt-danger-rgb), .08)', borderRadius: 'var(--nt-r-sm)' }}>
             {error}
           </div>
         )}
@@ -146,21 +151,23 @@ export default function ScheduleSendModal({ convId, defaultContent = '', onClose
             type="button"
             onClick={onClose}
             disabled={saving}
+            className="ssm-btn ssm-btn-secondary"
             style={{
-              padding: '8px 18px', borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--border-default)',
-              background: 'var(--bg-card)', color: 'var(--text-secondary)',
+              padding: '8px 18px', borderRadius: 'var(--nt-r-md)',
+              border: '1px solid transparent',
+              background: 'var(--nt-fill)', color: 'var(--nt-text)',
               cursor: 'pointer', fontSize: 'var(--text-base)',
             }}
           >取消</button>
           <button
             type="submit"
             disabled={saving || !content.trim()}
+            className="ssm-btn ssm-btn-primary"
             style={{
-              padding: '8px 18px', borderRadius: 'var(--radius-sm)',
-              border: 'none', background: 'var(--green)',
-              color: 'var(--text-on-brand)', cursor: 'pointer', fontSize: 'var(--text-base)',
-              opacity: (saving || !content.trim()) ? 0.6 : 1,
+              padding: '8px 18px', borderRadius: 'var(--nt-r-md)',
+              border: 'none', background: 'var(--nt-primary)',
+              color: 'var(--nt-on-primary)', cursor: 'pointer', fontSize: 'var(--text-base)', fontWeight: 600,
+              opacity: (saving || !content.trim()) ? 0.4 : 1,
             }}
           >{saving ? '设置中…' : '确认定时发送'}</button>
         </div>

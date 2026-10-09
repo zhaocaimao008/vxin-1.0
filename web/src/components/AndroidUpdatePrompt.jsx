@@ -69,7 +69,7 @@ export default function AndroidUpdatePrompt() {
       {/* 对话框内容 */}
       <div style={{ position: 'relative', zIndex: 9999 }}>
         <h2 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 600 }}>
-          <IcoCelebrate size={18} style={{ verticalAlign: '-3px' }} /> 发现新版本 {latestVersion.name}
+          <IcoCelebrate size={18} style={{ verticalAlign: '-3px', color: 'var(--nt-primary)' }} /> 发现新版本 {latestVersion.name}
         </h2>
 
         <p style={{ margin: '8px 0 16px 0', fontSize: '14px', color: 'var(--text-secondary)' }}>
@@ -97,8 +97,8 @@ export default function AndroidUpdatePrompt() {
             style={{
               flex: 1,
               padding: '12px 24px',
-              background: 'var(--color-primary)',
-              color: 'var(--text-on-brand)',
+              background: 'var(--nt-primary)',
+              color: 'var(--nt-on-primary)',
               border: 'none',
               borderRadius: 'var(--radius-md, 8px)',
               fontSize: '14px',
@@ -106,8 +106,8 @@ export default function AndroidUpdatePrompt() {
               cursor: 'pointer',
               transition: 'background 0.3s'
             }}
-            onMouseEnter={(e) => e.target.style.background = 'var(--color-primary-hover)'}
-            onMouseLeave={(e) => e.target.style.background = 'var(--color-primary)'}
+            onMouseEnter={(e) => e.target.style.background = 'var(--nt-primary-hover)'}
+            onMouseLeave={(e) => e.target.style.background = 'var(--nt-primary)'}
           >
             立即下载
           </button>
@@ -116,16 +116,16 @@ export default function AndroidUpdatePrompt() {
             style={{
               flex: 1,
               padding: '12px 24px',
-              background: 'var(--bg-card)',
-              color: 'var(--text-secondary)',
+              background: 'var(--nt-fill)',
+              color: 'var(--nt-text-2)',
               border: 'none',
               borderRadius: 'var(--radius-md, 8px)',
               fontSize: '14px',
               cursor: 'pointer',
               transition: 'background 0.3s'
             }}
-            onMouseEnter={(e) => e.target.style.background = 'var(--bg-card-hover)'}
-            onMouseLeave={(e) => e.target.style.background = 'var(--bg-card)'}
+            onMouseEnter={(e) => e.target.style.background = 'var(--nt-pressed)'}
+            onMouseLeave={(e) => e.target.style.background = 'var(--nt-fill)'}
           >
             稍后提醒
           </button>

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { showToast, showConfirm } from '../utils/toast';
 import { useConvSettings } from '../hooks/useConvSettings';
-import { IcoChevronRight, IcoClose } from './Icons';
+import { IcoChevronRight, IcoClose, IcoPhone, IcoVideo, IcoUser } from './Icons';
+import Avatar from './Avatar';
 
 const BURN_OPTIONS = [
   { value: 0,      label: '关闭' },
@@ -16,10 +17,12 @@ const BURN_OPTIONS = [
 ];
 
 /**
- * 私聊「聊天设置」面板：免打扰 / 置顶 / 聊天背景 / 阅后即焚 / 双向删除记录。
+ * 私聊「聊天设置」面板：联系人摘要 / 免打扰 / 置顶 / 聊天背景 / 阅后即焚 / 双向删除记录。
  * 从 ChatWindow.jsx 抽出（原 2705 行大文件拆分），无状态耦合，仅回调通信。
+ * 顶部联系人卡只展示会话里已有的 otherUser 字段，三个按钮复用聊天顶栏的同一组回调。
  */
-export default function PrivateChatSettings({ conversation, onClose, onConvUpdate, onPickBackground, onClearBackground, onCleared, onOpenChatFiles }) {
+export default function PrivateChatSettings({ conversation, onClose, onConvUpdate, onPickBackground, onClearBackground, onCleared, onOpenChatFiles, onOpenProfile, onStartCall }) {
+  const other = conversation.otherUser;
   // 免打扰 / 置顶：与 GroupInfo 共用 useConvSettings（state + /mute /pin API），
   // saving 沿用同一忙碌标志（切换/清空互斥），保持原有交互不回归。
   const { muted, pinned, saving, toggleMute, togglePin, setSaving } = useConvSettings(conversation, onConvUpdate);
@@ -73,10 +76,37 @@ export default function PrivateChatSettings({ conversation, onClose, onConvUpdat
   return (
     <div className="wc-settings-panel">
       <div className="wc-settings-header">
-        <span className="wc-settings-header-title">聊天设置</span>
+        <span className="wc-settings-header-title">聊天信息</span>
         <button className="wc-settings-close-btn" onClick={onClose} aria-label="关闭窗口"><IcoClose size={16} /></button>
       </div>
       <div className="wc-settings-body">
+        {other?.id && (
+          <div className="wc-settings-contact" data-testid="chat-info-contact">
+            <Avatar src={other.avatar || conversation.avatar} name={conversation.name} size={64} online={other.status === 'online'} />
+            <div className="wc-settings-contact-name">{conversation.name || other.username}</div>
+            {other.remark && other.username && other.remark !== other.username && (
+              <div className="wc-settings-contact-sub">昵称：{other.username}</div>
+            )}
+            {other.status === 'online' && <div className="wc-settings-contact-status">在线</div>}
+            <div className="wc-settings-contact-actions">
+              {onStartCall && (
+                <>
+                  <button type="button" className="wc-settings-contact-action" onClick={() => onStartCall('audio')} aria-label="语音通话">
+                    <span className="wc-settings-contact-action-ico"><IcoPhone size={18} /></span>语音
+                  </button>
+                  <button type="button" className="wc-settings-contact-action" onClick={() => onStartCall('video')} aria-label="视频通话">
+                    <span className="wc-settings-contact-action-ico"><IcoVideo size={18} /></span>视频
+                  </button>
+                </>
+              )}
+              {onOpenProfile && (
+                <button type="button" className="wc-settings-contact-action" onClick={() => onOpenProfile(other.id)} aria-label="查看资料">
+                  <span className="wc-settings-contact-action-ico"><IcoUser size={18} /></span>资料
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         <div className="wc-settings-section-mt">
           <div className="wc-settings-row">
             <span className="wc-settings-row-label">消息免打扰</span>

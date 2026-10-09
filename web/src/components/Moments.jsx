@@ -7,7 +7,7 @@ import { mediaUrl } from '../utils/url';
 import { showToast, showConfirm } from '../utils/toast';
 import { getAspect, rememberAspect } from '../utils/imgDimCache';
 import { linkify } from '../utils/linkify';
-import { IcoCheck, IcoClose, IcoHeart } from './Icons';
+import { IcoBell, IcoChat, IcoCheck, IcoClose, IcoEdit, IcoHeart, IcoImage, IcoMore, IcoRefresh, IcoSettings } from './Icons';
 
 function ago(sec) {
   // 钳到 0：时钟偏差/服务器时间超前时避免出现「-3分钟前」
@@ -83,7 +83,7 @@ const MomentCard = memo(function MomentCard({ m, meId, desktop, onLike, onCommen
             <div className="wc-moment-menu-wrap" ref={menuRef}>
               <button className="wc-moment-menu-btn" aria-label="更多" aria-haspopup="menu" aria-expanded={menuOpen}
                 onClick={() => setMenuOpen(v => !v)}>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+                <IcoMore size={16} />
               </button>
               {menuOpen && (
                 <div className="wc-moment-menu-pop" role="menu">
@@ -167,11 +167,11 @@ const MomentCard = memo(function MomentCard({ m, meId, desktop, onLike, onCommen
             className={`wc-moment-action-btn${m.liked ? ' liked' : ''}`}
             onClick={() => { if (!m.liked) { setLikePop(true); setTimeout(() => setLikePop(false), 360); } onLike(m); }}
           >
-            <svg viewBox="0 0 24 24" className={likePop ? 'wc-like-pop' : undefined}><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <IcoHeart size={15} filled={!!m.liked} className={likePop ? 'wc-like-pop' : undefined} />
             {m.likeCount > 0 ? m.likeCount : '赞'}
           </button>
           <button className="wc-moment-action-btn" onClick={() => setCommenting(v => !v)}>
-            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+            <IcoChat size={15} />
             {m.commentCount > 0 ? m.commentCount : '评论'}
           </button>
         </div>
@@ -553,16 +553,14 @@ export default function Moments({ desktop = false }) {
         <div className="wc-moments-heading">
           <span className="wc-moments-heading-title">{tab === 'mine' ? '我的动态' : '全部动态'}</span>
           <button className="wc-moments-refresh-btn" onClick={load} disabled={loading} aria-label="刷新" title="刷新">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" className={loading ? 'wc-moments-refresh-spin' : undefined}>
-              <path d="M17.65 6.35A7.95 7.95 0 0012 4a8 8 0 108 8h-2a6 6 0 11-1.76-4.24L13 11h7V4l-2.35 2.35z"/>
-            </svg>
+            <IcoRefresh size={16} className={loading ? 'wc-moments-refresh-spin' : undefined} />
           </button>
         </div>
       )}
       {/* 互动通知入口 */}
       <div className="wc-moment-notif-bar" onClick={openNotif} role="button" tabIndex={0}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openNotif(); } }}>
-        <span className="wc-moment-notif-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg></span>
+        <span className="wc-moment-notif-icon"><IcoBell size={18} /></span>
         <span className="wc-moment-notif-label">互动消息</span>
         {notifCount > 0 && <span className="wc-moment-notif-badge">{notifCount > 99 ? '99+' : notifCount}</span>}
         <div style={{ flex: 1 }} />
@@ -571,7 +569,7 @@ export default function Moments({ desktop = false }) {
           title="动态设置"
           aria-label="动态设置"
           onClick={e => { e.stopPropagation(); setShowSettings(true); }}
-        ><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 00-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></button>
+        ><IcoSettings size={17} /></button>
       </div>
 
       {/* 动态设置：最近 N 天可见 */}
@@ -592,7 +590,7 @@ export default function Moments({ desktop = false }) {
                     onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); saveVisibleDays(o.d); } }}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', cursor: 'pointer', borderTop: '1px solid var(--divider)' }}>
                     <span>{o.label}</span>
-                    {visibleDays === o.d && <IcoCheck size={18} style={{ color: 'var(--green)' }} />}
+                    {visibleDays === o.d && <IcoCheck size={18} style={{ color: 'var(--nt-primary)' }} />}
                   </div>
                 ))}
               </div>
@@ -649,7 +647,7 @@ export default function Moments({ desktop = false }) {
                     <div className="wc-moment-notif-body">
                       <div className="wc-moment-notif-text">{f.remark || f.username}</div>
                     </div>
-                    <span style={{ width: 20, height: 20, borderRadius: 'var(--radius-full)', border: `2px solid ${checked ? 'var(--green)' : 'var(--border-medium)'}`, background: checked ? 'var(--green)' : 'var(--bg-card)', color: 'var(--text-inverse)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-sm)' }}>{checked ? <IcoCheck size={14} /> : null}</span>
+                    <span style={{ width: 20, height: 20, borderRadius: 'var(--radius-full)', border: `2px solid ${checked ? 'var(--nt-primary)' : 'var(--nt-border-strong)'}`, background: checked ? 'var(--nt-primary)' : 'var(--nt-surface)', color: 'var(--nt-on-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-sm)' }}>{checked ? <IcoCheck size={14} /> : null}</span>
                   </div>
                 );
               })}
@@ -718,7 +716,7 @@ export default function Moments({ desktop = false }) {
             <div className="wc-moment-editor-actions">
               <button className="wc-moment-img-btn" onClick={() => imgInputRef.current?.click()}
                 disabled={images.length >= 9} title="添加图片" aria-label={`添加图片${images.length > 0 ? `，已选 ${images.length}/9` : ''}`}>
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true" style={{ marginRight: 4, verticalAlign: '-2px' }}><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                <IcoImage size={14} style={{ marginRight: 4, verticalAlign: '-2px' }} />
                 图片{images.length > 0 ? ` (${images.length}/9)` : ''}
               </button>
               <input ref={imgInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }}
@@ -780,7 +778,7 @@ export default function Moments({ desktop = false }) {
     <div className="wc-moments-desktop">
       <div className="wc-moments-side">
         <button className="wc-moments-publish-btn" onClick={() => setComposing(true)}>
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          <IcoEdit size={16} />
           发布动态
         </button>
         <div className="wc-moments-tabs" role="tablist" aria-label="动态筛选">
