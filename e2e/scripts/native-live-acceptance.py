@@ -64,7 +64,7 @@ try:
     app=Android() if platform=='android' else IOS()
     app.click(text='v信登录');app.type('login-vxin-input',a['identifier']);app.type('login-password-input',a['password'])
     if platform=='android':app.back() # dismiss keyboard before agreement below the form
-    app.click('login-agreement-checkbox');app.click('login-submit-btn');app.click('conv-item-'+state['privateId']);checks.append('real-login')
+    app.click('login-agreement-checkbox');app.click('login-submit-btn');app.click('nav-tab-chats');checks.append('real-login');app.click('conv-item-'+state['privateId'])
     stamp=str(int(time.time()));sent=platform+'-send-'+stamp
     app.type('chat-msg-input',sent);app.click('chat-send-btn')
     rows=wait(lambda: [x for x in api(b,'/api/messages/'+state['privateId']+'?limit=50') if x['content']==sent])
