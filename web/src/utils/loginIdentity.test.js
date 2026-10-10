@@ -1,4 +1,4 @@
-import { beforeEach, afterEach, expect, it, vi } from 'vitest';
+import { describe, beforeEach, afterEach, expect, it, vi } from 'vitest';
 import { initialLoginIdentity, recentAccountIdentity, rememberSuccessfulLogin } from './loginIdentity';
 import { removeRememberedUsername } from './rememberedCreds';
 
@@ -40,4 +40,14 @@ it('survives corrupt or unavailable local storage', () => {
   vi.stubGlobal('localStorage', { getItem() { throw Error('blocked'); }, setItem() { throw Error('blocked'); }, removeItem() { throw Error('blocked'); } });
   expect(() => rememberSuccessfulLogin('vxin', '123456', true)).not.toThrow();
   expect(initialLoginIdentity()).toEqual({ mode: 'phone', identifier: '', remember: false });
+});
+
+describe('add-account identity payloads', () => {
+  it('uses vxin login for six digits and phone login for eleven digits', async () => {
+    const { loginPayloadForIdentifier } = await import('./loginIdentity');
+    expect(loginPayloadForIdentifier(' 123456 ', 'secret')).toEqual({ loginType: 'vxin', identifier: '123456', password: 'secret' });
+    expect(loginPayloadForIdentifier('13800138000', 'secret')).toEqual({ phone: '13800138000', password: 'secret' });
+    expect(loginPayloadForIdentifier('0123456', 'secret')).toBeNull();
+    expect(loginPayloadForIdentifier('bad-id', 'secret')).toBeNull();
+  });
 });

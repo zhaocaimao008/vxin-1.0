@@ -32,3 +32,11 @@ export function rememberSuccessfulLogin(mode, identifier, remember) {
     localStorage.setItem(KEY, JSON.stringify({ mode, identifier: remember ? identifier : '' }));
   } catch { /* A storage failure must not prevent successful authentication. */ }
 }
+
+// Add-account and expired-wallet fallback accept the same identities as the login page.
+export function loginPayloadForIdentifier(value, password) {
+  const identifier = String(value || '').trim();
+  if (valid('vxin', identifier)) return { loginType: 'vxin', identifier, password };
+  if (valid('phone', identifier)) return { phone: identifier, password };
+  return null;
+}

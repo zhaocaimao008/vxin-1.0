@@ -69,7 +69,7 @@ export default function Login() {
   const storedServer = localStorage.getItem('vxin_server_url');
   const currentServer = (storedServer && !isDeprecatedServerUrl(storedServer))
     ? storedServer
-    : (axios.defaults.baseURL || 'https://vxinchat.com');
+    : (axios.defaults.baseURL || 'https://liaotian99.com');
   const [showServer, setShowServer] = useState(false);
   const [serverInput, setServerInput] = useState(currentServer);
   const [serverTest, setServerTest] = useState(null);
@@ -88,7 +88,7 @@ export default function Login() {
   const saveServer = async () => {
     const url = normalizeServerUrl(serverInput);
     if (!url) { setServerTest({ ok: false, msg: '请输入有效的 http:// 或 https:// 服务器地址' }); return; }
-    if (isDeprecatedServerUrl(url)) { setServerTest({ ok: false, msg: '该地址已废弃，请使用正式服务器 https://vxinchat.com' }); return; }
+    if (isDeprecatedServerUrl(url)) { setServerTest({ ok: false, msg: '该地址已废弃，请使用正式服务器 https://liaotian99.com' }); return; }
     try {
       if (isElectron && !await window.electronAPI?.setServerUrl?.(url)) return;
     } catch { setServerTest({ ok: false, msg: '未能保存服务器地址，请重试' }); return; }

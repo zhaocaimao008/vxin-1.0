@@ -4,17 +4,21 @@ import Avatar from '../components/Avatar';
 import { mediaUrl } from '../utils/url';
 import { showConfirm } from '../utils/toast';
 import { useAuth } from '../contexts/AuthContext';
-import { saveRememberedUsername, removeRememberedUsername } from '../utils/rememberedCreds';
+import { removeRememberedUsername } from '../utils/rememberedCreds';
+import { loginPayloadForIdentifier, recentAccountIdentity, rememberSuccessfulLogin } from '../utils/loginIdentity';
 import { IcoCheck, IcoChevronRight, IcoClose, IcoPlus, IcoUser } from './Icons';
 
-function goLogin() { window.location.href = (import.meta.env.BASE_URL || '/'); }
+function goLogin() {
+  if (window.__ELECTRON_CONFIG__) { window.location.hash = '/login'; window.location.reload(); }
+  else window.location.href = (import.meta.env.BASE_URL || '/') + 'login';
+}
 
 function AccountSwitcher() {
   const { user, accounts, login, switchAccount, removeAccount, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [form, setForm] = useState({ phone: '', password: '' });
+  const [form, setForm] = useState({ identifier: '', password: '' });
   const [switchTarget, setSwitchTarget] = useState(null); // 非空=正在切换到某个已登录账号(显示其昵称)
   const [err, setErr] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -41,7 +45,7 @@ function AccountSwitcher() {
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
     setPrevOpen(open);
-    if (!open) { setShowForm(false); setErr(''); setForm({ phone: '', password: '' }); setSwitchTarget(null); }
+    if (!open) { setShowForm(false); setErr(''); setForm({ identifier: '', password: '' }); setSwitchTarget(null); }
   }
 
   // 切换账号：优先丝滑切换（后端凭 wallet cookie 免密重签发）。
@@ -58,8 +62,8 @@ function AccountSwitcher() {
       // 免密切换不可用 → 回退：只填入手机号，密码始终由用户输入。
       setSwitching(false);
       setSwitchTarget(acct.user || null);
-      const phone = acct.user?.phone || '';
-      setForm({ phone, password: '' });
+      const { identifier } = recentAccountIdentity(acct);
+      setForm({ identifier, password: '' });
       setShowForm(true);
       setTimeout(() => passwordRef.current?.focus(), 80);
     }
@@ -76,7 +80,7 @@ function AccountSwitcher() {
       goLogin();
     } else {
       if (!(await showConfirm(`从本设备删除账号「${name}」？删除后切换需重新输密码。`))) return;
-      removeRememberedUsername(acct?.user?.phone || '');
+      removeRememberedUsername(recentAccountIdentity(acct).identifier);
       removeAccount(id);              // 移除最近登录记录 + 钱包凭证
     }
   };
@@ -84,16 +88,18 @@ function AccountSwitcher() {
   const doAdd = async (e) => {
     e.preventDefault();
     if (submitting) return; // 防连点/回车重复提交
-    if (!form.phone || !form.password) { setErr('请填写手机号和密码'); return; }
+    if (!form.identifier || !form.password) { setErr('请填写账号和密码'); return; }
+    const payload = loginPayloadForIdentifier(form.identifier, form.password);
+    if (!payload) { setErr('请输入 6 位 v信号或 11 位手机号'); return; }
     setErr(''); setSubmitting(true);
     try {
-      const { data } = await axios.post('/api/auth/login', form);
+      const { data } = await axios.post('/api/auth/login', payload);
       // 只记住用户名，密码不写入本地存储。
-      saveRememberedUsername(form.phone);
+      rememberSuccessfulLogin(payload.loginType || 'phone', form.identifier.trim(), true);
       login(data.user, data.token); // 必须传 token:Bearer端(Electron/移动)漏传会清掉鉴权头→reload后被登出
       window.location.reload();
     } catch (ex) {
-      setErr(ex.response?.data?.error || '手机号或密码错误');
+      setErr(ex.response?.data?.error || '账号或密码错误');
       setSubmitting(false);
     }
   };
@@ -103,7 +109,7 @@ function AccountSwitcher() {
     setShowForm(v => !v);
     setErr('');
     setSwitchTarget(null);   // 走"添加账户"入口，不是切换
-    setForm({ phone: '', password: '' });
+    setForm({ identifier: '', password: '' });
     if (!showForm) setTimeout(() => phoneRef.current?.focus(), 80);
   };
 
@@ -144,7 +150,7 @@ function AccountSwitcher() {
                   <div className={`as-name${active ? ' active' : ''}`}>
                     {a.user?.username || '未命名'}
                   </div>
-                  {a.user?.phone && <div className="as-phone">{a.user.phone}</div>}
+                  <div className="as-phone">{recentAccountIdentity(a).mode === 'vxin' ? 'v信号' : '手机号'} {recentAccountIdentity(a).identifier}</div>
                 </div>
                 {active
                   ? <span className="as-current-badge">当前</span>
@@ -216,11 +222,11 @@ function AccountSwitcher() {
                 </span>
               </div>
               <form onSubmit={doAdd} className="wc-add-form-inner">
-                <input ref={phoneRef} type="tel" placeholder="手机号" value={form.phone}
+                <input ref={phoneRef} type="tel" placeholder="v信号或手机号" value={form.identifier}
                   readOnly={!!switchTarget}
-                  onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                  onChange={e => setForm(f => ({ ...f, identifier: e.target.value }))}
                   className="wc-add-form-input"
-                  aria-label="手机号" data-testid="account-add-phone"
+                  aria-label="v信号或手机号" data-testid="account-add-phone"
                 />
                 <input ref={passwordRef} type="password" placeholder="密码" value={form.password}
                   onChange={e => setForm(f => ({ ...f, password: e.target.value }))}

@@ -15,5 +15,10 @@ module.exports=async(page,out)=>{
  const reply='Windows收到 '+stamp;await api(b,'/api/messages/'+state.privateId,{content:reply,type:'text'});await page.locator('[data-testid^="msg-bubble-"]').filter({hasText:reply}).last().waitFor({timeout:20000});
  const draft='Windows草稿 '+stamp;await page.getByTestId('chat-msg-input').fill(draft);await page.reload();await page.getByTestId('conv-item-'+state.privateId).click({timeout:30000});assert.equal(await page.getByTestId('chat-msg-input').inputValue(),draft);await page.getByTestId('chat-msg-input').fill('');
  await page.screenshot({path:path.join(out,'windows-live-chat.png')});
- return {login:true,sentOnce:true,received:true,draftAfterReload:true};
+ await page.getByTestId('chat-msg-input').fill('account-a-private-draft-'+stamp);
+ await page.getByTestId('account-switcher').click();await page.getByTestId('account-add-row').click();await page.getByTestId('account-add-phone').fill(b.identifier);await page.getByTestId('account-add-password').fill(b.password);await page.getByTestId('account-add-submit').click();
+ await page.getByTestId('conv-item-'+state.privateId).click({timeout:30000});assert.equal(await page.getByTestId('chat-msg-input').inputValue(),'');
+ await page.getByTestId('account-switcher').click();await page.getByTestId('account-row-'+a.userId).click();await page.getByTestId('conv-item-'+state.privateId).click({timeout:30000});
+ assert.equal(await page.getByTestId('chat-msg-input').inputValue(),'account-a-private-draft-'+stamp);await page.getByTestId('chat-msg-input').fill('');
+ return {login:true,sentOnce:true,received:true,draftAfterReload:true,vxinAddAccount:true,accountDraftIsolation:true};
 };
