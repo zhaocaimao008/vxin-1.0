@@ -21,6 +21,7 @@ import { setupAxiosInterceptors } from './utils/axiosInterceptor';
 import { registerSW } from './utils/serviceWorker';
 import { networkMonitor } from './utils/networkMonitor';
 import { prewarmAudio } from './utils/callSound';
+import { initializeClientDiagnostics } from './utils/clientDiagnostics';
 
 // ── Sentry 错误监控初始化 ─────────────────────────────────
 if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
@@ -95,6 +96,8 @@ if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
     const stored = localStorage.getItem('vxin_electron_token');
     if (stored) axios.defaults.headers.common['Authorization'] = `Bearer ${stored}`;
   }
+
+  initializeClientDiagnostics({ apiBase, platform: isElectron ? 'electron' : isMobile ? 'capacitor' : 'web' });
 
   // 4. 平台初始化
   if (isElectron) {

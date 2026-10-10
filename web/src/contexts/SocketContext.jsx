@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useRef, useState, useCallb
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { getConfig } from '../utils/config';
+import { reportClientDiagnostic } from '../utils/clientDiagnostics';
 
 // 拆分成两个 context 避免 reconnect 引起无关组件 re-render：
 // SocketCoreContext  — socket 实例 + 稳定回调（重连时不变）
@@ -84,6 +85,7 @@ export const SocketProvider = ({ children }) => {
     // 改密码的那台设备已拿到新凭证，重连成功，不会走到这里。
     let lastAuthCheck = 0;
     s.on('connect_error', (err) => {
+      reportClientDiagnostic('connection_failed', err);
       const msg = String(err?.message || '');
       if (!/未授权|失效|密码已修改|封禁|Token无效/.test(msg)) return;
       const now = Date.now();

@@ -27,6 +27,7 @@ jobs:
       - name: Verify packaged app on Windows
         shell: pwsh
         env:
+          VXIN_ACCEPTANCE_ACCOUNTS_JSON: ${{ secrets.VXIN_ACCEPTANCE_ACCOUNTS_JSON }}
           QA_MODULES: ${{ runner.temp }}/vxin-qa/node_modules
           QA_OUTPUT: ${{ runner.temp }}/windows-evidence
         run: node desktop-electron/scripts/verify-packaged.cjs

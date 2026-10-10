@@ -1,4 +1,5 @@
 import React from 'react';
+import { reportClientDiagnostic } from '../utils/clientDiagnostics';
 import { IcoAlert } from './Icons';
 
 /**
@@ -19,36 +20,8 @@ export default class ErrorBoundary extends React.Component {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error, errorInfo) {
-    // 1. 控制台日志
-    console.error('[ErrorBoundary] 捕获到未处理异常:', error, errorInfo);
-
-    // 2. 本地留痕（最近 10 条），便于线上排查/用户反馈
-    try {
-      const log = {
-        time: new Date().toISOString(),
-        message: String(error?.message || error),
-        stack: String(error?.stack || ''),
-        componentStack: String(errorInfo?.componentStack || ''),
-        url: typeof location !== 'undefined' ? location.href : '',
-        ua: typeof navigator !== 'undefined' ? navigator.userAgent : '',
-      };
-      const KEY = 'vxin_error_log';
-      const prev = JSON.parse(sessionStorage.getItem(KEY) || '[]');
-      prev.unshift(log);
-      sessionStorage.setItem(KEY, JSON.stringify(prev.slice(0, 10)));
-
-      // 3. 尽力上报后端（失败静默，不影响降级页）
-      if (typeof fetch === 'function') {
-        fetch('/api/client-errors', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(log),
-          keepalive: true,
-        }).catch(() => {});
-      }
-    } catch { /* 留痕失败不阻塞降级 */ }
+  componentDidCatch(error) {
+    reportClientDiagnostic('render_error', error);
   }
 
   handleReload = () => {

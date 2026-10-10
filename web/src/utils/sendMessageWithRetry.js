@@ -1,3 +1,5 @@
+import { reportClientDiagnostic } from './clientDiagnostics';
+
 // Retry only an explicit temporary rate limit, keeping the same idempotency key.
 // The caller's pending entry owns the lifetime (timeout, account/conversation change).
 export function sendMessageWithRetry(socket, payload, onAck, isPending) {
@@ -14,7 +16,10 @@ export function sendMessageWithRetry(socket, payload, onAck, isPending) {
           if (socket.connected) send();
           else onAck({ success: false, error: '连接已断开' });
         }, delay);
-      } else onAck(ack);
+      } else {
+        if (!ack?.success) reportClientDiagnostic('message_send_failed');
+        onAck(ack);
+      }
     });
   };
   send();

@@ -1,4 +1,5 @@
 import React from 'react';
+import { reportClientDiagnostic } from '../utils/clientDiagnostics';
 import { IcoWarn } from './Icons';
 
 /**
@@ -19,23 +20,8 @@ export default class ChatWindowBoundary extends React.Component {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error, info) {
-    // [ChatWindowBoundary] 捕获异常 — suppressed (keep fetch report)
-    // 静默上报，不影响降级 UI
-    try {
-      fetch('/api/client-errors', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          time: new Date().toISOString(),
-          message: String(error?.message || error),
-          stack: String(error?.stack || ''),
-          componentStack: String(info?.componentStack || ''),
-          url: typeof location !== 'undefined' ? location.href : '',
-        }),
-        keepalive: true,
-      }).catch(() => {});
-    } catch { /* 上报失败静默 */ }
+  componentDidCatch(error) {
+    reportClientDiagnostic('render_error', error);
   }
 
   componentDidUpdate(prevProps) {

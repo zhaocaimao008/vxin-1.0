@@ -3,6 +3,10 @@ name: iOS TestFlight
 on:
   workflow_dispatch:
     inputs:
+      review_verified_build:
+        description: Submit verified iOS 8.0.5 build 1791594513 for external Beta review
+        type: boolean
+        default: false
       publish_ipa_run_id:
         description: 'Upload the already verified IPA from this build run to TestFlight'
         type: string
@@ -37,7 +41,7 @@ on:
 
 jobs:
   testflight:
-    if: ${{ !inputs.signing_check_only && inputs.publish_ipa_run_id == '' }}
+    if: ${{ !inputs.signing_check_only && !inputs.review_verified_build && inputs.publish_ipa_run_id == '' }}
     # Apple 自 2026-04 起要求用 iOS 26 SDK(Xcode 26)构建才能上传 App Store。
     # macos-15 仅带 Xcode 16(iOS 18 SDK)，会在上传校验时 409。改用 macos-26。
     runs-on: macos-26
@@ -264,3 +268,28 @@ jobs:
           name: ios-distribution-result
           path: ios-distribution-result.json
           if-no-files-found: ignore
+
+  review-verified-build:
+    if: ${{ inputs.review_verified_build }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify account and submit the exact validated build
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
+          VXIN_REVIEW_ACCOUNT_JSON: ${{ secrets.VXIN_REVIEW_ACCOUNT_JSON }}
+        run: node scripts/ios-submit-verified.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-external-review-result
+          path: ios-external-review-result.json
+          retention-days: 14
