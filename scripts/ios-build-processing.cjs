@@ -17,9 +17,9 @@ async function get(path){
  const app=(await get('apps?filter[bundleId]=com.vxin.app')).data[0];
  if(!app)throw Error('Expected com.vxin.app not found');
  for(let attempt=0;attempt<30;attempt++){
-  const build=(await get('builds?filter[app]='+encodeURIComponent(app.id)+'&filter[version]=1791586705')).data[0];
+  const build=(await get('builds?filter[app]='+encodeURIComponent(app.id)+'&filter[version]=1791594513')).data[0];
   const state=build?.attributes.processingState||'WAITING_FOR_BUILD';
-  const result={bundleId:'com.vxin.app',version:'8.0.5',buildNumber:'1791586705',buildId:build?.id||null,processingState:state,expired:build?.attributes.expired??null,checkedAt:new Date().toISOString(),externalReviewSubmitted:false};
+  const result={bundleId:'com.vxin.app',version:'8.0.5',buildNumber:'1791594513',buildId:build?.id||null,processingState:state,expired:build?.attributes.expired??null,checkedAt:new Date().toISOString(),externalReviewSubmitted:false};
   if(build){
    const detail=await get('builds/'+encodeURIComponent(build.id)+'/buildBetaDetail');
    result.betaState=detail.data.attributes;

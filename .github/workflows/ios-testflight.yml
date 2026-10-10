@@ -223,10 +223,10 @@ jobs:
           IPA_RUN: ${{ inputs.publish_ipa_run_id }}
         run: |
           set -euo pipefail
-          test "$IPA_RUN" = 38001907305
+          test "$IPA_RUN" = 38011855142
           test "$(gh run view "$IPA_RUN" --json conclusion --jq .conclusion)" = success
           test "$(gh run view 38001904364 --json conclusion --jq .conclusion)" = success
-          test "$(gh run view 38011103828 --json conclusion --jq .conclusion)" = success
+          test "$(gh run view 38011856984 --json conclusion --jq .conclusion)" = success
       - uses: actions/download-artifact@v4
         with:
           name: vxin-ios-ipa
@@ -235,7 +235,7 @@ jobs:
           github-token: ${{ github.token }}
       - name: Check exact signed package
         run: |
-          test "$(shasum -a 256 verified-ipa/Vxin.ipa | cut -d' ' -f1)" = be0beaf9044d74d079515ba961ead5a06d7ac94809470d999aebfaecf195e7b0
+          test "$(shasum -a 256 verified-ipa/Vxin.ipa | cut -d' ' -f1)" = 262ed319eb8e044617a446d48d32d7e4923b0b8e2dcc48e107592fad18cda32a
           unzip -tq verified-ipa/Vxin.ipa
       - name: Validate and upload to App Store Connect
         env:
