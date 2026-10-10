@@ -32,7 +32,7 @@ jobs:
         working-directory: ios
         run: |
           set -o pipefail
-          xcodebuild build-for-testing \
+          xcodebuild build \
             -project Vxin.xcodeproj \
             -scheme Vxin \
             -destination 'generic/platform=iOS Simulator' \
@@ -82,6 +82,13 @@ jobs:
         run: |
           xcrun simctl io ${{ steps.sim.outputs.udid }} screenshot ios-screenshots/01-login.png
           sleep 2
+
+      - name: Screenshot - Dark appearance
+        run: |
+          xcrun simctl ui ${{ steps.sim.outputs.udid }} appearance dark
+          xcrun simctl launch --terminate-running-process ${{ steps.sim.outputs.udid }} com.vxin.app
+          sleep 5
+          xcrun simctl io ${{ steps.sim.outputs.udid }} screenshot ios-screenshots/02-login-dark.png
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
