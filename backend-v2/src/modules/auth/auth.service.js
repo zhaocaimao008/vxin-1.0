@@ -167,7 +167,10 @@ async function login(body = {}) {
   // 归一化登录方式与账号标识：
   //   - 显式 loginType='vxin' 时按 v信号查；
   //   - 否则一律走手机号（含旧的 { phone } 请求与 loginType='phone'）。
-  const loginType = body.loginType === 'vxin' ? 'vxin' : 'phone';
+  // Released Android/iOS clients send { wechat_id, password } without loginType.
+  // Recognize that legacy shape only when no explicit method/phone/identifier is supplied.
+  const legacyVxin = body.loginType == null && !body.phone && !body.identifier && body.wechat_id != null;
+  const loginType = body.loginType === 'vxin' || legacyVxin ? 'vxin' : 'phone';
   const identifier =
     loginType === 'vxin'
       ? (body.identifier ?? body.wechat_id ?? '')

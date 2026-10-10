@@ -282,3 +282,10 @@
 :root .wc-update-dismiss:hover { background: var(--nt-fill); color: var(--nt-text); }
 :root .wc-update-check-btn { color: var(--titlebar-fg, var(--nt-text-3)); border-radius: var(--nt-r-sm); }
 :root .wc-update-check-btn:hover { background: var(--nt-fill); color: var(--nt-text); }
+
+/* Account menus are portaled above glass/navigation stacking contexts. */
+:root .as-dropdown {
+  max-height: calc(100dvh - 56px);
+  max-width: calc(100vw - 16px);
+  overflow-y: auto;
+}

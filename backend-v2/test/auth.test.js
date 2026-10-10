@@ -58,6 +58,20 @@ describe('v信号 + 手机号双模式登录 — auth.service 核心逻辑', () 
     expect(result.user.wechat_id).toBe(TEST_VXIN);
   });
 
+  test('released native clients can log in with wechat_id only', async () => {
+    const result = await authService.login({ wechat_id: TEST_VXIN, password: TEST_PASS });
+    expect(result.user.id).toBe(testUserId);
+    await expect(authService.login({ wechat_id: TEST_VXIN, password: 'wrongpass' }))
+      .rejects.toMatchObject({ message: '账号或密码错误' });
+  });
+
+  test('legacy vxin field never overrides explicit phone login or another phone', async () => {
+    const result = await authService.login({ phone: TEST_PHONE, wechat_id: '999999', password: TEST_PASS });
+    expect(result.user.id).toBe(testUserId);
+    await expect(authService.login({ loginType: 'phone', identifier: '13999999999', wechat_id: TEST_VXIN, password: TEST_PASS }))
+      .rejects.toMatchObject({ message: '账号或密码错误' });
+  });
+
   // 4. v信号 + 错误密码 → 401
   test('4. v信号 + 错误密码 → 统一错误信息', async () => {
     await expect(

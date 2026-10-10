@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { createPortal } from 'react-dom';
 import Avatar from '../components/Avatar';
 import { mediaUrl } from '../utils/url';
 import { showConfirm } from '../utils/toast';
@@ -26,6 +27,13 @@ function AccountSwitcher() {
   const phoneRef = useRef(null);
   const passwordRef = useRef(null);
   const containerRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const [dropdownLeft, setDropdownLeft] = useState(72);
+  const toggleDropdown = () => {
+    const right = containerRef.current?.getBoundingClientRect().right || 64;
+    setDropdownLeft(Math.max(8, Math.min(right + 8, window.innerWidth - 276)));
+    setOpen(v => !v);
+  };
   const letter = (user?.username || '?')[0].toUpperCase();
   // 头像地址变化即复位错误态：render 期派生（存上一次 avatar），避免 effect 内同步 setState
   const [prevAvatar, setPrevAvatar] = useState(user?.avatar);
@@ -35,7 +43,7 @@ function AccountSwitcher() {
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
-      if (!containerRef.current?.contains(e.target)) setOpen(false);
+      if (!containerRef.current?.contains(e.target) && !dropdownRef.current?.contains(e.target)) setOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -116,7 +124,7 @@ function AccountSwitcher() {
   return (
     <div ref={containerRef} className="as-container">
       {/* 头像按钮 */}
-      <div className="as-avatar-btn" data-testid="account-switcher" role="button" tabIndex={0} aria-label="账号切换" aria-expanded={open} onClick={() => setOpen(v => !v)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(v => !v); } }}>
+      <div className="as-avatar-btn" data-testid="account-switcher" role="button" tabIndex={0} aria-label="账号切换" aria-expanded={open} onClick={toggleDropdown} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleDropdown(); } }}>
         <div className={`as-avatar-inner${open ? ' as-avatar-inner-open' : ''}`}>
           {user?.avatar && !avatarErr
             ? <img src={mediaUrl(user.avatar)} alt="" loading="lazy" className="as-avatar-img" onError={() => setAvatarErr(true)} />
@@ -126,8 +134,8 @@ function AccountSwitcher() {
       </div>
 
       {/* 下拉面板（fixed 定位，不受 sidebar overflow 影响） */}
-      {open && (
-        <div className="as-dropdown">
+      {open && createPortal(
+        <div ref={dropdownRef} className="as-dropdown" style={{ left: dropdownLeft }}>
 
           {/* 账号列表 */}
           {accounts.map((a) => {
@@ -240,7 +248,7 @@ function AccountSwitcher() {
               </form>
             </div>
           )}
-        </div>
+        </div>, document.body
       )}
     </div>
   );
