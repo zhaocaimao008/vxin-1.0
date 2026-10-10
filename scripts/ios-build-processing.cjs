@@ -1,0 +1,34 @@
+const crypto=require('node:crypto'),fs=require('node:fs');
+const key=Buffer.from(process.env.ASC_API_KEY_BASE64,'base64').toString('utf8');
+function token(){
+ const now=Math.floor(Date.now()/1000);
+ const header=Buffer.from(JSON.stringify({alg:'ES256',kid:process.env.ASC_KEY_ID,typ:'JWT'})).toString('base64url');
+ const claims=Buffer.from(JSON.stringify({iss:process.env.ASC_ISSUER_ID,iat:now-30,exp:now+600,aud:'appstoreconnect-v1'})).toString('base64url');
+ const input=header+'.'+claims;
+ return input+'.'+crypto.sign('sha256',Buffer.from(input),{key,dsaEncoding:'ieee-p1363'}).toString('base64url');
+}
+async function get(path){
+ const response=await fetch('https://api.appstoreconnect.apple.com/v1/'+path,{headers:{Authorization:'Bearer '+token()},signal:AbortSignal.timeout(30000)});
+ const data=await response.json();
+ if(!response.ok)throw Error('App Store Connect HTTP '+response.status+': '+JSON.stringify(data.errors?.map(e=>({status:e.status,code:e.code,title:e.title}))));
+ return data;
+}
+(async()=>{
+ const app=(await get('apps?filter[bundleId]=com.vxin.app')).data[0];
+ if(!app)throw Error('Expected com.vxin.app not found');
+ for(let attempt=0;attempt<30;attempt++){
+  const build=(await get('builds?filter[app]='+encodeURIComponent(app.id)+'&filter[version]=1791586705')).data[0];
+  const state=build?.attributes.processingState||'WAITING_FOR_BUILD';
+  const result={bundleId:'com.vxin.app',version:'8.0.5',buildNumber:'1791586705',buildId:build?.id||null,processingState:state,expired:build?.attributes.expired??null,checkedAt:new Date().toISOString(),externalReviewSubmitted:false};
+  if(build){
+   const detail=await get('builds/'+encodeURIComponent(build.id)+'/buildBetaDetail');
+   result.betaState=detail.data.attributes;
+  }
+  fs.writeFileSync('ios-distribution-result.json',JSON.stringify(result,null,2));
+  console.log('Apple processing state:',state);
+  if(state==='VALID'){console.log('Uploaded build is valid in App Store Connect');return;}
+  if(['FAILED','INVALID'].includes(state))throw Error('Apple rejected processing: '+state);
+  await new Promise(r=>setTimeout(r,30000));
+ }
+ throw Error('Apple processing still pending; inspect saved result');
+})().catch(e=>{console.error(e.message);process.exit(1)});

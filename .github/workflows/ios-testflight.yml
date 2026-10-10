@@ -3,6 +3,11 @@ name: iOS TestFlight
 on:
   workflow_dispatch:
     inputs:
+      publish_ipa_run_id:
+        description: 'Upload the already verified IPA from this build run to TestFlight'
+        type: string
+        required: false
+        default: ''
       repair_signing:
         description: '新增发布证书与描述文件，使用恢复公钥加密导出'
         type: boolean
@@ -32,7 +37,7 @@ on:
 
 jobs:
   testflight:
-    if: ${{ !inputs.signing_check_only }}
+    if: ${{ !inputs.signing_check_only && inputs.publish_ipa_run_id == '' }}
     # Apple 自 2026-04 起要求用 iOS 26 SDK(Xcode 26)构建才能上传 App Store。
     # macos-15 仅带 Xcode 16(iOS 18 SDK)，会在上传校验时 409。改用 macos-26。
     runs-on: macos-26
@@ -199,3 +204,63 @@ jobs:
           path: /tmp/vxin-ipa/*.ipa
           if-no-files-found: error
           retention-days: 14
+
+  publish-existing:
+    if: inputs.publish_ipa_run_id != ''
+    runs-on: macos-26
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify build and simulator gates
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IPA_RUN: ${{ inputs.publish_ipa_run_id }}
+        run: |
+          set -euo pipefail
+          test "$IPA_RUN" = 38001907305
+          test "$(gh run view "$IPA_RUN" --json conclusion --jq .conclusion)" = success
+          test "$(gh run view 38001904364 --json conclusion --jq .conclusion)" = success
+          test "$(gh run view 38011103828 --json conclusion --jq .conclusion)" = success
+      - uses: actions/download-artifact@v4
+        with:
+          name: vxin-ios-ipa
+          path: verified-ipa
+          run-id: ${{ inputs.publish_ipa_run_id }}
+          github-token: ${{ github.token }}
+      - name: Check exact signed package
+        run: |
+          test "$(shasum -a 256 verified-ipa/Vxin.ipa | cut -d' ' -f1)" = be0beaf9044d74d079515ba961ead5a06d7ac94809470d999aebfaecf195e7b0
+          unzip -tq verified-ipa/Vxin.ipa
+      - name: Validate and upload to App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          KEY="$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          trap 'rm -f "$KEY"' EXIT
+          printf '%s' "$ASC_API_KEY_BASE64" | base64 --decode > "$KEY"
+          chmod 600 "$KEY"
+          xcrun altool --validate-app -f verified-ipa/Vxin.ipa --type ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+          xcrun altool --upload-app -f verified-ipa/Vxin.ipa --type ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+      - name: Check Apple processing state
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
+        run: node scripts/ios-build-processing.cjs
+      - name: Save distribution result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-distribution-result
+          path: ios-distribution-result.json
+          if-no-files-found: ignore
