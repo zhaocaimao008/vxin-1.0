@@ -2,6 +2,19 @@ name: iOS Visual Audit
 
 on:
   workflow_dispatch:
+    inputs:
+      simulator_build_run:
+        description: Optional verified audit run containing ios-simulator-bundle; leave blank to compile
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  SIMULATOR_BUILD_RUN: ${{ inputs.simulator_build_run }}
 
 jobs:
   visual-audit:
@@ -15,13 +28,16 @@ jobs:
         run: xcodebuild -version
 
       - name: Install XcodeGen
+        if: inputs.simulator_build_run == ''
         run: brew install xcodegen
 
       - name: Generate Xcode project
+        if: inputs.simulator_build_run == ''
         working-directory: ios
         run: xcodegen generate
 
       - name: Resolve Swift packages
+        if: inputs.simulator_build_run == ''
         working-directory: ios
         run: |
           xcodebuild -resolvePackageDependencies \
@@ -29,6 +45,7 @@ jobs:
             -scheme Vxin
 
       - name: Build for Simulator
+        if: inputs.simulator_build_run == ''
         working-directory: ios
         run: |
           set -o pipefail
@@ -41,6 +58,15 @@ jobs:
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGN_STYLE=Automatic \
             PROVISIONING_PROFILE_SPECIFIER=""
+
+      - name: Fetch an existing simulator build for focused acceptance
+        if: inputs.simulator_build_run != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-simulator-bundle
+          path: ${{ runner.temp }}/simulator-archive
+          run-id: ${{ inputs.simulator_build_run }}
+          github-token: ${{ github.token }}
 
       - name: Pick iPhone simulator
         id: sim
@@ -65,16 +91,26 @@ jobs:
       - name: Install app
         working-directory: ios
         run: |
-          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "Vxin.app" | head -1)
+          if [ -n "$SIMULATOR_BUILD_RUN" ]; then
+            [[ "$SIMULATOR_BUILD_RUN" =~ ^[0-9]+$ ]]
+            mkdir -p "$RUNNER_TEMP/simulator-retry"
+            ditto -x -k "$RUNNER_TEMP/simulator-archive/Vxin-simulator.zip" "$RUNNER_TEMP/simulator-retry"
+            APP_PATH="$RUNNER_TEMP/simulator-retry/Vxin.app"
+          else
+            APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "Vxin.app" | head -1)
+          fi
           if [ -z "$APP_PATH" ]; then
             echo "App not found in DerivedData"
             exit 1
           fi
           echo "Installing: $APP_PATH"
           xcrun simctl install ${{ steps.sim.outputs.udid }} "$APP_PATH"
-          ditto -c -k --keepParent "$APP_PATH" "$RUNNER_TEMP/Vxin-simulator.zip"
+          if [ -z "$SIMULATOR_BUILD_RUN" ]; then
+            ditto -c -k --keepParent "$APP_PATH" "$RUNNER_TEMP/Vxin-simulator.zip"
+          fi
 
       - name: Preserve simulator build for focused UI retries
+        if: inputs.simulator_build_run == ''
         uses: actions/upload-artifact@v4
         with:
           name: ios-simulator-bundle
