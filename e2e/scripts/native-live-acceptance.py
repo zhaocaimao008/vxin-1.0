@@ -58,7 +58,7 @@ class IOS:
                    'conv-item-'+state['groupId']:'跨端验收专用群'}
             if tid not in names or not names[tid]:raise
             title=json.dumps(names[tid],ensure_ascii=False)
-            return self.d.find_element(AppiumBy.IOS_PREDICATE,'label BEGINSWITH '+title)
+            return self.d.find_element(AppiumBy.IOS_PREDICATE,'(type == "XCUIElementTypeButton" OR type == "XCUIElementTypeCell" OR type == "XCUIElementTypeStaticText") AND label CONTAINS '+title)
     def click(self,tid=None,text=None):wait(lambda:self.element(tid,text)).click()
     def type(self,tid,text):el=wait(lambda:self.element(tid));el.click();el.send_keys(text)
     def visible(self,text):
@@ -109,6 +109,11 @@ except Exception as error:
             for field in ['password','token','identifier']:
                 if account.get(field):detail=detail.replace(str(account[field]),'[redacted]')
         result['driverSetupError']=detail[:5000]
+    if driver:
+        try:
+            tree=ET.fromstring(driver.page_source)
+            result['visibleControlIds']=sorted({x.get('name') for x in tree.iter() if re.match(r'^(conv-item-|chat-|nav-tab-)',x.get('name',''))})[:80]
+        except Exception:pass
     try:app.screenshot(platform+'-failure.png')
     except Exception:pass
 finally:
