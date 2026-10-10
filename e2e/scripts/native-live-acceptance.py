@@ -2,7 +2,7 @@
 import json,os,re,subprocess,time,urllib.request,xml.etree.ElementTree as ET,shlex,sys
 from pathlib import Path
 state=json.loads(os.environ['VXIN_ACCEPTANCE_ACCOUNTS_JSON']);platform=sys.argv[1];out=Path(os.environ.get('QA_OUTPUT','native-evidence'));out.mkdir(exist_ok=True,parents=True)
-checks=[];driver=None
+checks=[];driver=None;phase="api-setup"
 def api(user,path,body=None,method=None):
     r=urllib.request.Request(state['base']+path,data=json.dumps(body).encode() if body is not None else None,headers={'Content-Type':'application/json',**({'Authorization':'Bearer '+user['token']} if user.get('token') else {})},method=method or ('POST' if body is not None else 'GET'))
     with urllib.request.urlopen(r,timeout=25) as response:return json.load(response)
@@ -43,6 +43,10 @@ class IOS:
         from appium import webdriver
         from appium.options.ios import XCUITestOptions
         opts=XCUITestOptions();opts.platform_name='iOS';opts.automation_name='XCUITest';opts.udid=os.environ['IOS_UDID'];opts.bundle_id='com.vxin.app';opts.no_reset=True;opts.auto_accept_alerts=True;opts.new_command_timeout=120
+        opts.set_capability('appium:usePrebuiltWDA',True)
+        opts.set_capability('appium:derivedDataPath',os.environ['WDA_DERIVED_DATA'])
+        opts.set_capability('appium:wdaStartupRetries',1)
+        opts.set_capability('appium:wdaLaunchTimeout',120000)
         driver=webdriver.Remote('http://127.0.0.1:4723',options=opts);self.d=driver
     def element(self,tid=None,text=None):
         from appium.webdriver.common.appiumby import AppiumBy
@@ -61,7 +65,9 @@ class IOS:
 try:
     a,b=state['accounts'][:2]
     b['token']=api(b,'/api/auth/login',{'loginType':'vxin','identifier':b['identifier'],'password':b['password']})['token']
+    phase='driver-setup'
     app=Android() if platform=='android' else IOS()
+    phase='business-checks'
     app.click(text='v信登录');app.type('login-vxin-input',a['identifier']);app.type('login-password-input',a['password'])
     if platform=='android':app.back() # dismiss keyboard before agreement below the form
     app.click('login-agreement-checkbox');app.click('login-submit-btn');app.click('nav-tab-chats');checks.append('real-login');app.click('conv-item-'+state['privateId'])
@@ -86,7 +92,14 @@ try:
     result={'platform':platform,'device':'emulator' if platform=='android' else 'simulator','passed':True,'checks':checks}
 except Exception as error:
     # Driver exceptions may echo input commands containing a password. Record type and stage only.
-    result={'platform':platform,'passed':False,'checks':checks,'errorType':type(error).__name__,'failedAfter':checks[-1] if checks else 'login'}
+    result={'platform':platform,'passed':False,'checks':checks,'errorType':type(error).__name__,'failedAfter':checks[-1] if checks else phase}
+    if phase=='driver-setup':
+        # No login input has occurred yet. Keep driver startup diagnostics only.
+        detail=str(error)
+        for account in state['accounts']:
+            for field in ['password','token','identifier']:
+                if account.get(field):detail=detail.replace(str(account[field]),'[redacted]')
+        result['driverSetupError']=detail[:5000]
     try:app.screenshot(platform+'-failure.png')
     except Exception:pass
 finally:

@@ -104,11 +104,21 @@ jobs:
           "$RUNNER_TEMP/vxin-qa-python/bin/pip" install Appium-Python-Client
           "$RUNNER_TEMP/vxin-appium/node_modules/.bin/appium" --log-level error --log "$RUNNER_TEMP/appium-private.log" > /dev/null 2>&1 &
           for i in $(seq 1 30); do if curl -fsS http://127.0.0.1:4723/status > /dev/null; then break; fi; sleep 1; done
+      - name: Build simulator automation driver
+        run: |
+          set -o pipefail
+          WDA_PROJECT=$(find "$HOME/.appium" -name WebDriverAgent.xcodeproj -print -quit)
+          test -n "$WDA_PROJECT"
+          xcodebuild build-for-testing -project "$WDA_PROJECT" -scheme WebDriverAgentRunner \
+            -destination 'platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}' \
+            -derivedDataPath "$RUNNER_TEMP/vxin-wda" \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY="-" CODE_SIGN_STYLE=Automatic
       - name: Real login, messaging, groups and draft persistence on iPhone simulator
         env:
           VXIN_ACCEPTANCE_ACCOUNTS_JSON: ${{ secrets.VXIN_ACCEPTANCE_ACCOUNTS_JSON }}
           QA_OUTPUT: ios-screenshots
           IOS_UDID: ${{ steps.sim.outputs.udid }}
+          WDA_DERIVED_DATA: ${{ runner.temp }}/vxin-wda
         run: |
           "$RUNNER_TEMP/vxin-qa-python/bin/python" e2e/scripts/native-live-acceptance.py ios
 
