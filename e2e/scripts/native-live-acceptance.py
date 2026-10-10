@@ -50,12 +50,20 @@ class IOS:
         driver=webdriver.Remote('http://127.0.0.1:4723',options=opts);self.d=driver
     def element(self,tid=None,text=None):
         from appium.webdriver.common.appiumby import AppiumBy
-        return self.d.find_element(AppiumBy.ACCESSIBILITY_ID,tid or text)
+        try:return self.d.find_element(AppiumBy.ACCESSIBILITY_ID,tid or text)
+        except Exception:
+            # SwiftUI NavigationLink may merge its row identifier with child text.
+            # Fall back to the exact synthetic conversation's visible name.
+            names={'conv-item-'+state['privateId']:state['accounts'][1].get('username'),
+                   'conv-item-'+state['groupId']:'跨端验收专用群'}
+            if tid not in names or not names[tid]:raise
+            title=json.dumps(names[tid],ensure_ascii=False)
+            return self.d.find_element(AppiumBy.IOS_PREDICATE,'label BEGINSWITH '+title)
     def click(self,tid=None,text=None):wait(lambda:self.element(tid,text)).click()
     def type(self,tid,text):el=wait(lambda:self.element(tid));el.click();el.send_keys(text)
     def visible(self,text):
         from appium.webdriver.common.appiumby import AppiumBy
-        return bool(self.d.find_elements(AppiumBy.IOS_PREDICATE,f'label == "{text}" OR value == "{text}"'))
+        return bool(self.d.find_elements(AppiumBy.IOS_PREDICATE,'label CONTAINS '+json.dumps(text)+' OR value CONTAINS '+json.dumps(text)))
     def back(self):
         from appium.webdriver.common.appiumby import AppiumBy
         self.d.find_element(AppiumBy.XPATH,'//XCUIElementTypeNavigationBar/XCUIElementTypeButton[1]').click()
@@ -64,7 +72,8 @@ class IOS:
     def relaunch(self):self.d.terminate_app('com.vxin.app');self.d.activate_app('com.vxin.app')
 try:
     a,b=state['accounts'][:2]
-    b['token']=api(b,'/api/auth/login',{'loginType':'vxin','identifier':b['identifier'],'password':b['password']})['token']
+    b_auth=api(b,'/api/auth/login',{'loginType':'vxin','identifier':b['identifier'],'password':b['password']})
+    b['token']=b_auth['token'];b['username']=b_auth['user']['username']
     phase='driver-setup'
     app=Android() if platform=='android' else IOS()
     phase='business-checks'
