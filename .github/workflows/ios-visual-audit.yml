@@ -72,6 +72,14 @@ jobs:
           fi
           echo "Installing: $APP_PATH"
           xcrun simctl install ${{ steps.sim.outputs.udid }} "$APP_PATH"
+          ditto -c -k --keepParent "$APP_PATH" "$RUNNER_TEMP/Vxin-simulator.zip"
+
+      - name: Preserve simulator build for focused UI retries
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-simulator-bundle
+          path: ${{ runner.temp }}/Vxin-simulator.zip
+          retention-days: 7
 
       - name: Launch app and wait
         run: |
@@ -99,7 +107,7 @@ jobs:
       - name: Install isolated native UI driver
         run: |
           npm install --prefix "$RUNNER_TEMP/vxin-appium" --no-audit --no-fund appium@3
-          "$RUNNER_TEMP/vxin-appium/node_modules/.bin/appium" driver install xcuitest
+          "$RUNNER_TEMP/vxin-appium/node_modules/.bin/appium" driver install xcuitest@12.16.0
           python3 -m venv "$RUNNER_TEMP/vxin-qa-python"
           "$RUNNER_TEMP/vxin-qa-python/bin/pip" install Appium-Python-Client
           "$RUNNER_TEMP/vxin-appium/node_modules/.bin/appium" --log-level error --log "$RUNNER_TEMP/appium-private.log" > /dev/null 2>&1 &

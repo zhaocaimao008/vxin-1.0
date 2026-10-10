@@ -2,17 +2,21 @@
 import json,os,re,subprocess,time,urllib.request,xml.etree.ElementTree as ET,shlex,sys
 from pathlib import Path
 state=json.loads(os.environ['VXIN_ACCEPTANCE_ACCOUNTS_JSON']);platform=sys.argv[1];out=Path(os.environ.get('QA_OUTPUT','native-evidence'));out.mkdir(exist_ok=True,parents=True)
-checks=[];driver=None;phase="api-setup"
+checks=[];driver=None;phase="api-setup";operation="initialization";last_wait_error=None;ui_actions=[]
+def step(name):
+    global operation
+    operation=name;print(json.dumps({"step":name}),flush=True)
 def api(user,path,body=None,method=None):
     r=urllib.request.Request(state['base']+path,data=json.dumps(body).encode() if body is not None else None,headers={'Content-Type':'application/json',**({'Authorization':'Bearer '+user['token']} if user.get('token') else {})},method=method or ('POST' if body is not None else 'GET'))
     with urllib.request.urlopen(r,timeout=25) as response:return json.load(response)
 def wait(fn,timeout=45):
+    global last_wait_error
     end=time.monotonic()+timeout
     while time.monotonic()<end:
         try:
             value=fn()
             if value:return value
-        except Exception:pass
+        except Exception as e:last_wait_error=type(e).__name__+": "+str(e)[:800]
         time.sleep(1)
     raise RuntimeError('Timed out waiting for the current acceptance step')
 def adb(*args):return subprocess.check_output(['adb',*args],stderr=subprocess.DEVNULL)
@@ -46,25 +50,32 @@ class IOS:
         opts.set_capability('appium:usePrebuiltWDA',True)
         opts.set_capability('appium:derivedDataPath',os.environ['WDA_DERIVED_DATA'])
         opts.set_capability('appium:wdaStartupRetries',1)
+        opts.set_capability('appium:waitForIdleTimeout',0.5)
         opts.set_capability('appium:wdaLaunchTimeout',120000)
         driver=webdriver.Remote('http://127.0.0.1:4723',options=opts);self.d=driver
     def element(self,tid=None,text=None):
         from appium.webdriver.common.appiumby import AppiumBy
-        try:return self.d.find_element(AppiumBy.ACCESSIBILITY_ID,tid or text)
-        except Exception:
-            # SwiftUI NavigationLink may merge its row identifier with child text.
-            # Fall back to the exact synthetic conversation's visible name.
-            names={'conv-item-'+state['privateId']:state['accounts'][1].get('username'),
-                   'conv-item-'+state['groupId']:'跨端验收专用群'}
-            if tid not in names or not names[tid]:raise
-            title=json.dumps(names[tid],ensure_ascii=False)
-            return self.d.find_element(AppiumBy.IOS_PREDICATE,'(type == "XCUIElementTypeButton" OR type == "XCUIElementTypeCell" OR type == "XCUIElementTypeStaticText") AND label CONTAINS '+title)
-    def click(self,tid=None,text=None):wait(lambda:self.element(tid,text)).click()
-    def type(self,tid,text):el=wait(lambda:self.element(tid));el.click();el.send_keys(text)
+        return self.d.find_element(AppiumBy.ACCESSIBILITY_ID,tid or text)
+    def click(self,tid=None,text=None):
+        step('tap:'+str(tid or text))
+        el=wait(lambda:self.element(tid,text))
+        if tid and tid.startswith('conv-item-'):
+            from appium.webdriver.common.appiumby import AppiumBy
+            try:el=self.d.find_element(AppiumBy.XPATH,'//XCUIElementTypeCell[@name="'+tid+'" or .//*[@name="'+tid+'"]]')
+            except Exception:pass
+            rect=el.rect
+            assert rect['width']>0 and rect['height']>0
+            ui_actions.append({'control':tid,'type':el.get_attribute('type'),'rect':rect})
+            self.d.execute_script('mobile: tap',{'x':rect['x']+rect['width']*0.75,'y':rect['y']+rect['height']/2})
+        else:el.click()
+    def type(self,tid,text):
+        step('type:'+tid)
+        el=wait(lambda:self.element(tid));el.click();el.send_keys(text)
     def visible(self,text):
         from appium.webdriver.common.appiumby import AppiumBy
         return bool(self.d.find_elements(AppiumBy.IOS_PREDICATE,'label CONTAINS '+json.dumps(text)+' OR value CONTAINS '+json.dumps(text)))
     def back(self):
+        step('navigate-back')
         from appium.webdriver.common.appiumby import AppiumBy
         self.d.find_element(AppiumBy.XPATH,'//XCUIElementTypeNavigationBar/XCUIElementTypeButton[1]').click()
     def screenshot(self,name):self.d.save_screenshot(str(out/name))
@@ -102,6 +113,13 @@ try:
 except Exception as error:
     # Driver exceptions may echo input commands containing a password. Record type and stage only.
     result={'platform':platform,'passed':False,'checks':checks,'errorType':type(error).__name__,'failedAfter':checks[-1] if checks else phase}
+    result['failedOperation']=operation;result['uiActions']=ui_actions
+    if last_wait_error:
+        safe=last_wait_error
+        for account in state['accounts']:
+            for field in ['password','token','identifier']:
+                if account.get(field):safe=safe.replace(str(account[field]),'[redacted]')
+        result['lastWaitError']=safe
     if phase=='driver-setup':
         # No login input has occurred yet. Keep driver startup diagnostics only.
         detail=str(error)
