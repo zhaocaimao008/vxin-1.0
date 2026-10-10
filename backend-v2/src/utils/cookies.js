@@ -14,6 +14,9 @@ function isHttps(req) {
 function isCrossOrigin(req) {
   const origin = req.headers['origin'];
   if (!origin) return false;
+  // file:// renderers send the literal opaque Origin 'null'. It is cross-site,
+  // so Strict cookies would be discarded and the device wallet could never persist.
+  if (origin === 'null') return true;
   try { return new URL(origin).host !== req.get('host'); }
   catch { return false; }
 }
