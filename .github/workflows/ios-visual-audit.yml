@@ -37,7 +37,10 @@ jobs:
             -scheme Vxin \
             -destination 'generic/platform=iOS Simulator' \
             -configuration Debug \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=YES \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGN_STYLE=Automatic \
+            PROVISIONING_PROFILE_SPECIFIER=""
 
       - name: Pick iPhone simulator
         id: sim
@@ -67,15 +70,6 @@ jobs:
             echo "App not found in DerivedData"
             exit 1
           fi
-          # Simulator builds are compiled without a distribution identity, but Keychain still
-          # needs a signed application identifier. Ad-hoc signing avoids false login failures.
-          python3 - <<'PY_SIGN'
-          import os, plistlib
-          with open(os.environ['RUNNER_TEMP'] + '/vxin-simulator-entitlements.plist', 'wb') as f:
-              plistlib.dump({'application-identifier': 'F2J52VX786.com.vxin.app', 'keychain-access-groups': ['F2J52VX786.com.vxin.app'], 'com.apple.developer.team-identifier': 'F2J52VX786', 'get-task-allow': True}, f)
-          PY_SIGN
-          codesign --force --sign - --entitlements "$RUNNER_TEMP/vxin-simulator-entitlements.plist" "$APP_PATH"
-          codesign --verify "$APP_PATH"
           echo "Installing: $APP_PATH"
           xcrun simctl install ${{ steps.sim.outputs.udid }} "$APP_PATH"
 
