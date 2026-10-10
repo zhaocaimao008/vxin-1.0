@@ -62,7 +62,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -100,6 +99,7 @@ import androidx.compose.ui.focus.focusRequester
 import com.vxin.app.data.model.ContactCardContent
 import com.vxin.app.data.model.LocalMsgStatus
 import com.vxin.app.data.model.Message
+import com.vxin.app.ui.VxinIcons
 import com.vxin.app.ui.components.InitialAvatar
 import kotlinx.serialization.json.Json
 import com.vxin.app.ui.theme.VxinGreen
@@ -307,7 +307,7 @@ fun ChatScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text(state.title.ifBlank { "聊天" }, modifier = Modifier.testTag("chat-title"))
+                        Text(state.title.ifBlank { "聊天" }, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("chat-title"))
                         if (state.peerTyping) {
                             Text("对方正在输入…", fontSize = com.vxin.app.ui.theme.VxinTextSize.xs, color = VxinGreen)
                         }
@@ -319,13 +319,13 @@ fun ChatScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.openSearch() }, modifier = Modifier.testTag("chat-search-btn").semantics { contentDescription = "搜索" }) { Text("🔍", style = MaterialTheme.typography.titleMedium) }
+                    IconButton(onClick = { viewModel.openSearch() }, modifier = Modifier.testTag("chat-search-btn").semantics { contentDescription = "搜索" }) { Icon(VxinIcons.Search, contentDescription = null) }
                     // 群聊：语音/视频按钮受后台开关控制（关闭即隐藏）；私聊不受影响
                     if (!viewModel.isGroup || state.groupVoiceCallEnabled) {
-                        IconButton(onClick = { launchCall(false) }, modifier = Modifier.testTag("chat-call-audio-btn").semantics { contentDescription = "语音通话" }) { Text("📞", style = MaterialTheme.typography.titleMedium) }
+                        IconButton(onClick = { launchCall(false) }, modifier = Modifier.testTag("chat-call-audio-btn").semantics { contentDescription = "语音通话" }) { Icon(VxinIcons.PhoneCall, contentDescription = null) }
                     }
                     if (!viewModel.isGroup || state.groupVideoCallEnabled) {
-                        IconButton(onClick = { launchCall(true) }, modifier = Modifier.testTag("chat-call-video-btn").semantics { contentDescription = "视频通话" }) { Text("📹", style = MaterialTheme.typography.titleMedium) }
+                        IconButton(onClick = { launchCall(true) }, modifier = Modifier.testTag("chat-call-video-btn").semantics { contentDescription = "视频通话" }) { Icon(VxinIcons.Video, contentDescription = null) }
                     }
                     if (viewModel.isGroup) {
                         IconButton(onClick = { onOpenGroupInfo(viewModel.conversationId) }) {
@@ -334,7 +334,7 @@ fun ChatScreen(
                     }
                     // 聊天背景设置
                     Box {
-                        IconButton(onClick = { showChatMenu = true }, modifier = Modifier.semantics { contentDescription = "聊天背景" }) { Text("🖼", style = MaterialTheme.typography.titleMedium) }
+                        IconButton(onClick = { showChatMenu = true }, modifier = Modifier.semantics { contentDescription = "聊天背景" }) { Icon(VxinIcons.Image, contentDescription = null) }
                         DropdownMenu(expanded = showChatMenu, onDismissRequest = { showChatMenu = false }) {
                             DropdownMenuItem(text = { Text(if (state.background.isBlank()) "设置聊天背景" else "更换聊天背景") }, onClick = {
                                 showChatMenu = false; backgroundPicker.launch("image/*")
@@ -1505,7 +1505,7 @@ private fun MessageInputBar(
         ) {
             // 语音输入切换（对齐微信左侧麦克风）
             IconButton(onClick = onMicClick, modifier = Modifier.testTag("chat-voice-btn").semantics { contentDescription = if (recording) "停止录音" else "语音输入" }) {
-                Text(if (recording) "⏹" else "🎤", style = MaterialTheme.typography.titleMedium)
+                Icon(if (recording) VxinIcons.Stop else VxinIcons.Mic, contentDescription = null, tint = if (recording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (showMention) {
                 IconButton(onClick = onMention, modifier = Modifier.semantics { contentDescription = "提及成员" }) { Text("@", style = MaterialTheme.typography.titleMedium) }
@@ -1520,7 +1520,7 @@ private fun MessageInputBar(
             Spacer(Modifier.size(2.dp))
             // 表情面板切换
             IconButton(onClick = onToggleEmoji, modifier = Modifier.testTag("chat-emoji-btn").semantics { contentDescription = if (emojiPanelOpen) "切换键盘" else "表情" }) {
-                Text(if (emojiPanelOpen) "⌨" else "😀", style = MaterialTheme.typography.titleMedium)
+                Icon(if (emojiPanelOpen) VxinIcons.Keyboard else VxinIcons.Smile, contentDescription = null)
             }
             // 有文字 → 发送键；无文字 → +(功能面板)。对齐微信输入栏交互。
             if (hasText || sending) {
@@ -1529,7 +1529,7 @@ private fun MessageInputBar(
                         CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                     } else {
                         Icon(
-                            Icons.AutoMirrored.Filled.Send,
+                            VxinIcons.Send,
                             contentDescription = "发送",
                             tint = VxinGreen,
                         )
@@ -1537,11 +1537,7 @@ private fun MessageInputBar(
                 }
             } else {
                 IconButton(onClick = onToggleFunc, modifier = Modifier.testTag("chat-more-btn").semantics { contentDescription = if (funcPanelOpen) "收起功能" else "更多功能" }) {
-                    Text(
-                        if (funcPanelOpen) "✕" else "＋",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = VxinTextSecondary,
-                    )
+                    Icon(if (funcPanelOpen) VxinIcons.Close else VxinIcons.Add, contentDescription = null)
                 }
             }
         }
@@ -1560,32 +1556,32 @@ private fun FunctionPanel(
     onScheduleList: (() -> Unit)? = null, // 我的定时消息列表
 ) {
     val items = buildList {
-        add(Triple("🖼", "相册", onPickImage))   // 支持图片和视频
-        add(Triple("📎", "文件", onPickFile))
-        if (onScreenshot != null) add(Triple("📷", "截屏", onScreenshot))
-        add(Triple("🧧", "红包", onRedPacket))
-        if (onTransfer != null) add(Triple("💸", "转账", onTransfer))
-        if (onSchedule != null) add(Triple("⏰", "定时发送", onSchedule))
-        if (onScheduleList != null) add(Triple("📋", "定时列表", onScheduleList))
+        add(Triple(VxinIcons.Image, "相册", onPickImage))   // 支持图片和视频
+        add(Triple(VxinIcons.Attachment, "文件", onPickFile))
+        if (onScreenshot != null) add(Triple(VxinIcons.Camera, "截屏", onScreenshot))
+        add(Triple(VxinIcons.RedPacket, "红包", onRedPacket))
+        if (onTransfer != null) add(Triple(VxinIcons.Transfer, "转账", onTransfer))
+        if (onSchedule != null) add(Triple(VxinIcons.Clock, "定时发送", onSchedule))
+        if (onScheduleList != null) add(Triple(VxinIcons.List, "定时列表", onScheduleList))
     }
     LazyVerticalGrid(
         columns = GridCells.Fixed(4),
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(max = 220.dp)
-            .background(Color(0xFFF2F2F2))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(vertical = 12.dp),
     ) {
-        gridItems(items) { (emoji, label, onClick) ->
-            val tag = when (label) { "图片" -> "chat-attach-image"; "文件" -> "chat-attach-file"; else -> "chat-attach-redpacket" }
+        gridItems(items) { (icon, label, onClick) ->
+            val tag = when (label) { "相册" -> "chat-attach-image"; "文件" -> "chat-attach-file"; "截屏" -> "chat-attach-screenshot"; "红包" -> "chat-attach-redpacket"; "转账" -> "chat-attach-transfer"; "定时发送" -> "chat-attach-schedule"; else -> "chat-attach-schedule-list" }
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(vertical = 8.dp).testTag(tag).clickable(onClick = onClick),
             ) {
                 Box(
-                    Modifier.size(56.dp).clip(RoundedCornerShape(com.vxin.app.ui.theme.VxinRadius.md)).background(Color.White),
+                    Modifier.size(56.dp).clip(RoundedCornerShape(com.vxin.app.ui.theme.VxinRadius.md)).background(MaterialTheme.colorScheme.surface),
                     contentAlignment = Alignment.Center,
-                ) { Text(emoji, fontSize = 26.sp) }
+                ) { Icon(icon, contentDescription = null, modifier = Modifier.size(26.dp), tint = MaterialTheme.colorScheme.onSurface) }
                 Spacer(Modifier.size(6.dp))
                 Text(label, fontSize = com.vxin.app.ui.theme.VxinTextSize.sm, color = VxinTextSecondary)
             }
@@ -1727,7 +1723,7 @@ private fun StickerEmojiPanel(
     onUploadSticker: () -> Unit = {},
 ) {
     var tab by remember { mutableStateOf(0) }
-    Column(Modifier.fillMaxWidth().heightIn(max = 240.dp).background(Color(0xFFF2F2F2))) {
+    Column(Modifier.fillMaxWidth().heightIn(max = 240.dp).background(MaterialTheme.colorScheme.surfaceVariant)) {
         Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
             TextButton(onClick = { tab = 0 }) { Text("表情", color = if (tab == 0) VxinGreen else VxinTextSecondary) }
             TextButton(onClick = { tab = 1 }) { Text("贴纸", color = if (tab == 1) VxinGreen else VxinTextSecondary) }

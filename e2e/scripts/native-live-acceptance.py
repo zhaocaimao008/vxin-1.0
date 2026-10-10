@@ -80,6 +80,9 @@ try:
     app.back();app.click('conv-item-'+state['groupId']);group=platform+'-group-'+stamp
     api(b,'/api/messages/'+state['groupId'],{'content':group,'type':'text'});wait(lambda:app.visible(group));checks.append('group-receive')
     app.screenshot(platform+'-live-group.png')
+    if platform=='android':
+        app.click('chat-more-btn');wait(lambda:app.visible('相册') and app.visible('文件'))
+        app.screenshot('android-function-panel.png');checks.append('function-panel-accessible')
     result={'platform':platform,'device':'emulator' if platform=='android' else 'simulator','passed':True,'checks':checks}
 except Exception as error:
     # Driver exceptions may echo input commands containing a password. Record type and stage only.

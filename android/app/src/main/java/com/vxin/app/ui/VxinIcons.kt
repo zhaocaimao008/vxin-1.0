@@ -339,4 +339,52 @@ object VxinIcons {
             line { moveTo(5.5f, 20f); curveToRelative(0.9f, -3.3f, 3.4f, -5f, 6.5f, -5f); reflectiveCurveToRelative(5.6f, 1.7f, 6.5f, 5f) }
         }
     }
+
+    /** 聊天工具与输入栏：与品牌图标保持 24px / 1.8 圆角线条。 */
+    val Video: ImageVector by lazy { stroke("Video") {
+        line { moveTo(4f, 6f); lineTo(14f, 6f); lineTo(14f, 18f); lineTo(4f, 18f); close() }
+        line { moveTo(14f, 9f); lineTo(21f, 5f); lineTo(21f, 19f); lineTo(14f, 15f) }
+    } }
+    val Image: ImageVector by lazy { stroke("Image") {
+        line { moveTo(4f, 3.5f); lineTo(20f, 3.5f); lineTo(20f, 20.5f); lineTo(4f, 20.5f); close() }
+        line { moveTo(4f, 16f); lineTo(9f, 11f); lineTo(13f, 15f); lineTo(16f, 12f); lineTo(20f, 16f) }
+        line { moveTo(14f, 7.5f); lineTo(14.1f, 7.5f) }
+    } }
+    val Mic: ImageVector by lazy { stroke("Mic") {
+        line { moveTo(9f, 6f); arcToRelative(3f, 3f, 0f, false, true, 6f, 0f); lineTo(15f, 11f); arcToRelative(3f, 3f, 0f, false, true, -6f, 0f); close() }
+        line { moveTo(6f, 10f); lineTo(6f, 11f); arcToRelative(6f, 6f, 0f, false, false, 12f, 0f); lineTo(18f, 10f) }
+        line { moveTo(12f, 17f); lineTo(12f, 21f); moveTo(9f, 21f); lineTo(15f, 21f) }
+    } }
+    val Stop: ImageVector by lazy { stroke("Stop") { line { moveTo(6f, 6f); lineTo(18f, 6f); lineTo(18f, 18f); lineTo(6f, 18f); close() } } }
+    val Smile: ImageVector by lazy { stroke("Smile") {
+        line { moveTo(3f, 12f); arcToRelative(9f, 9f, 0f, true, true, 18f, 0f); arcToRelative(9f, 9f, 0f, true, true, -18f, 0f) }
+        line { moveTo(8f, 9f); lineTo(8.1f, 9f); moveTo(16f, 9f); lineTo(16.1f, 9f); moveTo(8f, 14f); curveTo(10f, 17f, 14f, 17f, 16f, 14f) }
+    } }
+    val Keyboard: ImageVector by lazy { stroke("Keyboard") {
+        line { moveTo(3f, 6f); lineTo(21f, 6f); lineTo(21f, 18f); lineTo(3f, 18f); close() }
+        line { moveTo(7f, 10f); lineTo(7.1f, 10f); moveTo(12f, 10f); lineTo(12.1f, 10f); moveTo(17f, 10f); lineTo(17.1f, 10f); moveTo(7f, 14f); lineTo(17f, 14f) }
+    } }
+    val Close: ImageVector by lazy { stroke("Close") { line { moveTo(6f, 6f); lineTo(18f, 18f); moveTo(18f, 6f); lineTo(6f, 18f) } } }
+    val Send: ImageVector by lazy { stroke("Send") { line { moveTo(3f, 4f); lineTo(21f, 12f); lineTo(3f, 20f); lineTo(6f, 12f); close(); moveTo(6f, 12f); lineTo(21f, 12f) } } }
+    val Attachment: ImageVector by lazy { stroke("Attachment") { line {
+        moveTo(8f, 13f); lineTo(14f, 7f); arcToRelative(2f, 2f, 0f, false, true, 3f, 3f); lineTo(9f, 18f); arcToRelative(4f, 4f, 0f, false, true, -6f, -6f); lineTo(12f, 3f)
+    } } }
+    val Camera: ImageVector by lazy { stroke("Camera") {
+        line { moveTo(3f, 7f); lineTo(7f, 7f); lineTo(9f, 4f); lineTo(15f, 4f); lineTo(17f, 7f); lineTo(21f, 7f); lineTo(21f, 20f); lineTo(3f, 20f); close() }
+        line { moveTo(8f, 13f); arcToRelative(4f, 4f, 0f, true, true, 8f, 0f); arcToRelative(4f, 4f, 0f, true, true, -8f, 0f) }
+    } }
+    val RedPacket: ImageVector by lazy { stroke("RedPacket") {
+        line { moveTo(6f, 3f); lineTo(18f, 3f); lineTo(18f, 21f); lineTo(6f, 21f); close() }
+        line { moveTo(6f, 8f); curveTo(10f, 12f, 14f, 12f, 18f, 8f); moveTo(12f, 14f); lineTo(12f, 17f) }
+    } }
+    val Transfer: ImageVector by lazy { stroke("Transfer") {
+        line { moveTo(4f, 7f); lineTo(20f, 7f); lineTo(16f, 3f); moveTo(20f, 17f); lineTo(4f, 17f); lineTo(8f, 21f) }
+    } }
+    val Clock: ImageVector by lazy { stroke("Clock") {
+        line { moveTo(3f, 12f); arcToRelative(9f, 9f, 0f, true, true, 18f, 0f); arcToRelative(9f, 9f, 0f, true, true, -18f, 0f) }
+        line { moveTo(12f, 7f); lineTo(12f, 12f); lineTo(16f, 14f) }
+    } }
+    val List: ImageVector by lazy { stroke("List") {
+        line { moveTo(5f, 6f); lineTo(5.1f, 6f); moveTo(10f, 6f); lineTo(20f, 6f); moveTo(5f, 12f); lineTo(5.1f, 12f); moveTo(10f, 12f); lineTo(20f, 12f); moveTo(5f, 18f); lineTo(5.1f, 18f); moveTo(10f, 18f); lineTo(20f, 18f) }
+    } }
 }
