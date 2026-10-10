@@ -33,7 +33,10 @@ jobs:
           arch: x86_64
           profile: pixel_6
           disable-animations: true
-          script: bash e2e/scripts/android-launch-smoke.sh
+          script: bash e2e/scripts/android-launch-smoke.sh && python3 e2e/scripts/native-live-acceptance.py android
+        env:
+          VXIN_ACCEPTANCE_ACCOUNTS_JSON: ${{ secrets.VXIN_ACCEPTANCE_ACCOUNTS_JSON }}
+          QA_OUTPUT: android-smoke
       - uses: actions/upload-artifact@v4
         if: always()
         with:

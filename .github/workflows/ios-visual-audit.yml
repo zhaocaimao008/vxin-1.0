@@ -6,7 +6,7 @@ on:
 jobs:
   visual-audit:
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -90,7 +90,27 @@ jobs:
           sleep 5
           xcrun simctl io ${{ steps.sim.outputs.udid }} screenshot ios-screenshots/02-login-dark.png
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated native UI driver
+        run: |
+          npm install --prefix "$RUNNER_TEMP/vxin-appium" --no-audit --no-fund appium@3
+          "$RUNNER_TEMP/vxin-appium/node_modules/.bin/appium" driver install xcuitest
+          python3 -m venv "$RUNNER_TEMP/vxin-qa-python"
+          "$RUNNER_TEMP/vxin-qa-python/bin/pip" install Appium-Python-Client
+          "$RUNNER_TEMP/vxin-appium/node_modules/.bin/appium" --log-level error --log "$RUNNER_TEMP/appium-private.log" > /dev/null 2>&1 &
+          for i in $(seq 1 30); do if curl -fsS http://127.0.0.1:4723/status > /dev/null; then break; fi; sleep 1; done
+      - name: Real login, messaging, groups and draft persistence on iPhone simulator
+        env:
+          VXIN_ACCEPTANCE_ACCOUNTS_JSON: ${{ secrets.VXIN_ACCEPTANCE_ACCOUNTS_JSON }}
+          QA_OUTPUT: ios-screenshots
+          IOS_UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          "$RUNNER_TEMP/vxin-qa-python/bin/python" e2e/scripts/native-live-acceptance.py ios
+
       - name: Upload screenshots
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ios-visual-audit-screenshots
