@@ -3,6 +3,7 @@ const { authCookieOptions, walletCookieOptions, csrfCookieOptions } = require('.
 const req = (origin, https = true) => ({ headers: { ...(origin ? { origin } : {}), ...(https ? { 'x-forwarded-proto': 'https' } : {}) }, secure: false, get: () => 'liaotian99.com' });
 describe('cookie policy matches browser and packaged-client origins', () => {
   test.each([authCookieOptions, walletCookieOptions, csrfCookieOptions])('opaque desktop origins retain secure cross-site cookies', options => {
+    expect(options({ ...req(undefined), headers: { 'sec-fetch-site': 'cross-site', 'x-forwarded-proto': 'https' } })).toMatchObject({ secure: true, sameSite: 'none' });
     expect(options(req('null'))).toMatchObject({ secure: true, sameSite: 'none', path: '/' });
     expect(options(req('https://liaotian99.com'))).toMatchObject({ secure: true, sameSite: 'strict' });
     expect(options(req(undefined))).toMatchObject({ secure: true, sameSite: 'strict' });

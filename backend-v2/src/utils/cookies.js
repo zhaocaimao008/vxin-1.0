@@ -13,7 +13,7 @@ function isHttps(req) {
 
 function isCrossOrigin(req) {
   const origin = req.headers['origin'];
-  if (!origin) return false;
+  if (!origin) return req.headers['sec-fetch-site'] === 'cross-site';
   // file:// renderers send the literal opaque Origin 'null'. It is cross-site,
   // so Strict cookies would be discarded and the device wallet could never persist.
   if (origin === 'null') return true;
