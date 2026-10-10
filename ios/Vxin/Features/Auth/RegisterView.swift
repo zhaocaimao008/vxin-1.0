@@ -69,7 +69,7 @@ struct RegisterView: View {
                 .font(.footnote)
                 .padding(.top, 4)
 
-                HStack(alignment: .top, spacing: 8) {
+                HStack(alignment: .center, spacing: 8) {
                     VxinRoundCheckbox(checked: $agreed, accessibilityId: "register-agreement-checkbox")
                     Text("我已阅读并同意《用户协议》和《隐私政策》")
                         .font(.caption2)

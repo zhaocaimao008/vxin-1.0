@@ -93,7 +93,7 @@ struct VxinRoundCheckbox: View {
                 Circle()
                     .fill(checked ? Color.vxinBrand : Color.clear)
                 Circle()
-                    .strokeBorder(checked ? Color.clear : Color.vxinAuthBorder, lineWidth: 1.5)
+                    .strokeBorder(checked ? Color.clear : Color.vxinAuthTextMuted, lineWidth: 1.5)
                 if checked {
                     Image(systemName: "checkmark")
                         .font(.system(size: 10, weight: .bold))

@@ -123,7 +123,7 @@ struct LoginView: View {
                 .font(.footnote)
                 .padding(.top, 4)
 
-                HStack(alignment: .top, spacing: 8) {
+                HStack(alignment: .center, spacing: 8) {
                     VxinRoundCheckbox(checked: $agreed, accessibilityId: "login-agreement-checkbox")
                     // 《用户协议》《隐私政策》暂无落地页（与 Web 端 Register.jsx 现状一致：占位链接，点击不跳转）
                     Text("我已阅读并同意《用户协议》和《隐私政策》")
