@@ -12,6 +12,16 @@ on:
         type: string
         required: false
         default: ''
+      publish_ipa_sha256:
+        description: 'Expected SHA-256 of the verified IPA'
+        type: string
+        required: false
+        default: ''
+      build_gate_run_id:
+        description: 'Successful iOS Build run for the same source revision'
+        type: string
+        required: false
+        default: ''
       repair_signing:
         description: '新增发布证书与描述文件，使用恢复公钥加密导出'
         type: boolean
@@ -229,12 +239,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           IPA_RUN: ${{ inputs.publish_ipa_run_id }}
+          GATE_RUN: ${{ inputs.build_gate_run_id }}
         run: |
           set -euo pipefail
-          test "$IPA_RUN" = 38011855142
+          [[ "$IPA_RUN" =~ ^[0-9]+$ && "$GATE_RUN" =~ ^[0-9]+$ ]]
           test "$(gh run view "$IPA_RUN" --json conclusion --jq .conclusion)" = success
-          test "$(gh run view 38001904364 --json conclusion --jq .conclusion)" = success
-          test "$(gh run view 38011856984 --json conclusion --jq .conclusion)" = success
+          test "$(gh run view "$GATE_RUN" --json conclusion --jq .conclusion)" = success
+          test "$(gh run view "$IPA_RUN" --json workflowName --jq .workflowName)" = 'iOS TestFlight'
+          test "$(gh run view "$GATE_RUN" --json workflowName --jq .workflowName)" = 'iOS Build'
+          test "$(gh run view "$IPA_RUN" --json headSha --jq .headSha)" = "$(gh run view "$GATE_RUN" --json headSha --jq .headSha)"
       - uses: actions/download-artifact@v4
         with:
           name: vxin-ios-ipa
@@ -242,9 +255,16 @@ jobs:
           run-id: ${{ inputs.publish_ipa_run_id }}
           github-token: ${{ github.token }}
       - name: Check exact signed package
+        env:
+          EXPECTED_SHA256: ${{ inputs.publish_ipa_sha256 }}
         run: |
-          test "$(shasum -a 256 verified-ipa/Vxin.ipa | cut -d' ' -f1)" = 262ed319eb8e044617a446d48d32d7e4923b0b8e2dcc48e107592fad18cda32a
+          [[ "$EXPECTED_SHA256" =~ ^[a-f0-9]{64}$ ]]
+          test "$(shasum -a 256 verified-ipa/Vxin.ipa | cut -d' ' -f1)" = "$EXPECTED_SHA256"
           unzip -tq verified-ipa/Vxin.ipa
+          unzip -p verified-ipa/Vxin.ipa Payload/Vxin.app/Info.plist > "$RUNNER_TEMP/vxin-info.plist"
+          test "$(plutil -extract CFBundleIdentifier raw -o - "$RUNNER_TEMP/vxin-info.plist")" = com.vxin.app
+          echo "EXPECTED_VERSION=$(plutil -extract CFBundleShortVersionString raw -o - "$RUNNER_TEMP/vxin-info.plist")" >> "$GITHUB_ENV"
+          echo "EXPECTED_BUILD_NUMBER=$(plutil -extract CFBundleVersion raw -o - "$RUNNER_TEMP/vxin-info.plist")" >> "$GITHUB_ENV"
       - name: Validate and upload to App Store Connect
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
