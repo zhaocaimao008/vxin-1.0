@@ -29,6 +29,7 @@ async function get(path){
   }
   fs.writeFileSync('ios-distribution-result.json',JSON.stringify(result,null,2));
   console.log('Apple processing state:',state);
+  if(process.env.CHECK_ONCE==='true')return;
   if(state==='VALID'){console.log('Uploaded build is valid in App Store Connect');return;}
   if(['FAILED','INVALID'].includes(state))throw Error('Apple rejected processing: '+state);
   await new Promise(r=>setTimeout(r,30000));
