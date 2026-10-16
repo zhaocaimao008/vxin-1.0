@@ -12,6 +12,16 @@ on:
         type: string
         required: false
         default: ''
+      publish_ipa_sha256:
+        description: 'Expected SHA-256 of the verified IPA'
+        type: string
+        required: false
+        default: ''
+      build_gate_run_id:
+        description: 'Successful iOS Build run for the same source revision'
+        type: string
+        required: false
+        default: ''
       repair_signing:
         description: '新增发布证书与描述文件，使用恢复公钥加密导出'
         type: boolean
@@ -24,6 +34,24 @@ on:
         description: '仅诊断证书有效期与 Apple API 权限，不上传'
         type: boolean
         default: false
+      diagnose_crashes:
+        description: '只读查询当前 TestFlight 构建的启动诊断与崩溃报告'
+        type: boolean
+        default: false
+      inspect_build_number:
+        description: '只读查询指定构建号的 Apple 处理状态'
+        type: string
+        required: false
+        default: ''
+      submit_current_build:
+        description: '验证并提交指定构建到现有公开测试组'
+        type: boolean
+        default: false
+      current_build_id:
+        description: '要提交的 App Store Connect 构建 ID'
+        type: string
+        required: false
+        default: ''
       version:
         description: '版本号 (如 1.0.1)'
         required: false
@@ -41,7 +69,7 @@ on:
 
 jobs:
   testflight:
-    if: ${{ !inputs.signing_check_only && !inputs.review_verified_build && inputs.publish_ipa_run_id == '' }}
+    if: ${{ !inputs.signing_check_only && !inputs.diagnose_crashes && !inputs.review_verified_build && !inputs.submit_current_build && inputs.publish_ipa_run_id == '' && inputs.inspect_build_number == '' }}
     # Apple 自 2026-04 起要求用 iOS 26 SDK(Xcode 26)构建才能上传 App Store。
     # macos-15 仅带 Xcode 16(iOS 18 SDK)，会在上传校验时 409。改用 macos-26。
     runs-on: macos-26
@@ -225,12 +253,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           IPA_RUN: ${{ inputs.publish_ipa_run_id }}
+          GATE_RUN: ${{ inputs.build_gate_run_id }}
         run: |
           set -euo pipefail
-          test "$IPA_RUN" = 38011855142
+          [[ "$IPA_RUN" =~ ^[0-9]+$ && "$GATE_RUN" =~ ^[0-9]+$ ]]
           test "$(gh run view "$IPA_RUN" --json conclusion --jq .conclusion)" = success
-          test "$(gh run view 38001904364 --json conclusion --jq .conclusion)" = success
-          test "$(gh run view 38011856984 --json conclusion --jq .conclusion)" = success
+          test "$(gh run view "$GATE_RUN" --json conclusion --jq .conclusion)" = success
+          test "$(gh run view "$IPA_RUN" --json workflowName --jq .workflowName)" = 'iOS TestFlight'
+          test "$(gh run view "$GATE_RUN" --json workflowName --jq .workflowName)" = 'iOS Build'
+          test "$(gh run view "$IPA_RUN" --json headSha --jq .headSha)" = "$(gh run view "$GATE_RUN" --json headSha --jq .headSha)"
       - uses: actions/download-artifact@v4
         with:
           name: vxin-ios-ipa
@@ -238,9 +269,16 @@ jobs:
           run-id: ${{ inputs.publish_ipa_run_id }}
           github-token: ${{ github.token }}
       - name: Check exact signed package
+        env:
+          EXPECTED_SHA256: ${{ inputs.publish_ipa_sha256 }}
         run: |
-          test "$(shasum -a 256 verified-ipa/Vxin.ipa | cut -d' ' -f1)" = 262ed319eb8e044617a446d48d32d7e4923b0b8e2dcc48e107592fad18cda32a
+          [[ "$EXPECTED_SHA256" =~ ^[a-f0-9]{64}$ ]]
+          test "$(shasum -a 256 verified-ipa/Vxin.ipa | cut -d' ' -f1)" = "$EXPECTED_SHA256"
           unzip -tq verified-ipa/Vxin.ipa
+          unzip -p verified-ipa/Vxin.ipa Payload/Vxin.app/Info.plist > "$RUNNER_TEMP/vxin-info.plist"
+          test "$(plutil -extract CFBundleIdentifier raw -o - "$RUNNER_TEMP/vxin-info.plist")" = com.vxin.app
+          echo "EXPECTED_VERSION=$(plutil -extract CFBundleShortVersionString raw -o - "$RUNNER_TEMP/vxin-info.plist")" >> "$GITHUB_ENV"
+          echo "EXPECTED_BUILD_NUMBER=$(plutil -extract CFBundleVersion raw -o - "$RUNNER_TEMP/vxin-info.plist")" >> "$GITHUB_ENV"
       - name: Validate and upload to App Store Connect
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
@@ -293,3 +331,76 @@ jobs:
           name: ios-external-review-result
           path: ios-external-review-result.json
           retention-days: 14
+
+  diagnose-crashes:
+    if: ${{ inputs.diagnose_crashes }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Read TestFlight launch and crash diagnostics
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
+        run: node scripts/ios-testflight-diagnostics.cjs
+
+  inspect-build:
+    if: ${{ inputs.inspect_build_number != '' && !inputs.submit_current_build }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Read Apple processing state
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
+          EXPECTED_VERSION: ${{ inputs.version }}
+          EXPECTED_BUILD_NUMBER: ${{ inputs.inspect_build_number }}
+          CHECK_ONCE: 'true'
+        run: node scripts/ios-build-processing.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-distribution-result
+          path: ios-distribution-result.json
+          if-no-files-found: ignore
+
+  submit-current-build:
+    if: ${{ inputs.submit_current_build }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify demo account and submit current build for public beta review
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
+          VXIN_REVIEW_ACCOUNT_JSON: ${{ secrets.VXIN_REVIEW_ACCOUNT_JSON_CURRENT }}
+          EXPECTED_VERSION: ${{ inputs.version }}
+          EXPECTED_BUILD_NUMBER: ${{ inputs.inspect_build_number }}
+          EXPECTED_BUILD_ID: ${{ inputs.current_build_id }}
+        run: node scripts/ios-submit-current.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-current-review-result
+          path: ios-current-review-result.json
+          if-no-files-found: ignore

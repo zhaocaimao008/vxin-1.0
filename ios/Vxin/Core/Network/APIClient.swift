@@ -74,15 +74,18 @@ final class APIClient {
         _ path: String,
         method: String = "GET",
         body: Encodable? = nil,
-        authorized: Bool = true
+        authorized: Bool = true,
+        requestTimeout: TimeInterval? = nil,
+        retryCount: Int? = nil
     ) async throws -> T {
         let scope = authorized ? MessageScope.current : nil
         var request = try makeRequest(path: path, method: method, authorized: authorized)
+        if let requestTimeout { request.timeoutInterval = requestTimeout }
         if let body {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = try encoder.encode(AnyEncodable(body))
         }
-        return try await withRetry(maxRetries) {
+        return try await withRetry(retryCount ?? maxRetries) {
             let (data, response): (Data, URLResponse)
             do { (data, response) = try await self.session.data(for: request) }
             catch { throw APIError.network }

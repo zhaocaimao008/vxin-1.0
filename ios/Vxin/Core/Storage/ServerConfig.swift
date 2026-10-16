@@ -7,7 +7,7 @@ final class ServerConfig {
     private init() {}
 
     /// 编译内置兜底（仅在远程+无手动覆盖时使用）
-    static let defaultURL = "https://liaotian99.com"
+    static let defaultURL = "https://vxinchat.com"
 
     private let overrideKey = "vxin_base_url_override"   // 手动「切换服务器」
     private let remoteKey = "vxin_base_url_remote"       // RemoteConfig 拉取写入
@@ -36,7 +36,14 @@ final class ServerConfig {
         UserDefaults.standard.string(forKey: overrideKey).flatMap { $0.isEmpty ? nil : $0 }
     }
     private var remote: String? {
-        UserDefaults.standard.string(forKey: remoteKey).flatMap { $0.isEmpty ? nil : $0 }
+        guard let value = UserDefaults.standard.string(forKey: remoteKey), !value.isEmpty else { return nil }
+        // A previously downloaded address must not keep a returning TestFlight
+        // installation pointed at the retired service when discovery is offline.
+        if Self.deprecatedServers.contains(Self.extractHost(value)) {
+            UserDefaults.standard.removeObject(forKey: remoteKey)
+            return nil
+        }
+        return value
     }
 
     private func normalize(_ s: String) -> String {
@@ -70,5 +77,5 @@ final class ServerConfig {
     }
 
     /// 已确认废弃的 v信官方旧服务器地址（仅自动清除这些；自定义服务器不受影响）
-    private static let deprecatedServers: Set<String> = ["45.77.131.33", "104.244.95.70"]
+    private static let deprecatedServers: Set<String> = ["45.77.131.33", "104.244.95.70", "liaotian99.com"]
 }
