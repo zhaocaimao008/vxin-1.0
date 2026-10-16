@@ -103,6 +103,44 @@ jobs:
           done
           xcrun simctl shutdown "$SIM_ID"
 
+      # TestFlight is archived with Release optimizations; Debug simulator
+      # screenshots alone cannot catch a Release-only blank launch.
+      - name: Verify Release simulator reaches login
+        env:
+          SIM_ID: ${{ steps.sim.outputs.udid }}
+        run: |
+          set -euo pipefail
+          xcodebuild build \
+            -project ios/Vxin.xcodeproj \
+            -scheme Vxin \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Release \
+            -derivedDataPath "$RUNNER_TEMP/vxin-derived" \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee ios/xcodebuild-release.log
+          xcrun simctl boot "$SIM_ID"
+          xcrun simctl bootstatus "$SIM_ID" -b
+          xcrun simctl install "$SIM_ID" "$RUNNER_TEMP/vxin-derived/Build/Products/Release-iphonesimulator/Vxin.app"
+          xcrun simctl launch --terminate-running-process "$SIM_ID" com.vxin.app
+          sleep 12
+          xcrun simctl io "$SIM_ID" screenshot ios-screenshots/login-release.png
+          swift - ios-screenshots/login-release.png <<'SWIFT'
+          import Foundation
+          import Vision
+          let screenshot = URL(fileURLWithPath: CommandLine.arguments[1])
+          let request = VNRecognizeTextRequest()
+          request.recognitionLevel = .accurate
+          request.recognitionLanguages = ["zh-Hans", "en-US"]
+          try VNImageRequestHandler(url: screenshot).perform([request])
+          let text = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined(separator: " ")
+          print("Release launch text: \(text)")
+          guard text.contains("登录") else {
+            fputs("Release app did not reach the login screen\n", stderr)
+            exit(1)
+          }
+          SWIFT
+          xcrun simctl shutdown "$SIM_ID"
+
       - name: Upload build & test logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -111,5 +149,6 @@ jobs:
           path: |
             ios/xcodebuild.log
             ios/xcodebuild-test.log
+            ios/xcodebuild-release.log
             ios-screenshots/
           if-no-files-found: ignore

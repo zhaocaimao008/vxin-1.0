@@ -93,7 +93,9 @@ final class AuthRepository {
     /// 启动时凭已存 token 校验会话
     func restoreSession() async -> User? {
         guard KeychainStore.shared.isLoggedIn else { return nil }
-        return try? await api.send("api/auth/me")
+        // Startup must leave the splash screen even when the server is down.
+        // Other API calls retain their normal retry policy.
+        return try? await api.send("api/auth/me", requestTimeout: 8, retryCount: 0)
     }
 
     func logout() async {
