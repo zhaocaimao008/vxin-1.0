@@ -46,7 +46,11 @@ async function get(path){
      const all=(await get('betaGroups?filter[app]='+encodeURIComponent(app.id)+'&limit=200')).data;
      const assigned=(await get('betaGroups?filter[builds]='+encodeURIComponent(build.id)+'&limit=200')).data;
      const assignedIds=new Set(assigned.map(group=>group.id));
-     result.betaGroups=all.map(group=>({id:group.id,name:group.attributes.name,isInternalGroup:group.attributes.isInternalGroup,hasAccessToAllBuilds:group.attributes.hasAccessToAllBuilds,assigned:assignedIds.has(group.id)}));
+     result.betaGroups=[];
+     for(const group of all){
+      const testers=(await get('betaGroups/'+encodeURIComponent(group.id)+'/betaTesters?limit=1')).data;
+      result.betaGroups.push({id:group.id,name:group.attributes.name,isInternalGroup:group.attributes.isInternalGroup,hasAccessToAllBuilds:group.attributes.hasAccessToAllBuilds,publicLinkEnabled:group.attributes.publicLinkEnabled,hasTesters:testers.length>0,assigned:assignedIds.has(group.id)});
+     }
     }catch(error){result.betaGroupsError=error.message;}
    }
   }
