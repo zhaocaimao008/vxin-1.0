@@ -20,6 +20,7 @@ function token() {
 }
 
 async function api(path, method = 'GET', data, allow404 = false) {
+  const retryable = method === 'GET' || method === 'PATCH';
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
       const response = await fetch(`https://api.appstoreconnect.apple.com/v1/${path}`, {
@@ -32,11 +33,11 @@ async function api(path, method = 'GET', data, allow404 = false) {
       const body = response.status === 204 ? {} : await response.json();
       if (response.ok) return body;
       const error = Error(`${method} ${path} HTTP ${response.status}: ${JSON.stringify(body.errors?.map(e => ({ code: e.code, title: e.title })))}`);
-      if (method !== 'GET' || response.status < 500 || attempt === 4) throw error;
-      console.log(`Apple API ${response.status}; retrying read`);
+      if (!retryable || response.status < 500 || attempt === 4) throw error;
+      console.log(`Apple API ${response.status}; retrying ${method}`);
     } catch (error) {
-      if (method !== 'GET' || attempt === 4 || error.message.startsWith(`${method} ${path} HTTP `)) throw error;
-      console.log(`Apple API read timed out; retrying: ${error.message}`);
+      if (!retryable || attempt === 4 || error.message.startsWith(`${method} ${path} HTTP `)) throw error;
+      console.log(`Apple API ${method} timed out; retrying: ${error.message}`);
     }
     await new Promise(resolve => setTimeout(resolve, 5000));
   }
@@ -78,9 +79,11 @@ async function localized(path, type, attributes, relationship) {
   result.groupId = group.id;
   console.log('Verified exact valid build, working demo login, and existing public tester group.');
 
+  result.phase = 'update app beta localization';
   await localized(`apps/${app.id}/betaAppLocalizations`, 'betaAppLocalizations',
     { feedbackEmail: cfg.feedback_email, description: cfg.description },
     { app: { data: { type: 'apps', id: app.id } } });
+  result.phase = 'update build beta localization';
   await localized(`builds/${build.id}/betaBuildLocalizations`, 'betaBuildLocalizations',
     { whatsNew: '修复 iOS 启动时旧服务器不可用导致的长时间停留，更新服务器地址与启动超时处理。' },
     { build: { data: { type: 'builds', id: build.id } } });
@@ -91,19 +94,23 @@ async function localized(path, type, attributes, relationship) {
     demoAccountRequired: true, demoAccountName: demo.phone, demoAccountPassword: demo.password,
     notes: '服务器：https://vxinchat.com。请在默认的手机登录页使用演示账号和密码；该号码是专用测试标识，无需短信验证码。审核账号仅含专用测试数据。应用支持单聊、群聊和媒体消息，通话需允许麦克风和相机权限。',
   };
+  result.phase = 'update beta review contact';
   const detail = (await api(`apps/${app.id}/betaAppReviewDetail`, 'GET', undefined, true)).data;
   if (detail) await api(`betaAppReviewDetails/${detail.id}`, 'PATCH', { type: 'betaAppReviewDetails', id: detail.id, attributes });
   else await api('betaAppReviewDetails', 'POST', { type: 'betaAppReviewDetails', attributes, relationships: { app: { data: { type: 'apps', id: app.id } } } });
 
+  result.phase = 'assign public beta group';
   const assigned = (await api(`betaGroups?filter[builds]=${encodeURIComponent(build.id)}&limit=200`)).data;
   if (!assigned.some(item => item.id === group.id)) await api(`betaGroups/${group.id}/relationships/builds`, 'POST', [{ type: 'builds', id: build.id }]);
   result.groupAssigned = true;
 
+  result.phase = 'submit external beta review';
   let submission = (await api(`builds/${build.id}/betaAppReviewSubmission`, 'GET', undefined, true)).data;
   if (!submission) submission = (await api('betaAppReviewSubmissions', 'POST', { type: 'betaAppReviewSubmissions', relationships: { build: { data: { type: 'builds', id: build.id } } } })).data;
   result.externalReviewSubmitted = true;
   result.reviewState = submission.attributes?.betaReviewState;
   result.submissionId = submission.id;
+  result.phase = 'complete';
   console.log(`Public beta build assigned; external review state: ${result.reviewState}`);
 })().catch(error => {
   result.error = error.message;
