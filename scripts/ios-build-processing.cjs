@@ -41,6 +41,14 @@ async function get(path){
     if(!error.message.startsWith('App Store Connect HTTP 404 '))throw error;
     result.betaState=null;
    }
+   if(process.env.CHECK_ONCE==='true'){
+    try{
+     const all=(await get('betaGroups?filter[app]='+encodeURIComponent(app.id)+'&limit=200')).data;
+     const assigned=(await get('betaGroups?filter[builds]='+encodeURIComponent(build.id)+'&limit=200')).data;
+     const assignedIds=new Set(assigned.map(group=>group.id));
+     result.betaGroups=all.map(group=>({id:group.id,name:group.attributes.name,isInternalGroup:group.attributes.isInternalGroup,hasAccessToAllBuilds:group.attributes.hasAccessToAllBuilds,assigned:assignedIds.has(group.id)}));
+    }catch(error){result.betaGroupsError=error.message;}
+   }
   }
   fs.writeFileSync('ios-distribution-result.json',JSON.stringify(result,null,2));
   console.log('Apple processing state:',state);
