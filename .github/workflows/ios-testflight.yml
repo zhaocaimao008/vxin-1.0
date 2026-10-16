@@ -43,6 +43,15 @@ on:
         type: string
         required: false
         default: ''
+      submit_current_build:
+        description: '验证并提交指定构建到现有公开测试组'
+        type: boolean
+        default: false
+      current_build_id:
+        description: '要提交的 App Store Connect 构建 ID'
+        type: string
+        required: false
+        default: ''
       version:
         description: '版本号 (如 1.0.1)'
         required: false
@@ -60,7 +69,7 @@ on:
 
 jobs:
   testflight:
-    if: ${{ !inputs.signing_check_only && !inputs.diagnose_crashes && !inputs.review_verified_build && inputs.publish_ipa_run_id == '' && inputs.inspect_build_number == '' }}
+    if: ${{ !inputs.signing_check_only && !inputs.diagnose_crashes && !inputs.review_verified_build && !inputs.submit_current_build && inputs.publish_ipa_run_id == '' && inputs.inspect_build_number == '' }}
     # Apple 自 2026-04 起要求用 iOS 26 SDK(Xcode 26)构建才能上传 App Store。
     # macos-15 仅带 Xcode 16(iOS 18 SDK)，会在上传校验时 409。改用 macos-26。
     runs-on: macos-26
@@ -342,7 +351,7 @@ jobs:
         run: node scripts/ios-testflight-diagnostics.cjs
 
   inspect-build:
-    if: ${{ inputs.inspect_build_number != '' }}
+    if: ${{ inputs.inspect_build_number != '' && !inputs.submit_current_build }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -366,4 +375,32 @@ jobs:
         with:
           name: ios-distribution-result
           path: ios-distribution-result.json
+          if-no-files-found: ignore
+
+  submit-current-build:
+    if: ${{ inputs.submit_current_build }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify demo account and submit current build for public beta review
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
+          VXIN_REVIEW_ACCOUNT_JSON: ${{ secrets.VXIN_REVIEW_ACCOUNT_JSON }}
+          EXPECTED_VERSION: ${{ inputs.version }}
+          EXPECTED_BUILD_NUMBER: ${{ inputs.inspect_build_number }}
+          EXPECTED_BUILD_ID: ${{ inputs.current_build_id }}
+        run: node scripts/ios-submit-current.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-current-review-result
+          path: ios-current-review-result.json
           if-no-files-found: ignore
