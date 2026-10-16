@@ -8,10 +8,20 @@ function token(){
  return input+'.'+crypto.sign('sha256',Buffer.from(input),{key,dsaEncoding:'ieee-p1363'}).toString('base64url');
 }
 async function get(path){
- const response=await fetch('https://api.appstoreconnect.apple.com/v1/'+path,{headers:{Authorization:'Bearer '+token()},signal:AbortSignal.timeout(30000)});
- const data=await response.json();
- if(!response.ok)throw Error('App Store Connect HTTP '+response.status+': '+JSON.stringify(data.errors?.map(e=>({status:e.status,code:e.code,title:e.title}))));
- return data;
+ for(let attempt=0;attempt<5;attempt++){
+  try{
+   const response=await fetch('https://api.appstoreconnect.apple.com/v1/'+path,{headers:{Authorization:'Bearer '+token()},signal:AbortSignal.timeout(30000)});
+   const data=await response.json();
+   if(response.ok)return data;
+   const error=Error('App Store Connect HTTP '+response.status+': '+JSON.stringify(data.errors?.map(e=>({status:e.status,code:e.code,title:e.title}))));
+   if(response.status<500||attempt===4)throw error;
+   console.log('Apple API temporary error, retrying:',response.status);
+  }catch(error){
+   if(attempt===4||error.message.startsWith('App Store Connect HTTP '))throw error;
+   console.log('Apple API request failed, retrying:',error.message);
+  }
+  await new Promise(resolve=>setTimeout(resolve,5000));
+ }
 }
 (async()=>{
  const expectedVersion=process.env.EXPECTED_VERSION;
