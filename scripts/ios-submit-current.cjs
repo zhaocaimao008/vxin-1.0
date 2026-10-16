@@ -56,7 +56,7 @@ async function localized(path, type, attributes, relationship) {
 
   const login = await fetch('https://vxinchat.com/api/auth/login', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ loginType: 'vxin', identifier: demo.identifier, password: demo.password }),
+    body: JSON.stringify({ wechat_id: demo.identifier, password: demo.password }),
     signal: AbortSignal.timeout(30000),
   });
   assert(login.ok, `Review account login failed on current server: HTTP ${login.status}`);
