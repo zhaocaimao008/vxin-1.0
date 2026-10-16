@@ -393,7 +393,7 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
-          VXIN_REVIEW_ACCOUNT_JSON: ${{ secrets.VXIN_REVIEW_ACCOUNT_JSON }}
+          VXIN_REVIEW_ACCOUNT_JSON: ${{ secrets.VXIN_REVIEW_ACCOUNT_JSON_CURRENT }}
           EXPECTED_VERSION: ${{ inputs.version }}
           EXPECTED_BUILD_NUMBER: ${{ inputs.inspect_build_number }}
           EXPECTED_BUILD_ID: ${{ inputs.current_build_id }}

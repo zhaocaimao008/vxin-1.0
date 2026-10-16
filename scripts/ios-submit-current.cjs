@@ -51,17 +51,17 @@ async function localized(path, type, attributes, relationship) {
 
 (async () => {
   assert(/^\d+\.\d+\.\d+$/.test(version || '') && /^\d+$/.test(buildNumber || '') && /^[a-f0-9-]{36}$/.test(buildId || ''), 'Exact build identity is required');
-  assert(/^\d{6}$/.test(demo.identifier || '') && demo.password?.length >= 16, 'Private review account secret is missing');
+  assert(/^0\d{10}$/.test(demo.phone || '') && demo.password?.length >= 16, 'Private review account secret is missing');
   for (const key of ['contact_first', 'contact_last', 'contact_email', 'contact_phone', 'feedback_email', 'description', 'group_name']) assert(cfg[key]?.trim(), `Missing review metadata: ${key}`);
 
   const login = await fetch('https://vxinchat.com/api/auth/login', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ wechat_id: demo.identifier, password: demo.password }),
+    body: JSON.stringify({ phone: demo.phone, password: demo.password }),
     signal: AbortSignal.timeout(30000),
   });
   assert(login.ok, `Review account login failed on current server: HTTP ${login.status}`);
   const auth = await login.json();
-  assert.equal(auth.user.wechat_id, demo.identifier);
+  assert.equal(auth.user.phone, demo.phone);
   result.demoLoginVerified = true;
 
   const app = (await api('apps?filter[bundleId]=com.vxin.app')).data[0];
@@ -88,8 +88,8 @@ async function localized(path, type, attributes, relationship) {
   const attributes = {
     contactFirstName: cfg.contact_first, contactLastName: cfg.contact_last,
     contactEmail: cfg.contact_email, contactPhone: cfg.contact_phone,
-    demoAccountRequired: true, demoAccountName: demo.identifier, demoAccountPassword: demo.password,
-    notes: '服务器：https://vxinchat.com。请在登录页切换到 v信号登录，使用演示账号和密码；无需短信验证码。审核账号仅含专用测试数据。应用支持单聊、群聊和媒体消息，通话需允许麦克风和相机权限。',
+    demoAccountRequired: true, demoAccountName: demo.phone, demoAccountPassword: demo.password,
+    notes: '服务器：https://vxinchat.com。请在默认的手机登录页使用演示账号和密码；该号码是专用测试标识，无需短信验证码。审核账号仅含专用测试数据。应用支持单聊、群聊和媒体消息，通话需允许麦克风和相机权限。',
   };
   const detail = (await api(`apps/${app.id}/betaAppReviewDetail`, 'GET', undefined, true)).data;
   if (detail) await api(`betaAppReviewDetails/${detail.id}`, 'PATCH', { type: 'betaAppReviewDetails', id: detail.id, attributes });
