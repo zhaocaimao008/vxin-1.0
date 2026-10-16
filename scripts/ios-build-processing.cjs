@@ -13,7 +13,7 @@ async function get(path){
    const response=await fetch('https://api.appstoreconnect.apple.com/v1/'+path,{headers:{Authorization:'Bearer '+token()},signal:AbortSignal.timeout(30000)});
    const data=await response.json();
    if(response.ok)return data;
-   const error=Error('App Store Connect HTTP '+response.status+': '+JSON.stringify(data.errors?.map(e=>({status:e.status,code:e.code,title:e.title}))));
+   const error=Error('App Store Connect HTTP '+response.status+' for '+path+': '+JSON.stringify(data.errors?.map(e=>({status:e.status,code:e.code,title:e.title}))));
    if(response.status<500||attempt===4)throw error;
    console.log('Apple API temporary error, retrying:',response.status);
   }catch(error){
@@ -34,8 +34,13 @@ async function get(path){
   const state=build?.attributes.processingState||'WAITING_FOR_BUILD';
   const result={bundleId:'com.vxin.app',version:expectedVersion,buildNumber:expectedBuild,buildId:build?.id||null,processingState:state,expired:build?.attributes.expired??null,checkedAt:new Date().toISOString(),externalReviewSubmitted:false};
   if(build){
-   const detail=await get('builds/'+encodeURIComponent(build.id)+'/buildBetaDetail');
-   result.betaState=detail.data.attributes;
+   try{
+    const detail=await get('builds/'+encodeURIComponent(build.id)+'/buildBetaDetail');
+    result.betaState=detail.data.attributes;
+   }catch(error){
+    if(!error.message.startsWith('App Store Connect HTTP 404 '))throw error;
+    result.betaState=null;
+   }
   }
   fs.writeFileSync('ios-distribution-result.json',JSON.stringify(result,null,2));
   console.log('Apple processing state:',state);
